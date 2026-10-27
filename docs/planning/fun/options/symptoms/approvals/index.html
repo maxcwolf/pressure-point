@@ -1,0 +1,766 @@
+<meta charset="utf-8" />
+<title>Symptom Model Approvals</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap"
+/>
+<style>
+  /* Layout: a row per ailment, newest decisions first in the summary; each row's variants side by side as cards, every
+   card the same four pictures in the same places (front, side, play size, the cure). */
+  :root {
+    --bg: #eef3f2;
+    --panel: #ffffff;
+    --fg: #182628;
+    --muted: #566a6c;
+    --line: #d3dedd;
+    --accent: #0f7a73;
+    --ok: #2f8a3e;
+    --ok-ink: #ffffff;
+    --warn: #e09a12;
+    --warn-ink: #2a1c00;
+    --todo: #5a7fb0;
+    --todo-ink: #ffffff;
+    --display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+    --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #101819;
+      --panel: #172223;
+      --fg: #e3eceb;
+      --muted: #9db0b1;
+      --line: #2a3a3c;
+      --accent: #43c3b8;
+      --ok: #57b866;
+      --ok-ink: #0c1a0e;
+      --warn: #f2b33d;
+      --warn-ink: #241700;
+      --todo: #84a8d8;
+      --todo-ink: #0d1726;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #101819;
+    --panel: #172223;
+    --fg: #e3eceb;
+    --muted: #9db0b1;
+    --line: #2a3a3c;
+    --accent: #43c3b8;
+    --ok: #57b866;
+    --ok-ink: #0c1a0e;
+    --warn: #f2b33d;
+    --warn-ink: #241700;
+    --todo: #84a8d8;
+    --todo-ink: #0d1726;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 36px 72px;
+  }
+  main {
+    max-width: 1360px;
+    margin: 0 auto;
+    display: grid;
+    gap: 44px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+  }
+  h2 {
+    font-size: 1.6rem;
+  }
+  h3 {
+    font-size: 1.08rem;
+    font-weight: 600;
+  }
+  p {
+    margin: 0;
+    max-width: 70ch;
+  }
+  .eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  header {
+    display: grid;
+    gap: 12px;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .summary {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .summary li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .summary a {
+    color: var(--fg);
+    font-weight: 700;
+  }
+  .summary .n {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .status {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .status.approved {
+    background: var(--ok);
+    color: var(--ok-ink);
+  }
+  .status.needs-work {
+    background: var(--warn);
+    color: var(--warn-ink);
+  }
+  .status.proposed {
+    background: var(--todo);
+    color: var(--todo-ink);
+  }
+  .ailment {
+    display: grid;
+    gap: 14px;
+    padding-top: 24px;
+    border-top: 2px solid var(--line);
+  }
+  .ail-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+  }
+  .room {
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .said span {
+    color: var(--muted);
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 318px), 1fr));
+    gap: 16px;
+  }
+  .card {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    min-width: 0;
+  }
+  .card.ref {
+    background: transparent;
+    border-style: dashed;
+  }
+  .card.ref h3 {
+    color: var(--muted);
+  }
+  .line {
+    font-size: 0.92rem;
+    min-height: 4.6em;
+  }
+  .views {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  figcaption {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .shot {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+    line-height: 0;
+    max-width: 100%;
+    border-radius: 6px;
+  }
+  .shot img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+  }
+  .shot:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .play-pair {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    overflow: hidden;
+  }
+  .shot.native img {
+    width: 200px;
+    max-width: none;
+  }
+  .play-pair .shot.native {
+    flex: none;
+  }
+  .cure img {
+    width: 100%;
+  }
+  @media (min-width: 1100px) {
+    .cards {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .howto {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: grid;
+    gap: 6px;
+  }
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    background: rgb(8 14 15 / 0.9);
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox img {
+    max-width: min(1440px, 100%);
+    max-height: calc(100vh - 80px);
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  .lightbox .cap {
+    color: #e3eceb;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .lightbox button {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    font: 700 1rem var(--body);
+    background: #e3eceb;
+    color: #101819;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Symptoms you can see &#183; Round 1 &#183; 27 October 2026</span>
+    <h1>Symptom model approvals</h1>
+    <p>
+      Option A, where the guest's body becomes the joke, goes in one ailment at a time, and only once you have approved
+      its model. Each ailment below shows its variants side by side, each with the same four pictures: the lab close-up
+      from the front and from the side, the guest at play size from a busy waiting room (real pixels, a guest about 33
+      pixels tall), and the cure.
+    </p>
+    <ul class="summary">
+      <li>
+        <a href="#steam">Stress Head</a> <span class="status needs-work">Needs work</span>
+        <span class="n">3 variants</span>
+      </li>
+      <li>
+        <a href="#dizzy">Scrambled Noggin</a> <span class="status needs-work">Needs work</span>
+        <span class="n">3 variants</span>
+      </li>
+      <li>
+        <a href="#bottled">Bottled Up</a> <span class="status proposed">Proposed</span> <span class="n">1 variant</span>
+      </li>
+    </ul>
+    <div class="howto">
+      <b>To answer</b>
+      <p>
+        Name a variant for each ailment, such as "kettle 2, egg 1", or say what to change. An approved model gets built
+        in for real and is on for every guest with that ailment. Nothing goes in without your approval by name.
+      </p>
+    </div>
+    <p class="note">
+      Play-size pictures come from a day-900 Orchard Estate built by the playtest bot, at 1440&#215;900 with the camera
+      at its default distance, every unwell guest given Stress Head, Scrambled Noggin or Bottled Up in turn. Close-ups
+      are from the model lab.
+    </p>
+  </header>
+
+  <section class="ailment" id="steam">
+    <div class="ail-head">
+      <h2>Stress Head</h2>
+      <span class="status needs-work">Needs work</span>
+      <span class="room">Hot Stone room, massage</span>
+    </div>
+    <p class="said">
+      <b>Max, 27 Oct:</b> &quot;The kettle needs some refinement.&quot;
+      <span>Pick one of the three, or say what to change.</span>
+    </p>
+    <div class="cards">
+      <article class="card">
+        <h3>Kettle 1 &#183; Round red enamel</h3>
+        <p class="line">
+          The head stays round and red, now with a domed steel lid, a thicker black handle arching over the top, and a
+          fat red spout from the cheek with a black whistle that the steam comes out of.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="steam-1-front.webp">
+              <img src="steam-1-front.webp" alt="Kettle 1 &#183; Round red enamel, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="steam-1-side.webp">
+              <img src="steam-1-side.webp" alt="Kettle 1 &#183; Round red enamel, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-1-full.webp">
+              <img src="steam-1-play.webp" alt="Kettle 1 &#183; Round red enamel at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="steam-1-cure.webp">
+            <img
+              src="steam-1-cure.webp"
+              alt="Kettle 1 &#183; Round red enamel cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Kettle 2 &#183; Blue stovetop</h3>
+        <p class="line">
+          The head becomes a tapering blue enamel kettle, the classic stovetop outline, with a long steel spout, a black
+          whistle and a black handle. No hair, ears or nose.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="steam-2-front.webp">
+              <img src="steam-2-front.webp" alt="Kettle 2 &#183; Blue stovetop, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="steam-2-side.webp">
+              <img src="steam-2-side.webp" alt="Kettle 2 &#183; Blue stovetop, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-2-full.webp">
+              <img src="steam-2-play.webp" alt="Kettle 2 &#183; Blue stovetop at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="steam-2-cure.webp">
+            <img
+              src="steam-2-cure.webp"
+              alt="Kettle 2 &#183; Blue stovetop cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Kettle 3 &#183; Chrome stovetop</h3>
+        <p class="line">The same stovetop shape in polished chrome, with a red knob and a red whistle.</p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="steam-3-front.webp">
+              <img src="steam-3-front.webp" alt="Kettle 3 &#183; Chrome stovetop, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="steam-3-side.webp">
+              <img src="steam-3-side.webp" alt="Kettle 3 &#183; Chrome stovetop, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-3-full.webp">
+              <img src="steam-3-play.webp" alt="Kettle 3 &#183; Chrome stovetop at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="steam-3-cure.webp">
+            <img
+              src="steam-3-cure.webp"
+              alt="Kettle 3 &#183; Chrome stovetop cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card ref">
+        <h3>Round 0 &#183; For comparison</h3>
+        <p class="line">Round 0: the red head, a flat steel lid, a black ring for a handle and a thin gray spout.</p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="steam-0-front.webp">
+              <img src="steam-0-front.webp" alt="Round 0 &#183; For comparison, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="steam-0-side.webp">
+              <img src="steam-0-side.webp" alt="Round 0 &#183; For comparison, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-0-full.webp">
+              <img src="steam-0-play.webp" alt="Round 0 &#183; For comparison at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="steam-0-cure.webp">
+            <img
+              src="steam-0-cure.webp"
+              alt="Round 0 &#183; For comparison cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="dizzy">
+    <div class="ail-head">
+      <h2>Scrambled Noggin</h2>
+      <span class="status needs-work">Needs work</span>
+      <span class="room">Cranio-sacral room, massage</span>
+    </div>
+    <p class="said">
+      <b>Max, 27 Oct:</b> &quot;The egg needs some refinement.&quot;
+      <span>Pick one of the three, or say what to change.</span>
+    </p>
+    <div class="cards">
+      <article class="card">
+        <h3>Egg 1 &#183; Cracked open</h3>
+        <p class="line">
+          The head inside an eggshell broken in two: the top half lifted and tipped back like a lid, the bottom half
+          cupping the chin, the face looking out of the gap and yolk running down. From the front the bottom half can
+          read as a white beard.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-1-front.webp">
+              <img src="dizzy-1-front.webp" alt="Egg 1 &#183; Cracked open, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-1-side.webp">
+              <img src="dizzy-1-side.webp" alt="Egg 1 &#183; Cracked open, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-1-full.webp">
+              <img src="dizzy-1-play.webp" alt="Egg 1 &#183; Cracked open at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="dizzy-1-cure.webp">
+            <img
+              src="dizzy-1-cure.webp"
+              alt="Egg 1 &#183; Cracked open cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Egg 2 &#183; Scrambled on top</h3>
+        <p class="line">
+          The head a smooth egg, cracked across the crown, with a heap of scrambled egg spilling out of the top.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-2-front.webp">
+              <img src="dizzy-2-front.webp" alt="Egg 2 &#183; Scrambled on top, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-2-side.webp">
+              <img src="dizzy-2-side.webp" alt="Egg 2 &#183; Scrambled on top, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-2-full.webp">
+              <img src="dizzy-2-play.webp" alt="Egg 2 &#183; Scrambled on top at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="dizzy-2-cure.webp">
+            <img
+              src="dizzy-2-cure.webp"
+              alt="Egg 2 &#183; Scrambled on top cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Egg 3 &#183; Top knocked off</h3>
+        <p class="line">
+          The head an egg with its top knocked off and the yolk showing, the broken cap floating above it among the
+          stars.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-3-front.webp">
+              <img src="dizzy-3-front.webp" alt="Egg 3 &#183; Top knocked off, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-3-side.webp">
+              <img src="dizzy-3-side.webp" alt="Egg 3 &#183; Top knocked off, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-3-full.webp">
+              <img src="dizzy-3-play.webp" alt="Egg 3 &#183; Top knocked off at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="dizzy-3-cure.webp">
+            <img
+              src="dizzy-3-cure.webp"
+              alt="Egg 3 &#183; Top knocked off cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card ref">
+        <h3>Round 0 &#183; For comparison</h3>
+        <p class="line">Round 0: the head stretched tall and white, dark crack marks and a yolk blob on the crown.</p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-0-front.webp">
+              <img src="dizzy-0-front.webp" alt="Round 0 &#183; For comparison, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="dizzy-0-side.webp">
+              <img src="dizzy-0-side.webp" alt="Round 0 &#183; For comparison, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-0-full.webp">
+              <img src="dizzy-0-play.webp" alt="Round 0 &#183; For comparison at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="dizzy-0-cure.webp">
+            <img
+              src="dizzy-0-cure.webp"
+              alt="Round 0 &#183; For comparison cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="bottled">
+    <div class="ail-head">
+      <h2>Bottled Up</h2>
+      <span class="status proposed">Proposed</span>
+      <span class="room">Cupping room, acupuncture</span>
+    </div>
+    <p class="said">
+      <b>Max, 27 Oct:</b> &quot;The bottle looks great!&quot;
+      <span
+        >Unchanged since round 0. Say &quot;approve the bottle&quot; to have it built in for real, lying on a table
+        included.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card">
+        <h3>Bottle</h3>
+        <p class="line">
+          The whole guest inside a big green bottle, the cork above the head, a cream label with a red stripe round the
+          middle, legs out of the bottom.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="bottled-0-front.webp">
+              <img src="bottled-0-front.webp" alt="Bottle, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="bottled-0-side.webp">
+              <img src="bottled-0-side.webp" alt="Bottle, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-0-full.webp">
+              <img src="bottled-0-play.webp" alt="Bottle at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="bottled-0-cure.webp">
+            <img src="bottled-0-cure.webp" alt="Bottle cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <div>
+    <img id="lb-img" alt="" />
+    <p class="cap" id="lb-cap"></p>
+  </div>
+  <button type="button" id="lb-close">Close</button>
+</div>
+
+<script>
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  const lbCap = document.getElementById('lb-cap');
+  document.querySelectorAll('.shot').forEach((b) =>
+    b.addEventListener('click', () => {
+      lbImg.src = b.dataset.full;
+      lbImg.alt = b.querySelector('img').alt;
+      lbCap.textContent = b.querySelector('img').alt;
+      lb.hidden = false;
+      document.getElementById('lb-close').focus();
+    }),
+  );
+  const close = () => {
+    lb.hidden = true;
+    lbImg.removeAttribute('src');
+  };
+  document.getElementById('lb-close').addEventListener('click', close);
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !lb.hidden) close();
+  });
+</script>
