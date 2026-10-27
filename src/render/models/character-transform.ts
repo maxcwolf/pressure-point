@@ -1,6 +1,5 @@
-// Prototypes for symptoms that read from the game's usual distance (see `SYMPTOM_OPTION`): under `body`, the head or
-// the whole body becomes the joke (a kettle for a stress head, a bottle for someone bottled up, an egg for a scrambled
-// noggin); under `color`, the whole person wears it (a ghost for someone out of their body, frosted for a cold
+// Prototypes for symptoms that read from the game's usual distance (see `SYMPTOM_OPTION`): under `color`, the whole
+// person wears it (a ghost for someone out of their body, frosted for a cold
 // shoulder, pond green for stagnant vibes). Each is put back halfway through the cure, as the skin is.
 
 import * as THREE from 'three';
@@ -9,12 +8,10 @@ import type { Visual } from '../../core/data';
 import type { Viewpoint } from '../crowd';
 import { owned } from '../disposal';
 import { pixelsPerMeter } from '../readable';
-import { GROW, GROW_START, SYMPTOM_OPTION, variantOf } from '../symptom-options';
+import { GROW, GROW_START, SYMPTOM_OPTION } from '../symptom-options';
 import type { CharRig } from './character';
-import { hideUntilCured, named, props, swell } from './character-heads';
-import { cyl, mat, put, sph, torus } from './parts';
-import { kettle } from './symptom-heads';
-import { cactus } from './symptom-proposals';
+import { props } from './character-heads';
+import { mat, put, sph } from './parts';
 
 /**
  * Recolor every part of a person, each shared material swapped for the shared one of its new color so the crowd still
@@ -35,32 +32,6 @@ function propParts(rig: CharRig) {
   const parts = new Set<THREE.Object3D>();
   for (const p of rig.props) p.traverse((o) => parts.add(o));
   return parts;
-}
-
-/** The whole body as the symptom, for the ailments prototyped under `body`. */
-function bodySymptom(rig: CharRig, visual: Visual) {
-  const { head } = rig;
-  if (visual === 'steam' && variantOf('steam')) kettle(rig, variantOf('steam'));
-  else if (visual === 'cactus' && variantOf('cactus')) cactus(rig, variantOf('cactus'));
-  else if (visual === 'steam') {
-    // the head a whistling kettle: red enamel where the skin was, a steel lid for hair, a black handle arching over the
-    // top, and a spout the steam comes out of, the face still on it to show how they feel
-    rig.headMesh.material = mat(0xd9452f, 0.4);
-    hideUntilCured(rig, named(head, 'hair', 'moustache', 'beard', 'glasses'));
-    const kettle = new THREE.Group();
-    const steel = mat(0xc9ced6, 0.3);
-    const black = mat(0x1d1f24, 0.4);
-    put(kettle, cyl(0.15, 0.2, 0.06, 20), steel, 0, 0.2, 0);
-    put(kettle, sph(0.045, 10), black, 0, 0.26, 0);
-    put(kettle, torus(0.19, 0.03), black, 0, 0.2, -0.02);
-    const spout = put(kettle, cyl(0.035, 0.065, 0.24, 12), steel, 0.27, 0.03, 0.04);
-    spout.rotation.z = -0.85;
-    put(kettle, sph(0.045, 10), black, 0.36, 0.12, 0.04);
-    props(rig, kettle);
-    head.add(kettle);
-    rig.steam?.position.set(0.38, 0.14, 0.04);
-    swell(rig, 1.25, 1.2);
-  }
 }
 
 /** The whole person wearing the symptom as color, for the ailments prototyped under `color`. */
@@ -151,7 +122,6 @@ export function growProps(rig: CharRig, view: Viewpoint) {
 /** Draw a symptom as the prototype option asked for in the address does, for the ailments it has been tried on. */
 export function transformSymptom(rig: CharRig, visual: Visual | undefined) {
   if (!visual) return;
-  if (SYMPTOM_OPTION === 'body') bodySymptom(rig, visual);
-  else if (SYMPTOM_OPTION === 'color') colorSymptom(rig, visual);
+  if (SYMPTOM_OPTION === 'color') colorSymptom(rig, visual);
   else if (SYMPTOM_OPTION === 'grow') growSymptom(rig, visual);
 }

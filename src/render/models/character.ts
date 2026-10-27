@@ -391,12 +391,12 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       -0.19,
     );
   } else if (visual === 'steam') {
-    headMesh.material = mat(0xe8836f, 0.65);
+    // the head a whistling kettle, the steam puffing out of its spout
     rig.steam = new THREE.Group();
     for (let i = 0; i < 3; i++)
       put(rig.steam, sph(0.06, 8), mat(0xffffff, 0.9, 0.3), (i - 1) * 0.12, 0, 0).castShadow = false;
-    rig.steam.position.y = 0.3;
     head.add(rig.steam);
+    headSymptom(rig, visual);
   } else if (visual === 'band') {
     rig.band = put(head, torus(0.226, 0.038), mat(0xe5484d, 0.4, 0.7), 0, 0.07, 0);
     rig.band.rotation.x = Math.PI / 2;
@@ -807,17 +807,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     collar.rotation.x = Math.PI / 2;
     rig.props.push(strap, collar);
   } else if (visual === 'cactus') {
-    // a little cactus in a pot, balanced on the head, about as dry as they feel
-    const pot = new THREE.Group();
-    put(pot, cyl(0.06, 0.045, 0.07, 10), mat(0xb5523e, 0.8), 0, 0, 0);
-    const green = mat(0x5a9a4f, 0.7);
-    put(pot, capsule(0.035, 0.08), green, 0, 0.09, 0);
-    put(pot, capsule(0.02, 0.03), green, 0.045, 0.1, 0).rotation.z = -0.9;
-    pot.scale.setScalar(1.6);
-    pot.position.y = 0.27;
-    for (const o of pot.children) o.castShadow = false;
-    head.add(pot);
-    rig.props.push(pot);
+    bodySymptom(rig, visual);
   } else if (visual === 'bighead') {
     // a head swollen to half as big again, and a smug little crown on it
     rig.swell = [1.45, 1.45];

@@ -25,6 +25,7 @@ import {
   moodOf,
   PATIENCE_SIGNS,
   poseChar,
+  POTTED,
   PRONE_TURN,
   rattleDip,
   RHYTHM,
@@ -637,6 +638,25 @@ describe('a symptom in place of the head', () => {
     expect(rig.blink!.emissiveIntensity).not.toBe(lit);
   });
 
+  it("makes a stress head's head a kettle, the steam puffing out of its spout", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'steam');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect((rig.headMesh.material as THREE.MeshStandardMaterial).color.getHex()).not.toBe(LAB_LOOK.skin);
+    expect(hair(rig).some(shown)).toBe(false);
+    // the steam comes out of the whistle, off to the side of the head and up, not out of the top
+    expect(rig.steam!.position.x).toBeGreaterThan(0.3);
+    expect(rig.steam!.position.y).toBeGreaterThan(0.1);
+    expect(rig.head.scale.y).toBeGreaterThan(1);
+  });
+
+  it('gives a stress head their own skin back with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'steam');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'steam'), outcome: 'healed' }, 5, 1, { style: null });
+    expect((rig.headMesh.material as THREE.MeshStandardMaterial).color.getHex()).toBe(LAB_LOOK.skin);
+    expect(hair(rig).every(shown)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+  });
+
   it('gives a flat battery their head back with the cure', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
     poseChar(rig, { ...demoGuest(LAB_LOOK, 'battery'), outcome: 'healed' }, 5, 1, { style: null });
@@ -688,6 +708,44 @@ describe('a symptom worn whole', () => {
     expect(bottleOf(rig).position.y).toBeGreaterThan(0.8);
     poseChar(rig, healed, CURE * 2, 1, { style: null });
     expect(bottleOf(rig).visible).toBe(false);
+  });
+
+  /** How far someone's legs swing out at most over a few strides of walking. */
+  const swing = (rig: CharRig, g: Char) => {
+    let most = 0;
+    for (let i = 0; i < 40; i++) {
+      rig.walked = i * 0.05;
+      poseChar(rig, { ...g, pose: 'walk' }, i * 0.05, 1, { style: null });
+      most = Math.max(most, Math.abs(rig.legL.rotation.x), Math.abs(rig.legR.rotation.x));
+    }
+    return most;
+  };
+
+  it('pots someone spiritually dehydrated from the waist down, the head a cactus and the shirt gone green', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
+    expect(rig.headMesh.visible).toBe(false);
+    expect(rig.face.eyes.visible).toBe(true);
+    const shirt = rig.torso.getObjectByName('shirt') as THREE.Mesh;
+    expect((shirt.material as THREE.MeshStandardMaterial).color.getHex()).not.toBe(LAB_LOOK.top);
+    // the pot round the hips, on the body
+    expect(rig.props.some((p) => p.parent === rig.body)).toBe(true);
+  });
+
+  it('keeps their legs inside the pot: a shuffle walking, and straight down sitting, even on the floor', () => {
+    const g = demoGuest(LAB_LOOK, 'parched');
+    expect(swing(buildCharacter(LAB_LOOK, undefined, 'cactus'), g)).toBeLessThanOrEqual(POTTED.stride + 0.01);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
+    poseChar(rig, { ...g, pose: 'sit', h: 0 }, 0, 1, { style: null });
+    expect(rig.legL.rotation.x).toBeCloseTo(0);
+    expect(rig.legL.rotation.y).toBeCloseTo(0);
+  });
+
+  it('walks them as anyone does once the pot is gone with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
+    const healed = { ...demoGuest(LAB_LOOK, 'parched'), outcome: 'healed' as const };
+    poseChar(rig, healed, 5, 1, { style: null });
+    expect(rig.headMesh.visible).toBe(true);
+    expect(swing(rig, healed)).toBeGreaterThan(0.4);
   });
 });
 

@@ -1,7 +1,7 @@
 // The symptoms that take the place of a guest's head, so the ailment reads from across the room at the game's usual
-// distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off, and a
-// flat battery's a battery on its side. The face stays on, so how the guest feels still shows, and the head comes back
-// halfway through the cure.
+// distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off, a flat
+// battery's a battery on its side, and a stress head's a whistling kettle. The face stays on, so how the guest feels
+// still shows, and the head comes back halfway through the cure.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -9,7 +9,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Visual } from '../../core/data';
 import { owned } from '../disposal';
 import type { CharRig } from './character';
-import { cached, mat, put, rbox, sph } from './parts';
+import { cached, cyl, mat, put, rbox, sph } from './parts';
 
 /** Keep a symptom's parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
 export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
@@ -162,8 +162,63 @@ function battery(rig: CharRig) {
   swell(rig, 1.1, 1.1);
 }
 
+/** A kettle's red enamel, its steel lid and handle, its black knob and whistle, and the wood of its grip. */
+const ENAMEL = 0xd23c2a;
+const STEEL = 0xc9ced6;
+const KNOB = 0x1d1f24;
+const GRIP = 0xa86f3c;
+
+/**
+ * A thin wire handle over the top of the head from one side to the other, `across` between its feet and `up` high,
+ * standing in the head's left-right plane: an arch drawn out tall without growing thicker at the top, as a stretched
+ * ring would.
+ */
+const bail = (across: number, up: number, tube: number) =>
+  cached(`bail ${across}|${up}|${tube}`, () => {
+    const points: THREE.Vector3[] = [];
+    for (let i = 0; i <= 16; i++) {
+      const a = (i / 16) * Math.PI;
+      points.push(new THREE.Vector3((Math.cos(a) * across) / 2, Math.sin(a) * up, 0));
+    }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 32, tube, 8);
+  });
+
+/** How a kettle's spout grows out of the side of the head: where its root is, how far it leans out, and how long. */
+const SPOUT = { root: [0.03, -0.1], lean: 0.88, length: 0.44 } as const;
+
+/**
+ * A stress head: the head itself a whistling kettle in red enamel under a steel lid with a black knob, a tall thin
+ * steel handle over it with a wooden grip across the top, and a thick spout growing out of the cheek, the steam
+ * puffing out of the black whistle on its tip.
+ */
+function kettle(rig: CharRig) {
+  const { head } = rig;
+  hideUntilCured(rig, named(head, 'hair', 'moustache', 'beard', 'glasses'));
+  rig.headMesh.material = mat(ENAMEL, 0.35);
+  const kettle = new THREE.Group();
+  const lid = put(kettle, sph(0.15, 20), mat(STEEL, 0.25), 0, 0.19, 0);
+  lid.scale.y = 0.4;
+  const black = mat(KNOB, 0.4);
+  put(kettle, sph(0.04, 12), black, 0, 0.26, 0);
+  // the handle's feet in the head, and the grip across its top
+  put(kettle, bail(0.3, 0.25, 0.012), mat(STEEL, 0.3), 0, 0.12, -0.02);
+  put(kettle, cyl(0.028, 0.028, 0.13, 14), mat(GRIP, 0.6), 0, 0.37, -0.02).rotation.z = Math.PI / 2;
+  // the spout rooted deep in the head, so it grows out of the side without a seam
+  const { root, lean, length } = SPOUT;
+  const dir = new THREE.Vector2(Math.sin(lean), Math.cos(lean));
+  const mid = new THREE.Vector2(...root).addScaledVector(dir, length / 2);
+  const tip = new THREE.Vector2(...root).addScaledVector(dir, length);
+  put(kettle, cyl(0.032, 0.068, length, 14), mat(ENAMEL, 0.35), mid.x, mid.y, 0.03).rotation.z = -lean;
+  put(kettle, cyl(0.04, 0.034, 0.06, 12), black, tip.x, tip.y, 0.03).rotation.z = -lean;
+  rig.steam?.position.set(tip.x + dir.x * 0.05, tip.y + dir.y * 0.05, 0.03);
+  props(rig, kettle);
+  head.add(kettle);
+  swell(rig, 1.2, 1.2);
+}
+
 /** Draw a symptom that stands in for the head, if it is one. */
 export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'egg') egg(rig);
   else if (visual === 'battery') battery(rig);
+  else if (visual === 'steam') kettle(rig);
 }

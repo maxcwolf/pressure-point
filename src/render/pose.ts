@@ -31,8 +31,7 @@ import { blob } from './models/items/machine-kit';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 import { buildSoles } from './models/soles';
-import { pottedWalk } from './models/symptom-proposals';
-import { SYMPTOM_OPTION, variantOf } from './symptom-options';
+import { SYMPTOM_OPTION } from './symptom-options';
 import { walkSymptom } from './walk-symptoms';
 
 /**
@@ -227,6 +226,12 @@ function showCure(rig: CharRig, c: Char, t: number) {
   showBurst(rig.burst, u, c.pose === 'lie' ? 0.3 : 1.3 * rig.scale);
 }
 
+/**
+ * How someone potted from the waist down walks, keeping the legs inside the pot: how far each leg swings, in radians,
+ * how far the pot waddles from side to side, and how much of the usual bend the knees keep.
+ */
+export const POTTED = { stride: 0.1, waddle: 0.14, knees: 0.2 } as const;
+
 /** How long a blink lasts, in seconds. */
 export const BLINK = 0.13;
 
@@ -405,7 +410,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   /** Leaning to one side, for a guest who is off balance. */
   let side = 0;
   /** Whether they sit on the floor rather than a seat. */
-  const onFloor = c.pose === 'sit' && c.h < SIT.floor;
+  const onFloor = c.pose === 'sit' && c.h < SIT.floor && visual !== 'cactus';
   if (c.pose === 'walk') {
     const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
     legL = sw;
@@ -694,6 +699,18 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   } else if (visual === 'battery') {
     lean += 0.18;
     headX += 0.15;
+  } else if (visual === 'cactus' && c.pose === 'walk') {
+    // potted from the waist down: a shuffle of tiny steps, the pot waddling from side to side
+    const s = Math.sin(phase);
+    legL = s * POTTED.stride;
+    legR = -s * POTTED.stride;
+    side += s * POTTED.waddle;
+    bodyY = Math.abs(Math.cos(phase)) * 0.015;
+    armL *= 0.4;
+    armR *= 0.4;
+  } else if (visual === 'cactus' && c.pose === 'sit') {
+    // sitting potted, the legs straight down in the pot, which sits on the seat
+    legL = legR = 0;
   } else if (visual === 'blanket') lean += 0.12;
   else if (visual === 'flex') {
     armOut = 2.35;
@@ -774,21 +791,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   legR -= life.stamp;
   if (SYMPTOM_OPTION === 'walk' && visual && c.pose !== 'lie' && !act) {
     const moved = walkSymptom(visual, c, t, phase, life, {
-      legL,
-      legR,
-      armL,
-      armR,
-      armOut,
-      lean,
-      side,
-      headX,
-      headZ,
-      bodyY,
-    });
-    ({ legL, legR, armL, armR, armOut, lean, side, headX, headZ, bodyY } = moved);
-  }
-  if (SYMPTOM_OPTION === 'body' && visual === 'cactus' && variantOf('cactus') >= 2 && c.pose !== 'lie' && !act) {
-    const moved = pottedWalk(variantOf('cactus'), c.pose, phase, {
       legL,
       legR,
       armL,
@@ -1030,11 +1032,10 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
     elbowL = elbowR = 0;
     twist = 0;
   } else if (visual === 'flex' && c.pose !== 'lie') elbowL = elbowR = -1.5;
-  // walking potted, the feet kept in under the pot: the knees barely bend for a shuffle, and not at all for a hop
-  if (SYMPTOM_OPTION === 'body' && visual === 'cactus' && variantOf('cactus') >= 2 && c.pose === 'walk') {
-    const bend = variantOf('cactus') === 2 ? 0.2 : 0;
-    kneeL = 0.06 + (kneeL - 0.08) * bend;
-    kneeR = 0.06 + (kneeR - 0.08) * bend;
+  // potted from the waist down, the knees barely bend walking, so the feet stay in under the pot
+  if (visual === 'cactus' && c.pose === 'walk') {
+    kneeL = 0.06 + (kneeL - 0.08) * POTTED.knees;
+    kneeR = 0.06 + (kneeR - 0.08) * POTTED.knees;
   }
   kneeL += life.kneeL;
   kneeR += life.kneeR;

@@ -7,6 +7,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **A scrambled noggin you can see.** A guest with Scrambled Noggin now has an egg for a head, its top knocked off and the yolk showing, so they stand out in a crowd. Their face stays on it, and the egg goes in the puff when they are cured.
 - **Bottled up, in a bottle.** A guest who is Bottled Up now stands in a big green bottle, corked over their head, their legs out of the bottom. You can still see their face through the glass, and the bottle shrinks away when they are cured.
 - **A flat battery for a head.** A guest with a Flat Battery now has a battery for a head, its last cell blinking red, with their face on its label.
+- **A stress head that whistles.** A guest with Stress Head now has a red kettle for a head, with a steel handle and a spout the steam puffs out of.
+- **Spiritually dehydrated, potted.** A Spiritually Dehydrated guest is now a cactus in a terracotta pot from the waist down, shuffling along in tiny steps. The pot goes in the puff when they are cured, and they walk normally again.
 
 ## v0.34.3
 
