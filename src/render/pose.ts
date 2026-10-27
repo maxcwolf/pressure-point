@@ -875,6 +875,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.orbit.visible = c.pose !== 'lie';
   }
   if (rig.knot?.visible) rig.knot.rotation.z = Math.sin(t * 2 + c.id) * 0.2;
+  for (const o of rig.spin ?? []) {
+    const { spin = 0, rattle = 0 } = o.userData as { spin?: number; rattle?: number };
+    o.rotation.y = t * spin;
+    o.rotation.z = Math.sin(t * 38 + c.id) * rattle;
+  }
   if (rig.steam?.visible) {
     rig.steam.children.forEach((p, i) => {
       const f = (t * 0.9 + i * 0.33 + c.id * 0.1) % 1;

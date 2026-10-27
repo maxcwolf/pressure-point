@@ -115,6 +115,8 @@ export interface CharRig {
   swell?: [number, number];
   /** What puts back the parts and colors a symptom stands in for, done halfway through the cure. */
   restore?: (() => void)[];
+  /** Symptom parts that turn about their upright, or rattle side to side, each by `userData.spin` and `rattle`. */
+  spin?: THREE.Object3D[];
   /** Symptom props kept at least so many pixels across from afar, as bubbles are, under the `grow` prototype. */
   grow?: THREE.Object3D[];
   /** Pale soles turned up, shown while they lie face down, made the first time they do. */

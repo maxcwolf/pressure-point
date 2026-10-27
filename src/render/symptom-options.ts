@@ -27,8 +27,8 @@ export const GROW_START: number = (() => {
 })();
 
 /**
- * Which variant of an ailment's model under `body` the address asks for, by its look's name: `&steam=2` for the second
- * kettle, say. Without it, the first prototype.
+ * Which variant of an ailment's model under `body` the address asks for, by its look's name: `&glass=2` for the
+ * second glass, say. Without it, none.
  */
 export function variantOf(visual: string): number {
   if (typeof location === 'undefined') return 0;
