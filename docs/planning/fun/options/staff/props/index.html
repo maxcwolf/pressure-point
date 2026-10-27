@@ -1,0 +1,716 @@
+<meta charset="utf-8" />
+<title>Rare Quirk Props</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" />
+<style>
+  /* Layout: a one-glance table of quirk, prop, when and moment; then one section per rare quirk with a lab close-up
+     beside two game shots (zoomed in, and the default zoom a player sees); then the Holds Space rule problem and its
+     fixes, the recommended fix framed in gold. Game palette and Fredoka, as on the staff options page. */
+  :root {
+    --bg: #fff8ea;
+    --surface: #ffffff;
+    --inset: #f3e7cf;
+    --fg: #24384a;
+    --soft: #5c708a;
+    --line: #d7d2c5;
+    --accent: #23827c;
+    --gold: #f2c14e;
+    --gold-ink: #7a4e0c;
+    --gold-wash: #fff6dc;
+    --good: #1c6b49;
+    --good-wash: #d8f1e2;
+    --bad: #a8322b;
+    --bad-wash: #fbe3e1;
+    --lavender: #7e66c2;
+    --scrim: rgba(36, 56, 74, 0.82);
+    --display: 'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #1b2a38;
+      --surface: #24384a;
+      --inset: #2c3a4e;
+      --fg: #f6f0e3;
+      --soft: #b9c0c9;
+      --line: #3d5168;
+      --accent: #38bdb4;
+      --gold-ink: #fbedc6;
+      --gold-wash: #3a3220;
+      --good: #7fd8a4;
+      --good-wash: #1f3b30;
+      --bad: #f3b1ac;
+      --bad-wash: #43262a;
+      --lavender: #c3b4ee;
+      --scrim: rgba(10, 16, 22, 0.88);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #1b2a38;
+    --surface: #24384a;
+    --inset: #2c3a4e;
+    --fg: #f6f0e3;
+    --soft: #b9c0c9;
+    --line: #3d5168;
+    --accent: #38bdb4;
+    --gold-ink: #fbedc6;
+    --gold-wash: #3a3220;
+    --good: #7fd8a4;
+    --good-wash: #1f3b30;
+    --bad: #f3b1ac;
+    --bad-wash: #43262a;
+    --lavender: #c3b4ee;
+    --scrim: rgba(10, 16, 22, 0.88);
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--display);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+    display: grid;
+    gap: 52px;
+  }
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 700;
+  }
+  h2 {
+    font-size: 26px;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--soft);
+  }
+  p {
+    margin: 0;
+    max-width: 70ch;
+  }
+  a {
+    color: var(--accent);
+  }
+  code {
+    font-size: 0.92em;
+  }
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  header,
+  section {
+    display: grid;
+    gap: 16px;
+  }
+  .lede {
+    font-size: 18px;
+  }
+  .meta {
+    font-size: 14px;
+    color: var(--soft);
+  }
+  .chip {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 1px 8px;
+    white-space: nowrap;
+    background: var(--gold-wash);
+    color: var(--gold-ink);
+    border: 1px solid var(--gold);
+  }
+  .says {
+    font-style: italic;
+  }
+
+  /* pictures: a lab close-up, then the game zoomed in, then the game at its default zoom */
+  .shots {
+    display: grid;
+    grid-template-columns: 0.8fr 1fr 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .shots.wide {
+    grid-template-columns: 1fr;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  .pic {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+    cursor: zoom-in;
+  }
+  .pic img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .pic:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  figcaption {
+    font-size: 13px;
+    color: var(--soft);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .facts div {
+    background: var(--inset);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 15px;
+    display: grid;
+    gap: 4px;
+    align-content: start;
+  }
+  .facts b {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+  }
+  .facts .proposed b::after {
+    content: ' · not built';
+    color: var(--soft);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+  .reads {
+    font-size: 15px;
+  }
+  .reads b {
+    font-weight: 700;
+  }
+  .reads.yes b {
+    color: var(--good);
+  }
+  .reads.half b {
+    color: var(--gold-ink);
+  }
+  .reads.no b {
+    color: var(--bad);
+  }
+  hr {
+    border: none;
+    border-top: 2px dashed var(--line);
+    margin: 0;
+  }
+
+  /* the one-glance table */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 820px;
+    font-size: 14px;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--soft);
+    font-weight: 600;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  tr.recrow td {
+    background: var(--gold-wash);
+  }
+
+  /* the Holds Space problem and its fixes */
+  .problem {
+    background: var(--bad-wash);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: grid;
+    gap: 8px;
+  }
+  .problem b.big {
+    font-size: 30px;
+    color: var(--bad);
+    font-variant-numeric: tabular-nums;
+  }
+  .fixes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .fix {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    display: grid;
+    gap: 8px;
+    align-content: start;
+  }
+  .fix.rec {
+    border: 4px solid var(--gold);
+    box-shadow:
+      0 0 0 3px var(--gold-wash),
+      0 10px 28px rgba(201, 138, 26, 0.3);
+  }
+  .fix h3 {
+    color: var(--fg);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .fix p {
+    font-size: 15px;
+  }
+  .rec-chip {
+    justify-self: start;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--gold);
+    color: #24384a;
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+  .verdict {
+    background: var(--gold-wash);
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: grid;
+    gap: 10px;
+  }
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    display: grid;
+    place-items: center;
+    z-index: 20;
+    padding: 16px;
+    cursor: zoom-out;
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 64px);
+    border-radius: 12px;
+  }
+
+  @media (max-width: 860px) {
+    .shots,
+    .facts,
+    .fixes {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<main class="page">
+  <header>
+    <span class="eyebrow">Pressure Point Institute · staff you remember · 27 October 2026</span>
+    <h1>Rare quirk props</h1>
+    <p class="lede">
+      A rare quirk is the one thing about a person worth remembering, so it should show on the floor, not only in a gold
+      box in the inspector. Each of the four gets one prop that is the joke on its chip, worn or held so you can pick
+      that person out of a crowd, and one moment when the quirk visibly does its job. Nothing in the simulation changes:
+      the props are drawn from the quirks a person already has.
+    </p>
+    <p class="meta">
+      Props are built as a mockup on the branch, drawn by the game’s own character model: open the game with
+      <code>?props</code>, or the model lab at <code>/lab.html?model=staff:therapist</code> and pick a rare quirk. The
+      moments are described, not built. Game shots are the playtest bot’s Orchard Estate at day 500, with the four
+      quirks given to four staff working near each other. Every quirk is on
+      <a href="https://claude.ai/artifact/QticAP9QcjNZHwCpVqn4vU">Every staff quirk</a>. Click any picture to see it
+      larger.
+    </p>
+  </header>
+
+  <section aria-labelledby="glance">
+    <h2 id="glance">Which prop for which quirk</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Quirk</th>
+            <th>Prop</th>
+            <th>When it shows</th>
+            <th>The moment (not built)</th>
+            <th>At default zoom</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="chip">★ Former Influencer</span></td>
+            <td>A phone held up at arm’s length, screen lit toward their face, flash on toward the room</td>
+            <td>Standing between guests. Put away while treating or walking.</td>
+            <td>After each heal, a flash and a “+1 ★” floater: the reputation the post just earned.</td>
+            <td>
+              <span class="reads half"><b>Just.</b> The lit screen is a blue dot; best when they face you.</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="chip">★ Burnout Survivor</span></td>
+            <td>A white mug with a red band, steaming, held at the chest</td>
+            <td>Whenever they are not treating, walking included.</td>
+            <td>
+              When their morale reaches 35 and stops falling, a long sip and a puff of steam: the floor caught them.
+            </td>
+            <td>
+              <span class="reads half"><b>Just.</b> A white dot with a red band, clearest on the walk.</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="chip">★ Healing Hands</span></td>
+            <td>Both hands lit gold from within, a soft halo round each with motes of light circling it</td>
+            <td>Bright and pulsing while treating; a dim glow between guests.</td>
+            <td>
+              When a failed treatment is saved, a gold burst over the guest, and the outcome reads “Saved by Healing
+              Hands”.
+            </td>
+            <td>
+              <span class="reads yes"><b>Yes.</b> A gold spot over the guest while they treat.</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="chip">★ Holds Space</span></td>
+            <td>A lavender scarf, one end hanging down the front</td>
+            <td>Always.</td>
+            <td>
+              A lavender ring under each colleague they are speeding up, for as long as they are. Built in the mockup.
+            </td>
+            <td>
+              <span class="reads yes"
+                ><b>Yes.</b> The ring is the clearest of the four; the scarf reads as a lavender collar.</span
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="shots wide">
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/wide.jpg" alt="The Orchard Estate at default zoom with the four rare quirks' props" />
+        </button>
+        <figcaption>
+          The default zoom, as a player sees it. Top, purple room: the phone held up. Center, walking past the reception
+          desk: the caretaker with the mug. Red room: the scarf. Yellow room: the practitioner with Healing Hands,
+          standing in a lavender ring because the scarf is within reach.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="influencer">
+    <h2 id="influencer">Former Influencer: the phone</h2>
+    <p class="says">“Every guest they heal posts about it: +1 reputation each. Stops to film it: 10% slower.”</p>
+    <div class="shots">
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/lab-influencer.png" alt="Lab close-up: a therapist filming with a phone" />
+        </button>
+        <figcaption>The model lab, close up.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/game-influencer.jpg" alt="In game, zoomed in: the therapist filming between guests" />
+        </button>
+        <figcaption>Zoomed in, between guests, filming over the table. The 10% she loses is this.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/default-influencer.jpg" alt="In game at default zoom" />
+        </button>
+        <figcaption>Default zoom: a small lit screen at her shoulder.</figcaption>
+      </figure>
+    </div>
+    <div class="facts">
+      <div>
+        <b>What it looks like</b>A black phone held up and out at eye height, the screen glowing blue toward their face,
+        a bright flash dot toward the room.
+      </div>
+      <div>
+        <b>When it shows</b>Standing between guests: the 10% they lose is the filming. Put away the moment a guest lies
+        down, and on the walk.
+      </div>
+      <div class="proposed">
+        <b>The moment</b>Each heal, the flash pops and a small “+1 ★” rises off them, so you see the reputation arrive
+        from that person.
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="survivor">
+    <h2 id="survivor">Burnout Survivor: the mug</h2>
+    <p class="says">“Morale never falls below 35. Has a mug about it.”</p>
+    <div class="shots">
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/lab-survivor.png" alt="Lab close-up: a therapist holding a steaming mug" />
+        </button>
+        <figcaption>The model lab, close up.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/game-survivor.jpg" alt="In game, zoomed in: a caretaker walking with the mug" />
+        </button>
+        <figcaption>Zoomed in: a caretaker on the way to a job, mug in hand. It goes everywhere with them.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/default-survivor.jpg" alt="In game at default zoom" />
+        </button>
+        <figcaption>Default zoom: the mug is a white-and-red dot. It reads, but only if you are looking.</figcaption>
+      </figure>
+    </div>
+    <div class="facts">
+      <div>
+        <b>What it looks like</b>A white mug with a red band and a handle, coffee in it, two wisps of steam, held at the
+        chest with the elbow bent. The words on the mug are left to your imagination.
+      </div>
+      <div>
+        <b>When it shows</b>Whenever their hands are free, walking included: it goes everywhere with them. Set down
+        while they treat.
+      </div>
+      <div class="proposed">
+        <b>The moment</b>When their morale hits 35 and stops, a long sip and a bigger puff of steam. Everyone else would
+        be heading for the door.
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="hands">
+    <h2 id="hands">Healing Hands: the glow</h2>
+    <p class="says">“One treatment in ten that would have failed works anyway.”</p>
+    <div class="shots">
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/lab-hands.png" alt="Lab close-up: a therapist's hands glowing gold" />
+        </button>
+        <figcaption>The model lab, close up, working.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/game-hands.jpg" alt="In game, zoomed in: the practitioner's hands glowing over a guest" />
+        </button>
+        <figcaption>
+          Zoomed in, treating: the halo round each hand, the motes turning. The ring under him is from the scarf next
+          door.
+        </figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/default-hands.jpg" alt="In game at default zoom" />
+        </button>
+        <figcaption>
+          Default zoom: a gold spot at the table. Of the four, the one you notice without meaning to.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="facts">
+      <div>
+        <b>What it looks like</b>Hands lit warm from within, a soft gold halo round each, four motes of light circling
+        it.
+      </div>
+      <div>
+        <b>When it shows</b>While treating, the halos pulse and the motes turn. Between guests a smaller, steady glow,
+        so you can still find them.
+      </div>
+      <div class="proposed">
+        <b>The moment</b>When the dice save a treatment, a gold burst over the guest, and the outcome line says “Saved
+        by Healing Hands”, so the player learns why that one worked.
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="space">
+    <h2 id="space">Holds Space: the scarf and the ring</h2>
+    <p class="says">“Colleagues working in the same room work 10% faster. Mentions it.”</p>
+    <div class="shots">
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/lab-space.png" alt="Lab close-up: a therapist in a lavender scarf" />
+        </button>
+        <figcaption>The model lab: the scarf.</figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img
+            src="pictures/game-space.jpg"
+            alt="In game, zoomed in: the acupuncturist in a lavender scarf and a ring under a colleague"
+          />
+        </button>
+        <figcaption>
+          Zoomed out a little: the scarf on the acupuncturist (top left), a lavender ring under a colleague near her and
+          under the practitioner next door.
+        </figcaption>
+      </figure>
+      <figure>
+        <button class="pic" type="button">
+          <img src="pictures/default-space.jpg" alt="In game at default zoom" />
+        </button>
+        <figcaption>Default zoom: the rings read at once; the scarf is a lavender collar.</figcaption>
+      </figure>
+    </div>
+    <div class="facts">
+      <div>
+        <b>What it looks like</b>A lavender scarf wrapped loosely round the neck, one end hanging down the front. The
+        only lavender anyone wears.
+      </div>
+      <div>
+        <b>When it shows</b>Always. The ring shows under every colleague they are speeding up, in the same lavender, so
+        the link reads without a line.
+      </div>
+      <div>
+        <b>The moment</b>The ring is the moment, and it is built in the mockup. It answers “who is this helping?” at a
+        glance.
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section aria-labelledby="rule">
+    <h2 id="rule">Holds Space, as built, almost never works</h2>
+    <div class="problem">
+      <b class="big">0 of 12</b>
+      <p>
+        Building the ring turned this up. The rule on the branch is “colleagues posted in the <em>same room</em> and
+        within 5 tiles”. But in the bot’s Orchard at day 500, all 12 staff at posts are alone in their rooms: one
+        therapist per Massage Suite, one consultant per consulting room, and so on. Receptionists and caretakers have no
+        room post at all. So a Holds Space hire would have sped up nobody, for a quarter more pay. A player who builds
+        two tables in one room could make it work, but nothing tells them to.
+      </p>
+    </div>
+    <div class="fixes">
+      <div class="fix rec">
+        <span class="rec-chip">★ Recommended</span>
+        <h3>A. Nearby, any room</h3>
+        <p>
+          Colleagues at their posts within 5 tiles, wherever they are: Ray of Sunshine’s reach. In the same save, 8 of
+          the 12 would have someone near enough. The mockup’s ring already uses this rule, which is why it shows in the
+          pictures above.
+        </p>
+        <p>
+          Chip text: “Colleagues working nearby work 10% faster. Mentions it.” About an hour: one condition in
+          <code>heldSpace</code>, its test, the guide line.
+        </p>
+      </div>
+      <div class="fix">
+        <h3>B. Same or next-door rooms</h3>
+        <p>
+          Closer to “holding the room”, and a reason to place rooms side by side. But the simulation does not know which
+          rooms touch today, so it needs room adjacency worked out, kept up as rooms change, and explained.
+        </p>
+        <p>About a day.</p>
+      </div>
+      <div class="fix">
+        <h3>C. Everyone, a little</h3>
+        <p>
+          The whole center works 3% faster while they are on shift. Always on and easy to explain, but there is nothing
+          to point at: no ring, no placement, and it reads as one more tiny buff.
+        </p>
+        <p>About an hour.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="build" class="verdict">
+    <h2 id="build">Building it for real</h2>
+    <ul>
+      <li>
+        <b>Props:</b> the mockup is about 130 lines in <code>quirk-props.ts</code>, drawn from a person’s quirks, with
+        no save change. Firming it up (turned with the camera, hidden in the low-detail view, checked on every role’s
+        pose) is about a day.
+      </li>
+      <li><b>Moments:</b> the floater, the gold burst, the sip and the outcome line are about a day and a half.</li>
+      <li><b>Holds Space:</b> fix A first, before the props: about an hour.</li>
+      <li>
+        <b>Before building:</b> the mug and the phone only just read at the default zoom. Making each about a third
+        bigger, as the glow already was after the first shots, should be enough; the ring and the glow are fine as they
+        are.
+      </li>
+    </ul>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden><img id="lightbox-img" alt="" /></div>
+
+<script>
+  const box = document.getElementById('lightbox');
+  const big = document.getElementById('lightbox-img');
+  for (const pic of document.querySelectorAll('.pic')) {
+    pic.addEventListener('click', () => {
+      const img = pic.querySelector('img');
+      big.src = img.src;
+      big.alt = img.alt;
+      box.hidden = false;
+    });
+  }
+  box.addEventListener('click', () => (box.hidden = true));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') box.hidden = true;
+  });
+</script>
