@@ -1093,7 +1093,11 @@ test.describe('running a center', () => {
       pp.state.rival.opened = pp.state.day;
       pp.state.rival.nextSale = 1e9;
       pp.state.rival.nextPoach = pp.state.day;
-      for (const st of pp.state.staff) st.morale = st.role === 'therapist' ? 20 : 90;
+      for (const st of pp.state.staff) {
+        // a Burnout Survivor's morale never falls low enough to be poached, so the therapist must not be one
+        st.traits = st.traits.filter((t) => t !== 'survivor');
+        st.morale = st.role === 'therapist' ? 20 : 90;
+      }
     });
     await game.fastForward(2);
     await expect(page.locator('#toasts')).toContainText('ZenMart has offered');
