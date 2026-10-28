@@ -1,13 +1,17 @@
-// The symptoms of the ailments only a machine cures, drawn on a guest: a chair-shaped back, shopping bags, a blue
-// screen for a face, a beach umbrella over the head, a crust of salt, seaweed, an echo, a cap of snow, a bunch of sour
-// grapes, a bad apple, a flat cap and walking stick, and a Tudor ruff.
+// The symptoms of the ailments only a machine cures, drawn on a guest: an office chair stuck to them, shopping bags, an old
+// monitor for a head, a beach umbrella over the head, a crust of salt, seaweed, an echo, a cap of snow, a bunch of sour
+// grapes, an apple core for a head, a flat cap and walking stick, and a Tudor ruff. The chair is drawn with the symptoms
+// worn whole, in character-bodies.ts, and the two heads with the others that stand in for a head, in
+// character-heads.ts.
 
 import * as THREE from 'three';
 
 import type { Visual } from '../../core/data';
 import { owned } from '../disposal';
 import type { CharRig } from './character';
+import { bodySymptom } from './character-bodies';
 import { detailCap } from './character-detail';
+import { headSymptom } from './character-heads';
 import { capsule, cyl, mat, put, rbox, sph, torus } from './parts';
 
 /** The parts of a person a symptom hangs from, and how far up the forearm the hand is. */
@@ -45,8 +49,7 @@ function bag(color: number): THREE.Group {
 export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body) {
   const { head, torso } = b;
   if (visual === 'chairshape') {
-    // still bent to the shape of a chair, with its cushion stuck on behind
-    props(rig, put(torso, rbox(0.34, 0.08, 0.3, 0.03), mat(0x3a5a8a, 0.8), 0, -0.02, -0.18));
+    bodySymptom(rig, visual);
   } else if (visual === 'bags') {
     // somebody else's shopping, a bag in each hand
     const right = bag(0xd9a93a);
@@ -57,14 +60,7 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
     b.foreL.add(left);
     props(rig, right, left);
   } else if (visual === 'bluescreen') {
-    // the face gone blue, with a sad little face of its own
-    const screen = new THREE.Group();
-    put(screen, rbox(0.26, 0.2, 0.02, 0.02), mat(0x2b5fd9, 0.4, 0.6), 0, 0, 0);
-    for (const x of [-0.05, 0.05]) put(screen, rbox(0.02, 0.03, 0.01, 0.004), mat(0xffffff, 0.4, 0.6), x, 0.03, 0.012);
-    put(screen, torus(0.04, 0.008), mat(0xffffff, 0.4, 0.6), 0, -0.05, 0.012).rotation.z = Math.PI;
-    screen.position.set(0, 0.02, 0.2);
-    head.add(screen);
-    props(rig, screen);
+    headSymptom(rig, visual);
   } else if (visual === 'beachhead') {
     // a beach umbrella over the head, and sunglasses on, wherever they are
     const brolly = new THREE.Group();
@@ -137,18 +133,7 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
     head.add(bunch);
     rig.bob = bunch;
   } else if (visual === 'rotten') {
-    // a brown apple hanging over them, with a whiff coming off it
-    const apple = new THREE.Group();
-    put(apple, sph(0.075, 12), mat(0x7a5a2a, 0.8), 0, 0, 0);
-    put(apple, cyl(0.008, 0.008, 0.05, 6), mat(0x4a3a24, 0.8), 0, 0.08, 0);
-    for (const [x, y] of [
-      [0.08, 0.1],
-      [-0.06, 0.13],
-    ] as const)
-      put(apple, sph(0.035, 8), mat(0x8fbf4a, 0.9), x, y, 0);
-    apple.position.y = 0.45;
-    head.add(apple);
-    rig.bob = apple;
+    headSymptom(rig, visual);
   } else if (visual === 'oldsoul') {
     // a flat cap and a walking stick, at thirty-four
     const stick = put(b.holdR, cyl(0.015, 0.015, 0.72, 8), mat(0x6b4f33, 0.7), 0, -0.4 + b.handUp, 0.08);

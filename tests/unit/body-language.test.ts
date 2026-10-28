@@ -723,6 +723,56 @@ describe('a symptom in place of the head', () => {
     expect(buildCharacter(LAB_LOOK).bubbleAt).toBe(BUBBLE_STANDING);
   });
 
+  it("screws a tension headband's head down in a G-clamp, squashed under it, put away while they lie down", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'band');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBeLessThan(1);
+    expect(rig.head.scale.x * rig.wide).toBeGreaterThan(1);
+    const clamp = rig.props[0]!;
+    expect(clamp.parent).toBe(rig.head);
+    // the clamp keeps its own shape, however the head is squashed
+    clamp.updateMatrixWorld(true);
+    const size = new THREE.Vector3();
+    clamp.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), size);
+    expect(size.y).toBeCloseTo(size.x);
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'band'), pose: 'lie' }, 0, 1, { style: null });
+    expect(clamp.visible).toBe(false);
+    poseChar(rig, demoGuest(LAB_LOOK, 'band'), 1, 1, { style: null });
+    expect(clamp.visible).toBe(true);
+  });
+
+  it("makes a bad apple's head an apple core, the face on it and flies going round", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'rotten');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    // the old apple hanging over them is gone
+    expect(rig.bob).toBeUndefined();
+    expect(rig.spin?.length).toBeGreaterThan(0);
+  });
+
+  it("makes a blue screen's head an old monitor, the face on its screen", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'bluescreen');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    expect(shown(rig.face.mouth)).toBe(true);
+  });
+
+  it('gives a tension headband, a bad apple and a blue screen their heads back with the cure', () => {
+    for (const [visual, id] of [
+      ['band', 'band'],
+      ['rotten', 'badapple'],
+      ['bluescreen', 'bluescreen'],
+    ] as const) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      poseChar(rig, { ...demoGuest(LAB_LOOK, id), outcome: 'healed' }, 5, 1, { style: null });
+      expect(shown(rig.headMesh), visual).toBe(true);
+      expect(rig.head.scale.y, visual).toBe(1);
+      expect(rig.props.some(shown), visual).toBe(false);
+    }
+  });
+
   it('gives a flat battery their head back with the cure', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
     poseChar(rig, { ...demoGuest(LAB_LOOK, 'battery'), outcome: 'healed' }, 5, 1, { style: null });
@@ -854,6 +904,32 @@ describe('a symptom worn whole', () => {
     expect(rig.torso.position.toArray()).toEqual(whole.torso.position.toArray());
     expect(rig.spin ?? []).not.toContain(rig.head);
     expect(rig.spin ?? []).not.toContain(rig.torso);
+  });
+
+  it('ties someone knotted up in rope, round the chest and arms', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'knot');
+    expect(rig.props.length).toBeGreaterThan(0);
+    expect(rig.props.every((p) => p.parent === rig.torso)).toBe(true);
+    // wider than the shoulders, so it goes round the arms
+    rig.group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(rig.props[0]!);
+    expect(box.max.x - box.min.x).toBeGreaterThan(0.55);
+  });
+
+  it('sticks an office chair to someone chair-shaped, put away while they sit or lie on something real', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'chairshape');
+    const chair = rig.props[0]!;
+    expect(chair.parent).toBe(rig.body);
+    const g = demoGuest(LAB_LOOK, 'chairshaped');
+    for (const [pose, shows] of [
+      ['stand', true],
+      ['walk', true],
+      ['sit', false],
+      ['lie', false],
+    ] as const) {
+      poseChar(rig, { ...g, pose }, 1, 1, { style: null });
+      expect(chair.visible, pose).toBe(shows);
+    }
   });
 
   it('leaves midlife fog its own cloud over the head', () => {

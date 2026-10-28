@@ -1,7 +1,8 @@
 // The symptoms that take the place of a guest's head, so the ailment reads from across the room at the game's usual
 // distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off, a flat
-// battery's a battery on its side, a stress head's a whistling kettle, a noisy mind's a boombox left on too loud, and
-// someone who has lost their way has a signpost growing out of the top of theirs. The face stays on, so how the guest
+// battery's a battery on its side, a stress head's a whistling kettle, a noisy mind's a boombox left on too loud,
+// someone who has lost their way has a signpost growing out of the top of theirs, a tension headband's is screwed down
+// in a G-clamp, a bad apple's is an apple core and a blue screen's an old monitor. The face stays on, so how the guest
 // feels still shows, and the head comes back halfway through the cure.
 
 import * as THREE from 'three';
@@ -356,7 +357,7 @@ function signpost(rig: CharRig) {
   put(post, rbox(0.075, 0.075, 0.024, 0.008), mat(SIGN_TIP, 0.5), 0, 0.74, 0).rotation.z = Math.PI / 4;
   spin(rig, post, 0.5);
   // put away while they lie down, so it never pokes off the end of a table
-  post.userData.upright = true;
+  upright(rig, post);
   props(rig, post);
   rig.head.add(post);
   // their bubble raised clear of the top of the post, which it would hide from afar, and lowered again with the cure
@@ -367,6 +368,200 @@ function signpost(rig: CharRig) {
   (rig.restore ??= []).push(() => (rig.bubbleAt = was));
 }
 
+/**
+ * Set a symptom's part to be put away while they lie down, where it would poke into what they lie on or off the end of
+ * it (see `pose`).
+ */
+function upright(rig: CharRig, o: THREE.Object3D) {
+  o.userData.upright = true;
+  if (!rig.spin?.includes(o)) (rig.spin ??= []).push(o);
+}
+
+/**
+ * A tension headband: a red G-clamp screwed down on the crown, its frame down behind the head to rest on the back of
+ * the neck, the head squashed short and wide under it. Put away while they lie down, as its frame would go through the
+ * table.
+ */
+function gClamp(rig: CharRig) {
+  const g = new THREE.Group();
+  put(
+    g,
+    joined('g clamp', [
+      [rbox(0.07, 0.06, 0.42, 0.02), 0, 0.36, -0.1],
+      [rbox(0.07, 0.66, 0.07, 0.02), 0, 0.06, -0.31],
+      [rbox(0.07, 0.06, 0.16, 0.02), 0, -0.24, -0.24],
+    ]),
+    mat(0xd9362f, 0.45),
+    0,
+    0,
+    0,
+  );
+  put(
+    g,
+    joined('g clamp screw', [
+      [cyl(0.018, 0.018, 0.26, 8), 0, 0.32, 0],
+      [cyl(0.07, 0.07, 0.02, 14), 0, 0.195, 0],
+      [cyl(0.012, 0.012, 0.26, 8), 0, 0.45, 0, 0, 0, Math.PI / 2],
+    ]),
+    mat(0x8a96a3, 0.3),
+    0,
+    0,
+    0,
+  );
+  swell(rig, 1.12, 0.84);
+  // the head is squeezed, not the clamp, nor widened by the build the body is
+  const s = rig.head.scale;
+  g.scale.set(1 / (s.x * rig.wide), 1 / s.y, 1 / (s.z * rig.wide));
+  upright(rig, g);
+  props(rig, g);
+  rig.head.add(g);
+}
+
+/** A shape turned round its upright from a profile of [radius, height] points, made once under a name and shared. */
+const lathe = (key: string, profile: readonly [number, number][]) =>
+  cached(
+    `lathe ${key}`,
+    () =>
+      new THREE.LatheGeometry(
+        profile.map(([r, y]) => new THREE.Vector2(r, y)),
+        28,
+      ),
+  );
+
+const APPLE = 0x9a3b2a;
+const FLESH = 0xf2e2b8;
+
+/**
+ * A bad apple, rotten to the core as the croquet club says: the head an apple core, red top and bottom and bitten to
+ * the pips between, the face on the bitten middle and three flies going round it.
+ */
+function appleCore(rig: CharRig) {
+  hideUntilCured(rig, [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')]);
+  const g = new THREE.Group();
+  const caps = joined('core caps', [
+    [
+      lathe('core bottom', [
+        [0.001, -0.3],
+        [0.12, -0.3],
+        [0.22, -0.26],
+        [0.26, -0.18],
+        [0.24, -0.12],
+        [0.15, -0.1],
+        [0.001, -0.1],
+      ]),
+      0,
+      0,
+      0,
+    ],
+    [
+      lathe('core top', [
+        [0.001, 0.1],
+        [0.15, 0.1],
+        [0.24, 0.12],
+        [0.26, 0.18],
+        [0.22, 0.26],
+        [0.12, 0.3],
+        [0.03, 0.27],
+        [0.001, 0.27],
+      ]),
+      0,
+      0,
+      0,
+    ],
+  ]);
+  put(g, caps, mat(APPLE, 0.5), 0, 0, 0);
+  put(
+    g,
+    lathe('core flesh', [
+      [0.17, -0.12],
+      [0.13, -0.06],
+      [0.12, 0],
+      [0.13, 0.06],
+      [0.17, 0.12],
+    ]),
+    mat(FLESH, 0.7),
+    0,
+    0,
+    0,
+  );
+  put(
+    g,
+    joined('core pips', [
+      [sph(0.022, 6), -0.09, -0.03, 0.08],
+      [sph(0.022, 6), 0.1, 0.02, 0.07],
+      [sph(0.022, 6), 0.02, -0.05, -0.11],
+    ]),
+    mat(0x3a2414, 0.5),
+    0,
+    0,
+    0,
+  );
+  put(
+    g,
+    joined('apple stalk', [
+      [cyl(0.012, 0.016, 0.1, 6), 0, 0.26, 0, 0, 0, 0.2],
+      [rbox(0.1, 0.012, 0.05, 0.01), 0.06, 0.29, 0, 0, 0, -0.5],
+    ]),
+    mat(0x4a3a24, 0.8),
+    0,
+    0.04,
+    0,
+  );
+  const flies = new THREE.Group();
+  put(
+    flies,
+    joined('flies', [
+      [sph(0.018, 6), 0.34, 0.04, 0],
+      [sph(0.018, 6), -0.2, -0.04, 0.28],
+      [sph(0.018, 6), -0.16, 0.08, -0.3],
+    ]),
+    mat(0x1d1f24, 0.4),
+    0,
+    0,
+    0,
+  );
+  flies.position.y = 0.05;
+  spin(rig, flies, 2.6);
+  g.add(flies);
+  faceOut(rig, { eyes: -0.065, brows: -0.05, mouth: -0.045 });
+  props(rig, g);
+  rig.head.add(g);
+}
+
+/**
+ * A blue screen: the head an old beige monitor, the face on its blue screen over two lines of white error text.
+ */
+function oldMonitor(rig: CharRig) {
+  hideUntilCured(rig, [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')]);
+  const g = new THREE.Group();
+  put(
+    g,
+    joined('monitor case', [
+      [rbox(0.5, 0.42, 0.24, 0.04), 0, 0.02, 0.06],
+      [rbox(0.36, 0.3, 0.2, 0.06), 0, 0.02, -0.14],
+    ]),
+    mat(0xd9cfb4, 0.6),
+    0,
+    0,
+    0,
+  );
+  put(g, rbox(0.4, 0.31, 0.012, 0.03), mat(0x2b5fd9, 0.4, 0.7), 0, 0.03, 0.18);
+  put(
+    g,
+    joined('error text', [
+      [rbox(0.2, 0.014, 0.004, 0.002), -0.04, -0.09, 0],
+      [rbox(0.14, 0.014, 0.004, 0.002), -0.07, -0.12, 0],
+    ]),
+    mat(0xffffff, 0.4, 0.6),
+    0,
+    0.03,
+    0.188,
+  );
+  faceOut(rig, { eyes: -0.005, brows: -0.008, mouth: -0.005 });
+  props(rig, g);
+  rig.head.add(g);
+}
+
 /** Draw a symptom that stands in for the head, if it is one. */
 export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'egg') egg(rig);
@@ -374,4 +569,7 @@ export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   else if (visual === 'steam') kettle(rig);
   else if (visual === 'gears') boombox(rig);
   else if (visual === 'compass') signpost(rig);
+  else if (visual === 'band') gClamp(rig);
+  else if (visual === 'rotten') appleCore(rig);
+  else if (visual === 'bluescreen') oldMonitor(rig);
 }

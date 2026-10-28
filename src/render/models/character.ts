@@ -65,7 +65,6 @@ export interface CharRig {
   bubble: THREE.Sprite;
   knot?: THREE.Mesh;
   steam?: THREE.Group;
-  band?: THREE.Mesh;
   orbit?: THREE.Group;
   /** Drops of water falling off a wet blanket, each from where it starts. */
   drips?: THREE.Group;
@@ -389,14 +388,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   group.add(rig.bubble);
 
   if (visual === 'knot') {
-    rig.knot = put(
-      torso,
-      cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8)),
-      mat(0xd9584a, 0.5),
-      0,
-      0.46,
-      -0.19,
-    );
+    bodySymptom(rig, visual);
   } else if (visual === 'steam') {
     // the head a whistling kettle, the steam puffing out of its spout
     rig.steam = new THREE.Group();
@@ -405,8 +397,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     head.add(rig.steam);
     headSymptom(rig, visual);
   } else if (visual === 'band') {
-    rig.band = put(head, torus(0.226, 0.038), mat(0xe5484d, 0.4, 0.7), 0, 0.07, 0);
-    rig.band.rotation.x = Math.PI / 2;
+    headSymptom(rig, visual);
   } else if (visual === 'flex') {
     for (const arm of [armL, armR]) rig.props.push(put(arm, sph(0.092, 12), top, 0, -0.1, 0.02));
   } else if (visual === 'frost') {
@@ -826,7 +817,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     holdR.add(phone);
     rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
-  for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
+  for (const o of [rig.knot, rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   transformSymptom(rig, visual);
   if (rig.bob) rig.bobAt = rig.bob.position.y;
   if (role === 'practitioner' || role === 'caretaker') {

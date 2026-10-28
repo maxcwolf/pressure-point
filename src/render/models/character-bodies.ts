@@ -1,8 +1,8 @@
 // The symptoms a guest wears whole, so the ailment reads from across the room at the game's usual distance: someone
 // bottled up stands in a big green bottle, corked over their head, someone glass half empty in a tall tumbler with the
 // water up to their waist, someone spiritually dehydrated is a cactus potted from the waist down, and someone with
-// blocked qi has a storm going on round their chest, and someone scattered comes apart, head and body floating loose
-// of each other. The face still shows, through the glass or on the cactus, so how they feel does too, and it all goes
+// blocked qi has a storm going on round their chest, someone scattered comes apart, head and body floating loose of
+// each other, someone knotted up is tied up in rope, and someone chair-shaped has an office chair stuck to them. The face still shows, through the glass or on the cactus, so how they feel does too, and it all goes
 // in the puff of the cure.
 
 import * as THREE from 'three';
@@ -284,6 +284,68 @@ function inPieces(rig: CharRig) {
   floatApart(rig, rig.torso, 0.22, -0.04, 0.025);
 }
 
+const ROPE = 0xc8a46a;
+
+/**
+ * Knotted up: tied up in rope, three coils round the chest and arms and a big knot on the front, the two ends hanging
+ * from it.
+ */
+function rope(rig: CharRig) {
+  const tan = mat(ROPE, 0.9);
+  const coils = put(
+    rig.torso,
+    joined('rope coils', [
+      [torus(0.32, 0.028), 0, 0.42, 0, Math.PI / 2 + 0.12, 0, 0],
+      [torus(0.32, 0.028), 0, 0.3, 0, Math.PI / 2 - 0.1, 0, 0],
+      [torus(0.32, 0.028), 0, 0.18, 0, Math.PI / 2 + 0.06, 0, 0],
+    ]),
+    tan,
+    0,
+    0,
+    0,
+  );
+  coils.scale.set(1, 1, 0.62);
+  const knot = put(
+    rig.torso,
+    joined('rope knot', [
+      [cached('rope knot', () => new THREE.TorusKnotGeometry(0.075, 0.03, 64, 8)), 0, 0, 0],
+      [cyl(0.026, 0.026, 0.22, 8), -0.04, -0.1, 0, 0, 0, 0.15],
+      [cyl(0.026, 0.026, 0.18, 8), 0.06, -0.08, 0, 0, 0, -0.2],
+    ]),
+    tan,
+    0.02,
+    0.3,
+    0.21,
+  );
+  props(rig, coils, knot);
+}
+
+/**
+ * Chair-shaped: a whole office chair stuck to them, the seat on their behind, the back up theirs and the arms at their
+ * sides, carried about on their own bent legs (see `pose`). Put away while they sit or lie on something real, which it
+ * would go through.
+ */
+function officeChair(rig: CharRig) {
+  const chair = put(
+    rig.body,
+    joined('office chair top', [
+      [rbox(0.46, 0.08, 0.44, 0.04), 0, 0, 0],
+      [rbox(0.44, 0.5, 0.08, 0.04), 0, 0.3, -0.23, -0.12, 0, 0],
+      [rbox(0.05, 0.05, 0.26, 0.02), -0.25, 0.17, -0.03],
+      [rbox(0.05, 0.05, 0.26, 0.02), 0.25, 0.17, -0.03],
+      [rbox(0.04, 0.17, 0.04, 0.01), -0.25, 0.08, -0.12],
+      [rbox(0.04, 0.17, 0.04, 0.01), 0.25, 0.08, -0.12],
+    ]),
+    mat(0x2d3a52, 0.8),
+    0,
+    0.36,
+    -0.05,
+  );
+  chair.userData.standing = true;
+  (rig.spin ??= []).push(chair);
+  props(rig, chair);
+}
+
 /** Draw a symptom the guest wears whole, if it is one. */
 export function bodySymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'cork') bottle(rig);
@@ -291,4 +353,6 @@ export function bodySymptom(rig: CharRig, visual: Visual | undefined) {
   else if (visual === 'cactus') cactus(rig);
   else if (visual === 'storm') storm(rig);
   else if (visual === 'shards') inPieces(rig);
+  else if (visual === 'knot') rope(rig);
+  else if (visual === 'chairshape') officeChair(rig);
 }

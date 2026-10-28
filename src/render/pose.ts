@@ -869,7 +869,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     sat: cues.lie === 'back' ? (cues.sat ?? 0) : 0,
   };
   poseJoints(rig.joints, rig, c, t, k, limbs, life);
-  if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
     rig.body.position.x = Math.sin(t * 47 + c.id) * 0.022;
@@ -904,15 +903,17 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       pulse = 0,
       drift = 0,
       upright = false,
+      standing = false,
     } = o.userData as {
       spin?: number;
       rattle?: number;
       pulse?: number;
       drift?: number;
       upright?: boolean;
+      standing?: boolean;
     };
-    // put away while they lie down, as what floats over the head is
-    if (upright && !rig.cured) o.visible = c.pose !== 'lie';
+    // put away while they lie down, as what floats over the head is, or, `standing`, while they sit too
+    if ((upright || standing) && !rig.cured) o.visible = c.pose !== 'lie' && !(standing && c.pose === 'sit');
     if (drift) {
       // floating loose of where it belongs, up and down to its own rhythm, but put back together lying down, to lie on
       // whatever they lie on
