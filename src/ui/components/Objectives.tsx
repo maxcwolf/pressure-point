@@ -12,7 +12,7 @@ import { panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
-import { readyLines } from '../lib/waves';
+import { readyLines, shownLines, waveSummary } from '../lib/waves';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
@@ -200,8 +200,7 @@ function WaveCard() {
   if (!w || !sim.featureOn('waves')) return null;
   const c = conditionOf(w.condition);
   const m = MODALITIES[c.modality];
-  const lines = readyLines(s, m.id, sim.waveChecks(m.id));
-  const before = s.day < w.starts;
+  const lines = shownLines(readyLines(s, m.id, sim.waveChecks(m.id)));
   // the wave's guests in the center now, being seen or waiting
   const here = s.guests.filter((g) => g.wave && g.state !== 'leaving').length;
   return (
@@ -216,15 +215,11 @@ function WaveCard() {
         <b>
           <IconText id="bubble-sick">{`Going around: ${c.name}`}</IconText>
         </b>
-        <span>
-          {before
-            ? `In ${wholeDaysLeft(w.starts - s.day)} days · for ${Math.round(w.ends - w.starts)} days`
-            : `${wholeDaysLeft(w.ends - s.day)} days left · ${here} in now · ${w.healed} healed${w.turned ? ` · ${w.turned} came back later` : ''}`}
-        </span>
+        <span>{waveSummary(w, s.day, here)}</span>
       </Button>
       {lines.map(({ ok, text }) => (
         <p key={text} class={cx('ready', ok ? 'ok' : 'warn')}>
-          {`${ok ? '✔' : '⚠'} ${text}`}
+          {ok ? `✔ ${text}` : <IconText id="ui-warning">{text}</IconText>}
         </p>
       ))}
     </div>

@@ -37,7 +37,8 @@ const modalityCard = css(cardLook, {
   cursor: 'default',
   _locked: { cursor: 'default' },
   '& .treats': { opacity: 'full', fontWeight: 'medium', mt: '2' },
-  '& em.early': { bg: 'warm.bg', color: 'fg' },
+  // balanced over its lines, so a narrow card does not leave the star's number on a line of its own
+  '& em.early': { bg: 'warm.bg', color: 'fg', textWrap: 'balance' },
 });
 
 /** A discipline's heading, over its modalities. */

@@ -3,8 +3,10 @@
 import { DISCIPLINES, ITEMS, MODALITIES, type Modality, ROOMS } from '../../core/data';
 import { an } from '../../core/format';
 import { atWork } from '../../core/sim/demand';
+import { daysInWords } from '../../core/sim/mishaps';
 import { trainedAway, type WaveChecks } from '../../core/sim/waves';
-import type { GameState } from '../../core/state/types';
+import type { GameState, Wave } from '../../core/state/types';
+import { timeLeftLabel } from './emergency';
 
 /** A part of getting ready, done or still to do, in words. */
 export interface ReadyLine {
@@ -52,4 +54,22 @@ export function readyLines(s: GameState, m: Modality, checks: WaveChecks): Ready
         : { ok: false, text: 'Only one practitioner trained in it: the line will grow' },
     );
   return lines;
+}
+
+/**
+ * The lines the card shows: every part still to do, or once each is done, the one line saying the center is ready, so
+ * the card stays short in a narrow objectives panel for the month the wave goes around.
+ */
+export function shownLines(lines: readonly ReadyLine[]): ReadyLine[] {
+  return lines.every((l) => l.ok) ? [{ ok: true, text: 'Ready to see them' }] : [...lines];
+}
+
+/**
+ * How a wave stands, in a line: before its guests come, how soon and for how long; while they come, the time left, how
+ * many are in now (`here`) and how they have fared.
+ */
+export function waveSummary(w: Wave, day: number, here: number): string {
+  if (day < w.starts) return `In ${daysInWords(w.starts - day)} · for ${daysInWords(w.ends - w.starts)}`;
+  const later = w.turned ? ` · ${w.turned} came back later` : '';
+  return `${timeLeftLabel(w.ends - day)} · ${here} in now · ${w.healed} healed${later}`;
 }

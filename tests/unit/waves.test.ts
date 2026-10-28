@@ -34,7 +34,7 @@ import { newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
-import { readyLines } from '../../src/ui/lib/waves';
+import { readyLines, shownLines, waveSummary } from '../../src/ui/lib/waves';
 import { addAcupuncture, addRecovery, hire, openCenter } from './helpers';
 
 /** A game at The Exchange, with ailments going around switched on or off, and a context on it. */
@@ -272,6 +272,28 @@ describe('the card under the objectives', () => {
       ok: true,
       text: '2 practitioners trained in it share the line',
     });
+  });
+
+  it('folds every part to one line once the center is ready, and lists what is left until then', () => {
+    const { sim, s, ctx } = moxaReady();
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    const one = readyLines(s, 'moxa', waveChecks(ctx, 'moxa'));
+    expect(shownLines(one)).toEqual(one);
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    expect(shownLines(readyLines(s, 'moxa', waveChecks(ctx, 'moxa')))).toEqual([
+      { ok: true, text: 'Ready to see them' },
+    ]);
+  });
+
+  it('says how soon and how long, then the days left and how its guests have fared', () => {
+    const w = { ...announced().s.wave!, warned: 0, starts: 7, ends: 37 };
+    expect(waveSummary(w, 6, 0)).toBe('In 1 day · for 30 days');
+    expect(waveSummary(w, 6.5, 0)).toBe('In less than a day · for 30 days');
+    expect(waveSummary(w, 2, 0)).toBe('In 5 days · for 30 days');
+    expect(waveSummary({ ...w, healed: 3 }, 36, 2)).toBe('1 day left · 2 in now · 3 healed');
+    expect(waveSummary({ ...w, healed: 3, turned: 4 }, 20, 0)).toBe(
+      '17 days left · 0 in now · 3 healed · 4 came back later',
+    );
   });
 });
 
