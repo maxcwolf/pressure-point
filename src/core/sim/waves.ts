@@ -30,6 +30,7 @@ import { random } from '../random';
 import { featureOn, unlockedUpTo } from '../state/game';
 import type { GameState, Wave } from '../state/types';
 import type { SimContext } from './context';
+import { atWork } from './demand';
 import { emit, toast } from './events';
 import { hasRoom } from './progress';
 import { enabled, equipmentProblem, offered } from './treatments';
@@ -52,8 +53,9 @@ export const openedEarly = (s: GameState, m: Modality): boolean =>
 
 /**
  * Whether the center can treat a technique properly now: its discipline offered, with a finished room; someone on the
- * staff and staying who is qualified in it; its kit, if it needs any, working beside one of the discipline's tables;
- * and a Recovery Lounge, if its guests need a rest after, since without one it works less often.
+ * staff, staying and here, who is qualified in it, not away on a house call or a course; its kit, if it needs any,
+ * working beside one of the discipline's tables; and a Recovery Lounge, if its guests need a rest after, since without
+ * one it works less often.
  */
 export function waveReady(ctx: SimContext, m: Modality): boolean {
   const c = waveChecks(ctx, m);
@@ -66,14 +68,20 @@ export function waveTodo(ctx: SimContext, m: Modality): string {
   const disc = DISCIPLINES[def.discipline];
   const c = waveChecks(ctx, m);
   if (!c.room) return `Build ${an(ROOMS[disc.room].name)}`;
-  if (!c.qualified) return `Train ${an(ROLES[disc.role].name)} in ${def.name}`;
+  if (!c.qualified)
+    return trainedAway(ctx.s, m)
+      ? `Wait for someone trained in ${def.name} to be back`
+      : `Train ${an(ROLES[disc.role].name)} in ${def.name}`;
   if (!c.kit && def.equipment)
     return `Put ${an(ITEMS[def.equipment].name)} beside a table in the ${ROOMS[disc.room].name}`;
   if (!c.rest) return `Build a Recovery Lounge for the rest after ${def.name}`;
   return '';
 }
 
-/** What getting ready for a technique takes, each part done or not: its room, someone qualified, its kit, a rest. */
+/**
+ * What getting ready for a technique takes, each part done or not: its room, someone qualified and here, its kit, a
+ * rest.
+ */
 export interface WaveChecks {
   room: boolean;
   qualified: boolean;
@@ -81,6 +89,10 @@ export interface WaveChecks {
   /** Its guests need a rest after, and a Recovery Lounge is built (true when they need none). */
   rest: boolean;
 }
+
+/** Whether someone staying is trained in a technique, but away now on a house call or a course. */
+export const trainedAway = (s: GameState, m: Modality): boolean =>
+  s.staff.some((st) => st.state !== 'leaving' && !atWork(st) && st.quals.includes(m));
 
 /** How ready the center is for a technique, part by part. */
 export function waveChecks(ctx: SimContext, m: Modality): WaveChecks {
@@ -98,7 +110,7 @@ export function waveChecks(ctx: SimContext, m: Modality): WaveChecks {
     });
   return {
     room: offered(ctx, def.discipline),
-    qualified: ctx.s.staff.some((st) => st.state !== 'leaving' && st.quals.includes(m)),
+    qualified: ctx.s.staff.some((st) => atWork(st) && st.quals.includes(m)),
     kit,
     rest: !def.rest || hasRoom(ctx, 'recovery'),
   };

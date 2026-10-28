@@ -2,7 +2,8 @@
 
 import { DISCIPLINES, ITEMS, MODALITIES, type Modality, ROOMS } from '../../core/data';
 import { an } from '../../core/format';
-import type { WaveChecks } from '../../core/sim/waves';
+import { atWork } from '../../core/sim/demand';
+import { trainedAway, type WaveChecks } from '../../core/sim/waves';
 import type { GameState } from '../../core/state/types';
 
 /** A part of getting ready, done or still to do, in words. */
@@ -11,9 +12,9 @@ export interface ReadyLine {
   text: string;
 }
 
-/** How many on the staff, and staying, are trained in a technique, to share its line between them. */
+/** How many on the staff are trained in a technique and at work, to share its line between them. */
 export const trainedIn = (s: GameState, m: Modality): number =>
-  s.staff.filter((st) => st.state !== 'leaving' && st.quals.includes(m)).length;
+  s.staff.filter((st) => atWork(st) && st.quals.includes(m)).length;
 
 /**
  * A line for each part of getting ready for a technique: its room, someone trained, its kit and a rest after, each as
@@ -26,7 +27,11 @@ export function readyLines(s: GameState, m: Modality, checks: WaveChecks): Ready
     { ok: checks.room, text: checks.room ? `${room} open` : `Build ${an(room)}` },
     {
       ok: checks.qualified,
-      text: checks.qualified ? `Someone trained in ${def.name}` : `Train someone in ${def.name}`,
+      text: checks.qualified
+        ? `Someone trained in ${def.name}`
+        : trainedAway(s, m)
+          ? `Everyone trained in ${def.name} is away`
+          : `Train someone in ${def.name}`,
     },
   ];
   if (def.equipment) {

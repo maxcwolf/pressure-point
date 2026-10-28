@@ -220,6 +220,34 @@ describe('an ailment going around', () => {
   });
 });
 
+describe('a center ready for a wave', () => {
+  it('has someone trained in its technique here, not away on a house call or a course', () => {
+    const { sim, s } = openCenter();
+    const ctx = createContext(s);
+    s.opened = ['moxa'];
+    addAcupuncture(sim);
+    expect(sim.placeItem('moxa_burner', 27, 9, 0)).not.toBeNull();
+    addRecovery(sim);
+    const acu = hire(sim, 'acupuncturist');
+    acu.quals.push('moxa');
+    expect(waveReady(ctx, 'moxa')).toBe(true);
+    for (const away of ['toCall', 'away', 'toTrain', 'training'] as const) {
+      acu.state = away;
+      expect(waveChecks(ctx, 'moxa').qualified).toBe(false);
+      expect(waveReady(ctx, 'moxa')).toBe(false);
+      expect(waveTodo(ctx, 'moxa')).toBe('Wait for someone trained in Moxibustion to be back');
+      expect(readyLines(s, 'moxa', waveChecks(ctx, 'moxa'))[1]).toEqual({
+        ok: false,
+        text: 'Everyone trained in Moxibustion is away',
+      });
+    }
+    acu.state = 'leaving';
+    expect(waveTodo(ctx, 'moxa')).toBe('Train an Acupuncturist in Moxibustion');
+    acu.state = 'atPost';
+    expect(waveReady(ctx, 'moxa')).toBe(true);
+  });
+});
+
 describe('the card under the objectives', () => {
   /** A center with an Acupuncture Clinic, a Moxa Burner and a Recovery Lounge, open to Moxibustion early. */
   function moxaReady() {

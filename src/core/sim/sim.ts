@@ -532,7 +532,7 @@ export class Sim {
     FEATURE_SWITCHED[f](this.ctx, on);
   }
 
-  /** How ready the center is for a technique, part by part: its room, someone qualified, its kit, a rest after. */
+  /** How ready the center is for a technique, part by part: its room, someone qualified here, its kit, a rest after. */
   waveChecks(m: Modality): WaveChecks {
     return waveChecks(this.ctx, m);
   }

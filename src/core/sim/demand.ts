@@ -270,7 +270,7 @@ export interface MachineCapacity {
 const working = (ctx: SimContext, it: Item) => it.wear < 100 && (ctx.world.roomOfItem(it)?.done ?? true);
 
 /** Whether someone on the payroll is at work today: staying, and not away on a course or a house call. */
-const atWork = (st: Staff) => !['leaving', 'toTrain', 'training', 'toCall', 'away'].includes(st.state);
+export const atWork = (st: Staff) => !['leaving', 'toTrain', 'training', 'toCall', 'away'].includes(st.state);
 
 /**
  * What the center can treat at once. A treatment station counts while someone on the payroll and at work could work
