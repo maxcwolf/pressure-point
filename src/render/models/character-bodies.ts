@@ -29,6 +29,15 @@ const GLASS = new THREE.MeshStandardMaterial({
 /** How far up the body the middle of the bottle is, which it shrinks toward with the cure. */
 const MIDDLE = 1;
 
+/** The bottle's glass, as one shape, from `from` up the body to its lip: its body, shoulder, neck and lip. */
+const bottleGlass = (from: number) =>
+  joined(`bottle glass ${from}`, [
+    [cyl(0.31, 0.31, 1.305 - from, 24), 0, (from + 1.305) / 2 - MIDDLE, 0],
+    [cyl(0.13, 0.31, 0.16, 24), 0, 1.38 - MIDDLE, 0],
+    [cyl(0.13, 0.13, 0.15, 20), 0, 1.535 - MIDDLE, 0],
+    [torus(0.135, 0.022), 0, 1.61 - MIDDLE, 0, Math.PI / 2, 0, 0],
+  ]);
+
 /** A tumbler's clear glass and the water in it, one of each for every guest who has them, drawn as the bottle is. */
 const CLEAR = new THREE.MeshStandardMaterial({
   color: 0xdcecf2,
@@ -50,18 +59,33 @@ const SURFACE = 0x9fd0ee;
 /** How far up the body the middle of the tumbler is, which it shrinks toward with the cure. */
 const TUMBLER_MIDDLE = 0.95;
 
+/** How wide a tumbler is at a height up the body: 0.29 across its foot, at 0.27, to 0.34 at its rim, at 1.57. */
+const tumblerAt = (y: number) => 0.29 + (0.05 * (y - 0.27)) / 1.3;
+
+/** A tumbler's glass, as one shape, from its foot at `from` up the body to its rim: its sides, rim and base. */
+const tumblerGlass = (from: number) =>
+  joined(`tumbler glass ${from}`, [
+    [cyl(0.34, tumblerAt(from), 1.57 - from, 28), 0, (from + 1.57) / 2 - TUMBLER_MIDDLE, 0],
+    [torus(0.34, 0.018), 0, 1.57 - TUMBLER_MIDDLE, 0, Math.PI / 2, 0, 0],
+    [cyl(tumblerAt(from), tumblerAt(from), 0.06, 28), 0, from + 0.03 - TUMBLER_MIDDLE, 0],
+  ]);
+
+/** The water in a tumbler, from just over its base at `from` up the body to the waist, as one shape. */
+const tumblerWater = (from: number) =>
+  joined(`tumbler water ${from}`, [
+    [cyl(0.31, tumblerAt(from) - 0.005, 0.875 - from, 28), 0, (from + 0.875) / 2 - TUMBLER_MIDDLE, 0],
+  ]);
+
 /**
  * Bottled up: the whole person in a big green bottle, the cork in its neck above their head and a cream label with a
- * red stripe round the middle, their legs out of the bottom to walk on.
+ * red stripe round the middle, their legs out of the bottom to walk on. The glass is one shape, as each part of it
+ * drawn alone is a draw call more for every bottled guest.
  */
 function bottle(rig: CharRig) {
   const bottle = new THREE.Group();
   /** A height up the body, as a height in the bottle, whose middle is at `MIDDLE`. */
   const at = (y: number) => y - MIDDLE;
-  put(bottle, cyl(0.31, 0.31, 1.05, 24), GLASS, 0, at(0.78), 0);
-  put(bottle, cyl(0.13, 0.31, 0.16, 24), GLASS, 0, at(1.38), 0);
-  put(bottle, cyl(0.13, 0.13, 0.15, 20), GLASS, 0, at(1.535), 0);
-  put(bottle, torus(0.135, 0.022), GLASS, 0, at(1.61), 0).rotation.x = Math.PI / 2;
+  put(bottle, bottleGlass(0.255), GLASS, 0, 0, 0);
   put(bottle, cyl(0.115, 0.1, 0.16, 14), mat(0xc9a56a, 0.95), 0, at(1.66), 0);
   put(bottle, cyl(0.315, 0.315, 0.3, 24), mat(0xf2e6c8, 0.8), 0, at(0.62), 0);
   put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, at(0.68), 0);
@@ -72,16 +96,15 @@ function bottle(rig: CharRig) {
 
 /**
  * Glass half empty: the whole person standing in a tall clear tumbler, the water up to the waist and the top half
- * empty, their own head and face dry in the empty half and their legs out of the bottom.
+ * empty, their own head and face dry in the empty half and their legs out of the bottom. The glass is one shape, as
+ * the bottle's is.
  */
 function tumbler(rig: CharRig) {
   const glass = new THREE.Group();
   /** A height up the body, as a height in the tumbler, whose middle is at `TUMBLER_MIDDLE`. */
   const at = (y: number) => y - TUMBLER_MIDDLE;
-  put(glass, cyl(0.34, 0.29, 1.3, 28), CLEAR, 0, at(0.92), 0);
-  put(glass, torus(0.34, 0.018), CLEAR, 0, at(1.57), 0).rotation.x = Math.PI / 2;
-  put(glass, cyl(0.29, 0.29, 0.06, 28), CLEAR, 0, at(0.3), 0);
-  put(glass, cyl(0.31, 0.285, 0.55, 28), WATER, 0, at(0.6), 0);
+  put(glass, tumblerGlass(0.27), CLEAR, 0, 0, 0);
+  put(glass, tumblerWater(0.325), WATER, 0, 0, 0);
   put(glass, cyl(0.312, 0.312, 0.012, 28), mat(SURFACE, 0.1), 0, at(0.88), 0);
   glass.position.y = TUMBLER_MIDDLE;
   props(rig, glass);

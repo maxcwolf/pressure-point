@@ -550,7 +550,8 @@ function oldMonitor(rig: CharRig) {
       [rbox(0.2, 0.014, 0.004, 0.002), -0.04, -0.09, 0],
       [rbox(0.14, 0.014, 0.004, 0.002), -0.07, -0.12, 0],
     ]),
-    mat(0xffffff, 0.4, 0.6),
+    // plain white, not glowing as the screen does, so the crowd draws it with everyone's white in a batch
+    mat(0xffffff, 0.4),
     0,
     0.03,
     0.188,
