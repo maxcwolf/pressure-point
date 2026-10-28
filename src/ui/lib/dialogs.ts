@@ -49,5 +49,7 @@ export function mustAnswer(id: DialogId, s: GameState): boolean {
 export function stillDue(id: DialogId, s: GameState): boolean {
   if (id === 'payroll') return !!s.payrollDue && !s.bankrupt;
   if (id === 'visit') return s.visitReport !== null;
+  // an ailment's news, once it has stopped going around while waiting, would announce a wave already over
+  if (id === 'wave') return s.wave !== null;
   return true;
 }

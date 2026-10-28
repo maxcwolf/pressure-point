@@ -29,7 +29,7 @@ import {
 import { barHeights, CHART_HEIGHT } from '../../src/ui/lib/chart';
 import { cx } from '../../src/ui/lib/cx';
 import { deliveryNote, disciplineNote } from '../../src/ui/lib/delivery';
-import { mustAnswer, pendingDialog, raise } from '../../src/ui/lib/dialogs';
+import { mustAnswer, pendingDialog, raise, stillDue } from '../../src/ui/lib/dialogs';
 import { offerTimeLeft, timeLeftLabel, wholeDaysLeft } from '../../src/ui/lib/emergency';
 import { hintChips } from '../../src/ui/lib/hint-chips';
 import { pleasantness, quietness, upkeepShown } from '../../src/ui/lib/overlays';
@@ -93,6 +93,25 @@ describe('dialogs the game raises', () => {
     expect(pendingDialog(s)).toBeNull();
     expect(mustAnswer('visit', s)).toBe(false);
     expect(mustAnswer('payroll', s)).toBe(true);
+  });
+
+  it('drops the news of an ailment going around that ended while it waited its turn', () => {
+    const { s } = openCenter(1);
+    s.wave = {
+      condition: 'coldfeet',
+      warned: 0,
+      starts: 7,
+      ends: 37,
+      opened: true,
+      begun: false,
+      came: 0,
+      healed: 0,
+      turned: 0,
+    };
+    expect(stillDue('wave', s)).toBe(true);
+    s.pastWaves.push(s.wave);
+    s.wave = null;
+    expect(stillDue('wave', s)).toBe(false);
   });
 });
 
