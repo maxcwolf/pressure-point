@@ -1,0 +1,808 @@
+<meta charset="utf-8" />
+<title>Symptoms You Can See</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap"
+/>
+<style>
+  /* Layout: one column of options, each opening on its pictures at the game's own pixel size, then a short spec sheet;
+   a comparison table and the recommendation close the page. The recommended option's pictures wear an amber frame. */
+  :root {
+    --bg: #eef3f2;
+    --panel: #ffffff;
+    --fg: #182628;
+    --muted: #566a6c;
+    --line: #d3dedd;
+    --accent: #0f7a73;
+    --rec: #e09a12;
+    --rec-ink: #2a1c00;
+    --bad: #b5432f;
+    --display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+    --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #101819;
+      --panel: #172223;
+      --fg: #e3eceb;
+      --muted: #9db0b1;
+      --line: #2a3a3c;
+      --accent: #43c3b8;
+      --rec: #f2b33d;
+      --rec-ink: #241700;
+      --bad: #ef8a74;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #101819;
+    --panel: #172223;
+    --fg: #e3eceb;
+    --muted: #9db0b1;
+    --line: #2a3a3c;
+    --accent: #43c3b8;
+    --rec: #f2b33d;
+    --rec-ink: #241700;
+    --bad: #ef8a74;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+  }
+  main {
+    max-width: 1360px;
+    margin: 0 auto;
+    display: grid;
+    gap: 56px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    text-wrap: balance;
+    line-height: 1.15;
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(2rem, 4vw, 2.9rem);
+  }
+  h2 {
+    font-size: 1.7rem;
+  }
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  p {
+    margin: 0;
+    max-width: 68ch;
+  }
+  .eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  header {
+    display: grid;
+    gap: 14px;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .opt {
+    display: grid;
+    gap: 18px;
+    padding-top: 28px;
+    border-top: 2px solid var(--line);
+  }
+  .opt-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 14px;
+  }
+  .opt-head .letter {
+    font-family: var(--display);
+    font-size: 1.7rem;
+    color: var(--accent);
+  }
+  .chip {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--rec);
+    color: var(--rec-ink);
+  }
+  .pitch {
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  figcaption b {
+    color: var(--fg);
+  }
+  .shot {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+    max-width: 100%;
+    line-height: 0;
+    border-radius: 6px;
+  }
+  .shot img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+  }
+  .shot:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  /* the recommended option's pictures: a heavy amber frame and a tag on the picture itself */
+  .rec .shot img {
+    border: 5px solid var(--rec);
+  }
+  .rec .shot::after {
+    content: 'Recommended';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    line-height: 1;
+    font: 700 0.8rem/1 var(--body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--rec);
+    color: var(--rec-ink);
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px 28px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .spec div {
+    min-width: 0;
+  }
+  .spec dt {
+    font-size: 0.78rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .spec dd {
+    margin: 0;
+  }
+  .risk dd {
+    color: var(--fg);
+  }
+  .risk dt {
+    color: var(--bad);
+  }
+  .days {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 760px;
+    font-variant-numeric: tabular-nums;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  tr.rec-row td {
+    background: color-mix(in srgb, var(--rec) 16%, transparent);
+  }
+  tr.rec-row td:first-child {
+    box-shadow: inset 5px 0 0 var(--rec);
+    font-weight: 700;
+  }
+  .verdict {
+    display: grid;
+    gap: 14px;
+    padding: 22px 24px;
+    border-radius: 10px;
+    border: 3px solid var(--rec);
+    background: var(--panel);
+  }
+  ol.ten {
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 4px;
+    max-width: 80ch;
+  }
+  ol.ten b {
+    font-weight: 700;
+  }
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    background: rgb(8 14 15 / 0.88);
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox .frame {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    line-height: 0;
+  }
+  .lightbox img {
+    max-width: min(1440px, 100%);
+    max-height: calc(100vh - 80px);
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  .lightbox .frame.rec img {
+    border: 6px solid var(--rec);
+  }
+  .lightbox .frame.rec::after {
+    content: 'Recommended';
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font: 700 0.85rem/1 var(--body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--rec);
+    color: var(--rec-ink);
+    padding: 7px 11px;
+    border-radius: 4px;
+  }
+  .lightbox .cap {
+    color: #e3eceb;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .lightbox button {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    font: 700 1rem var(--body);
+    background: #e3eceb;
+    color: #101819;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    body {
+      padding-block: 24px 48px;
+    }
+    main {
+      gap: 40px;
+    }
+  }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Pressure Point Institute &#183; Fun gap 2 of the 27 October review</span>
+    <h1>Symptoms you can see</h1>
+    <p>
+      In Two Point Hospital you read the waiting room from across the map: a cube, a clown, a mummy. Here most of the 62
+      ailments are a small prop on an ordinary person, a cork, a glass, a hen, so at the usual zoom, where a guest is
+      about 33 pixels tall, a crowd of thirty reads as a crowd, and the jokes live in names nobody reads. Below are four
+      ways to fix that, each tried for real on three ailments, and one recommendation.
+    </p>
+    <p class="note">
+      How the pictures were made: a day-900 Orchard Estate built by the playtest bot (seed 2, machines on), loaded in
+      the game at 1440&#215;900 with the camera at its default distance over the busiest spot indoors. For each option,
+      every unwell guest was given one of that option's three ailments, and the same save was shot as the game draws it
+      today (<i>before</i>) and with the prototype on (<i>after</i>). Corridor pictures are shown at their real pixel
+      size; click any picture for the whole screen. Close-ups are from the model lab at the game's camera angle.
+    </p>
+  </header>
+
+  <section class="opt rec" id="body">
+    <div class="opt-head">
+      <span class="letter">A</span>
+      <h2>The body becomes the joke</h2>
+      <span class="chip">Recommended</span>
+      <h3>Tried on Stress Head, Bottled Up, Scrambled Noggin</h3>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="corridor-before-body-full.webp">
+          <img
+            src="corridor-before-body.webp"
+            alt="The busy waiting area at the default zoom, as the game draws it today"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Before.</b> Today: steam puffs, a cork, a few small stars.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="corridor-after-body-full.webp">
+          <img src="corridor-after-body.webp" alt="The same waiting area with the prototype on" loading="lazy" />
+        </button>
+        <figcaption><b>After.</b> Option A: kettles, bottles and eggs.</figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="lab-before-body.webp">
+          <img src="lab-before-body.webp" alt="Close-ups in the model lab, today" loading="lazy" />
+        </button>
+        <figcaption><b>Close-up, today.</b></figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="lab-after-body.webp">
+          <img src="lab-after-body.webp" alt="Close-ups in the model lab, with the prototype" loading="lazy" />
+        </button>
+        <figcaption>
+          <b>Close-up, option A.</b> Kettle, bottle, egg. The face stays on, so how they feel still shows.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="lab-cure-body.webp">
+          <img
+            src="lab-cure-body.webp"
+            alt="The kettle, bottle and egg shrinking away in the cure's puff, the guest's own head coming back"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>At the cure, option A.</b> The thing goes in the puff and the person comes back.</figcaption>
+      </figure>
+    </div>
+    <p class="pitch">
+      For the ailments whose name already names a thing, the guest turns into that thing: a stress head is a kettle,
+      someone bottled up walks about inside a bottle, a scrambled noggin has an egg for a head.
+    </p>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          A new outline and a new color at head height or whole-body size. In the crop the green bottles, white eggs and
+          black kettle handles can be picked out at 33 pixels without zooming in; today the same crowd shows a few
+          specks of white and gold.
+        </dd>
+      </div>
+      <div>
+        <dt>At the cure</dt>
+        <dd>
+          The thing shrinks away in the puff and their own head, hair or body is back at the halfway mark, then the hop.
+          Built in the prototype. There is room for more: the lid blows off, the cork pops, the shell cracks.
+        </dd>
+      </div>
+      <div>
+        <dt>Work for the full set</dt>
+        <dd>
+          About half a day per ailment with sitting, lying, treatments and the machine gags checked:
+          <span class="days">~25 days</span> for all 62, <span class="days">~5</span> for the first ten. About 20
+          ailments suit it; the rest can keep their props.
+        </dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>
+          A whole-body shape has to work lying on a table, sitting, in a queue and in every machine gag; the bottle goes
+          round the body, and the prototype does not yet handle lying down. Hiding the hair must never hide the face:
+          the kettle and the egg keep eyes, brows and mouth. Five looks are shared by two ailments each today (pale,
+          dizzy, cloud, jitter, static), so those pairs need telling apart. Steer clear of Two Point's own shapes, such
+          as a light bulb for a head.
+        </dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt" id="walk">
+    <div class="opt-head">
+      <span class="letter">B</span>
+      <h2>The symptom is in how they move</h2>
+      <h3>Tried on Possessed by a Chicken, Cold Feet, Scrambled Noggin</h3>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="corridor-before-walk-full.webp">
+          <img
+            src="corridor-before-walk.webp"
+            alt="The busy waiting area at the default zoom, as the game draws it today"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Before.</b> Today: a hen, ice blocks on the feet, stars.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="corridor-after-walk-full.webp">
+          <img src="corridor-after-walk-moving.webp" alt="The same waiting area with the prototype on" loading="lazy" />
+        </button>
+        <figcaption><b>After.</b> Option B, moving: the strut, the hop and the stagger.</figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="lab-before-walk-moving.webp">
+          <img src="lab-before-walk-moving.webp" alt="Close-ups in the model lab, today" loading="lazy" />
+        </button>
+        <figcaption><b>Close-up, today.</b></figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="lab-after-walk-moving.webp">
+          <img src="lab-after-walk-moving.webp" alt="Close-ups in the model lab, with the prototype" loading="lazy" />
+        </button>
+        <figcaption>
+          <b>Close-up, option B.</b> Walking on the spot, today (top) and with the prototype (bottom).
+        </figcaption>
+      </figure>
+    </div>
+    <p class="pitch">
+      Each ailment gets its own walk and idle: possessed by a chicken struts with elbows flapping and head pecking, cold
+      feet high-step and hop from foot to foot, a scrambled noggin staggers with arms out.
+    </p>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          Motion carries at small sizes better than detail, and in the moving clip the strutting and staggering show. A
+          still picture barely changes, and the outline is still a person.
+        </dd>
+      </div>
+      <div>
+        <dt>At the cure</dt>
+        <dd>
+          The walk straightens out on the spot, then the hop. A clear change for anyone watching that guest; nothing in
+          a screenshot.
+        </dd>
+      </div>
+      <div>
+        <dt>Work for the full set</dt>
+        <dd>
+          About a third of a day per ailment, because each walk has to sit with queueing, sitting, carrying a drink and
+          every mood: <span class="days">~18&#8211;20 days</span> for all 62.
+        </dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>
+          The game already uses body language for a guest's state: patience running out (stamping, folded arms, glances
+          at the door), stress, the bad trip. A walk per ailment competes with all of it and makes mood harder to read,
+          which the challenging-but-fair rule rules out unless the two are kept strictly apart. Many names have no walk
+          in them (Bottled Up, Glass Half Empty).
+        </dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt" id="grow">
+    <div class="opt-head">
+      <span class="letter">C</span>
+      <h2>Props that grow from afar</h2>
+      <h3>Tried on Bottled Up, Glass Half Empty, Flat Battery</h3>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="corridor-before-grow-full.webp">
+          <img
+            src="corridor-before-grow.webp"
+            alt="The busy waiting area at the default zoom, as the game draws it today"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Before.</b> Today: a cork, a glass and a battery, a few pixels each.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="corridor-after-grow-full.webp">
+          <img src="corridor-after-grow.webp" alt="The same waiting area with the prototype on" loading="lazy" />
+        </button>
+        <figcaption><b>After.</b> Option C: the same props, grown.</figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="lab-before-grow.webp">
+          <img src="lab-before-grow.webp" alt="Close-ups in the model lab, today" loading="lazy" />
+        </button>
+        <figcaption><b>Close-up, today.</b></figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="lab-after-grow.webp">
+          <img src="lab-after-grow.webp" alt="Close-ups in the model lab, with the prototype" loading="lazy" />
+        </button>
+        <figcaption>
+          <b>Close-up, option C.</b> The props at the size they are drawn from the default distance.
+        </figcaption>
+      </figure>
+    </div>
+    <p class="pitch">
+      A symptom prop is kept at least 18 pixels across however far out the camera is, as speech bubbles are, up to 2.6
+      times its own size.
+    </p>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          The cork, glass and battery become readable blobs over heads. They are the same props, so they read as what
+          they are, but there is nothing new to laugh at.
+        </dd>
+      </div>
+      <div>
+        <dt>At the cure</dt>
+        <dd>Unchanged: the bigger prop shrinks away in the same puff, which is easier to see.</dd>
+      </div>
+      <div>
+        <dt>Work for the full set</dt>
+        <dd>
+          <span class="days">~2&#8211;3 days</span> for all 62: one mount and one size per prop, done in one place.
+        </dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>
+          Grown props over a crowd pile up on each other and on the mood bubbles, which sit in the same space over the
+          head and matter more. Their size changes with zoom, so the same guest looks different in every picture. It
+          fixes legibility, not the fun.
+        </dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt" id="color">
+    <div class="opt-head">
+      <span class="letter">D</span>
+      <h2>Wear it as color</h2>
+      <h3>Tried on Out of Body, Cold Shoulder, Stagnant Vibes</h3>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="corridor-before-color-full.webp">
+          <img
+            src="corridor-before-color.webp"
+            alt="The busy waiting area at the default zoom, as the game draws it today"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Before.</b> Today: a gray face, an ice lump on one shoulder, a purple ring.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="corridor-after-color-full.webp">
+          <img src="corridor-after-color.webp" alt="The same waiting area with the prototype on" loading="lazy" />
+        </button>
+        <figcaption><b>After.</b> Option D: ghosts, frosted and pond green.</figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot" data-full="lab-before-color.webp">
+          <img src="lab-before-color.webp" alt="Close-ups in the model lab, today" loading="lazy" />
+        </button>
+        <figcaption><b>Close-up, today.</b></figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot" data-full="lab-after-color.webp">
+          <img src="lab-after-color.webp" alt="Close-ups in the model lab, with the prototype" loading="lazy" />
+        </button>
+        <figcaption><b>Close-up, option D.</b> Ghost, frosted, pond green.</figcaption>
+      </figure>
+    </div>
+    <p class="pitch">
+      The whole person takes on the ailment's color: out of body is a see-through ghost, a cold shoulder is frosted blue
+      from head to toe, stagnant vibes are pond green with flies.
+    </p>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          Color reads at any distance: a frosted figure or a ghost stands out at once. The outline does not change, so
+          it says "something is wrong with that one" more than what is wrong.
+        </dd>
+      </div>
+      <div>
+        <dt>At the cure</dt>
+        <dd>The color drains back at the halfway mark of the puff, a good payoff.</dd>
+      </div>
+      <div>
+        <dt>Work for the full set</dt>
+        <dd>
+          <span class="days">~4&#8211;6 days</span> for all 62: a palette per ailment, checked in each center's light
+          and weather.
+        </dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>
+          Clothes are how the player tells one guest from another, and the Condition overlay and heat map already use
+          color for how unwell a guest is, so a third meaning for color muddies both. The ghost makes the face hard to
+          read, so mood is harder to see. Most names have no color in them.
+        </dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt" id="compare">
+    <div class="opt-head"><h2>Side by side</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Reads at 33 px</th>
+            <th>Funny</th>
+            <th>At the cure</th>
+            <th>Days, all 62</th>
+            <th>Risk to reading a guest's state</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="rec-row">
+            <td>A &#183; The body becomes the joke</td>
+            <td>Yes: new outline and color</td>
+            <td>High: the picture is the joke</td>
+            <td>Their own head comes back</td>
+            <td>~25 (~5 for the first ten)</td>
+            <td>Low: the face stays on</td>
+          </tr>
+          <tr>
+            <td>B &#183; How they move</td>
+            <td>Only while moving</td>
+            <td>Medium</td>
+            <td>The walk straightens</td>
+            <td>~18&#8211;20</td>
+            <td>High: competes with patience and mood</td>
+          </tr>
+          <tr>
+            <td>C &#183; Props that grow</td>
+            <td>As a blob</td>
+            <td>Low: the same props</td>
+            <td>Same puff, bigger</td>
+            <td>~2&#8211;3</td>
+            <td>Medium: covers the mood bubbles</td>
+          </tr>
+          <tr>
+            <td>D &#183; Wear it as color</td>
+            <td>As color, not as what</td>
+            <td>Low to medium</td>
+            <td>The color drains back</td>
+            <td>~4&#8211;6</td>
+            <td>Medium to high: overlay colors, ghost faces</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="verdict" id="recommendation">
+    <span class="eyebrow">Recommendation</span>
+    <h2>A: the body becomes the joke, for the ailments that name a thing</h2>
+    <p>
+      It is the only option that changes the outline, which is what Two Point's crowd is read by, and in the corridor it
+      is the only one where the ailment can be named at play size rather than just noticed. It keeps the face, so a
+      guest's mood reads as well as it does today, and it gives the cure a real payoff: the person comes back. Days are
+      spent per ailment, so it can go out ten at a time.
+    </p>
+    <p>
+      <b>The first ten</b>, all found in every center, each a name that already is a picture, each treated in a
+      different room, and all five disciplines among them:
+    </p>
+    <ol class="ten">
+      <li><b>Stress Head</b>: a whistling kettle (prototyped).</li>
+      <li><b>Bottled Up</b>: inside a big green bottle, the cork above the head (prototyped).</li>
+      <li><b>Scrambled Noggin</b>: a cracked egg for a head (prototyped).</li>
+      <li><b>Flat Battery</b>: the body a battery, legs out of the bottom, one red bar blinking.</li>
+      <li><b>Spiritually Dehydrated</b>: a cactus in a terracotta pot, prickles and all.</li>
+      <li><b>Glass Half Empty</b>: a tumbler, the water line at the waist.</li>
+      <li><b>Scattered</b>: in pieces, head, body and legs drifting a hand's width apart.</li>
+      <li><b>Noisy Mind</b>: a clockwork head with the gears turning behind glass.</li>
+      <li><b>Lost Their Way</b>: a signpost for a head, its arms pointing every way.</li>
+      <li><b>Blocked Qi</b>: head and shoulders lost in a small gray storm cloud.</li>
+    </ol>
+    <p class="note">
+      The prototype is on the branch behind <code>?symptoms=body</code> (and <code>walk</code>, <code>grow</code>,
+      <code>color</code>) in the game's address, and <code>&amp;symptoms=body</code> in the model lab. Without it
+      nothing changes.
+    </p>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <div>
+    <div class="frame" id="lb-frame"><img id="lb-img" alt="" /></div>
+    <p class="cap" id="lb-cap"></p>
+  </div>
+  <button type="button" id="lb-close">Close</button>
+</div>
+
+<script>
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  const lbFrame = document.getElementById('lb-frame');
+  const lbCap = document.getElementById('lb-cap');
+  document.querySelectorAll('.shot').forEach((b) =>
+    b.addEventListener('click', () => {
+      lbImg.src = b.dataset.full || b.querySelector('img').src;
+      lbImg.alt = b.querySelector('img').alt;
+      lbFrame.classList.toggle('rec', !!b.closest('.rec'));
+      lbCap.textContent = b.closest('figure').querySelector('figcaption')?.textContent ?? '';
+      lb.hidden = false;
+      document.getElementById('lb-close').focus();
+    }),
+  );
+  const close = () => {
+    lb.hidden = true;
+    lbImg.removeAttribute('src');
+  };
+  document.getElementById('lb-close').addEventListener('click', close);
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !lb.hidden) close();
+  });
+</script>

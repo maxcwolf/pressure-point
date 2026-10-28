@@ -4,11 +4,12 @@ import * as THREE from 'three';
 import { type Role, ROLES, type Visual } from '../../core/data';
 import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
-import { BUBBLE_SIZE } from '../bubbles';
+import { BUBBLE_SIZE, BUBBLE_STANDING } from '../bubbles';
 import { owned } from '../disposal';
 import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
 import type { Burst } from './burst';
+import { bodySymptom } from './character-bodies';
 import {
   detailArm,
   detailBib,
@@ -27,6 +28,7 @@ import {
   GLASSES_OUT,
   KNEE,
 } from './character-detail';
+import { headSymptom, upright } from './character-heads';
 import { machineSymptom } from './character-machines';
 import type { HeldKind } from './held';
 import { buildMop } from './mop';
@@ -60,15 +62,15 @@ export interface CharRig {
   headMesh: THREE.Mesh;
   pick: THREE.Mesh;
   bubble: THREE.Sprite;
-  knot?: THREE.Mesh;
   steam?: THREE.Group;
-  band?: THREE.Mesh;
   orbit?: THREE.Group;
   /** Drops of water falling off a wet blanket, each from where it starts. */
   drips?: THREE.Group;
   /** Something that hovers over the head and bobs gently, and how high it hovers. */
   bob?: THREE.Object3D;
   bobAt: number;
+  /** How high a standing person's bubble sits: higher over a symptom that stands up tall out of the head. */
+  bubbleAt: number;
   /** A material whose glow pulses. */
   blink?: THREE.MeshStandardMaterial;
   /** Everything that only exists to show the symptom, hidden once healed. */
@@ -108,6 +110,14 @@ export interface CharRig {
   rest?: { scale: THREE.Vector3; y: number }[];
   /** A puff of sparkles round them as the symptom goes, made the first time it is needed. */
   burst?: Burst;
+  /** How much bigger than usual the symptom makes the head, across and up, to go down with the cure. */
+  swell?: [number, number];
+  /** What puts back the parts and colors a symptom stands in for, done halfway through the cure. */
+  restore?: (() => void)[];
+  /** Bolts of lightning that show one at a time in a flash, and the materials that glow with it (see `pose`). */
+  flash?: { bolts: THREE.Object3D[]; glow: THREE.MeshStandardMaterial[] };
+  /** Symptom parts that turn, rattle, pulse or drift up and down: by `userData.spin`, `rattle`, `pulse` and `drift`. */
+  spin?: THREE.Object3D[];
   /** Pale soles turned up, shown while they lie face down, made the first time they do. */
   soles?: THREE.Mesh[];
   scale: number;
@@ -134,6 +144,9 @@ export const CAP_TIP = -0.38;
 
 /** How much bigger than life the hen is drawn, the game's signature, to be seen from its usual distance. */
 const HEN_SIZE = 1.7;
+
+/** How many times the size of a phone in the hand someone with text neck holds theirs: as big as their chest. */
+const GIANT_PHONE = 2.8;
 
 /**
  * A ram's horn on one side of the head: rooted on top, curling back, down round the ear and forward again, thick at the
@@ -363,6 +376,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     wide,
     bubbleKey: '',
     bobAt: 0,
+    bubbleAt: BUBBLE_STANDING,
   };
   rig.pick.position.y = 0.7;
   group.add(rig.pick);
@@ -373,24 +387,16 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   group.add(rig.bubble);
 
   if (visual === 'knot') {
-    rig.knot = put(
-      torso,
-      cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8)),
-      mat(0xd9584a, 0.5),
-      0,
-      0.46,
-      -0.19,
-    );
+    bodySymptom(rig, visual);
   } else if (visual === 'steam') {
-    headMesh.material = mat(0xe8836f, 0.65);
+    // the head a whistling kettle, the steam puffing out of its spout
     rig.steam = new THREE.Group();
     for (let i = 0; i < 3; i++)
       put(rig.steam, sph(0.06, 8), mat(0xffffff, 0.9, 0.3), (i - 1) * 0.12, 0, 0).castShadow = false;
-    rig.steam.position.y = 0.3;
     head.add(rig.steam);
+    headSymptom(rig, visual);
   } else if (visual === 'band') {
-    rig.band = put(head, torus(0.226, 0.038), mat(0xe5484d, 0.4, 0.7), 0, 0.07, 0);
-    rig.band.rotation.x = Math.PI / 2;
+    headSymptom(rig, visual);
   } else if (visual === 'flex') {
     for (const arm of [armL, armR]) rig.props.push(put(arm, sph(0.092, 12), top, 0, -0.1, 0.02));
   } else if (visual === 'frost') {
@@ -398,7 +404,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(put(torso, ico(0.135), ice, 0.21, 0.4, 0));
     const icicle = put(torso, cyl(0.035, 0.001, 0.16, 6), ice, 0.3, 0.26, 0.02);
     rig.props.push(icicle, put(torso, cyl(0.03, 0.001, 0.11, 6), ice, 0.2, 0.25, 0.1));
-  } else if (visual === 'dizzy') {
+  } else if (visual === 'dizzy' || visual === 'egg') {
+    // stars going round the head, and for a scrambled noggin, the head an egg
+    headSymptom(rig, visual);
     rig.orbit = new THREE.Group();
     for (let i = 0; i < 3; i++) {
       const a = (i / 3) * Math.PI * 2;
@@ -425,6 +433,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     cloud.position.y = 0.4;
     head.add(cloud);
     rig.bob = cloud;
+  } else if (visual === 'storm') {
+    bodySymptom(rig, visual);
   } else if (visual === 'aura') {
     rig.orbit = new THREE.Group();
     const ring = put(rig.orbit, torus(0.36, 0.035), mat(0x7a4f9a, 0.5, 0.5), 0, 0, 0);
@@ -433,10 +443,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.orbit.position.y = 0.22;
     torso.add(rig.orbit);
   } else if (visual === 'cork') {
-    rig.props.push(put(head, cyl(0.07, 0.09, 0.15, 12), mat(0xc9a56a, 0.95), 0, 0.26, 0));
-    const neck = put(head, torus(0.095, 0.025), mat(0x3f6b52, 0.3), 0, 0.2, 0);
-    neck.rotation.x = Math.PI / 2;
-    rig.props.push(neck);
+    bodySymptom(rig, visual);
   } else if (visual === 'coldfeet') {
     const ice = mat(0xcdeeff, 0.15, 0.25);
     for (const leg of [shinL, shinR])
@@ -490,24 +497,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     torso.add(rig.drips);
     rig.props.push(rig.drips);
   } else if (visual === 'battery') {
-    const cell = new THREE.Group();
-    put(cell, rbox(0.26, 0.13, 0.09, 0.02), mat(0x2f3136, 0.6), 0, 0, 0).castShadow = false;
-    put(cell, rbox(0.03, 0.06, 0.05, 0.01), mat(0x2f3136, 0.6), 0.145, 0, 0).castShadow = false;
-    rig.blink = owned(new THREE.MeshStandardMaterial({ color: 0x551111, emissive: 0xff3b30, emissiveIntensity: 1 }));
-    put(cell, rbox(0.05, 0.09, 0.1, 0.01), rig.blink, -0.085, 0, 0).castShadow = false;
-    cell.position.y = 0.4;
-    head.add(cell);
-    rig.bob = cell;
+    headSymptom(rig, visual);
   } else if (visual === 'wires') {
-    const tangle = new THREE.Group();
-    const knot = cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8));
-    put(tangle, knot, mat(0xe5484d, 0.5), 0, 0, 0).scale.setScalar(0.85);
-    const second = put(tangle, knot, mat(0x4a9fe0, 0.5), 0, 0, 0);
-    second.scale.setScalar(0.85);
-    second.rotation.set(1.2, 0.6, 0);
-    tangle.position.y = 0.3;
-    head.add(tangle);
-    rig.knot = tangle as unknown as THREE.Mesh;
+    headSymptom(rig, visual);
   } else if (visual === 'pale') {
     headMesh.material = mat(0xd3cfcb, 0.65);
   } else if (visual === 'static') {
@@ -548,6 +540,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.25;
     torso.add(rig.orbit);
+    bodySymptom(rig, visual);
   } else if (visual === 'bulb') {
     // a dim light bulb that keeps flickering
     const lamp = new THREE.Group();
@@ -589,25 +582,9 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.orbit.position.y = 0.02;
     head.add(rig.orbit);
   } else if (visual === 'glass') {
-    // a glass, half empty, hanging over them like a cloud
-    const glass = new THREE.Group();
-    put(glass, cyl(0.06, 0.05, 0.14, 12), mat(0xe8f1f6, 0.1), 0, 0, 0).castShadow = false;
-    put(glass, cyl(0.052, 0.048, 0.06, 12), mat(0x6fb5e0, 0.2), 0, -0.035, 0).castShadow = false;
-    glass.position.y = 0.42;
-    head.add(glass);
-    rig.bob = glass;
+    bodySymptom(rig, visual);
   } else if (visual === 'gears') {
-    // a cog turning over the head
-    rig.orbit = new THREE.Group();
-    const steel = mat(0x8c939c, 0.35);
-    put(rig.orbit, torus(0.07, 0.025), steel, 0, 0, 0).rotation.x = Math.PI / 2;
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      const tooth = put(rig.orbit, rbox(0.04, 0.03, 0.04, 0.005), steel, Math.cos(a) * 0.105, 0, Math.sin(a) * 0.105);
-      tooth.rotation.y = -a;
-    }
-    rig.orbit.position.y = 0.36;
-    head.add(rig.orbit);
+    headSymptom(rig, visual);
   } else if (visual === 'chakra') {
     // seven glowing centers down the front, the third gone dark
     const colors = [0x9b6fd1, 0x5b5fc7, 0x4a9fe0, 0x3bb273, 0xf2c14e, 0xf08a4b, 0xe5484d];
@@ -646,6 +623,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     for (const x of [-0.075, 0.075])
       rig.props.push(put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2 + GLASSES_OUT));
     rig.props.push(put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205 + GLASSES_OUT));
+    // and a lobster's claws and feelers
+    bodySymptom(rig, visual);
   } else if (visual === 'icicles') {
     // frozen blue, with snow settled on the shoulders and icicles hanging off the chin
     headMesh.material = mat(0xb9d7e8, 0.5);
@@ -806,39 +785,16 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     collar.rotation.x = Math.PI / 2;
     rig.props.push(strap, collar);
   } else if (visual === 'cactus') {
-    // a little cactus in a pot, balanced on the head, about as dry as they feel
-    const pot = new THREE.Group();
-    put(pot, cyl(0.06, 0.045, 0.07, 10), mat(0xb5523e, 0.8), 0, 0, 0);
-    const green = mat(0x5a9a4f, 0.7);
-    put(pot, capsule(0.035, 0.08), green, 0, 0.09, 0);
-    put(pot, capsule(0.02, 0.03), green, 0.045, 0.1, 0).rotation.z = -0.9;
-    pot.scale.setScalar(1.6);
-    pot.position.y = 0.27;
-    for (const o of pot.children) o.castShadow = false;
-    head.add(pot);
-    rig.props.push(pot);
+    bodySymptom(rig, visual);
   } else if (visual === 'bighead') {
     // a head swollen to half as big again, and a smug little crown on it
+    rig.swell = [1.45, 1.45];
     head.scale.set(1.45 / wide, 1.45, 1.45 / wide);
     rig.props.push(put(head, cyl(0.1, 0.08, 0.07, 6), mat(0xd9a93a, 0.3, 0.2), 0, 0.24, 0));
   } else if (visual === 'compass') {
-    // a compass floating over their head, its needle spinning round and never settling
-    const compass = new THREE.Group();
-    put(compass, cyl(0.11, 0.11, 0.025, 18), mat(0xc9a13a, 0.35, 0.3), 0, 0, 0);
-    put(compass, cyl(0.095, 0.095, 0.03, 18), mat(0xf4f1ea, 0.6), 0, 0.002, 0);
-    rig.orbit = new THREE.Group();
-    put(rig.orbit, rbox(0.15, 0.012, 0.025, 0.004), mat(0xd9362f, 0.5), 0.04, 0, 0);
-    put(rig.orbit, rbox(0.08, 0.012, 0.025, 0.004), mat(0x3a3a46, 0.5), -0.04, 0, 0);
-    rig.orbit.position.y = 0.025;
-    compass.add(rig.orbit);
-    for (const o of [...compass.children, ...rig.orbit.children]) o.castShadow = false;
-    // bobbing gently, and put away while they lie down
-    compass.scale.setScalar(1.5);
-    compass.position.y = 0.4;
-    head.add(compass);
-    rig.bob = compass;
+    headSymptom(rig, visual);
   } else if (visual === 'neck') {
-    // a phone held up in front of them, its screen lit, that they cannot look up from
+    // a phone as big as their chest held out in front of them, its screen lit, that they cannot look up from
     const phone = new THREE.Group();
     put(phone, rbox(0.13, 0.22, 0.02, 0.015), mat(0x1d1f24, 0.3), 0, 0, 0);
     // lit on both faces, so it glows whichever way it is seen
@@ -847,14 +803,18 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       [rbox(0.11, 0.19, 0.006, 0.005), 0, 0, -0.012],
     ]);
     put(phone, glow, mat(0x8fd3ff, 0.3, 1.2), 0, 0, 0);
-    // lying on the hand, on the thumb's side, which faces up with the forearm raised, the screen tipped to the face
-    phone.position.set(0, -0.32 + handUp, 0.068);
+    // held by its near end on the hand, on the thumb's side, which faces up with the forearm raised, the screen tipped
+    // to the face: out past the hand and a little down, so it is clear of the chest and shoulder and below the face
+    phone.scale.setScalar(GIANT_PHONE);
+    phone.position.set(0, -0.6 + handUp, -0.032);
     phone.rotation.x = 0.45;
     phone.name = 'phone';
     holdR.add(phone);
+    // put away while they lie down, where it would stick out over the edge of whatever they lie on
+    upright(rig, phone);
     rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
-  for (const o of [rig.knot, rig.steam, rig.band, rig.orbit, rig.bob]) if (o) rig.props.push(o);
+  for (const o of [rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (rig.bob) rig.bobAt = rig.bob.position.y;
   if (role === 'practitioner' || role === 'caretaker') {
     const { bundle, tip } = buildSage();
@@ -897,7 +857,14 @@ export function endCure(rig: CharRig, look: Look) {
     o.position.y = rest.y;
   });
   if (rig.glasses) rig.glasses.visible = true;
+  restoreRig(rig);
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
   if (rig.burst) rig.burst.group.visible = false;
+}
+
+/** Put back the parts and colors a symptom stood in for, once. */
+export function restoreRig(rig: CharRig) {
+  for (const undo of rig.restore ?? []) undo();
+  delete rig.restore;
 }

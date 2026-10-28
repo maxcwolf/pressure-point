@@ -23,7 +23,7 @@ import { prefersReducedMotion } from './camera-math';
 import { animateEmitter, emitter, type EmitterShape } from './gags/particles';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
-import { type CharRig, cureRig, endCure, type Joints } from './models/character';
+import { type CharRig, cureRig, endCure, type Joints, restoreRig } from './models/character';
 import { BACK_Y, type Expression, HIP, KNEE, showExpression, showEyes, SIT_Y } from './models/character-detail';
 import { buildHeld, HELD_SIZE, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
@@ -211,13 +211,38 @@ function showCure(rig: CharRig, c: Char, t: number) {
     o.scale.copy(rest.scale).multiplyScalar(Math.max(0.001, 1 - u));
     o.position.y = rest.y + 0.25 * u;
   });
-  if (rig.visual === 'bighead') {
-    const size = 1.45 - 0.45 * u;
-    rig.head.scale.set(size / rig.wide, size, size / rig.wide);
+  if (rig.swell) {
+    const [across, up] = rig.swell;
+    const a = across - (across - 1) * u;
+    rig.head.scale.set(a / rig.wide, up - (up - 1) * u, a / rig.wide);
   }
-  if (u > 0.5) rig.headMesh.material = mat(c.look.skin, 0.65);
+  if (u > 0.5) {
+    rig.headMesh.material = mat(c.look.skin, 0.65);
+    restoreRig(rig);
+  }
   rig.burst ??= buildBurst(rig.group);
   showBurst(rig.burst, u, c.pose === 'lie' ? 0.3 : 1.3 * rig.scale);
+}
+
+/**
+ * How someone potted from the waist down walks, keeping the legs inside the pot: how far each leg swings, in radians,
+ * how far the pot waddles from side to side, and how much of the usual bend the knees keep.
+ */
+export const POTTED = { stride: 0.1, waddle: 0.14, knees: 0.2 } as const;
+
+/** How often lightning flashes in someone's storm cloud, in seconds, each person at their own pace. */
+const flashPeriod = (id: number) => 2.6 + hash(id * 1.3) * 1.8;
+
+/**
+ * How bright the lightning in someone's storm cloud is at a moment, from 0 (dark) to 1: a flash, a flicker of dark,
+ * and a second flash, once a period.
+ */
+export function flashAt(id: number, t: number) {
+  const s = (t + id * 0.77) % flashPeriod(id);
+  if (s < 0.07) return 1;
+  if (s < 0.13) return 0;
+  if (s < 0.25) return 0.75;
+  return 0;
 }
 
 /** How long a blink lasts, in seconds. */
@@ -398,7 +423,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   /** Leaning to one side, for a guest who is off balance. */
   let side = 0;
   /** Whether they sit on the floor rather than a seat. */
-  const onFloor = c.pose === 'sit' && c.h < SIT.floor;
+  const onFloor = c.pose === 'sit' && c.h < SIT.floor && visual !== 'cactus';
   if (c.pose === 'walk') {
     const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
     legL = sw;
@@ -687,6 +712,18 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   } else if (visual === 'battery') {
     lean += 0.18;
     headX += 0.15;
+  } else if (visual === 'cactus' && c.pose === 'walk') {
+    // potted from the waist down: a shuffle of tiny steps, the pot waddling from side to side
+    const s = Math.sin(phase);
+    legL = s * POTTED.stride;
+    legR = -s * POTTED.stride;
+    side += s * POTTED.waddle;
+    bodyY = Math.abs(Math.cos(phase)) * 0.015;
+    armL *= 0.4;
+    armR *= 0.4;
+  } else if (visual === 'cactus' && c.pose === 'sit') {
+    // sitting potted, the legs straight down in the pot, which sits on the seat
+    legL = legR = 0;
   } else if (visual === 'blanket') lean += 0.12;
   else if (visual === 'flex') {
     armOut = 2.35;
@@ -815,7 +852,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     sat: cues.lie === 'back' ? (cues.sat ?? 0) : 0,
   };
   poseJoints(rig.joints, rig, c, t, k, limbs, life);
-  if (rig.band?.visible) rig.band.scale.setScalar(1 + Math.sin(t * 6 + c.id) * 0.05);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
     rig.body.position.x = Math.sin(t * 47 + c.id) * 0.022;
@@ -835,7 +871,48 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.orbit.rotation.y = t * 3.5 + c.id;
     rig.orbit.visible = c.pose !== 'lie';
   }
-  if (rig.knot?.visible) rig.knot.rotation.z = Math.sin(t * 2 + c.id) * 0.2;
+  if (rig.flash) {
+    const { bolts, glow } = rig.flash;
+    const f = flashAt(c.id, t);
+    const which = Math.floor((t + c.id * 0.77) / flashPeriod(c.id)) % bolts.length;
+    bolts.forEach((b, i) => (b.visible = f > 0 && i === which));
+    for (const m of glow) m.emissiveIntensity = f * 0.9;
+  }
+  for (const o of rig.spin ?? []) {
+    const {
+      spin = 0,
+      rattle = 0,
+      pulse = 0,
+      drift = 0,
+      upright = false,
+      standing = false,
+    } = o.userData as {
+      spin?: number;
+      rattle?: number;
+      pulse?: number;
+      drift?: number;
+      upright?: boolean;
+      standing?: boolean;
+    };
+    // put away while they lie down, as what floats over the head is, or, `standing`, while they sit too
+    if ((upright || standing) && !rig.cured) o.visible = c.pose !== 'lie' && !(standing && c.pose === 'sit');
+    if (drift) {
+      // floating loose of where it belongs, up and down to its own rhythm, but put back together lying down, to lie on
+      // whatever they lie on
+      const { home, apart } = o.userData as { home: THREE.Vector3; apart: THREE.Vector3 };
+      o.position.copy(home);
+      if (c.pose !== 'lie') o.position.add(apart).y += Math.sin(t * 1.7 + c.id + o.id * 1.3) * drift;
+      continue;
+    }
+    o.rotation.y = t * spin;
+    o.rotation.z = Math.sin(t * 38 + c.id) * rattle;
+    // pumping on a beat of about two a second
+    if (pulse) {
+      // from the shape it was built in, which may be squashed
+      const built = (o.userData.built ??= o.scale.clone()) as THREE.Vector3;
+      o.scale.copy(built).multiplyScalar(1 + pulse * Math.max(0, Math.sin(t * 13 + c.id)) ** 6);
+    }
+  }
   if (rig.steam?.visible) {
     rig.steam.children.forEach((p, i) => {
       const f = (t * 0.9 + i * 0.33 + c.id * 0.1) % 1;
@@ -927,7 +1004,7 @@ function poseBubble(rig: CharRig, c: Char, t: number, mood: Mood) {
   const size = bubbleScale(shown, t, prefersReducedMotion());
   sprite.visible = size > 0;
   sprite.scale.setScalar(BUBBLE_SIZE * size);
-  sprite.position.y = (c.pose === 'lie' ? 0.72 : 1.44) + Math.sin(t * 3 + c.id) * 0.04;
+  sprite.position.y = (c.pose === 'lie' ? 0.72 : rig.bubbleAt) + Math.sin(t * 3 + c.id) * 0.04;
 }
 
 /** How a person's limbs are posed this frame, from which the knees, elbows and waist follow. */
@@ -993,6 +1070,11 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
     elbowL = elbowR = 0;
     twist = 0;
   } else if (visual === 'flex' && c.pose !== 'lie') elbowL = elbowR = -1.5;
+  // potted from the waist down, the knees barely bend walking, so the feet stay in under the pot
+  if (visual === 'cactus' && c.pose === 'walk') {
+    kneeL = 0.06 + (kneeL - 0.08) * POTTED.knees;
+    kneeR = 0.06 + (kneeR - 0.08) * POTTED.knees;
+  }
   kneeL += life.kneeL;
   kneeR += life.kneeR;
   elbowL += life.elbowL;

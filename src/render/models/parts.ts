@@ -181,6 +181,19 @@ export const bowl = (r: number, h: number, t = 0.025, seg = 24) =>
 export const capsule = (r: number, len: number) =>
   cached(`k${r}|${len}`, () => new THREE.CapsuleGeometry(r, len, 6, 14));
 
+/** A tube along a smooth line through points, made once under a name and shared. */
+export const tube = (key: string, points: readonly (readonly [number, number, number])[], r: number) =>
+  cached(
+    `tube ${key}`,
+    () =>
+      new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z))),
+        points.length * 10,
+        r,
+        8,
+      ),
+  );
+
 /** A shape for joining with others: where it sits, and how far it is turned about each axis. */
 export type Piece = readonly [
   shape: THREE.BufferGeometry,

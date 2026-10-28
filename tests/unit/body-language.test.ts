@@ -8,6 +8,7 @@ import { SHOES } from '../../src/core/people';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
+import { BUBBLE_STANDING } from '../../src/render/bubbles';
 import { rattle } from '../../src/render/item-cues';
 import { buildCharacter, CAP_TIP, type CharRig, cureRig } from '../../src/render/models/character';
 import { HELD_SIZE } from '../../src/render/models/held';
@@ -17,6 +18,7 @@ import {
   blinkAt,
   CURE,
   expressionOf,
+  flashAt,
   hasNothingToDo,
   IDLE,
   idleAct,
@@ -25,6 +27,7 @@ import {
   moodOf,
   PATIENCE_SIGNS,
   poseChar,
+  POTTED,
   PRONE_TURN,
   rattleDip,
   RHYTHM,
@@ -560,6 +563,488 @@ describe('symptoms over the head', () => {
       const rig = buildCharacter(LAB_LOOK, undefined, visual);
       if (rig.bob) expect(rig.bobAt, visual).toBeGreaterThanOrEqual(0.3);
     }
+  });
+});
+
+describe('a symptom in place of the head', () => {
+  /** Whether a part of someone is drawn: shown itself, and every parent of it shown too. */
+  const shown = (o: THREE.Object3D) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (!p.visible) return false;
+    return true;
+  };
+  /** The hair on someone's head. */
+  const hair = (rig: CharRig) => rig.head.children.filter((o) => o.name === 'hair');
+
+  it("makes a scrambled noggin's head an egg with its top knocked off, the face still on it", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    expect(shown(rig.face.mouth)).toBe(true);
+    // the broken cap floats over it, among the stars
+    expect(rig.bob?.position.y).toBeGreaterThan(0.3);
+    expect(rig.orbit).toBeDefined();
+    expect(rig.head.scale.y).toBeGreaterThan(1);
+  });
+
+  it('leaves someone far out their own head, with the stars going round it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'dizzy');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(hair(rig).some(shown)).toBe(true);
+    expect(rig.orbit).toBeDefined();
+    expect(rig.head.scale.y).toBe(1);
+  });
+
+  it('gives the head back halfway through the cure, with the face where it was', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    const face = buildCharacter(LAB_LOOK).face.eyes.position.z;
+    const healed = { ...demoGuest(LAB_LOOK, 'dizzy'), outcome: 'healed' as const };
+    poseChar(rig, { ...healed, outcome: '' }, -1, 1, { style: null });
+    cureRig(rig, 0);
+    poseChar(rig, healed, CURE * 0.25, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(false);
+    poseChar(rig, healed, CURE * 0.75, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(hair(rig).every(shown)).toBe(true);
+    expect(rig.face.eyes.position.z).toBeCloseTo(face);
+    poseChar(rig, healed, CURE * 2, 1, { style: null });
+    expect(rig.head.scale.y).toBe(1);
+    expect(rig.props.some(shown)).toBe(false);
+  });
+
+  it('is simply gone for someone seen first already healed, as from a save', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'dizzy'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+    expect(rig.burst).toBeUndefined();
+  });
+
+  it('puts the floating cap away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'egg');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'dizzy'), pose: 'lie' }, 0, 1, { style: null });
+    expect(rig.bob?.visible).toBe(false);
+  });
+
+  it("makes a flat battery's head a battery, its last cell blinking and the face on its label", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    expect(rig.blink).toBeDefined();
+    // the battery is the head now, so nothing hovers over it
+    expect(rig.bob).toBeUndefined();
+    poseChar(rig, demoGuest(LAB_LOOK, 'battery'), 0, 1, { style: null });
+    const lit = rig.blink!.emissiveIntensity;
+    poseChar(rig, demoGuest(LAB_LOOK, 'battery'), Math.PI / 6, 1, { style: null });
+    expect(rig.blink!.emissiveIntensity).not.toBe(lit);
+  });
+
+  it("makes a stress head's head a kettle, the steam puffing out of its spout", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'steam');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect((rig.headMesh.material as THREE.MeshStandardMaterial).color.getHex()).not.toBe(LAB_LOOK.skin);
+    expect(hair(rig).some(shown)).toBe(false);
+    // the steam comes out of the whistle, off to the side of the head and up, not out of the top
+    expect(rig.steam!.position.x).toBeGreaterThan(0.3);
+    expect(rig.steam!.position.y).toBeGreaterThan(0.1);
+    expect(rig.head.scale.y).toBeGreaterThan(1);
+  });
+
+  it('gives a stress head their own skin back with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'steam');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'steam'), outcome: 'healed' }, 5, 1, { style: null });
+    expect((rig.headMesh.material as THREE.MeshStandardMaterial).color.getHex()).toBe(LAB_LOOK.skin);
+    expect(hair(rig).every(shown)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+  });
+
+  it("makes a noisy mind's head a boombox blaring, notes rising off it and its speakers pumping", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'gears');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    // the cog that used to turn over the head is gone
+    expect(rig.orbit).toBeUndefined();
+    expect(rig.steam?.children).toHaveLength(3);
+    const g = demoGuest(LAB_LOOK, 'noisy');
+    /** How big each pumping part is at a moment. */
+    const sizes = (t: number) => {
+      poseChar(rig, g, t, 1, { style: null });
+      return (rig.spin ?? []).map((o) => o.scale.x);
+    };
+    const beats = Array.from({ length: 20 }, (_, i) => sizes(i * 0.037));
+    expect(new Set(beats.map((b) => b.join())).size).toBeGreaterThan(1);
+  });
+
+  it('gives a noisy mind their head back with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'gears');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'noisy'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+    expect(rig.props.some(shown)).toBe(false);
+  });
+
+  it("grows a signpost out of the top of a lost guest's head, its arrows turning slowly every which way", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(shown(rig.face.eyes)).toBe(true);
+    // the compass that used to float over the head is gone
+    expect(rig.bob).toBeUndefined();
+    expect(rig.orbit).toBeUndefined();
+    const post = rig.props[0]!;
+    expect(post.parent).toBe(rig.head);
+    const g = demoGuest(LAB_LOOK, 'lost');
+    poseChar(rig, g, 0, 1, { style: null });
+    const facing = post.rotation.y;
+    poseChar(rig, g, 1, 1, { style: null });
+    expect(post.rotation.y).not.toBeCloseTo(facing);
+  });
+
+  it('puts the signpost away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'lost'), pose: 'lie' }, 0, 1, { style: null });
+    expect(rig.props[0]!.visible).toBe(false);
+    poseChar(rig, demoGuest(LAB_LOOK, 'lost'), 1, 1, { style: null });
+    expect(rig.props[0]!.visible).toBe(true);
+  });
+
+  it('takes the signpost away with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'lost'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(rig.props.some(shown)).toBe(false);
+    expect(rig.bubbleAt).toBe(BUBBLE_STANDING);
+  });
+
+  it('raises their bubble clear of the top of the signpost, so it never hides it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    rig.group.updateMatrixWorld(true);
+    const top = new THREE.Box3().setFromObject(rig.props[0]!).max.y;
+    expect(rig.bubbleAt).toBeGreaterThan(top);
+    expect(buildCharacter(LAB_LOOK).bubbleAt).toBe(BUBBLE_STANDING);
+  });
+
+  it("screws a tension headband's head down in a G-clamp, squashed under it, put away while they lie down", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'band');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBeLessThan(1);
+    expect(rig.head.scale.x * rig.wide).toBeGreaterThan(1);
+    const clamp = rig.props[0]!;
+    expect(clamp.parent).toBe(rig.head);
+    // the clamp keeps its own shape, however the head is squashed
+    clamp.updateMatrixWorld(true);
+    const size = new THREE.Vector3();
+    clamp.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), size);
+    expect(size.y).toBeCloseTo(size.x);
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'band'), pose: 'lie' }, 0, 1, { style: null });
+    expect(clamp.visible).toBe(false);
+    poseChar(rig, demoGuest(LAB_LOOK, 'band'), 1, 1, { style: null });
+    expect(clamp.visible).toBe(true);
+  });
+
+  it("makes a bad apple's head an apple core, the face on it and flies going round", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'rotten');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    // the old apple hanging over them is gone
+    expect(rig.bob).toBeUndefined();
+    expect(rig.spin?.length).toBeGreaterThan(0);
+  });
+
+  it("makes a blue screen's head an old monitor, the face on its screen", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'bluescreen');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    expect(shown(rig.face.mouth)).toBe(true);
+  });
+
+  it("makes crossed wires' head a wall plug, the face on it and its cable wound round and round them", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'wires');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    const wound = rig.props.filter((p) => p.parent === rig.torso);
+    expect(wound.length).toBeGreaterThanOrEqual(2);
+    // round them, wider than the body
+    rig.group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(wound[0]!);
+    expect(box.max.x - box.min.x).toBeGreaterThan(0.5);
+  });
+
+  it('stands someone snowed in in a snow globe, snowed up to the nose, the eyes clear over it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'snowcap');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(shown(rig.face.eyes)).toBe(true);
+    const globe = rig.props[0]!;
+    expect(globe.parent).toBe(rig.head);
+    rig.group.updateMatrixWorld(true);
+    const eyes = new THREE.Box3().setFromObject(rig.face.eyes);
+    const mouth = new THREE.Box3().setFromObject(rig.face.mouth);
+    const snow = globe.children.find(
+      (o) => o instanceof THREE.Mesh && (o.material as THREE.MeshStandardMaterial).color.getHex() === 0xffffff,
+    )!;
+    const top = new THREE.Box3().setFromObject(snow).max.y;
+    // the lumps on the drift reach a little higher than its top
+    expect(top).toBeLessThan(eyes.min.y + 0.08);
+    expect(top).toBeGreaterThan(mouth.max.y);
+    // the old cap of snow is gone
+    expect(rig.props).toHaveLength(1);
+  });
+
+  it('gives a tension headband, a bad apple, a blue screen, crossed wires and the snowed in their heads back with the cure', () => {
+    for (const [visual, id] of [
+      ['band', 'band'],
+      ['rotten', 'badapple'],
+      ['bluescreen', 'bluescreen'],
+      ['wires', 'wires'],
+      ['snowcap', 'snowedin'],
+    ] as const) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      poseChar(rig, { ...demoGuest(LAB_LOOK, id), outcome: 'healed' }, 5, 1, { style: null });
+      expect(shown(rig.headMesh), visual).toBe(true);
+      expect(rig.head.scale.y, visual).toBe(1);
+      expect(rig.props.some(shown), visual).toBe(false);
+    }
+  });
+
+  it('gives a flat battery their head back with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'battery'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(rig.head.scale.y).toBe(1);
+  });
+});
+
+describe('a symptom worn whole', () => {
+  /** The bottle someone bottled up stands in. */
+  const bottleOf = (rig: CharRig) => rig.props[0]!;
+
+  it('stands someone bottled up in a bottle, their head and face still there through the glass', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cork');
+    expect(rig.props).toHaveLength(1);
+    expect(bottleOf(rig).parent).toBe(rig.body);
+    expect(rig.headMesh.visible).toBe(true);
+    expect(rig.face.eyes.visible).toBe(true);
+    // the bottle reaches from below the knees to over the head
+    const box = new THREE.Box3().setFromObject(bottleOf(rig));
+    const head = new THREE.Box3().setFromObject(rig.headMesh);
+    expect(box.max.y).toBeGreaterThan(head.max.y);
+    expect(box.min.y).toBeLessThan(0.4);
+  });
+
+  it('shares one glass between everyone bottled up, drawn by itself as it is see-through', () => {
+    /** The see-through parts of someone's bottle. */
+    const glass = (rig: CharRig) => {
+      const found = new Set<THREE.Material>();
+      bottleOf(rig).traverse((o) => {
+        const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+        if (m?.transparent) found.add(m);
+      });
+      return [...found];
+    };
+    const a = glass(buildCharacter(LAB_LOOK, undefined, 'cork'));
+    expect(a).toHaveLength(1);
+    expect(glass(buildCharacter(LAB_LOOK, undefined, 'cork'))).toEqual(a);
+  });
+
+  it('shrinks the bottle away round them with the cure, not down to their feet', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cork');
+    const g = demoGuest(LAB_LOOK, 'bottled');
+    poseChar(rig, g, -1, 1, { style: null });
+    cureRig(rig, 0);
+    const healed = { ...g, outcome: 'healed' as const };
+    poseChar(rig, healed, CURE * 0.5, 1, { style: null });
+    expect(bottleOf(rig).scale.y).toBeCloseTo(0.5);
+    expect(bottleOf(rig).position.y).toBeGreaterThan(0.8);
+    poseChar(rig, healed, CURE * 2, 1, { style: null });
+    expect(bottleOf(rig).visible).toBe(false);
+  });
+
+  it('stands someone glass half empty in a tumbler, the water at the waist and their head dry above it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'glass');
+    expect(rig.props).toHaveLength(1);
+    expect(rig.bob).toBeUndefined();
+    expect(rig.headMesh.visible).toBe(true);
+    const tumbler = rig.props[0]!;
+    rig.group.updateMatrixWorld(true);
+    // the see-through parts are the glass, made the same throughout, and the water, its own
+    const glass = (tumbler.children[0] as THREE.Mesh).material as THREE.Material;
+    const water = tumbler.children.find((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material;
+      return m.transparent && m !== glass;
+    })!;
+    const waterTop = new THREE.Box3().setFromObject(water).max.y;
+    const whole = new THREE.Box3().setFromObject(tumbler);
+    const head = new THREE.Box3().setFromObject(rig.headMesh);
+    // half full: the water stops about halfway up the glass, well below the face, and the glass reaches over the head
+    expect((waterTop - whole.min.y) / (whole.max.y - whole.min.y)).toBeCloseTo(0.5, 1);
+    expect(waterTop).toBeLessThan((head.min.y + head.max.y) / 2 - 0.1);
+    expect(whole.max.y).toBeGreaterThan(head.max.y);
+    // and the tumbler is the same see-through glass for everyone
+    const again = buildCharacter(LAB_LOOK, undefined, 'glass').props[0]!;
+    expect((again.children[0] as THREE.Mesh).material).toBe((tumbler.children[0] as THREE.Mesh).material);
+  });
+
+  it('storms round the chest of someone with blocked qi, lightning flashing in it a bolt at a time', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'storm');
+    const g = demoGuest(LAB_LOOK, 'qi');
+    const { bolts, glow } = rig.flash!;
+    expect(rig.drips).toBeDefined();
+    let flashes = 0;
+    let dark = 0;
+    for (let t = 0; t < 8; t += 0.02) {
+      poseChar(rig, g, t, 1, { style: null });
+      const lit = bolts.filter((b) => b.visible).length;
+      // never more than one bolt at once, and the cloud glows only while one shows
+      expect(lit).toBeLessThanOrEqual(1);
+      expect(glow[0]!.emissiveIntensity > 0).toBe(lit === 1);
+      if (flashAt(g.id, t) > 0) flashes++;
+      else dark++;
+    }
+    // a flash now and then, dark most of the time
+    expect(flashes).toBeGreaterThan(0);
+    expect(dark).toBeGreaterThan(flashes * 5);
+  });
+
+  it('leaves someone scattered in pieces, the head over the shoulders and the body over the legs, each drifting', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    expect(rig.head.position.y - whole.head.position.y).toBeGreaterThan(0.15);
+    expect(rig.torso.position.y - whole.torso.position.y).toBeGreaterThan(0.15);
+    // the shards of them still go round
+    expect(rig.orbit).toBeDefined();
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    const heights = [0, 0.4, 0.8].map((t) => {
+      poseChar(rig, g, t, 1, { style: null });
+      return [rig.head.position.y, rig.torso.position.y];
+    });
+    expect(new Set(heights.map(([h]) => h)).size).toBeGreaterThan(1);
+    expect(new Set(heights.map(([, b]) => b)).size).toBeGreaterThan(1);
+  });
+
+  it('puts someone scattered together while they lie down, to lie on what they lie on', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), pose: 'lie' }, 0.3, 1, { style: null });
+    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
+    expect(rig.torso.position.toArray()).toEqual(whole.torso.position.toArray());
+  });
+
+  it('puts someone scattered back together with the cure, the head free to turn again', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
+    expect(rig.torso.position.toArray()).toEqual(whole.torso.position.toArray());
+    expect(rig.spin ?? []).not.toContain(rig.head);
+    expect(rig.spin ?? []).not.toContain(rig.torso);
+  });
+
+  it('ties someone knotted up in rope, round the chest and arms', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'knot');
+    expect(rig.props.length).toBeGreaterThan(0);
+    expect(rig.props.every((p) => p.parent === rig.torso)).toBe(true);
+    // wider than the shoulders, so it goes round the arms
+    rig.group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(rig.props[0]!);
+    expect(box.max.x - box.min.x).toBeGreaterThan(0.55);
+  });
+
+  it('sticks an office chair to someone chair-shaped, put away while they sit or lie on something real', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'chairshape');
+    const chair = rig.props[0]!;
+    expect(chair.parent).toBe(rig.body);
+    const g = demoGuest(LAB_LOOK, 'chairshaped');
+    for (const [pose, shows] of [
+      ['stand', true],
+      ['walk', true],
+      ['sit', false],
+      ['lie', false],
+    ] as const) {
+      poseChar(rig, { ...g, pose }, 1, 1, { style: null });
+      expect(chair.visible, pose).toBe(shows);
+    }
+  });
+
+  it('gives someone lobstered a claw for each hand and feelers, put away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'sunburn');
+    const { foreL, foreR } = rig.joints;
+    for (const fore of [foreL, foreR]) {
+      expect(rig.props.some((p) => p.parent === fore)).toBe(true);
+      expect(fore.getObjectByName('hand')!.visible).toBe(false);
+    }
+    const feelers = rig.props.find((p) => p.parent === rig.head && p.children.length > 2)!;
+    const g = demoGuest(LAB_LOOK, 'lobstered');
+    poseChar(rig, { ...g, pose: 'lie' }, 0, 1, { style: null });
+    expect(feelers.visible).toBe(false);
+    poseChar(rig, g, 1, 1, { style: null });
+    expect(feelers.visible).toBe(true);
+    const cured = buildCharacter(LAB_LOOK, undefined, 'sunburn');
+    poseChar(cured, { ...g, outcome: 'healed' }, 5, 1, { style: null });
+    for (const fore of [cured.joints.foreL, cured.joints.foreR])
+      expect(fore.getObjectByName('hand')!.visible).toBe(true);
+    expect(cured.props.some((p) => p.visible)).toBe(false);
+  });
+
+  it('gives someone with text neck a phone as big as their chest, held clear of them, put away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'neck');
+    const phone = rig.joints.foreR.getObjectByName('phone')!;
+    expect(phone.scale.x).toBeGreaterThan(2);
+    const g = demoGuest(LAB_LOOK, 'neck');
+    poseChar(rig, g, 1, 1, { style: null });
+    expect(phone.visible).toBe(true);
+    // in front of the chest, not through it
+    rig.group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(phone);
+    const chest = new THREE.Box3().setFromObject(rig.torso.getObjectByName('torso') ?? rig.torso);
+    expect(box.min.z).toBeGreaterThan(chest.min.z);
+    poseChar(rig, { ...g, pose: 'lie' }, 2, 1, { style: null });
+    expect(phone.visible).toBe(false);
+  });
+
+  it('leaves midlife fog its own cloud over the head', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cloud');
+    expect(rig.flash).toBeUndefined();
+    expect(rig.bob).toBeDefined();
+  });
+
+  /** How far someone's legs swing out at most over a few strides of walking. */
+  const swing = (rig: CharRig, g: Char) => {
+    let most = 0;
+    for (let i = 0; i < 40; i++) {
+      rig.walked = i * 0.05;
+      poseChar(rig, { ...g, pose: 'walk' }, i * 0.05, 1, { style: null });
+      most = Math.max(most, Math.abs(rig.legL.rotation.x), Math.abs(rig.legR.rotation.x));
+    }
+    return most;
+  };
+
+  it('pots someone spiritually dehydrated from the waist down, the head a cactus and the shirt gone green', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
+    expect(rig.headMesh.visible).toBe(false);
+    expect(rig.face.eyes.visible).toBe(true);
+    const shirt = rig.torso.getObjectByName('shirt') as THREE.Mesh;
+    expect((shirt.material as THREE.MeshStandardMaterial).color.getHex()).not.toBe(LAB_LOOK.top);
+    // the pot round the hips, on the body
+    expect(rig.props.some((p) => p.parent === rig.body)).toBe(true);
+  });
+
+  it('keeps their legs inside the pot: a shuffle walking, and straight down sitting, even on the floor', () => {
+    const g = demoGuest(LAB_LOOK, 'parched');
+    expect(swing(buildCharacter(LAB_LOOK, undefined, 'cactus'), g)).toBeLessThanOrEqual(POTTED.stride + 0.01);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
+    poseChar(rig, { ...g, pose: 'sit', h: 0 }, 0, 1, { style: null });
+    expect(rig.legL.rotation.x).toBeCloseTo(0);
+    expect(rig.legL.rotation.y).toBeCloseTo(0);
+  });
+
+  it('walks them as anyone does once the pot is gone with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
+    const healed = { ...demoGuest(LAB_LOOK, 'parched'), outcome: 'healed' as const };
+    poseChar(rig, healed, 5, 1, { style: null });
+    expect(rig.headMesh.visible).toBe(true);
+    expect(swing(rig, healed)).toBeGreaterThan(0.4);
   });
 });
 

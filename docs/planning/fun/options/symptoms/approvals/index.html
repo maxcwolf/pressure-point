@@ -1,0 +1,2337 @@
+<meta charset="utf-8" />
+<title>Symptom Model Approvals</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap"
+/>
+<style>
+  /* Layout: a row per ailment, newest decisions first in the summary; each row's variants side by side as cards, every
+   card the same four pictures in the same places (front, side, play size, the cure). */
+  :root {
+    --bg: #eef3f2;
+    --panel: #ffffff;
+    --fg: #182628;
+    --muted: #566a6c;
+    --line: #d3dedd;
+    --accent: #0f7a73;
+    --ok: #2f8a3e;
+    --ok-ink: #ffffff;
+    --warn: #e09a12;
+    --warn-ink: #2a1c00;
+    --todo: #5a7fb0;
+    --todo-ink: #ffffff;
+    --display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+    --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #101819;
+      --panel: #172223;
+      --fg: #e3eceb;
+      --muted: #9db0b1;
+      --line: #2a3a3c;
+      --accent: #43c3b8;
+      --ok: #57b866;
+      --ok-ink: #0c1a0e;
+      --warn: #f2b33d;
+      --warn-ink: #241700;
+      --todo: #84a8d8;
+      --todo-ink: #0d1726;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #101819;
+    --panel: #172223;
+    --fg: #e3eceb;
+    --muted: #9db0b1;
+    --line: #2a3a3c;
+    --accent: #43c3b8;
+    --ok: #57b866;
+    --ok-ink: #0c1a0e;
+    --warn: #f2b33d;
+    --warn-ink: #241700;
+    --todo: #84a8d8;
+    --todo-ink: #0d1726;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 36px 72px;
+  }
+  main {
+    max-width: 1360px;
+    margin: 0 auto;
+    display: grid;
+    gap: 44px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+  }
+  h2 {
+    font-size: 1.6rem;
+  }
+  h3 {
+    font-size: 1.08rem;
+    font-weight: 600;
+  }
+  p {
+    margin: 0;
+    max-width: 70ch;
+  }
+  .eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  header {
+    display: grid;
+    gap: 12px;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .summary {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .summary li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .summary a {
+    color: var(--fg);
+    font-weight: 700;
+  }
+  .summary .n {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .status {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .status.approved {
+    background: var(--ok);
+    color: var(--ok-ink);
+  }
+  .status.needs-work {
+    background: var(--warn);
+    color: var(--warn-ink);
+  }
+  .status.proposed {
+    background: var(--todo);
+    color: var(--todo-ink);
+  }
+  .ailment {
+    display: grid;
+    gap: 14px;
+    padding-top: 24px;
+    border-top: 2px solid var(--line);
+  }
+  .ail-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+  }
+  .room {
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .said span {
+    color: var(--muted);
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 318px), 1fr));
+    gap: 16px;
+  }
+  .card {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    min-width: 0;
+  }
+  .card.ref {
+    background: transparent;
+    border-style: dashed;
+  }
+  .card.ref h3 {
+    color: var(--muted);
+  }
+  .card.built {
+    border: 2px solid var(--ok);
+  }
+  .history ul {
+    margin: 0;
+    padding-left: 1.2em;
+    display: grid;
+    gap: 4px;
+  }
+  .said b:empty {
+    display: none;
+  }
+  .line {
+    font-size: 0.92rem;
+    min-height: 4.6em;
+  }
+  .views {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  figcaption {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .shot {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+    line-height: 0;
+    max-width: 100%;
+    border-radius: 6px;
+  }
+  .shot img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+  }
+  .shot:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .play-pair {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    overflow: hidden;
+  }
+  .shot.native img {
+    width: 200px;
+    max-width: none;
+  }
+  .play-pair .shot.native {
+    flex: none;
+  }
+  .cure img {
+    width: 100%;
+  }
+  .walks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  @media (min-width: 1100px) {
+    .cards {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .howto {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: grid;
+    gap: 6px;
+  }
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    background: rgb(8 14 15 / 0.9);
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox img {
+    max-width: min(1440px, 100%);
+    max-height: calc(100vh - 80px);
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  .lightbox .cap {
+    color: #e3eceb;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .lightbox button {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    font: 700 1rem var(--body);
+    background: #e3eceb;
+    color: #101819;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Symptoms you can see &#183; Round 10 &#183; 27 October 2026 &#183; Cut for 0.35.0</span>
+    <h1>Symptom model approvals</h1>
+    <p>
+      Option A, where the guest's body becomes the joke, goes in one ailment at a time, and only once you have approved
+      its model. Each ailment below shows its variants side by side, each with the same four pictures: the lab close-up
+      from the front and from the side, the guest at play size from a busy waiting room (real pixels, a guest about 33
+      pixels tall), and the cure.
+    </p>
+    <p>
+      <b>Round 10 is the cut for release 0.35.0.</b> The nineteen models approved by name ship in it, built in for every
+      guest; the switch for trying models out is gone from the game. Earworm 2 is still waiting on approval and stays
+      out of the release, kept on the branch claude/earworm-2-proposal for a later round.
+    </p>
+    <ul class="summary">
+      <li><a href="#earworm">Earworm</a> <span class="status proposed">Proposed</span></li>
+      <li><a href="#wires">Crossed Wires</a> <span class="status approved">Approved</span></li>
+      <li><a href="#neck">Text Neck</a> <span class="status approved">Approved</span></li>
+      <li><a href="#snowedin">Snowed In</a> <span class="status approved">Approved</span></li>
+      <li><a href="#lobstered">Lobstered</a> <span class="status approved">Approved</span></li>
+      <li><a href="#knotted">Knotted Up</a> <span class="status approved">Approved</span></li>
+      <li><a href="#band">Tension Headband</a> <span class="status approved">Approved</span></li>
+      <li><a href="#badapple">Bad Apple</a> <span class="status approved">Approved</span></li>
+      <li><a href="#bluescreen">Blue Screen</a> <span class="status approved">Approved</span></li>
+      <li><a href="#chairshaped">Chair-Shaped</a> <span class="status approved">Approved</span></li>
+      <li><a href="#scattered">Scattered</a> <span class="status approved">Approved</span></li>
+      <li><a href="#lost">Lost Their Way</a> <span class="status approved">Approved</span></li>
+      <li><a href="#noisy">Noisy Mind</a> <span class="status approved">Approved</span></li>
+      <li><a href="#qi">Blocked Qi</a> <span class="status approved">Approved</span></li>
+      <li><a href="#glasshalf">Glass Half Empty</a> <span class="status approved">Approved</span></li>
+      <li><a href="#steam">Stress Head</a> <span class="status approved">Approved</span></li>
+      <li><a href="#parched">Spiritually Dehydrated</a> <span class="status approved">Approved</span></li>
+      <li><a href="#bottled">Bottled Up</a> <span class="status approved">Approved</span></li>
+      <li><a href="#battery">Flat Battery</a> <span class="status approved">Approved</span></li>
+      <li><a href="#dizzy">Scrambled Noggin</a> <span class="status approved">Approved</span></li>
+    </ul>
+    <div class="howto history">
+      <b>Decided so far</b>
+      <ul>
+        <li>
+          <b>28 Oct, cut for 0.35.0.</b> Round 10 is the cut for release 0.35.0: the nineteen models approved by name
+          ship, built in for every guest, and the ?symptoms= switch for trying models out is gone from the game. Earworm
+          2 is still waiting on approval; it is kept on the branch claude/earworm-2-proposal, out of the release, for a
+          later round.
+        </li>
+        <li>
+          <b>27 Oct, round 10.</b> Wires 1 wound up approved, now built in. Neck 2 held clear approved, now built in.
+          Snowed 3, the globe snowed in to the nose, approved, now built in. Lobster 1&#x27;s second pass approved, now
+          built in. Earworm 2: the worm too long now, to be less than half the length; shown again below.
+        </li>
+        <li>
+          <b>27 Oct, round 9.</b> Knotted 1, the rope, approved, now built in; logged for later, a replacement that
+          makes the guest a pretzel themself, body and head. Vise 2, the G-clamp, approved, now built in. Apple 2, the
+          core, approved, now built in. Screen 1, the old monitor, approved, now built in. Chair 1, the chair stuck on,
+          approved, now built in. Earworm 2 with a longer worm, Wires 1 wound tighter and crazier, Neck 2 without the
+          phone in the shoulder, the snow globe with the snow halfway up the face, and Lobster 1 with better feelers and
+          claws, all shown again below. Knotted 2 as worn, Vise 1, Earworm 1, Wires 2, Neck 1, the snowman, Lobster 2,
+          Apple 1, Screen 2 and Chair 2 dropped.
+        </li>
+        <li>
+          <b>27 Oct, round 8.</b> Asked: prototype the next ten. Ten more ailments whose names are already a picture,
+          five found everywhere and one local one for each center, two models each, with today&#x27;s look beside them.
+        </li>
+        <li>
+          <b>27 Oct, round 7.</b> The mood bubble over the signpost raised clear of it, as asked, so it no longer hides
+          the post at play size; the marker over a selected guest rises with it.
+        </li>
+        <li>
+          <b>27 Oct, round 6.</b> Scattered 1, in pieces, approved, now built in; the jigsaw dropped. Lost 1, the
+          signpost, approved, now built in; the compass head dropped. That is all of the first ten approved and built
+          in.
+        </li>
+        <li>
+          <b>27 Oct, round 5.</b> Noisy Mind: the radio is the one; then Radio 2, the boombox, approved, now built in.
+          Blocked Qi: Cloud 2, the storm, approved, now built in. Next: Scattered and Lost Their Way, the last two of
+          the first ten.
+        </li>
+        <li>
+          <b>27 Oct, round 4.</b> Glass 1, the tumbler, approved, now built in; Glass 2 dropped. Noisy Mind: not sure
+          about the clockwork heads, other ideas wanted; of the beehive, radio and popcorn bucket, the radio is the one.
+          Blocked Qi: Cloud 2 to be reworked with a stormy animation, the lightning flashing rather than always there.
+        </li>
+        <li>
+          <b>27 Oct, round 3.</b> Kettle 1D approved, now built in. Cactus 2 with the shuffle approved, now built in.
+          Next from the first ten: Glass Half Empty, Noisy Mind and Blocked Qi.
+        </li>
+        <li>
+          <b>27 Oct, round 2.</b> Bottle approved, now built in. Battery 2 approved, now built in; Battery 1 dropped.
+          Stress Head: Kettle 1&#x27;s spout is better, but the handle should be taller, and &quot;less pronounced&quot;
+          meant less thick; maybe a grip at the top. Cactus 2 &quot;is great&quot;, but the legs may clip through the
+          pot walking; Cactus 1 dropped.
+        </li>
+        <li>
+          <b>27 Oct, round 1.</b> Scrambled Noggin: Egg 3 approved, now built in. Stress Head: Kettle 1 liked, with the
+          spout to join the kettle cleanly and the handle less prominent. Bottle: &quot;looks great&quot;, not yet
+          approved by name.
+        </li>
+      </ul>
+    </div>
+    <div class="howto">
+      <b>To answer</b>
+      <p>
+        Approve a model by name, such as "approve the kettle" or "battery 2", or say what to change. An approved model
+        gets built in for real and is on for every guest with that ailment. Nothing goes in without your approval by
+        name.
+      </p>
+    </div>
+    <p class="note">
+      Play-size pictures come from a day-900 Orchard Estate built by the playtest bot, at 1440&#215;900 with the camera
+      at its default distance, every unwell guest given one of the ailments on this page in turn. Close-ups are from the
+      model lab.
+    </p>
+  </header>
+
+  <section class="ailment" id="earworm">
+    <div class="ail-head">
+      <h2>Earworm</h2>
+      <span class="status proposed">Proposed</span>
+      <span class="room">Treated with Fork Eviction</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Okay, like less than half the length of the longer one.&quot;
+      <span
+        >Still waiting, and not in 0.35.0: kept on the branch claude/earworm-2-proposal for a later round. Round
+        8&#x27;s and round 9&#x27;s worms on the left, the new one on the right. Approve it by name, or say what to
+        change.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card ref">
+        <h3>Round 8 &#183; Earworm 2</h3>
+        <p class="line">
+          A big pair of headphones on the guest, the worm poking out of one cup and nodding, notes of the jingle rising
+          off them as off the boombox.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="worm2-front.webp">
+              <img src="worm2-front.webp" alt="Round 8 &#183; Earworm 2, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="worm2-side.webp">
+              <img src="worm2-side.webp" alt="Round 8 &#183; Earworm 2, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r82-full.webp">
+              <img src="worm2-play.webp" alt="Round 8 &#183; Earworm 2 at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="worm2-anim-front.webp">
+              <img
+                src="worm2-anim-front.webp"
+                alt="Round 8 &#183; Earworm 2 moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="worm2-anim-game.webp">
+              <img src="worm2-anim-game.webp" alt="Round 8 &#183; Earworm 2 moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+      </article>
+      <article class="card ref">
+        <h3>Round 9 &#183; Longer worm</h3>
+        <p class="line">
+          The same big headphones, the worm several times as long: out of the left cup, round behind the neck and up in
+          a tall arch over the head.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="worm2b-front.webp">
+              <img src="worm2b-front.webp" alt="Round 9 &#183; Longer worm, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="worm2b-side.webp">
+              <img src="worm2b-side.webp" alt="Round 9 &#183; Longer worm, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r9r-full.webp">
+              <img src="worm2b-play.webp" alt="Round 9 &#183; Longer worm at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="worm2b-anim-front.webp">
+              <img
+                src="worm2b-anim-front.webp"
+                alt="Round 9 &#183; Longer worm moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="worm2b-anim-game.webp">
+              <img src="worm2b-anim-game.webp" alt="Round 9 &#183; Longer worm moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Earworm 2 &#183; Shorter worm</h3>
+        <p class="line">
+          The same big headphones, the worm a third the length of round 9&#x27;s: out of the left cup, curling up the
+          side of the head and over the cup, its head nodding out front at the temple, the notes rising off the other
+          side.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="worm2c-front.webp">
+              <img src="worm2c-front.webp" alt="Earworm 2 &#183; Shorter worm, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="worm2c-side.webp">
+              <img src="worm2c-side.webp" alt="Earworm 2 &#183; Shorter worm, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r10r-full.webp">
+              <img src="worm2c-play.webp" alt="Earworm 2 &#183; Shorter worm at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="worm2c-anim-front.webp">
+              <img
+                src="worm2c-anim-front.webp"
+                alt="Earworm 2 &#183; Shorter worm moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="worm2c-anim-game.webp">
+              <img
+                src="worm2c-anim-game.webp"
+                alt="Earworm 2 &#183; Shorter worm moving, from the game"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="worm2c-cure.webp">
+            <img
+              src="worm2c-cure.webp"
+              alt="Earworm 2 &#183; Shorter worm cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="wires">
+    <div class="ail-head">
+      <h2>Crossed Wires</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Electro Rewiring</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;New Wound up approved.&quot;
+      <span
+        >Built in: every guest with Crossed Wires has it, in place of the tangle over the head, no switch needed.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Wires 1 &#183; Built in</h3>
+        <p class="line">
+          The head a white wall plug, two brass prongs out of the top and the face on its front, its black cable and an
+          orange extension cord wound round and round them from the shoulders to the thighs, two loose plugs dangling
+          off the ends.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="plug-front.webp">
+              <img src="plug-front.webp" alt="Wires 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="plug-side.webp">
+              <img src="plug-side.webp" alt="Wires 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r10b-full.webp">
+              <img src="plug-play.webp" alt="Wires 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="plug-cure.webp">
+            <img src="plug-cure.webp" alt="Wires 1 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest given Crossed Wires, and climbing onto a reiki
+          table in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="plug-queue.webp">
+            <img src="plug-queue.webp" alt="Queuing at the front desk, a crowd of them" loading="lazy" />
+          </button>
+          <figcaption>Queuing at the front desk, a crowd of them</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="plug-desk.webp">
+            <img src="plug-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="plug-mat.webp">
+            <img src="plug-mat.webp" alt="Lying on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="plug-table.webp">
+            <img src="plug-table.webp" alt="Face down on a massage table" loading="lazy" />
+          </button>
+          <figcaption>Face down on a massage table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="plug-reiki.webp">
+            <img src="plug-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="plug-lab-sit.webp">
+            <img src="plug-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="plug-lab-lie.webp">
+            <img src="plug-lab-lie.webp" alt="Lying, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="neck">
+    <div class="ail-head">
+      <h2>Text Neck</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Cranio-sacral Unscrolling</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Neck Held clear approved.&quot;
+      <span>Built in: every guest with Text Neck has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Neck 2 &#183; Built in</h3>
+        <p class="line">
+          The phone in their hand as big as their chest, held out low in front of them, clear of the shoulder, its
+          screen glowing, their own head bent over it. Put away while they lie down, where it would stick out over the
+          edge of a table.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="phone-front.webp">
+              <img src="phone-front.webp" alt="Neck 2 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="phone-side.webp">
+              <img src="phone-side.webp" alt="Neck 2 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r10b-full.webp">
+              <img src="phone-play.webp" alt="Neck 2 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="phone-cure.webp">
+            <img src="phone-cure.webp" alt="Neck 2 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest given Text Neck, and climbing onto a reiki table
+          in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="phone-desk.webp">
+            <img src="phone-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="phone-table.webp">
+            <img src="phone-table.webp" alt="Lying on a massage table, the phone put away" loading="lazy" />
+          </button>
+          <figcaption>Lying on a massage table, the phone put away</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="phone-reiki.webp">
+            <img src="phone-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="phone-lab-sit.webp">
+            <img src="phone-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="phone-lab-lie.webp">
+            <img src="phone-lab-lie.webp" alt="Lying, in the lab: the phone put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: the phone put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="snowedin">
+    <div class="ail-head">
+      <h2>Snowed In</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Alpine Thaw</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;New snowed in approved.&quot;
+      <span
+        >Built in: every Snowed In guest has it, in place of the cap of snow, no switch needed. The snow covers the
+        mouth, so the smile or frown shows only in the mood bubble.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Snowed 3 &#183; Built in</h3>
+        <p class="line">
+          The head and shoulders inside a snow globe on a wooden base, the snow heaped up inside it to the nose and the
+          flakes swirling over it, only the eyes and the top of the head clear. It stays on lying down, the globe
+          resting on the mat.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="globe-front.webp">
+              <img src="globe-front.webp" alt="Snowed 3 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="globe-side.webp">
+              <img src="globe-side.webp" alt="Snowed 3 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r10b-full.webp">
+              <img src="globe-play.webp" alt="Snowed 3 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="globe-anim-front.webp">
+              <img
+                src="globe-anim-front.webp"
+                alt="Snowed 3 &#183; Built in moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="globe-anim-game.webp">
+              <img src="globe-anim-game.webp" alt="Snowed 3 &#183; Built in moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="globe-cure.webp">
+            <img
+              src="globe-cure.webp"
+              alt="Snowed 3 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Snowed In, and climbing onto a reiki table in the
+          lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="globe-queue.webp">
+            <img src="globe-queue.webp" alt="Queuing at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Queuing at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="globe-desk.webp">
+            <img src="globe-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="globe-mat.webp">
+            <img src="globe-mat.webp" alt="Lying on a sound-bath mat, globe and all" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat, globe and all</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="globe-reiki.webp">
+            <img src="globe-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="globe-lab-sit.webp">
+            <img src="globe-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="globe-lab-lie.webp">
+            <img src="globe-lab-lie.webp" alt="Lying, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="lobstered">
+    <div class="ail-head">
+      <h2>Lobstered</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Swedish Cool-down</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;New lobster approved.&quot;
+      <span>Built in: every Lobstered guest has it, no switch needed. Still lobster red behind the sunglasses.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Lobster 1 &#183; Built in</h3>
+        <p class="line">
+          A big crusher claw for each hand, and two long feelers out of the forehead, thick at the root and sweeping
+          back in thin whips, with a pair of short ones out front. The feelers are put away while they lie down, as they
+          would sweep back through the table; the claws stay.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="lobster-front.webp">
+              <img src="lobster-front.webp" alt="Lobster 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="lobster-side.webp">
+              <img src="lobster-side.webp" alt="Lobster 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r10b-full.webp">
+              <img src="lobster-play.webp" alt="Lobster 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="lobster-cure.webp">
+            <img
+              src="lobster-cure.webp"
+              alt="Lobster 1 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Lobstered, and climbing onto a reiki table in the
+          lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="lobster-desk.webp">
+            <img src="lobster-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="lobster-table.webp">
+            <img src="lobster-table.webp" alt="On a massage table, the feelers put away" loading="lazy" />
+          </button>
+          <figcaption>On a massage table, the feelers put away</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="lobster-mat.webp">
+            <img src="lobster-mat.webp" alt="Lying on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="lobster-reiki.webp">
+            <img src="lobster-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="lobster-lab-sit.webp">
+            <img src="lobster-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="lobster-lab-lie.webp">
+            <img src="lobster-lab-lie.webp" alt="Lying, in the lab: the feelers put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: the feelers put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="knotted">
+    <div class="ail-head">
+      <h2>Knotted Up</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Deep Tissue Untangling</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Knotted 1 approved.&quot;
+      <span
+        >Built in: every guest who is Knotted Up has it, no switch needed. Logged for later, as asked: a replacement
+        that makes the guest an actual pretzel, body and head, or another whole-body knot.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Knotted 1 &#183; Built in</h3>
+        <p class="line">
+          Three coils of rope round the chest and arms and a big knot on the front, the ends hanging. It stays on lying,
+          seated and climbing, and the cure takes it off.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="rope-front.webp">
+              <img src="rope-front.webp" alt="Knotted 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="rope-side.webp">
+              <img src="rope-side.webp" alt="Knotted 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r9b-full.webp">
+              <img src="rope-play.webp" alt="Knotted 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="rope-cure.webp">
+            <img
+              src="rope-cure.webp"
+              alt="Knotted 1 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Knotted Up, and climbing onto a reiki table in the
+          lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="rope-mat.webp">
+            <img src="rope-mat.webp" alt="Lying on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="rope-desk.webp">
+            <img src="rope-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="rope-reiki.webp">
+            <img src="rope-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="rope-lab-sit.webp">
+            <img src="rope-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="rope-lab-lie.webp">
+            <img src="rope-lab-lie.webp" alt="Lying, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="band">
+    <div class="ail-head">
+      <h2>Tension Headband</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Swedish Unwinding</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Go with Vise 2, approved.&quot;
+      <span>Built in: every guest with a Tension Headband has it, in place of the pulsing band, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Vise 2 &#183; Built in</h3>
+        <p class="line">
+          A red G-clamp screwed down on the crown, the head squashed short and wide. The clamp is put away while they
+          lie down, so it never pokes off the end of a table; the cure takes it off and the head springs back.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="clamp-front.webp">
+              <img src="clamp-front.webp" alt="Vise 2 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="clamp-side.webp">
+              <img src="clamp-side.webp" alt="Vise 2 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r9b-full.webp">
+              <img src="clamp-play.webp" alt="Vise 2 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="clamp-cure.webp">
+            <img src="clamp-cure.webp" alt="Vise 2 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest given a Tension Headband, and climbing onto a
+          reiki table in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="clamp-desk.webp">
+            <img src="clamp-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="clamp-table.webp">
+            <img src="clamp-table.webp" alt="Face down on a massage table, the clamp put away" loading="lazy" />
+          </button>
+          <figcaption>Face down on a massage table, the clamp put away</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="clamp-reiki.webp">
+            <img src="clamp-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="clamp-lab-sit.webp">
+            <img src="clamp-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="clamp-lab-lie.webp">
+            <img src="clamp-lab-lie.webp" alt="Lying, in the lab: the clamp put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: the clamp put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="badapple">
+    <div class="ail-head">
+      <h2>Bad Apple</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Pressing of Rebirth</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Go with Apple 2.&quot;
+      <span>Built in: every guest who is a Bad Apple has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Apple 2 &#183; Built in</h3>
+        <p class="line">
+          The head an apple core, red top and bottom and bitten to the pips between, a stalk on top and flies going
+          round it. Their face on the bitten middle.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="core-front.webp">
+              <img src="core-front.webp" alt="Apple 2 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="core-side.webp">
+              <img src="core-side.webp" alt="Apple 2 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r9b-full.webp">
+              <img src="core-play.webp" alt="Apple 2 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="core-anim-front.webp">
+              <img
+                src="core-anim-front.webp"
+                alt="Apple 2 &#183; Built in moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="core-anim-game.webp">
+              <img src="core-anim-game.webp" alt="Apple 2 &#183; Built in moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="core-cure.webp">
+            <img src="core-cure.webp" alt="Apple 2 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest a Bad Apple, and climbing onto a reiki table in
+          the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="core-queue.webp">
+            <img src="core-queue.webp" alt="Queuing, a crowd of them" loading="lazy" />
+          </button>
+          <figcaption>Queuing, a crowd of them</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="core-mat.webp">
+            <img src="core-mat.webp" alt="Lying on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="core-reiki.webp">
+            <img src="core-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="core-lab-sit.webp">
+            <img src="core-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="core-lab-lie.webp">
+            <img src="core-lab-lie.webp" alt="Lying, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="bluescreen">
+    <div class="ail-head">
+      <h2>Blue Screen</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Hard Reset</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Screen 1 approved.&quot;
+      <span
+        >Built in: every guest with a Blue Screen has it, no switch needed. Still frozen mid-sentence, one hand
+        raised.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Screen 1 &#183; Built in</h3>
+        <p class="line">
+          The head an old beige monitor, the face on its blue screen over two lines of white error text.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="crt-front.webp">
+              <img src="crt-front.webp" alt="Screen 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="crt-side.webp">
+              <img src="crt-side.webp" alt="Screen 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r9b-full.webp">
+              <img src="crt-play.webp" alt="Screen 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="crt-cure.webp">
+            <img src="crt-cure.webp" alt="Screen 1 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest given a Blue Screen, and climbing onto a reiki
+          table in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="crt-desk.webp">
+            <img src="crt-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="crt-mat.webp">
+            <img src="crt-mat.webp" alt="Lying on a mat" loading="lazy" />
+          </button>
+          <figcaption>Lying on a mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="crt-reiki.webp">
+            <img src="crt-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="crt-lab-sit.webp">
+            <img src="crt-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="crt-lab-lie.webp">
+            <img src="crt-lab-lie.webp" alt="Lying, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="chairshaped">
+    <div class="ail-head">
+      <h2>Chair-Shaped</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Kneadmaster Unfolding</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Chair 1 approved also.&quot;
+      <span
+        >Built in: every Chair-Shaped guest has it, in place of the cushion, no switch needed. Still bent at the hips
+        and knees.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Chair 1 &#183; Built in</h3>
+        <p class="line">
+          A whole office chair stuck to them, seat, back and arms, carried about on their own bent legs. Put away while
+          they sit on a real chair or lie down, so it never doubles up with the seat or pokes off a table. Its play-size
+          picture is from round 8, the model unchanged.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="chair-front.webp">
+              <img src="chair-front.webp" alt="Chair 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="chair-side.webp">
+              <img src="chair-side.webp" alt="Chair 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r81-full.webp">
+              <img src="chair-play.webp" alt="Chair 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="chair-anim-front.webp">
+              <img
+                src="chair-anim-front.webp"
+                alt="Chair 1 &#183; Built in walking, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="chair-anim-game.webp">
+              <img src="chair-anim-game.webp" alt="Chair 1 &#183; Built in walking, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Walking, moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="chair-cure.webp">
+            <img src="chair-cure.webp" alt="Chair 1 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Chair-Shaped, and climbing onto a reiki table in
+          the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="chair-queue.webp">
+            <img src="chair-queue.webp" alt="Walking through the waiting room" loading="lazy" />
+          </button>
+          <figcaption>Walking through the waiting room</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="chair-desk.webp">
+            <img src="chair-desk.webp" alt="Seated at the front desk, the chair put away" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk, the chair put away</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="chair-reiki.webp">
+            <img src="chair-reiki.webp" alt="Sitting up on a reiki table, the chair put away" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table, the chair put away</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="chair-lab-sit.webp">
+            <img src="chair-lab-sit.webp" alt="Seated, in the lab: put away" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab: put away</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="chair-lab-lie.webp">
+            <img src="chair-lab-lie.webp" alt="Lying, in the lab: put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="scattered">
+    <div class="ail-head">
+      <h2>Scattered</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Crystal Gathering (crystals)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Scattered 1 is approved.&quot;
+      <span>Built in: every Scattered guest has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Scattered 1 &#183; Built in</h3>
+        <p class="line">
+          The head floating a hand&#x27;s width over the shoulders and the body over the legs, each a little askew and
+          drifting up and down on its own, the shards still round them. Lying down they pull together, so the head stays
+          on the table or mat, as the shards are put away then; the cure puts them back together for good.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="pieces-front.webp">
+              <img src="pieces-front.webp" alt="Scattered 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="pieces-side.webp">
+              <img src="pieces-side.webp" alt="Scattered 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r72-full.webp">
+              <img src="pieces-play.webp" alt="Scattered 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="pieces-anim-front.webp">
+              <img
+                src="pieces-anim-front.webp"
+                alt="Scattered 1 &#183; Built in moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="pieces-anim-game.webp">
+              <img src="pieces-anim-game.webp" alt="Scattered 1 &#183; Built in moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="pieces-cure.webp">
+            <img
+              src="pieces-cure.webp"
+              alt="Scattered 1 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Scattered, and climbing onto tables in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="pieces-mat.webp">
+            <img src="pieces-mat.webp" alt="Lying on a sound-bath mat, together" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat, together</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="pieces-desk.webp">
+            <img src="pieces-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="pieces-reiki.webp">
+            <img src="pieces-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="pieces-lab-sit.webp">
+            <img src="pieces-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="pieces-lab-lie.webp">
+            <img src="pieces-lab-lie.webp" alt="Lying, in the lab: together, the shards put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: together, the shards put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="lost">
+    <div class="ail-head">
+      <h2>Lost Their Way</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Vision Quest (shaman)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Lost 1 approved.&quot;
+      <span
+        >Built in: every guest who has Lost Their Way has it, in place of the floating compass, no switch needed.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Lost 1 &#183; Built in</h3>
+        <p class="line">
+          A wooden signpost growing out of the top of the head, four arrows pointing every which way and a red tip on
+          top, the whole post turning slowly. Their own head and face. It is put away while they lie down, as the old
+          compass was, so it never pokes off the end of a table. Their mood bubble sits up over the top of the post, so
+          it never hides it at play size.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="signpost-front.webp">
+              <img src="signpost-front.webp" alt="Lost 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="signpost-side.webp">
+              <img src="signpost-side.webp" alt="Lost 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r72-full.webp">
+              <img src="signpost-play.webp" alt="Lost 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="signpost-anim-front.webp">
+              <img
+                src="signpost-anim-front.webp"
+                alt="Lost 1 &#183; Built in moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="signpost-anim-game.webp">
+              <img src="signpost-anim-game.webp" alt="Lost 1 &#183; Built in moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="signpost-cure.webp">
+            <img
+              src="signpost-cure.webp"
+              alt="Lost 1 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Lost Their Way, and climbing onto tables in the
+          lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="signpost-walk.webp">
+            <img src="signpost-walk.webp" alt="Walking past the front desk" loading="lazy" />
+          </button>
+          <figcaption>Walking past the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="signpost-mat.webp">
+            <img src="signpost-mat.webp" alt="Lying on a mat, the signpost put away" loading="lazy" />
+          </button>
+          <figcaption>Lying on a mat, the signpost put away</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="signpost-reiki.webp">
+            <img src="signpost-reiki.webp" alt="Sitting up on a reiki table" loading="lazy" />
+          </button>
+          <figcaption>Sitting up on a reiki table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="signpost-lab-sit.webp">
+            <img src="signpost-lab-sit.webp" alt="Seated, in the lab" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="signpost-lab-lie.webp">
+            <img src="signpost-lab-lie.webp" alt="Lying, in the lab: the signpost put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: the signpost put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="noisy">
+    <div class="ail-head">
+      <h2>Noisy Mind</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Sound Bath Quieting (sound)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Noisy Mind: Boombox approved.&quot;
+      <span>Built in: every guest with Noisy Mind has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Radio 2 &#183; Built in</h3>
+        <p class="line">
+          The head a black boombox, a big speaker either side of the face on the silver cassette deck, buttons along the
+          top and a handle over it. The speakers pump on the beat, the aerial rattles, the set shakes a little and notes
+          of music rise off it.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="boombox-front.webp">
+              <img src="boombox-front.webp" alt="Radio 2 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="boombox-side.webp">
+              <img src="boombox-side.webp" alt="Radio 2 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r61-full.webp">
+              <img src="boombox-play.webp" alt="Radio 2 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="boombox-anim-front.webp">
+              <img
+                src="boombox-anim-front.webp"
+                alt="Radio 2 &#183; Built in moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="boombox-anim-game.webp">
+              <img src="boombox-anim-game.webp" alt="Radio 2 &#183; Built in moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="boombox-cure.webp">
+            <img
+              src="boombox-cure.webp"
+              alt="Radio 2 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">Checked in the day-900 Orchard save with every unwell guest given Noisy Mind.</p>
+        <figure>
+          <button type="button" class="shot" data-full="boombox-wait.webp">
+            <img src="boombox-wait.webp" alt="Waiting at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Waiting at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="boombox-mat.webp">
+            <img src="boombox-mat.webp" alt="Lying on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="qi">
+    <div class="ail-head">
+      <h2>Blocked Qi</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Needling Unblocking (acupuncture)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Blocked Qi Cloud 2 storm approved.&quot;
+      <span
+        >Built in: every guest with Blocked Qi has it, no switch needed. It has a look of its own now, so Midlife Fog
+        keeps its cloud over the head.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Cloud 2 &#183; Built in</h3>
+        <p class="line">
+          A gray storm cloud round the chest, churning slowly round them, rain falling from under it, and every few
+          seconds lightning flashing a bolt at a time and lighting it from inside, each guest on their own beat.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="storm-front.webp">
+              <img src="storm-front.webp" alt="Cloud 2 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="storm-side.webp">
+              <img src="storm-side.webp" alt="Cloud 2 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r61-full.webp">
+              <img src="storm-play.webp" alt="Cloud 2 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="storm-anim-front.webp">
+              <img
+                src="storm-anim-front.webp"
+                alt="Cloud 2 &#183; Built in moving, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="storm-anim-game.webp">
+              <img src="storm-anim-game.webp" alt="Cloud 2 &#183; Built in moving, from the game" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>Moving: from the front and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="storm-cure.webp">
+            <img src="storm-cure.webp" alt="Cloud 2 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">Checked in the day-900 Orchard save with every unwell guest given Blocked Qi.</p>
+        <figure>
+          <button type="button" class="shot" data-full="storm-table.webp">
+            <img src="storm-table.webp" alt="Face down on the needling table" loading="lazy" />
+          </button>
+          <figcaption>Face down on the needling table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="storm-desk.webp">
+            <img src="storm-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="glasshalf">
+    <div class="ail-head">
+      <h2>Glass Half Empty</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Crystal Refilling (crystal bowls)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Glass 1 tumbler is approved.&quot;
+      <span>Built in: every guest who is Glass Half Empty has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Glass 1 &#183; Built in</h3>
+        <p class="line">
+          The whole guest standing in a tall clear tumbler, the water up to the waist and the top half empty, their own
+          head and face dry in the empty half, the legs out of the bottom. The glass and the water are each one
+          see-through material shared by every guest who has them.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="tumbler-front.webp">
+              <img src="tumbler-front.webp" alt="Glass 1 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="tumbler-side.webp">
+              <img src="tumbler-side.webp" alt="Glass 1 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r51-full.webp">
+              <img src="tumbler-play.webp" alt="Glass 1 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="tumbler-cure.webp">
+            <img
+              src="tumbler-cure.webp"
+              alt="Glass 1 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Glass Half Empty, and seated in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="tumbler-mat.webp">
+            <img src="tumbler-mat.webp" alt="Lying on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="tumbler-bowls.webp">
+            <img src="tumbler-bowls.webp" alt="Two at the crystal bowls" loading="lazy" />
+          </button>
+          <figcaption>Two at the crystal bowls</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="tumbler-sit.webp">
+            <img src="tumbler-sit.webp" alt="Seated" loading="lazy" />
+          </button>
+          <figcaption>Seated</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="steam">
+    <div class="ail-head">
+      <h2>Stress Head</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Hot Stone (massage)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Kettle 1D is approved.&quot;
+      <span>Built in: every guest with Stress Head has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Kettle 1D &#183; Built in</h3>
+        <p class="line">
+          The head a red enamel kettle under a steel lid, a tall thin steel handle with a wooden grip, and a spout
+          growing out of the cheek, the steam puffing out of its whistle.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="kettle-front.webp">
+              <img src="kettle-front.webp" alt="Kettle 1D &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="kettle-side.webp">
+              <img src="kettle-side.webp" alt="Kettle 1D &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r41-full.webp">
+              <img src="kettle-play.webp" alt="Kettle 1D &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="kettle-cure.webp">
+            <img
+              src="kettle-cure.webp"
+              alt="Kettle 1D &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">Checked in the day-900 Orchard save with every unwell guest given Stress Head.</p>
+        <figure>
+          <button type="button" class="shot" data-full="kettle-table.webp">
+            <img src="kettle-table.webp" alt="On the hot-stone table, a practitioner at work" loading="lazy" />
+          </button>
+          <figcaption>On the hot-stone table, a practitioner at work</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="kettle-desk.webp">
+            <img src="kettle-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="parched">
+    <div class="ail-head">
+      <h2>Spiritually Dehydrated</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Sweat Lodge (shaman)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Cactus 2 Shuffle is approved.&quot;
+      <span
+        >Built in: every guest who is Spiritually Dehydrated has it, no switch needed. Once cured, they walk as anyone
+        does.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Cactus 2 &#183; Built in, shuffling</h3>
+        <p class="line">
+          The head a ribbed cactus with a pink flower, the shirt gone green, and a terracotta pot from the waist down.
+          They shuffle in tiny steps with a waddle, so the legs stay in the pot, and sit with the legs straight down in
+          it.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="cactus-front.webp">
+              <img src="cactus-front.webp" alt="Cactus 2 &#183; Built in, shuffling, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="cactus-side.webp">
+              <img src="cactus-side.webp" alt="Cactus 2 &#183; Built in, shuffling, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r41-full.webp">
+              <img src="cactus-play.webp" alt="Cactus 2 &#183; Built in, shuffling at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="cactus-walk-side.webp">
+              <img
+                src="cactus-walk-side.webp"
+                alt="Cactus 2 &#183; Built in, shuffling walking, from the side"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="cactus-walk-game.webp">
+              <img
+                src="cactus-walk-game.webp"
+                alt="Cactus 2 &#183; Built in, shuffling walking, from the game"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>Walking, moving: from the side and from the game's angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="cactus-cure.webp">
+            <img
+              src="cactus-cure.webp"
+              alt="Cactus 2 &#183; Built in, shuffling cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">Checked in the day-900 Orchard save with every unwell guest Spiritually Dehydrated.</p>
+        <figure>
+          <button type="button" class="shot" data-full="cactus-desk.webp">
+            <img src="cactus-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="cactus-lie.webp">
+            <img src="cactus-lie.webp" alt="Lying down in the sweat lodge" loading="lazy" />
+          </button>
+          <figcaption>Lying down in the sweat lodge</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="bottled">
+    <div class="ail-head">
+      <h2>Bottled Up</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Cupping (acupuncture)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Bottle is approved.&quot;
+      <span>Built in: every guest who is Bottled Up has it, no switch needed.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Bottle &#183; Built in</h3>
+        <p class="line">
+          The whole guest in a big green bottle, corked over the head, a cream label with a red stripe round the middle,
+          legs out of the bottom. One see-through glass shared by every bottled guest. The bottle shrinks away round its
+          middle in the cure.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="bottle-front.webp">
+              <img src="bottle-front.webp" alt="Bottle &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="bottle-side.webp">
+              <img src="bottle-side.webp" alt="Bottle &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r31-full.webp">
+              <img src="bottle-play.webp" alt="Bottle &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="bottle-cure.webp">
+            <img src="bottle-cure.webp" alt="Bottle &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">
+          Checked in the day-900 Orchard save with every unwell guest Bottled Up, and climbing onto a table in the lab.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-table.webp">
+            <img src="bottle-table.webp" alt="Face down on a massage table" loading="lazy" />
+          </button>
+          <figcaption>Face down on a massage table</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-mat.webp">
+            <img src="bottle-mat.webp" alt="Lying back on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying back on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-desk.webp">
+            <img src="bottle-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="bottle-climb.webp">
+            <img src="bottle-climb.webp" alt="Climbing onto a massage table" loading="lazy" />
+          </button>
+          <figcaption>Climbing onto a massage table</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="battery">
+    <div class="ail-head">
+      <h2>Flat Battery</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Electro-acupuncture (acupuncture)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Battery 2, battery head is good. Approve.&quot;
+      <span>Built in: every guest with a Flat Battery has it, no switch needed. The slump stays.</span>
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Battery 2 &#183; Built in</h3>
+        <p class="line">
+          The head a battery on its side, the silver end out to one side, the gauge along the top with the last cell
+          blinking red, and the face on a cream label on its front.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="battery-front.webp">
+              <img src="battery-front.webp" alt="Battery 2 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="battery-side.webp">
+              <img src="battery-side.webp" alt="Battery 2 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r31-full.webp">
+              <img src="battery-play.webp" alt="Battery 2 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="battery-cure.webp">
+            <img
+              src="battery-cure.webp"
+              alt="Battery 2 &#183; Built in cured: before, in the puff, after"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">Checked in the day-900 Orchard save with every unwell guest given a Flat Battery.</p>
+        <figure>
+          <button type="button" class="shot" data-full="battery-mat.webp">
+            <img src="battery-mat.webp" alt="Lying back on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying back on a sound-bath mat</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="battery-desk.webp">
+            <img src="battery-desk.webp" alt="Seated at the front desk" loading="lazy" />
+          </button>
+          <figcaption>Seated at the front desk</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment" id="dizzy">
+    <div class="ail-head">
+      <h2>Scrambled Noggin</h2>
+      <span class="status approved">Approved</span>
+      <span class="room">Treated with Cranio-sacral (massage)</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Go with 3.&quot;
+      <span
+        >Built in: every guest with Scrambled Noggin has it, no switch needed. Far Out keeps its own head and the
+        stars.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card built">
+        <h3>Egg 3 &#183; Built in</h3>
+        <p class="line">
+          The head an egg with its top knocked off and the yolk showing, the cap floating among the stars. The shell has
+          a rim you can see, the cap is put away lying down, and the head and face come back halfway through the cure.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="egg-front.webp">
+              <img src="egg-front.webp" alt="Egg 3 &#183; Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="egg-side.webp">
+              <img src="egg-side.webp" alt="Egg 3 &#183; Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r21-full.webp">
+              <img src="egg-play.webp" alt="Egg 3 &#183; Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+
+        <figure>
+          <button type="button" class="shot cure" data-full="egg-cure.webp">
+            <img src="egg-cure.webp" alt="Egg 3 &#183; Built in cured: before, in the puff, after" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card built">
+        <h3>In the game</h3>
+        <p class="line">Checked in the day-900 Orchard save with every unwell guest given Scrambled Noggin.</p>
+        <figure>
+          <button type="button" class="shot" data-full="egg-table.webp">
+            <img src="egg-table.webp" alt="Prone on a massage table, a practitioner at work" loading="lazy" />
+          </button>
+          <figcaption>Prone on a massage table, a practitioner at work</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="egg-mat.webp">
+            <img src="egg-mat.webp" alt="Lying back on a sound-bath mat" loading="lazy" />
+          </button>
+          <figcaption>Lying back on a sound-bath mat</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <div>
+    <img id="lb-img" alt="" />
+    <p class="cap" id="lb-cap"></p>
+  </div>
+  <button type="button" id="lb-close">Close</button>
+</div>
+
+<script>
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  const lbCap = document.getElementById('lb-cap');
+  document.querySelectorAll('.shot').forEach((b) =>
+    b.addEventListener('click', () => {
+      lbImg.src = b.dataset.full;
+      lbImg.alt = b.querySelector('img').alt;
+      lbCap.textContent = b.querySelector('img').alt;
+      lb.hidden = false;
+      document.getElementById('lb-close').focus();
+    }),
+  );
+  const close = () => {
+    lb.hidden = true;
+    lbImg.removeAttribute('src');
+  };
+  document.getElementById('lb-close').addEventListener('click', close);
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !lb.hidden) close();
+  });
+</script>
