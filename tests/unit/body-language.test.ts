@@ -1190,6 +1190,11 @@ describe('at work', () => {
 });
 
 describe('symptoms where they are: round 11', () => {
+  /** Whether a part of someone is drawn: shown itself, and every parent of it shown too. */
+  const shown = (o: THREE.Object3D) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (!p.visible) return false;
+    return true;
+  };
   /** The way to the game's camera, looking down at someone from the front and to one side, as the lab's game angle. */
   const GAME = new THREE.Vector3(1, 1.2, 1).normalize();
   /** Across the game's picture, to the right. */
@@ -1304,5 +1309,69 @@ describe('symptoms where they are: round 11', () => {
     // none of them out in front of the face
     const face = new THREE.Box3().setFromObject(rig.face.eyes);
     expect(new THREE.Box3().setFromObject(feelers).max.z).toBeLessThan(face.max.z + 0.04);
+  });
+
+  /** Lay someone down on their back on a table, all the way down. */
+  const lay = (rig: CharRig, g: Char, t = 1) => {
+    poseChar(rig, { ...g, pose: 'lie', h: 0.6 }, t, 1, { style: null, lie: 'back', lying: 1 });
+    rig.group.updateMatrixWorld(true);
+  };
+
+  it('puts a shell round someone away while they lie down: the bottle, tumbler, snow globe, pot and storm', () => {
+    for (const [visual, id] of [
+      ['cork', 'bottled'],
+      ['glass', 'glasshalf'],
+      ['snowcap', 'snowedin'],
+      ['cactus', 'parched'],
+      ['storm', 'qi'],
+    ] as const) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      const g = demoGuest(LAB_LOOK, id);
+      // the pot round the hips, or the shell that is the whole symptom
+      const shell = rig.props.find((p) => p.parent === rig.body) ?? rig.props[0]!;
+      lay(rig, g);
+      expect(shown(shell), visual).toBe(false);
+      pose(rig, g, 2);
+      expect(shown(shell), visual).toBe(true);
+    }
+  });
+
+  it('stops the lightning in a storm while they lie down, as the rain stops', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'storm');
+    const g = demoGuest(LAB_LOOK, 'qi');
+    for (let t = 0; t < 8; t += 0.02) {
+      lay(rig, g, t);
+      expect(rig.flash!.glow[0]!.emissiveIntensity).toBe(0);
+    }
+  });
+
+  it('raises a head that is an egg or an apple core onto the pillow lying down, rather than into it', () => {
+    for (const [visual, id] of [
+      ['egg', 'dizzy'],
+      ['rotten', 'badapple'],
+    ] as const) {
+      const plain = buildCharacter(LAB_LOOK);
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      const g = demoGuest(LAB_LOOK, id);
+      lay(plain, g);
+      lay(rig, g);
+      // the shell of the egg, or the core's red top and bottom, not the flies round it
+      const under = new THREE.Box3().setFromObject(rig.props[0]!.children[0] ?? rig.props[0]!).min.y;
+      // no lower than the back of an ordinary head
+      expect(under, visual).toBeGreaterThan(new THREE.Box3().setFromObject(plain.headMesh).min.y - 0.015);
+      pose(rig, g, 2);
+      expect(rig.head.position.z, visual).toBe(0);
+    }
+  });
+
+  it("flattens the plug's cable against someone with crossed wires lying down, so it lies on what they do", () => {
+    const plain = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'wires');
+    const g = demoGuest(LAB_LOOK, 'wires');
+    lay(plain, g);
+    lay(rig, g);
+    const back = new THREE.Box3().setFromObject(plain.torso.getObjectByName('shirt')!).min.y;
+    for (const coil of rig.props.filter((p) => p.parent === rig.torso))
+      expect(new THREE.Box3().setFromObject(coil).min.y).toBeGreaterThan(back - 0.05);
   });
 });

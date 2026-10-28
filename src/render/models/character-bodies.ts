@@ -78,7 +78,8 @@ const tumblerWater = (from: number) =>
 
 /**
  * Bottled up: the whole person in a big green bottle, the cork in its neck above their head and a cream label with a
- * red stripe round the middle, their legs out of the bottom to walk on. The glass is one shape, as each part of it
+ * red stripe round the middle, their legs out of the bottom to walk on. Put away while they lie down, as it would go
+ * into what they lie on. The glass is one shape, as each part of it
  * drawn alone is a draw call more for every bottled guest.
  */
 function bottle(rig: CharRig) {
@@ -90,14 +91,15 @@ function bottle(rig: CharRig) {
   put(bottle, cyl(0.315, 0.315, 0.3, 24), mat(0xf2e6c8, 0.8), 0, at(0.62), 0);
   put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, at(0.68), 0);
   bottle.position.y = MIDDLE;
+  upright(rig, bottle);
   props(rig, bottle);
   rig.body.add(bottle);
 }
 
 /**
  * Glass half empty: the whole person standing in a tall clear tumbler, the water up to the waist and the top half
- * empty, their own head and face dry in the empty half and their legs out of the bottom. The glass is one shape, as
- * the bottle's is.
+ * empty, their own head and face dry in the empty half and their legs out of the bottom. Put away while they lie
+ * down, as the bottle is. The glass is one shape, as the bottle's is.
  */
 function tumbler(rig: CharRig) {
   const glass = new THREE.Group();
@@ -107,6 +109,7 @@ function tumbler(rig: CharRig) {
   put(glass, tumblerWater(0.325), WATER, 0, 0, 0);
   put(glass, cyl(0.312, 0.312, 0.012, 28), mat(SURFACE, 0.1), 0, at(0.88), 0);
   glass.position.y = TUMBLER_MIDDLE;
+  upright(rig, glass);
   props(rig, glass);
   rig.body.add(glass);
 }
@@ -157,7 +160,7 @@ function spines(r: number, from: number, to: number) {
 /**
  * Spiritually dehydrated: the head a ribbed cactus, prickly, an arm bent up off one side and a pink flower on top, the
  * face on its front; the shirt and sleeves gone cactus green, and a terracotta pot round them from the waist down, the
- * feet out of the bottom to shuffle along on (see `pose`).
+ * feet out of the bottom to shuffle along on (see `pose`). The pot is put away while they lie down.
  */
 function cactus(rig: CharRig) {
   const { head } = rig;
@@ -194,6 +197,7 @@ function cactus(rig: CharRig) {
   put(pot, cyl(0.27, 0.2, 0.38, 28), clay, 0, 0.25, 0);
   put(pot, cyl(0.3, 0.3, 0.07, 28), clay, 0, 0.46, 0);
   put(pot, cyl(0.25, 0.25, 0.02, 28), mat(SOIL, 0.9), 0, 0.495, 0);
+  upright(rig, pot);
   props(rig, top, pot);
   rig.body.add(pot);
 }
@@ -274,6 +278,8 @@ function storm(rig: CharRig) {
     drop.userData.y = 0.3;
   }
   weather.position.y = 0.42;
+  // put away while they lie down, as it would go into what they lie on, as the rain is, the lightning with it
+  upright(rig, weather);
   props(rig, weather, rig.drips);
   rig.torso.add(weather, rig.drips);
 }

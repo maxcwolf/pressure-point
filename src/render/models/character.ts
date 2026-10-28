@@ -66,6 +66,11 @@ export interface CharRig {
   orbit?: THREE.Group;
   /** Drops of water falling off a wet blanket, each from where it starts. */
   drips?: THREE.Group;
+  /**
+   * How far a symptom standing in for the head reaches past the head behind and in front, in meters: the head is
+   * raised that far off what they lie on, so it lies on the pillow rather than in it (see `pose`).
+   */
+  pillow?: number;
   /** Something that hovers over the head and bobs gently, and how high it hovers. */
   bob?: THREE.Object3D;
   bobAt: number;

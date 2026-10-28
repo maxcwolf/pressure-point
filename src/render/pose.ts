@@ -876,7 +876,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   }
   if (rig.flash) {
     const { bolts, glow } = rig.flash;
-    const f = flashAt(c.id, t);
+    // none while they lie down, the cloud put away
+    const f = c.pose === 'lie' ? 0 : flashAt(c.id, t);
     const which = Math.floor((t + c.id * 0.77) / flashPeriod(c.id)) % bolts.length;
     bolts.forEach((b, i) => (b.visible = f > 0 && i === which));
     for (const m of glow) m.emissiveIntensity = f * 0.9;
@@ -889,6 +890,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift = 0,
       upright = false,
       standing = false,
+      flat,
     } = o.userData as {
       spin?: number;
       rattle?: number;
@@ -896,9 +898,12 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift?: number;
       upright?: boolean;
       standing?: boolean;
+      flat?: number;
     };
     // put away while they lie down, as what floats over the head is, or, `standing`, while they sit too
     if ((upright || standing) && !rig.cured) o.visible = c.pose !== 'lie' && !(standing && c.pose === 'sit');
+    // flattened against them lying down, so it lies on what they lie on
+    if (flat) o.scale.z = c.pose === 'lie' ? 1 - (1 - flat) * lying : 1;
     if (drift) {
       // floating loose of where it belongs, up and down and round to its own rhythm, but put back together lying down,
       // to lie on whatever they lie on, and eased back together over the puff of the cure
@@ -943,6 +948,12 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       d.scale.set(1 - 0.4 * f, 1.5, 1 - 0.4 * f);
       d.visible = c.pose !== 'lie';
     });
+  }
+  if (rig.pillow) {
+    // a symptom bigger than the head rests on the pillow lying down, on the back or face down, rather than going into
+    // it, and comes down with the head as it goes in the cure
+    const kept = !healed ? 1 : Number.isNaN(curing) ? 0 : Math.max(0, 1 - curing / CURE);
+    rig.head.position.z = c.pose === 'lie' ? (back ? 1 : -1) * rig.pillow * lying * kept : 0;
   }
   if (rig.mop) rig.mop.visible = mopping;
   if (healed && !rig.cured) showCure(rig, c, t);

@@ -123,6 +123,7 @@ const BROKEN = 0.72;
 /**
  * A scrambled noggin: the head an egg with its top knocked off and the yolk showing, the broken cap floating over it
  * among the stars (bobbing as anything hovering over a head does, and put away lying down), the face on its front.
+ * Lying down, the egg rests on the pillow.
  */
 function egg(rig: CharRig) {
   const { head } = rig;
@@ -143,6 +144,7 @@ function egg(rig: CharRig) {
   for (const o of cap.children) o.castShadow = false;
   rig.props.push(body, pool);
   swell(rig, 1.08, 1.08);
+  rig.pillow = 0.08;
 }
 
 /** A battery's casing, its band and its silver end, and the empty cells of its gauge. */
@@ -428,7 +430,8 @@ const FLESH = 0xf2e2b8;
 
 /**
  * A bad apple, rotten to the core as the croquet club says: the head an apple core, red top and bottom and bitten to
- * the pips between, the face on the bitten middle and three flies going round it.
+ * the pips between, the face on the bitten middle and three flies going round it. Lying down, the core rests on the
+ * pillow.
  */
 function appleCore(rig: CharRig) {
   hideUntilCured(rig, [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')]);
@@ -524,6 +527,7 @@ function appleCore(rig: CharRig) {
   faceOut(rig, { eyes: -0.065, brows: -0.05, mouth: -0.045 });
   props(rig, g);
   rig.head.add(g);
+  rig.pillow = 0.07;
 }
 
 /**
@@ -614,6 +618,11 @@ function plugHead(rig: CharRig) {
     0,
     0,
   );
+  // flattened against them while they lie down, so the coils lie on what they lie on rather than going into it
+  for (const o of [cable, cord, plugs]) {
+    o.userData.flat = 0.55;
+    (rig.spin ??= []).push(o);
+  }
   props(rig, cable, cord, plugs);
   swell(rig, 1.04, 1.04);
 }
@@ -645,7 +654,7 @@ const heap = (r: number, top: number) =>
 
 /**
  * Snowed in: the head and shoulders inside a snow globe on a wooden base, the snow heaped up inside it to the nose and
- * the flakes still swirling over it, only the eyes and the top of the head clear.
+ * the flakes still swirling over it, only the eyes and the top of the head clear. Put away while they lie down.
  */
 function snowGlobe(rig: CharRig) {
   const snow = mat(0xffffff, 0.6);
@@ -672,6 +681,8 @@ function snowGlobe(rig: CharRig) {
   );
   g.add(flakes);
   spin(rig, flakes, 0.9);
+  // put away while they lie down, as it would go into what they lie on
+  upright(rig, g);
   props(rig, g);
   rig.head.add(g);
 }
