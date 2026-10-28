@@ -31,8 +31,6 @@ import { blob } from './models/items/machine-kit';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 import { buildSoles } from './models/soles';
-import { SYMPTOM_OPTION } from './symptom-options';
-import { walkSymptom } from './walk-symptoms';
 
 /**
  * A hip's rotation that points its thigh along `along` and turns it on its own length so the knee hinges about
@@ -804,21 +802,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   armR += life.armR;
   armOut += life.armOut;
   legR -= life.stamp;
-  if (SYMPTOM_OPTION === 'walk' && visual && c.pose !== 'lie' && !act) {
-    const moved = walkSymptom(visual, c, t, phase, life, {
-      legL,
-      legR,
-      armL,
-      armR,
-      armOut,
-      lean,
-      side,
-      headX,
-      headZ,
-      bodyY,
-    });
-    ({ legL, legR, armL, armR, armOut, lean, side, headX, headZ, bodyY } = moved);
-  }
   if (c.pose === 'lie' && cues.lie) {
     life.elbowL += bendTo(armL, -0.08, 1);
     life.elbowR += bendTo(armR, -0.08, 1);
@@ -1132,7 +1115,7 @@ interface Doing {
 }
 
 /** What liveliness adds to a pose: turns in radians and shifts in meters, on top of what the pose sets. */
-export interface Life {
+interface Life {
   lean: number;
   side: number;
   headX: number;

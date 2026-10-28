@@ -30,7 +30,6 @@ import {
 } from './character-detail';
 import { headSymptom, upright } from './character-heads';
 import { machineSymptom } from './character-machines';
-import { transformSymptom } from './character-transform';
 import type { HeldKind } from './held';
 import { buildMop } from './mop';
 import {
@@ -119,8 +118,6 @@ export interface CharRig {
   flash?: { bolts: THREE.Object3D[]; glow: THREE.MeshStandardMaterial[] };
   /** Symptom parts that turn, rattle, pulse or drift up and down: by `userData.spin`, `rattle`, `pulse` and `drift`. */
   spin?: THREE.Object3D[];
-  /** Symptom props kept at least so many pixels across from afar, as bubbles are, under the `grow` prototype. */
-  grow?: THREE.Object3D[];
   /** Pale soles turned up, shown while they lie face down, made the first time they do. */
   soles?: THREE.Mesh[];
   scale: number;
@@ -818,7 +815,6 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
-  transformSymptom(rig, visual);
   if (rig.bob) rig.bobAt = rig.bob.position.y;
   if (role === 'practitioner' || role === 'caretaker') {
     const { bundle, tip } = buildSage();
