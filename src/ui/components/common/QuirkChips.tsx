@@ -3,20 +3,25 @@
 import { type TraitId, traitOf } from '../../../core/data';
 import { css } from '../../../styled-system/css';
 import { cx } from '../../lib/cx';
+import { rareFirst } from '../../lib/quirks';
 
-/** A quirk's chip: green where it helps, red where it costs, gold with a star for a rare one. */
+/**
+ * A quirk's chip: green where it helps, red where it costs, gold with a star for a rare one, which is ringed. Every chip
+ * has the ring's room, clear where it has none, so a row with a rare chip stands no taller than one without.
+ */
 const chip = css({
   display: 'inline-block',
   fontSize: '12',
   fontWeight: 'bold',
+  border: 'outline.thin',
+  borderColor: 'transparent',
   borderRadius: '8',
   py: '0',
-  px: '6',
+  px: '4',
   whiteSpace: 'nowrap',
-  cursor: 'help',
   '&.good': { bg: 'good.bg', color: 'good' },
   '&.bad': { bg: 'bad.bg', color: 'bad' },
-  '&.rare': { bg: 'highlight.bg', color: 'warn', border: 'outline.thin', borderColor: 'highlight' },
+  '&.rare': { bg: 'highlight.bg', color: 'warn', borderColor: 'highlight' },
 });
 
 /** The chips in a row, as on a row of the Staff menu. */
@@ -38,11 +43,14 @@ const lines = css({
 /** The word that marks a rare quirk, between its chip and what it does. */
 const rareWord = css({ fontSize: '12', fontWeight: 'bold', color: 'warn' });
 
-/** The chip for one quirk, with what it does as its tooltip. */
-function Chip({ id }: { id: TraitId }) {
+/** The chip for one quirk, with what it does as its tooltip unless that is written out beside it (`spelled`). */
+function Chip({ id, spelled = false }: { id: TraitId; spelled?: boolean }) {
   const def = traitOf(id);
   return (
-    <span class={cx('quirk', 'chip', def.rare ? 'rare' : def.bad ? 'bad' : 'good', chip)} title={def.desc}>
+    <span
+      class={cx('quirk', 'chip', def.rare ? 'rare' : def.bad ? 'bad' : 'good', chip)}
+      title={spelled ? undefined : def.desc}
+    >
       {def.rare ? `★ ${def.name}` : def.name}
     </span>
   );
@@ -50,12 +58,12 @@ function Chip({ id }: { id: TraitId }) {
 
 /**
  * Someone's quirks as chips, rare ones first, each with what it does on hover. With `spell`, as on an applicant's card
- * and in the inspector, each is on a line of its own with what it does written after it; a row of the Staff menu keeps
- * to the chips. Nobody hired since every applicant has a quirk can have none; someone from an older game can, and
+ * and in the inspector, each is on a line of its own with what it does written after it, and no tooltip to say it
+ * again; a row of the Staff menu keeps to the chips. Nobody hired since every applicant has a quirk can have none; someone from an older game can, and
  * shows no chips.
  */
 export function QuirkChips({ traits, spell = false }: { traits: readonly TraitId[]; spell?: boolean }) {
-  const ordered = [...traits.filter((t) => traitOf(t).rare), ...traits.filter((t) => !traitOf(t).rare)];
+  const ordered = rareFirst(traits);
   if (!ordered.length) return null;
   if (!spell)
     return (
@@ -69,7 +77,7 @@ export function QuirkChips({ traits, spell = false }: { traits: readonly TraitId
     <div class={cx('quirks', 'spelled', lines)}>
       {ordered.map((t) => (
         <div key={t} class="quirk-line">
-          <Chip id={t} />
+          <Chip id={t} spelled />
           {/* the word and its dot are held to the first word of what it does, so they never end a line alone */}
           {traitOf(t).rare && <span class={rareWord}>{'rare\u00a0·\u00a0'}</span>}
           {traitOf(t).desc}

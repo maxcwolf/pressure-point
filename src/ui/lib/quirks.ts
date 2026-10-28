@@ -1,7 +1,7 @@
-// What a member of staff's inspector says their rare quirk has done: the treatments Healing Hands saved, the heals a
-// Former Influencer posted, and who Holds Space for whom right now.
+// What a member of staff's inspector says their rare quirk has done (the treatments Healing Hands saved, the heals a
+// Former Influencer posted, and who Holds Space for whom right now), and their quirks in words for a row's label.
 
-import { traitMost, traitProduct } from '../../core/data';
+import { type TraitId, traitMost, traitOf, traitProduct } from '../../core/data';
 import type { Staff } from '../../core/state/types';
 
 /** Someone's first name, as a line about a colleague calls them. */
@@ -28,4 +28,22 @@ export function quirkNotes(st: Staff, holdingFor: readonly Staff[], holder: Staf
     notes.push(`Working ${faster}% faster: ${firstName(holder)} holds space`);
   }
   return notes;
+}
+
+/** Someone's quirks with the rare one first, as the chips show them. */
+export const rareFirst = (traits: readonly TraitId[]) => [
+  ...traits.filter((t) => traitOf(t).rare),
+  ...traits.filter((t) => !traitOf(t).rare),
+];
+
+/**
+ * Someone's quirks as words, rare ones first, each with what it does, for a row's label that keyboard, touch and
+ * screen reader players get where others point at the chips: "Quirks: Healing Hands, rare: One treatment in three
+ * that would have failed works anyway. Brisk: Works 20% faster." Nothing for someone with none.
+ */
+export function quirksSaid(traits: readonly TraitId[]): string {
+  const ordered = rareFirst(traits);
+  if (!ordered.length) return '';
+  const each = ordered.map((t) => `${traitOf(t).name}${traitOf(t).rare ? ', rare' : ''}: ${traitOf(t).desc}`);
+  return `Quirks: ${each.join(' ')}`;
 }

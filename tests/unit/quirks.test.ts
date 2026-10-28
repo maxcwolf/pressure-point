@@ -30,7 +30,7 @@ import { moraleFloor } from '../../src/core/sim/staffing';
 import { postAboutIt, serviceSeconds, worksAnyway } from '../../src/core/sim/stations';
 import type { Candidate, GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { quirkNotes } from '../../src/ui/lib/quirks';
+import { quirkNotes, quirksSaid, rareFirst } from '../../src/ui/lib/quirks';
 import { freshSim, hire, openCenter, run, runUntil } from './helpers';
 
 /** The simulation's own context, which the hooks are given. */
@@ -386,5 +386,18 @@ describe('the rare quirks', () => {
     expect(sim.heldSpace(therapist)).toBe(1);
     consultant.state = 'atPost';
     expect(sim.heldSpace(therapist)).toBeCloseTo(1.15);
+  });
+});
+
+describe('the quirks in words', () => {
+  it('put the rare one first, as the chips do', () => {
+    expect(rareFirst(['brisk', 'hands', 'quick'])).toEqual(['hands', 'brisk', 'quick']);
+  });
+
+  it("give a Staff row's label every quirk and what it does, for those who cannot point at a chip", () => {
+    expect(quirksSaid(['brisk', 'hands'])).toBe(
+      `Quirks: Healing Hands, rare: ${traitOf('hands').desc} Brisk: ${traitOf('brisk').desc}`,
+    );
+    expect(quirksSaid([])).toBe('');
   });
 });

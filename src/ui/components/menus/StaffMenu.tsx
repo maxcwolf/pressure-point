@@ -10,6 +10,7 @@ import { css } from '../../../styled-system/css';
 import { goButton, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { quirksSaid } from '../../lib/quirks';
 import { sorted, STAFF_SORTS } from '../../lib/sorts';
 import { moraleLook, promotionRequests, raiseRequests, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
@@ -302,7 +303,7 @@ export function StaffMenu() {
             {/* the whole row selects them, from a button stretched over its cells, as a button cannot hold another */}
             <Button
               class={pick}
-              label={`Show ${st.name}`}
+              label={[`Show ${st.name}.`, quirksSaid(st.traits)].filter(Boolean).join(' ')}
               onPress={() => {
                 hud.show({ kind: 'staff', id: st.id });
               }}
