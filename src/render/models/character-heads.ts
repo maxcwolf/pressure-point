@@ -618,11 +618,6 @@ function plugHead(rig: CharRig) {
     0,
     0,
   );
-  // flattened against them while they lie down, so the coils lie on what they lie on rather than going into it
-  for (const o of [cable, cord, plugs]) {
-    o.userData.flat = 0.55;
-    (rig.spin ??= []).push(o);
-  }
   props(rig, cable, cord, plugs);
   swell(rig, 1.04, 1.04);
 }
@@ -654,7 +649,7 @@ const heap = (r: number, top: number) =>
 
 /**
  * Snowed in: the head and shoulders inside a snow globe on a wooden base, the snow heaped up inside it to the nose and
- * the flakes still swirling over it, only the eyes and the top of the head clear. Put away while they lie down.
+ * the flakes still swirling over it, only the eyes and the top of the head clear.
  */
 function snowGlobe(rig: CharRig) {
   const snow = mat(0xffffff, 0.6);
@@ -681,8 +676,6 @@ function snowGlobe(rig: CharRig) {
   );
   g.add(flakes);
   spin(rig, flakes, 0.9);
-  // put away while they lie down, as it would go into what they lie on
-  upright(rig, g);
   props(rig, g);
   rig.head.add(g);
 }

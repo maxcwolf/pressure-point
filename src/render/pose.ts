@@ -888,8 +888,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   }
   if (rig.flash) {
     const { bolts, glow } = rig.flash;
-    // none while they lie down, the cloud put away
-    const f = c.pose === 'lie' ? 0 : flashAt(c.id, t);
+    const f = flashAt(c.id, t);
     const which = Math.floor((t + c.id * 0.77) / flashPeriod(c.id)) % bolts.length;
     bolts.forEach((b, i) => (b.visible = f > 0 && i === which));
     for (const m of glow) m.emissiveIntensity = f * 0.9;
@@ -902,8 +901,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift = 0,
       upright = false,
       standing = false,
-      cuts,
-      flat,
     } = o.userData as {
       spin?: number;
       rattle?: number;
@@ -911,15 +908,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift?: number;
       upright?: boolean;
       standing?: boolean;
-      cuts?: [THREE.Mesh, THREE.BufferGeometry, THREE.BufferGeometry][];
-      flat?: number;
     };
-    // put away while they lie down, as what floats over the head is, or, `standing`, while they sit too
-    if ((upright || standing) && !rig.cured) o.visible = c.pose !== 'lie' && !(standing && c.pose === 'sit');
-    // cut short at the seat while they sit, each part in its shape that stops there
-    if (cuts) for (const [part, whole, short] of cuts) part.geometry = c.pose === 'sit' ? short : whole;
-    // flattened against them lying down, so it lies on what they lie on
-    if (flat) o.scale.z = c.pose === 'lie' ? 1 - (1 - flat) * lying : 1;
+    // put away while they lie down, as what floats over the head is, and, `standing`, while they sit
+    if ((upright || standing) && !rig.cured)
+      o.visible = !(upright && c.pose === 'lie') && !(standing && c.pose === 'sit');
     if (drift) {
       // floating loose of where it belongs, up and down and round to its own rhythm, but put back together lying down,
       // to lie on whatever they lie on, and eased back together over the puff of the cure

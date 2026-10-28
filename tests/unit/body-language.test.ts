@@ -1319,7 +1319,7 @@ describe('symptoms where they are: round 11', () => {
     rig.group.updateMatrixWorld(true);
   };
 
-  it('puts a shell round someone away while they lie down: the bottle, tumbler, snow globe, pot and storm', () => {
+  it('keeps a shell round someone in sight lying down: the bottle, tumbler, snow globe, pot and storm', () => {
     for (const [visual, id] of [
       ['cork', 'bottled'],
       ['glass', 'glasshalf'],
@@ -1332,18 +1332,7 @@ describe('symptoms where they are: round 11', () => {
       // the pot round the hips, or the shell that is the whole symptom
       const shell = rig.props.find((p) => p.parent === rig.body) ?? rig.props[0]!;
       lay(rig, g);
-      expect(shown(shell), visual).toBe(false);
-      pose(rig, g, 2);
       expect(shown(shell), visual).toBe(true);
-    }
-  });
-
-  it('stops the lightning in a storm while they lie down, as the rain stops', () => {
-    const rig = buildCharacter(LAB_LOOK, undefined, 'storm');
-    const g = demoGuest(LAB_LOOK, 'qi');
-    for (let t = 0; t < 8; t += 0.02) {
-      lay(rig, g, t);
-      expect(rig.flash!.glow[0]!.emissiveIntensity).toBe(0);
     }
   });
 
@@ -1366,17 +1355,6 @@ describe('symptoms where they are: round 11', () => {
     }
   });
 
-  it("flattens the plug's cable against someone with crossed wires lying down, so it lies on what they do", () => {
-    const plain = buildCharacter(LAB_LOOK);
-    const rig = buildCharacter(LAB_LOOK, undefined, 'wires');
-    const g = demoGuest(LAB_LOOK, 'wires');
-    lay(plain, g);
-    lay(rig, g);
-    const back = new THREE.Box3().setFromObject(plain.torso.getObjectByName('shirt')!).min.y;
-    for (const coil of rig.props.filter((p) => p.parent === rig.torso))
-      expect(new THREE.Box3().setFromObject(coil).min.y).toBeGreaterThan(back - 0.05);
-  });
-
   it('puts the giant phone away while they sit, where it would go into a desk or the next guest', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'neck');
     const g = demoGuest(LAB_LOOK, 'neck');
@@ -1386,15 +1364,17 @@ describe('symptoms where they are: round 11', () => {
     expect(rig.phone!.visible).toBe(true);
   });
 
-  it('puts a bottle or a tumbler away while they sit, rather than down through the seat', () => {
+  it('puts a bottle, a tumbler or a pot away while they sit, rather than down through the seat', () => {
     for (const [visual, id] of [
       ['cork', 'bottled'],
       ['glass', 'glasshalf'],
+      ['cactus', 'parched'],
     ] as const) {
       const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      const shell = rig.props.find((p) => p.parent === rig.body) ?? rig.props[0]!;
       poseChar(rig, { ...demoGuest(LAB_LOOK, id), pose: 'sit', h: 0.4 }, 1, 1, { style: null });
-      expect(rig.props[0]!.visible, visual).toBe(false);
-      expect(rig.bubbleSitting, visual).toBeLessThan(rig.bubbleAt);
+      expect(shell.visible, visual).toBe(false);
+      if (visual !== 'cactus') expect(rig.bubbleSitting, visual).toBeLessThan(rig.bubbleAt);
     }
   });
 });
