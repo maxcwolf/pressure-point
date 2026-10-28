@@ -394,7 +394,7 @@ const LOBSTER_DARK = 0xa8321f;
 
 /**
  * A lobster's crusher claw, as one shape pointing down along -y from the wrist: a fat oval palm, bumpy along its top,
- * and two curved, tapering fingers with a gap between, the lower one shorter.
+ * and two curved, tapering fingers with a gap between, the inner one shorter, each in one piece from palm to tip.
  */
 const crusher = () =>
   joined('lobster crusher', [
@@ -403,11 +403,13 @@ const crusher = () =>
     [sph(0.022, 6), 0.06, -0.09, 0.04],
     [sph(0.02, 6), 0.075, -0.15, 0.03],
     [sph(0.018, 6), 0.065, -0.2, 0.035],
-    // the fixed finger, on the outside, long
+    // the fixed finger, on the outside, long, its tip going on from the end of its base and curving in
     [cyl(0.045, 0.032, 0.11, 10), 0.045, -0.3, 0, 0, 0, 0.16],
-    [cyl(0.032, 0.006, 0.12, 10), 0.012, -0.41, 0, 0, 0, 0.45],
+    [sph(0.032, 10), 0.054, -0.354, 0],
+    [cyl(0.032, 0.006, 0.12, 10), 0.034, -0.41, 0, 0, 0, -0.34],
     // the moving finger, on the inside, shorter, opened a little
     [cyl(0.04, 0.028, 0.09, 10), -0.05, -0.28, 0, 0, 0, -0.32],
+    [sph(0.028, 10), -0.065, -0.322, 0],
     [cyl(0.028, 0.006, 0.1, 10), -0.065, -0.37, 0, 0, 0, 0.12],
   ]);
 
