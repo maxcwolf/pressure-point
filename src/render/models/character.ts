@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { type Role, ROLES, type Visual } from '../../core/data';
 import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
-import { BUBBLE_SIZE } from '../bubbles';
+import { BUBBLE_SIZE, BUBBLE_STANDING } from '../bubbles';
 import { owned } from '../disposal';
 import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
@@ -72,6 +72,8 @@ export interface CharRig {
   /** Something that hovers over the head and bobs gently, and how high it hovers. */
   bob?: THREE.Object3D;
   bobAt: number;
+  /** How high a standing person's bubble sits: higher over a symptom that stands up tall out of the head. */
+  bubbleAt: number;
   /** A material whose glow pulses. */
   blink?: THREE.MeshStandardMaterial;
   /** Everything that only exists to show the symptom, hidden once healed. */
@@ -376,6 +378,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     wide,
     bubbleKey: '',
     bobAt: 0,
+    bubbleAt: BUBBLE_STANDING,
   };
   rig.pick.position.y = 0.7;
   group.add(rig.pick);

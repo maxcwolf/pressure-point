@@ -1021,7 +1021,7 @@ function poseBubble(rig: CharRig, c: Char, t: number, mood: Mood) {
   const size = bubbleScale(shown, t, prefersReducedMotion());
   sprite.visible = size > 0;
   sprite.scale.setScalar(BUBBLE_SIZE * size);
-  sprite.position.y = (c.pose === 'lie' ? 0.72 : 1.44) + Math.sin(t * 3 + c.id) * 0.04;
+  sprite.position.y = (c.pose === 'lie' ? 0.72 : rig.bubbleAt) + Math.sin(t * 3 + c.id) * 0.04;
 }
 
 /** How a person's limbs are posed this frame, from which the knees, elbows and waist follow. */

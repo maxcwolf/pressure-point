@@ -386,7 +386,8 @@ export class Overlays {
         this.ring.position.set(x, 0.04, z);
         this.ring.scale.setScalar(1 + Math.sin(t * 5) * 0.06);
         this.marker.visible = true;
-        const h = (d?.y ?? c.h) + ((d ? d.lie : c.pose === 'lie') ? MARKER_LYING : MARKER_HEIGHT);
+        const lying = d ? d.lie : c.pose === 'lie';
+        const h = (d?.y ?? c.h) + (lying ? MARKER_LYING : MARKER_HEIGHT + (d?.lift ?? 0));
         this.marker.position.set(x, h + Math.sin(t * 3) * 0.06, z);
         this.marker.rotation.y = t * 1.5;
       }

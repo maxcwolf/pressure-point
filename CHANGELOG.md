@@ -13,7 +13,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **A noisy mind, turned up.** A guest with Noisy Mind now has a boombox for a head, its speakers pumping, its aerial rattling and notes of music rising off it.
 - **Blocked qi, stormy.** A guest with Blocked Qi now has a storm cloud round their chest, with rain falling from it and lightning flashing in it every few seconds. Midlife Fog keeps its cloud over the head.
 - **Scattered, in pieces.** A Scattered guest now comes apart, their head floating over their shoulders and their body over their legs, each drifting on its own. They pull together to lie down, and for good when they are cured.
-- **Lost, with a signpost.** A guest who has Lost Their Way now has a signpost growing out of the top of their head, its arrows pointing every which way and turning slowly. It replaces the compass that floated over them.
+- **Lost, with a signpost.** A guest who has Lost Their Way now has a signpost growing out of the top of their head, its arrows pointing every which way and turning slowly. It replaces the compass that floated over them, and their mood bubble sits up over the top of the post so it never hides it.
 
 ## v0.34.3
 

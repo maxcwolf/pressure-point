@@ -7,6 +7,7 @@ import { streetEnds } from '../core/sim/chars';
 import type { Sim } from '../core/sim/sim';
 import type { Char, Guest } from '../core/state/types';
 import { type Act, actOf, itemIdAt, lyingAt } from './acts';
+import { BUBBLE_STANDING } from './bubbles';
 import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
 import { applyGuestGag } from './gags/apply';
@@ -24,9 +25,11 @@ const FADE_TILES = 1;
 
 /**
  * Where each person on show is drawn this frame, by id, which can be a little way from where the sim has them as they
- * climb on and off things or step aside: for the ring under someone selected and the halos, to stay under them.
+ * climb on and off things or step aside: for the ring under someone selected and the halos, to stay under them. `lift`
+ * is how much higher than most their bubble sits, raised over a symptom standing up out of the head, for the marker
+ * over them to clear it too.
  */
-export const drawnAt = new Map<number, { x: number; y: number; z: number; lie: boolean }>();
+export const drawnAt = new Map<number, { x: number; y: number; z: number; lie: boolean; lift: number }>();
 
 /**
  * How big someone is drawn, from 0 to 1: on the pavement, they grow from nothing over the first tile from where people
@@ -132,7 +135,7 @@ export class PeopleLayer {
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') this.inMachine(rig, c, t);
       const { x, y, z } = rig.group.position;
-      drawnAt.set(c.id, { x, y, z, lie: seen.c.pose === 'lie' });
+      drawnAt.set(c.id, { x, y, z, lie: seen.c.pose === 'lie', lift: rig.bubbleAt - BUBBLE_STANDING });
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;

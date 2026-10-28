@@ -8,6 +8,7 @@ import { SHOES } from '../../src/core/people';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
+import { BUBBLE_STANDING } from '../../src/render/bubbles';
 import { rattle } from '../../src/render/item-cues';
 import { buildCharacter, CAP_TIP, type CharRig, cureRig } from '../../src/render/models/character';
 import { HELD_SIZE } from '../../src/render/models/held';
@@ -711,6 +712,15 @@ describe('a symptom in place of the head', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
     poseChar(rig, { ...demoGuest(LAB_LOOK, 'lost'), outcome: 'healed' }, 5, 1, { style: null });
     expect(rig.props.some(shown)).toBe(false);
+    expect(rig.bubbleAt).toBe(BUBBLE_STANDING);
+  });
+
+  it('raises their bubble clear of the top of the signpost, so it never hides it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    rig.group.updateMatrixWorld(true);
+    const top = new THREE.Box3().setFromObject(rig.props[0]!).max.y;
+    expect(rig.bubbleAt).toBeGreaterThan(top);
+    expect(buildCharacter(LAB_LOOK).bubbleAt).toBe(BUBBLE_STANDING);
   });
 
   it('gives a flat battery their head back with the cure', () => {
