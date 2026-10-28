@@ -67,6 +67,7 @@ import { type ArrivalParts, arrivalParts, cutOff, impatience } from './twists';
 import { addWear, dirtier } from './upkeep';
 import { wallDrain } from './wall-items';
 import { discomfort, feelTemperature, hotness, warmthAt } from './warmth';
+import { waveArrival, waveGuests, waveRunning } from './waves';
 import { worsen } from './worsening';
 
 const GOAL_NAME = {
@@ -101,6 +102,8 @@ export interface ArrivalPace {
   /** The guests a month that come for the treatment stations, and for each signature machine's own ailments. */
   tables: number;
   machines: { demand: MachineDemand; perMonth: number }[];
+  /** The guests a month come with the ailment going around, on top of the rest, while it is. */
+  wave: number;
   /** The seconds between one new guest and the next, on average, and the guests a month that comes to. */
   seconds: number;
   perMonth: number;
@@ -127,7 +130,8 @@ export function arrivalPace(ctx: SimContext): ArrivalPace {
   const base = MONTH / (30 - s.reputation * 0.2);
   const tables = MONTH / between;
   const machines = machineDemand(ctx, cap).map((d) => ({ demand: d, perMonth: base * pace * difficulty * d.pull }));
-  const perMonth = machines.reduce((sum, m) => sum + m.perMonth, tables);
+  const wave = waveGuests(s, tables);
+  const perMonth = machines.reduce((sum, m) => sum + m.perMonth, tables + wave);
   return {
     base,
     parts,
@@ -137,6 +141,7 @@ export function arrivalPace(ctx: SimContext): ArrivalPace {
     difficulty,
     tables,
     machines,
+    wave,
     // worked out as it was before the machines while none draws anyone, to the last digit, so seeded games keep
     seconds: perMonth > tables ? MONTH / perMonth : between,
     perMonth,
@@ -151,7 +156,8 @@ export function arrivalPace(ctx: SimContext): ArrivalPace {
 function machineArrival(ctx: SimContext, pace: ArrivalPace): ConditionId | undefined {
   const own = pace.machines.reduce((sum, m) => sum + m.perMonth, 0);
   if (own <= 0) return undefined;
-  if (random(ctx.s) * pace.perMonth < pace.tables) return undefined;
+  // with an ailment going around, its guests are already taken out of the pace
+  if (random(ctx.s) * (pace.perMonth - pace.wave) < pace.tables) return undefined;
   return chooseMachineCondition(
     pace.machines.map((m) => m.demand),
     random(ctx.s),
@@ -169,11 +175,23 @@ export function admitGuests(ctx: SimContext, dt: number) {
   if (!s.open || cutOff(ctx)) return;
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
+  // someone come with the ailment going around, while one is, who turns back at the door if nobody here can treat it
+  // yet, uncounted
+  const pace = waveRunning(s) ? arrivalPace(ctx) : undefined;
+  const wave = pace && waveArrival(ctx, pace.wave, pace.perMonth);
   // a regular due back takes the place of someone new; a guest the building, or the player, has no room for goes
   // elsewhere, and is counted, so the cost of a full center can be seen
-  if (guestsCounted(s) < intakeLimit(ctx)) {
-    const forMachine = machineArrival(ctx, arrivalPace(ctx));
-    if (forMachine) spawnGuest(ctx, forMachine);
+  if (wave === 'turned') {
+    // gone already
+  } else if (guestsCounted(s) < intakeLimit(ctx)) {
+    const forMachine = wave ? undefined : machineArrival(ctx, pace ?? arrivalPace(ctx));
+    if (wave) {
+      const g = spawnGuest(ctx, wave);
+      if (g) {
+        g.wave = true;
+        if (s.wave) s.wave.came++;
+      }
+    } else if (forMachine) spawnGuest(ctx, forMachine);
     else spawnGuest(ctx, undefined, false, 0, dueRegular(s));
   } else countTurnedAway(ctx);
   s.spawnT = arrivalPace(ctx).seconds * rnd(s, 0.7, 1.3);

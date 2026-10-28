@@ -3,8 +3,9 @@
 // follow Theme Hospital's cheats (money, win the level, an emergency, an epidemic) and what Two Point's trainers offer
 // (kudosh, maxed-out staff, no needs).
 
-import { conditionHere, type ConditionId, CONDITIONS, RUNAWAY_SECONDS } from '../data';
+import { conditionHere, type ConditionId, conditionOf, CONDITIONS, RUNAWAY_SECONDS } from '../data';
 import { money } from '../format';
+import { featureOn } from '../state/game';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { adjustMoney } from './economy';
@@ -14,6 +15,7 @@ import { spawnGuest } from './guests';
 import { offerOutbreak } from './outbreaks';
 import { awardStar } from './progress';
 import { startRunning } from './runaways';
+import { endWave, forceWave } from './waves';
 
 /** The commands the console takes. */
 export type CheatName =
@@ -28,6 +30,7 @@ export type CheatName =
   | 'guests'
   | 'emergency'
   | 'outbreak'
+  | 'wave'
   | 'badtrip'
   | 'unlock'
   | 'skip';
@@ -50,6 +53,7 @@ export const CHEATS: Readonly<Record<CheatName, CheatDef>> = {
   guests: { usage: 'guests [count] [condition]', desc: 'Send in guests, 5 unless you say, with any condition.' },
   emergency: { usage: 'emergency', desc: 'Offer an emergency now.' },
   outbreak: { usage: 'outbreak', desc: 'Offer a stress outbreak now.' },
+  wave: { usage: 'wave [end]', desc: 'Announce the ailment going around now, or end the one going around.' },
   badtrip: { usage: 'badtrip', desc: 'Send a guest running round on a really bad trip.' },
   unlock: { usage: 'unlock', desc: 'Unlock every room, item and treatment in this game.' },
   skip: { usage: 'skip [days]', desc: 'Play on for some days at once, 1 unless you say, up to 60.' },
@@ -122,6 +126,21 @@ function run(ctx: SimContext, name: CheatName, args: string[], fastForward: (day
       const n = Math.round(amountOr(args[0], 10));
       if (!Number.isFinite(n) || n <= 0) return refused('Say how much karma to add, such as karma 10.');
       return { ok: true, text: `+${n} karma to spend in any center.`, karma: n };
+    }
+    case 'wave': {
+      if (!featureOn(s, 'waves'))
+        return refused('Switch on Ailments going around under Feature testing in Settings first.');
+      if (args[0] === 'end') {
+        if (!s.wave) return refused('Nothing is going around.');
+        endWave(ctx);
+        return done('The ailment going around has stopped.');
+      }
+      if (s.wave)
+        return refused(`${conditionOf(s.wave.condition).name} is going around already. Type wave end to stop it.`);
+      const going = forceWave(ctx);
+      return going
+        ? done(`${conditionOf(going).name} is going around, from a week today.`)
+        : refused('Nothing is left to go around in this center.');
     }
     case 'star':
       return awardStar(ctx) ? done(`Star ${s.stars} earned.`) : refused('Every star here is already earned.');

@@ -5,6 +5,7 @@ import type { SimContext } from './context';
 import { earn } from './economy';
 import { emit, toast } from './events';
 import { type Objective, objectiveFor } from './goals';
+import { scheduleWave } from './waves';
 
 export type { Objective } from './goals';
 
@@ -50,6 +51,7 @@ export function awardStar(ctx: SimContext): boolean {
   earn(ctx, grant, 'bonus');
   emit(ctx, { type: 'star', stars: s.stars });
   emit(ctx, { type: 'sfx', name: 'fanfare' });
+  scheduleWave(ctx);
   return true;
 }
 

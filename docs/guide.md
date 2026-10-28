@@ -157,6 +157,10 @@ Under **Display**, **Interface size** draws the panels, buttons and words in a g
 
 In the desktop app, **Full screen** under **Display** fills the screen with the game, and the app opens the same way the next time. Leaving full screen any other way switches the setting off with it: the green button or Ctrl+Cmd+F on a Mac, F11 on Windows, or **Game › Toggle Full Screen** in the menu. The browser version has no such switch, and leaves full screen to the browser.
 
+**Feature testing**, above the cheat console, lists features still being tried out, each with its own switch, off to begin with. On the title screen a switch applies to new games, campaign ones included; in a game it switches the feature on or off for that game, and for new ones. For now there is one:
+
+- **Ailments going around.** At The Exchange, about a month and a half after its first star, an ailment goes around town: Cold Feet, after the trading floor's bonuses were postponed. A dialog warns a week ahead and opens its treatment, Moxibustion, early, ahead of the second star, with its Moxa Burner. For the next 30 days guests with it come on top of the usual ones, about a quarter of all new guests; the dialog says how many a week that is at the pace of the day. A card under the objectives counts the days, the wave's guests in the center and those healed, and what getting ready takes: the room, someone trained, the kit and, as Moxibustion leaves guests needing a rest, a Recovery Lounge. Its guests come in only once all of them are there, and then like any guest: with only one practitioner of the discipline, the card warns that the line will grow. Not ready, or not wanting it, a guest with it turns back at the door and comes another time, at no cost, so letting it pass loses nothing but the fees. What it opened stays open. Switched off in a game, a wave under way ends quietly; switched on after the first star, it comes within the week.
+
 The **Controls** there are kept for every game on this computer: **edge scrolling** (off to begin with), how often the game **autosaves** (every 12 seconds, every minute, every 5 minutes to begin with, or only on leaving; it always saves as you leave), and the **keys**. Click a key and press the one you want in its place; a key already in use swaps over, and **Reset the keys** puts them all back. The arrow keys always move the camera and Esc always cancels, whatever the keys are set to.
 
 ## Controls
@@ -199,6 +203,7 @@ For testing, or for fun. Switch on **Cheat console** at the bottom of **Settings
 | `emergency`                  | Offer an emergency now                                                               |
 | `outbreak`                   | Offer a stress outbreak now                                                          |
 | `badtrip`                    | Send a guest running round on a really bad trip                                      |
+| `wave [end]`                 | With Ailments going around on, warn of this center's ailment now, or end it          |
 | `unlock`                     | Unlock every room, item and treatment in this game                                   |
 | `skip [days]`                | Play on for up to 60 days at once, 1 unless you say                                  |
 

@@ -1,0 +1,1471 @@
+<meta charset="utf-8" />
+<title>The Research Drip</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+/>
+<style>
+  /* Layout: one reading column of options, each opening on its before/after pictures and its 24-month strip, in the game's own cream-and-navy panel look. */
+  :root {
+    --bg: #f3e7cf; /* the game's inset cream */
+    --panel: #fff8ea; /* a panel */
+    --card: #ffffff;
+    --ink: #24384a; /* the cartoon outline and text */
+    --muted: #5c708a;
+    --line: rgba(36, 56, 74, 0.2);
+    --teal: #23827c;
+    --teal-soft: #e6f6f3;
+    --gold: #f2c14e;
+    --gold-soft: #fff6dc;
+    --violet: #8a6fd1;
+    --violet-soft: #e4d9f7;
+    --orange: #f08a4b;
+    --orange-soft: #fde8da;
+    --red: #a8322b;
+    --empty: rgba(229, 86, 77, 0.14);
+    --rec: #f2c14e;
+    --rec-ink: #24384a;
+    --display: 'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
+    --body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #18242f;
+      --panel: #213140;
+      --card: #2a3c4d;
+      --ink: #f6f0e3;
+      --muted: #b9c0c9;
+      --line: rgba(246, 240, 227, 0.2);
+      --teal: #38bdb4;
+      --teal-soft: #1e3d40;
+      --gold: #f2c14e;
+      --gold-soft: #3b3420;
+      --violet: #b39cf0;
+      --violet-soft: #34305a;
+      --orange: #f5a370;
+      --orange-soft: #43301f;
+      --red: #f08a84;
+      --empty: rgba(240, 138, 132, 0.16);
+      --rec: #f2c14e;
+      --rec-ink: #24384a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #18242f;
+    --panel: #213140;
+    --card: #2a3c4d;
+    --ink: #f6f0e3;
+    --muted: #b9c0c9;
+    --line: rgba(246, 240, 227, 0.2);
+    --teal: #38bdb4;
+    --teal-soft: #1e3d40;
+    --gold: #f2c14e;
+    --gold-soft: #3b3420;
+    --violet: #b39cf0;
+    --violet-soft: #34305a;
+    --orange: #f5a370;
+    --orange-soft: #43301f;
+    --red: #f08a84;
+    --empty: rgba(240, 138, 132, 0.16);
+    --rec: #f2c14e;
+    --rec-ink: #24384a;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+  }
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    gap: 40px;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--display);
+    font-weight: 600;
+    text-wrap: balance;
+    margin: 0;
+    line-height: 1.15;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.1rem);
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+  }
+  h3 {
+    font-size: 1.05rem;
+  }
+  p {
+    margin: 0;
+  }
+  .eyebrow {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+  .lede {
+    max-width: 68ch;
+    font-size: 1.06rem;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  header.top {
+    display: grid;
+    gap: 14px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--ink);
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .gapnote {
+    display: grid;
+    gap: 14px;
+  }
+  .facts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink);
+    background: var(--card);
+    white-space: nowrap;
+  }
+  .chip.gold {
+    background: var(--gold);
+    color: #24384a;
+  }
+
+  /* options */
+  section.option {
+    display: grid;
+    gap: 18px;
+    padding-top: 8px;
+    border-top: 2px dashed var(--line);
+  }
+  .opt-head {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .opt-letter {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.5rem;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--ink);
+    background: var(--card);
+    flex: none;
+  }
+  .option.recommended .opt-letter {
+    background: var(--rec);
+    color: var(--rec-ink);
+  }
+  .opt-title {
+    display: grid;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+  .pitch {
+    font-size: 1.12rem;
+    font-weight: 600;
+    max-width: 70ch;
+  }
+
+  .pics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .pics.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    align-content: start;
+  }
+  .shot {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card);
+    cursor: zoom-in;
+  }
+  .shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .shot:focus-visible {
+    outline: 3px solid var(--teal);
+    outline-offset: 3px;
+  }
+  .tag {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1.5px solid #24384a;
+    background: #fff8ea;
+    color: #24384a;
+  }
+  .tag.after {
+    background: #e4d9f7;
+  }
+  figcaption {
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+
+  /* the recommended option's pictures: a thick gold frame and a tag on the image itself */
+  .rec-frame {
+    border: 6px solid var(--rec);
+    box-shadow:
+      0 0 0 2px #24384a,
+      0 6px 0 2px rgba(36, 56, 74, 0.35);
+  }
+  .rec-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 10px 3px 8px;
+    border-radius: 999px;
+    background: var(--rec);
+    color: var(--rec-ink);
+    border: 2px solid #24384a;
+    box-shadow: 0 2px 0 #24384a;
+  }
+  .rec-badge::before {
+    content: '★ ';
+  }
+
+  /* timeline strip */
+  .strip {
+    background: var(--panel);
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    padding: 14px 16px 10px;
+    display: grid;
+    gap: 6px;
+  }
+  .strip.rec-frame {
+    border-width: 6px;
+    border-color: var(--rec);
+  }
+  .strip-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .strip-head h4 {
+    font-size: 0.95rem;
+  }
+  .strip-scroll {
+    overflow-x: auto;
+  }
+  .strip svg {
+    display: block;
+    width: 100%;
+    min-width: 640px;
+    height: auto;
+  }
+  .strip .stat {
+    font-family: var(--display);
+    font-size: 0.85rem;
+  }
+  .strip .rec-badge {
+    position: static;
+    display: inline-block;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sw {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    display: inline-block;
+  }
+  .sw.star {
+    background: var(--gold);
+    border-radius: 3px;
+    transform: rotate(45deg);
+    width: 10px;
+    height: 10px;
+  }
+  .sw.one {
+    background: var(--teal);
+  }
+  .sw.gift {
+    background: var(--violet);
+    border-radius: 2px;
+  }
+  .sw.gap {
+    background: var(--empty);
+    border-radius: 2px;
+    border-color: transparent;
+    width: 18px;
+  }
+  svg text {
+    font-family: var(--display);
+    fill: var(--ink);
+  }
+  svg .axis {
+    stroke: var(--line);
+  }
+  svg .tick {
+    fill: var(--muted);
+    font-size: 11px;
+  }
+  svg .rowlabel {
+    font-size: 12px;
+    font-weight: 600;
+  }
+  svg .ev-label {
+    font-size: 10.5px;
+    fill: var(--muted);
+  }
+  svg .gapband {
+    fill: var(--empty);
+  }
+  svg .gaptext {
+    font-size: 10.5px;
+    fill: var(--red);
+    font-weight: 600;
+  }
+  svg .star {
+    fill: var(--gold);
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+  svg .one {
+    fill: var(--teal);
+    stroke: var(--ink);
+    stroke-width: 1.2;
+  }
+  svg .gift {
+    fill: var(--violet);
+    stroke: var(--ink);
+    stroke-width: 1.2;
+  }
+  svg .issue {
+    fill: var(--card);
+    stroke: var(--muted);
+    stroke-width: 1.2;
+  }
+
+  /* facts */
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 26px;
+  }
+  .fact {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .fact h3 {
+    font-size: 0.95rem;
+    color: var(--teal);
+  }
+  .fact p,
+  .fact li {
+    font-size: 0.95rem;
+  }
+  .fact ul {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 3px;
+  }
+  .fact.wide {
+    grid-column: 1 / -1;
+  }
+  .pa {
+    font-style: italic;
+  }
+  .days {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .days .chip {
+    font-size: 0.85rem;
+  }
+
+  /* comparison + recommendation */
+  .table-wrap {
+    overflow-x: auto;
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    background: var(--panel);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 820px;
+    font-size: 0.9rem;
+  }
+  th,
+  td {
+    text-align: left;
+    vertical-align: top;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  th {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+  }
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  tr.rec-row td {
+    background: var(--gold-soft);
+  }
+  tr.rec-row td:first-child {
+    box-shadow: inset 6px 0 0 var(--rec);
+  }
+  td.num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .verdict {
+    display: grid;
+    gap: 12px;
+    border: 6px solid var(--rec);
+  }
+  .verdict ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 4px;
+  }
+  .small {
+    font-size: 0.88rem;
+  }
+
+  /* lightbox */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(15, 24, 33, 0.86);
+    display: grid;
+    place-items: center;
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox .box {
+    position: relative;
+    max-width: min(1440px, 100%);
+    max-height: 100%;
+    display: grid;
+    gap: 8px;
+  }
+  .lightbox .frame {
+    position: relative;
+    border: 2px solid #24384a;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .lightbox .frame.rec-frame {
+    border: 6px solid var(--rec);
+  }
+  .lightbox img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 110px);
+    width: auto;
+    height: auto;
+  }
+  .lightbox .cap {
+    color: #f6f0e3;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .lightbox button {
+    font-family: var(--display);
+    font-weight: 600;
+    background: #fff8ea;
+    color: #24384a;
+    border: 2px solid #24384a;
+    border-radius: 10px;
+    padding: 4px 12px;
+    cursor: pointer;
+  }
+
+  @media (max-width: 760px) {
+    .pics,
+    .pics.three,
+    .facts {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .panel {
+      padding: 16px;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .shot {
+      transition: transform 0.12s ease;
+    }
+    .shot:hover {
+      transform: translateY(-2px);
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Pressure Point Institute · options for gap 3 · 27 October 2026</p>
+    <h1>The Research Drip</h1>
+    <p class="lede">
+      Four ways to keep new things arriving through a center's middle and after its last star, the way Two Point's
+      Research room does. Pictures first: each option shows a real panel today and the same panel with the option drawn
+      in, then a strip of a center's first 24 months. One is recommended.
+    </p>
+  </header>
+
+  <div class="panel gapnote">
+    <h2>The gap</h2>
+    <p class="lede">
+      Today everything new arrives in three lumps, at the stars, plus the karma shop. Equipment upgrades are bought from
+      the inspector with nothing to research, nothing new turns up between stars, and the room count stops at eighteen.
+      After the third star a center sits on its money with <q>Nothing left to prove. For now.</q> and the Foundation's
+      three gifts as the only thing to spend it on. The bot's three-star Orchard Estate below was at $339,836 on day
+      900.
+    </p>
+    <div class="pics">
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/before-star-exchange.jpg"
+          data-cap="Today: The Exchange's first star. Four techniques, two rooms, karma and the next center arrive in one dialog."
+        >
+          <img
+            src="img/before-star-exchange.png"
+            alt="The star dialog at The Exchange listing two new rooms and four new treatments at once"
+            loading="lazy"
+          /><span class="tag">Today</span>
+        </button>
+        <figcaption>
+          A star arrives as one lump: two rooms, four techniques, items, land and an upgrade level in a single dialog.
+        </figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/before-objectives.jpg"
+          data-cap="Today: The Orchard Estate, day 900, three stars and $339,836 in the bank."
+        >
+          <img
+            src="img/before-objectives.png"
+            alt="The objectives panel at The Orchard Estate reading All stars earned and Nothing left to prove. For now."
+            loading="lazy"
+          /><span class="tag">Today</span>
+        </button>
+        <figcaption>
+          After the last star the objectives panel has nothing to ask. The Orchard save, built by the playtest bot (seed
+          2, day 900).
+        </figcaption>
+      </figure>
+    </div>
+    <p class="small muted">
+      The strips use The Exchange with stars at months 4, 8 and 13, a good player's pace on today's code (Max's own
+      games reached its first two at months 3.9 and 6.4; the good bot's median is about 8, 12 and 20). It has massage
+      and acupuncture only, so its third star opens no technique at all. Foundation gifts land where the bot makes them,
+      months 17 and 22. Already designed elsewhere: <b>Grand Occasions</b> moves the third star's techniques and items
+      to the second star and gives the third star a finale. All four options here sit beside it.
+    </p>
+  </div>
+
+  <!-- A: What's Going Around (recommended) -->
+  <section class="option recommended" id="going-around">
+    <div class="opt-head">
+      <span class="opt-letter">A</span>
+      <div class="opt-title">
+        <p class="eyebrow">Option A · recommended</p>
+        <h2>What's Going Around</h2>
+        <p class="pitch">
+          Every six to eight weeks an ailment goes around town, announced a week ahead with a fanfare, and it opens what
+          treats it, even ahead of its star.
+        </p>
+      </div>
+    </div>
+    <div class="pics three">
+      <figure>
+        <button
+          class="shot rec-frame"
+          data-rec
+          data-full="img/full/after-trend-dialog.jpg"
+          data-cap="After: the fanfare dialog, in the star dialog's look, a week before the wave."
+        >
+          <img
+            src="img/after-trend-dialog.png"
+            alt="Mockup: a dialog titled Going around town, Cold Feet, opening Moxibustion ahead of star 2"
+            loading="lazy"
+          /><span class="tag after">After</span><span class="rec-badge">Recommended</span>
+        </button>
+        <figcaption>The fanfare: a week's warning, what it opens, and what happens if you let it pass.</figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot rec-frame"
+          data-rec
+          data-full="img/full/after-trend-objectives.jpg"
+          data-cap="After: the objectives panel carries a readiness check for the wave."
+        >
+          <img
+            src="img/after-trend-objectives.png"
+            alt="Mockup: an orange card under the objectives, Going around: Cold Feet, with ticks and warnings"
+            loading="lazy"
+          /><span class="tag after">After</span><span class="rec-badge">Recommended</span>
+        </button>
+        <figcaption>
+          Mid-center: a card under the objectives checks you are ready, as Grand Occasions' readiness check does.
+        </figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot rec-frame"
+          data-rec
+          data-full="img/full/after-trend-late.jpg"
+          data-cap="After: The Orchard Estate after its last star, with something on its way again."
+        >
+          <img
+            src="img/after-trend-late.png"
+            alt="Mockup: All stars earned, with a card Going around: Sea Legs, from The Boardwalk"
+            loading="lazy"
+          /><span class="tag after">After</span><span class="rec-badge">Recommended</span>
+        </button>
+        <figcaption>
+          After the last star: other centers' ailments come visiting, and once a year a whole discipline.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="strip rec-frame" data-strip="A"></div>
+    <div class="facts">
+      <div class="fact">
+        <h3>What the player sees</h3>
+        <ul>
+          <li>Seven days out: the dialog, a PA line and the objectives card.</li>
+          <li>
+            For 30 days about a quarter of new guests have that ailment, all wearing its prop, so one line visibly
+            grows.
+          </li>
+          <li>They pay 25% more while it lasts.</li>
+        </ul>
+      </div>
+      <div class="fact">
+        <h3>What the player chooses</h3>
+        <p>
+          Chase it or let it pass. Chasing costs a training course, a practitioner off the floor while they learn, maybe
+          a second table or a room, and a crowded line that squeezes the others. Letting it pass costs nothing:
+          Reception tells those guests to come back later.
+        </p>
+      </div>
+      <div class="fact">
+        <h3>What arrives, across two years</h3>
+        <p>
+          About ten moments where today has three. Before a star, a wave pulls one of the next star's techniques
+          forward. After the last star, ailments from the other centers visit, and once a year a discipline the center
+          does not have arrives with its room: sound healing at The Exchange.
+        </p>
+      </div>
+      <div class="fact">
+        <h3>One new sim rule</h3>
+        <p>For 30 days one named ailment makes up a quarter of arrivals, and whatever treats it is open.</p>
+        <p class="pa">PA: “Cold Feet is going around. Moxibustion is open; train an Acupuncturist now.”</p>
+      </div>
+      <div class="fact">
+        <h3>First slice</h3>
+        <p>
+          One ailment going around at The Exchange (Cold Feet, opening Moxibustion), with the warning, the dialog, the
+          card and the PA line, and a bot rerun.
+        </p>
+        <div class="days">
+          <span class="chip">First slice: 5–7 days</span><span class="chip">Whole: 12–15 days</span>
+        </div>
+      </div>
+      <div class="fact">
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>
+            Chasing could always be right, the "accept every emergency" problem again. The cost has to be real: the bot
+            should sometimes do better letting one pass.
+          </li>
+          <li>
+            A new discipline after the last star touches discipline switches, rooms marked for one center and the guide.
+            That is the big part of the whole.
+          </li>
+          <li>
+            The Foundation stays the only karma. A wave pays only for guests you actually heal, never for ignoring it.
+          </li>
+        </ul>
+      </div>
+      <div class="fact wide">
+        <h3>Fits with</h3>
+        <p class="small">
+          The horoscope (Under the Stars) can name next month's ailment; the Rag can headline it; ZenMart Express copies
+          the busiest discipline, which is often the one you just chased. A Grand Occasion is a wave at full scale, so
+          waves pause around one. The folder parked "Wellness Fads" for a later doc; this is that doc's shape, with the
+          town choosing the fad. The Trend Lab wild card could later let the player start one.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- B: The Research Room -->
+  <section class="option" id="research-room">
+    <div class="opt-head">
+      <span class="opt-letter">B</span>
+      <div class="opt-title">
+        <p class="eyebrow">Option B</p>
+        <h2>The Research Room</h2>
+        <p class="pitch">
+          Two Point's shape: from the first star, a practitioner at a Research Desk turns days and money into the next
+          thing you choose.
+        </p>
+      </div>
+    </div>
+    <div class="pics">
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/before-treatments-exchange.jpg"
+          data-cap="Today: the Treatments menu at The Exchange after its first star. Locked techniques say only when."
+        >
+          <img
+            src="img/before-treatments-exchange.png"
+            alt="The Treatments menu with Hot Stone and Cranio-sacral faded, reading Unlocks at star 2"
+            loading="lazy"
+          /><span class="tag">Today</span>
+        </button>
+        <figcaption>Today: a locked technique says "Unlocks at star 2" and nothing else.</figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/after-research-treatments.jpg"
+          data-cap="After: the Research Desk strip over the Treatments menu, and a Research button on each locked technique."
+        >
+          <img
+            src="img/after-research-treatments.png"
+            alt="Mockup: a lilac Research Desk strip with a study in progress and a queue, and a Research it button on Hot Stone"
+            loading="lazy"
+          /><span class="tag after">After</span>
+        </button>
+        <figcaption>After: the desk's study and queue at the top; each locked technique can be researched.</figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/before-upgrade-exchange.jpg"
+          data-cap="Today: a Massage Table's upgrade, locked until the next star."
+        >
+          <img
+            src="img/before-upgrade-exchange.png"
+            alt="A Massage Table inspector with a faded button Level 2 unlocks at star 2"
+            loading="lazy"
+          /><span class="tag">Today</span>
+        </button>
+        <figcaption>Today: the next upgrade level waits for a star.</figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/after-research-upgrade.jpg"
+          data-cap="After: the same inspector offers to research the level."
+        >
+          <img
+            src="img/after-research-upgrade.png"
+            alt="Mockup: the upgrade button reads Research level 2: $4,000, 20 days at the desk"
+            loading="lazy"
+          /><span class="tag after">After</span>
+        </button>
+        <figcaption>After: research it instead of waiting.</figcaption>
+      </figure>
+    </div>
+    <div class="strip" data-strip="B"></div>
+    <div class="facts">
+      <div class="fact">
+        <h3>What the player sees and chooses</h3>
+        <p>
+          A Research Room with one desk opens at the first star. The player picks the study: one of the next star's
+          techniques, the next upgrade level for one kind of equipment, or, after the last star, a refinement of a
+          technique. One study at a time per desk; a second desk doubles the pace.
+        </p>
+      </div>
+      <div class="fact">
+        <h3>What it costs</h3>
+        <p>
+          $4,000 to $9,000 a study before the last star, $15,000 to $40,000 a refinement after, and a practitioner of
+          that discipline off the floor while they sit at the desk. At The Exchange the refinements come to about
+          $225,000.
+        </p>
+      </div>
+      <div class="fact">
+        <h3>One new sim rule</h3>
+        <p>
+          A study moves on one day for each day a practitioner of its discipline works the desk; finished, it opens its
+          thing.
+        </p>
+        <p class="pa">PA: “The Research Desk is empty. Seat a practitioner to continue the study.”</p>
+      </div>
+      <div class="fact">
+        <h3>First slice</h3>
+        <p>The room, the desk and the study rule, with the next star's techniques as the only studies.</p>
+        <div class="days">
+          <span class="chip">First slice: 8–10 days</span><span class="chip">Whole: 20–25 days</span>
+        </div>
+      </div>
+      <div class="fact wide">
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>
+            Nothing arrives before the first star, and the room competes for money in the mid-center squeeze. It is
+            optional, so no cliff, but the people who need a drip most can least afford it.
+          </li>
+          <li>
+            Refinements are numbers (+5%, shorter sessions) unless each changes what is on screen, which is gap 1's
+            work.
+          </li>
+          <li>
+            Early techniques make stars feel smaller. Stars still open everything not yet studied, and the grants, land
+            and karma.
+          </li>
+          <li>
+            The Foundation stays the karma sink: research earns nothing for the campaign and is spent where it is
+            played.
+          </li>
+        </ul>
+      </div>
+      <div class="fact wide">
+        <h3>Late game</h3>
+        <figure style="max-width: 560px">
+          <button
+            class="shot"
+            data-full="img/full/after-research-late.jpg"
+            data-cap="After: The Orchard Estate after its last star, a refinement under way."
+          >
+            <img
+              src="img/after-research-late.png"
+              alt="Mockup: under All stars earned, a lilac card Research: Gong Bath, refined, 26 of 35 days"
+              loading="lazy"
+            /><span class="tag after">After</span>
+          </button>
+          <figcaption>
+            After the last star the desk keeps working through refinements, one every month or so.
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- C: The Wholesale Catalog -->
+  <section class="option" id="catalog">
+    <div class="opt-head">
+      <span class="opt-letter">C</span>
+      <div class="opt-title">
+        <p class="eyebrow">Option C</p>
+        <h2>The Wholesale Catalog</h2>
+        <p class="pitch">
+          On the 1st of every month, four offers good until month's end: the next star's kit early at a markup, an
+          upgrade kit, a limited piece and a clearance.
+        </p>
+      </div>
+    </div>
+    <div class="pics">
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/before-money-books.jpg"
+          data-cap="Today: the Money menu after the last star. The Foundation's card is the one place for the money."
+        >
+          <img
+            src="img/before-money-books.png"
+            alt="The Money menu's Books tab with the Pressure Point Foundation card, gift 3 of 3 at $300,000"
+            loading="lazy"
+          /><span class="tag">Today</span>
+        </button>
+        <figcaption>Today: six tabs, and the Foundation is the only thing to buy.</figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/after-catalog.jpg"
+          data-cap="After: a seventh tab, this month's catalog."
+        >
+          <img
+            src="img/after-catalog.png"
+            alt="Mockup: a Catalog tab with four offers, The Founder's Gong, a table level 4 kit, a Himalayan Salt Wall and an Aura Camera"
+            loading="lazy"
+          /><span class="tag after">After</span>
+        </button>
+        <figcaption>After: this month's issue, delivered to the curb in three days.</figcaption>
+      </figure>
+    </div>
+    <div class="strip" data-strip="C"></div>
+    <div class="facts">
+      <div class="fact">
+        <h3>What the player sees and chooses</h3>
+        <p>
+          A new issue every month, a toast on the 1st, and a van at the curb when an order comes. The choice is which
+          offer, if any, this month.
+        </p>
+      </div>
+      <div class="fact">
+        <h3>What it costs</h3>
+        <p>
+          Money only: +50 to +60% for anything early, $20,000 to $60,000 for the collector's pieces after the last star.
+        </p>
+        <p class="pa">PA: “The catalog van is at the curb. A Caretaker will bring it in.”</p>
+      </div>
+      <div class="fact">
+        <h3>First slice</h3>
+        <p>The tab and a monthly draw from items that already exist: the next star's at a markup, plus a clearance.</p>
+        <div class="days">
+          <span class="chip">First slice: 3–4 days</span><span class="chip">Whole: 8–10 days</span>
+        </div>
+      </div>
+      <div class="fact">
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>Shopping is not play: no new verb on the floor beyond placing what came.</li>
+          <li>
+            It competes with the Foundation for the same pile and does the same job, money in, things out. Collector's
+            pieces must never carry karma.
+          </li>
+          <li>Overlaps the Talismans and the Peddler wild card and the karma shop.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- D: Discipline Ladders -->
+  <section class="option" id="ladders">
+    <div class="opt-head">
+      <span class="opt-letter">D</span>
+      <div class="opt-title">
+        <p class="eyebrow">Option D</p>
+        <h2>Discipline Ladders</h2>
+        <p class="pitch">
+          Each discipline climbs its own ladder of heals, and each rung opens one technique or upgrade level; stars keep
+          the rooms, land and new disciplines.
+        </p>
+      </div>
+    </div>
+    <div class="pics">
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/before-treatments-exchange.jpg"
+          data-cap="Today: the Treatments menu at The Exchange after its first star."
+        >
+          <img
+            src="img/before-treatments-exchange.png"
+            alt="The Treatments menu with Hot Stone and Cranio-sacral reading Unlocks at star 2"
+            loading="lazy"
+          /><span class="tag">Today</span>
+        </button>
+        <figcaption>Today: techniques wait for the star.</figcaption>
+      </figure>
+      <figure>
+        <button
+          class="shot"
+          data-full="img/full/after-ladder.jpg"
+          data-cap="After: a ladder of heals under each discipline's heading."
+        >
+          <img
+            src="img/after-ladder.png"
+            alt="Mockup: a ladder under Massage therapy with rungs at 10, 25, 40, 60, 90 and 140 heals"
+            loading="lazy"
+          /><span class="tag after">After</span>
+        </button>
+        <figcaption>After: Hot Stone opens at 60 massage heals, 52 so far.</figcaption>
+      </figure>
+    </div>
+    <div class="strip" data-strip="D"></div>
+    <div class="facts">
+      <div class="fact">
+        <h3>What the player sees and chooses</h3>
+        <p>
+          A ladder under each discipline in the Treatments menu and a toast at each rung. The choice is which discipline
+          to push: where guests go, who is trained, which room is built.
+        </p>
+        <p class="pa">PA: “Acupuncture has reached fifty heals. Electroacupuncture is open to train.”</p>
+      </div>
+      <div class="fact">
+        <h3>What it costs</h3>
+        <p>No money at all. It costs attention, and a discipline you neglect stays locked.</p>
+        <div class="days">
+          <span class="chip">First slice: 4–5 days</span
+          ><span class="chip">Whole: 8–10 days, plus star goals rebalanced</span>
+        </div>
+      </div>
+      <div class="fact wide">
+        <h3>What could go wrong</h3>
+        <ul>
+          <li>
+            It pays for heals the player was making anyway, and the busiest discipline gets everything first: a loop
+            that pushes the way things already go.
+          </li>
+          <li>
+            It tops out around month 16, so after the last star it adds nothing, and it gives the money nowhere to go.
+          </li>
+          <li>Star goals need rework, since stars would open less.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="option" id="compare">
+    <h2>Side by side</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Verb it adds</th>
+            <th>New moments in 24 months</th>
+            <th>Longest wait for something new</th>
+            <th>After the last star</th>
+            <th>Where the money goes</th>
+            <th>First slice</th>
+            <th>Whole</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Today</td>
+            <td>none</td>
+            <td class="num">3 lumps</td>
+            <td class="num">11+ months</td>
+            <td>Foundation gifts only</td>
+            <td>Foundation</td>
+            <td class="num">–</td>
+            <td class="num">–</td>
+          </tr>
+          <tr class="rec-row">
+            <td><b>A. What's Going Around</b> ★</td>
+            <td>chase it or let it pass</td>
+            <td class="num">3 + 11</td>
+            <td class="num">2 months</td>
+            <td>visiting ailments; a new discipline and room a year</td>
+            <td>rooms, training, staff for the waves</td>
+            <td class="num">5–7 days</td>
+            <td class="num">12–15 days</td>
+          </tr>
+          <tr>
+            <td><b>B. The Research Room</b></td>
+            <td>choose a path; give up a practitioner</td>
+            <td class="num">3 + 12</td>
+            <td class="num">4 months</td>
+            <td>refinements, monthly</td>
+            <td>studies, about $225k a center</td>
+            <td class="num">8–10 days</td>
+            <td class="num">20–25 days</td>
+          </tr>
+          <tr>
+            <td><b>C. The Wholesale Catalog</b></td>
+            <td>shop</td>
+            <td class="num">3 + 24 issues</td>
+            <td class="num">1 month, if you buy</td>
+            <td>collector's pieces</td>
+            <td>things, at a markup</td>
+            <td class="num">3–4 days</td>
+            <td class="num">8–10 days</td>
+          </tr>
+          <tr>
+            <td><b>D. Discipline Ladders</b></td>
+            <td>push one discipline</td>
+            <td class="num">3 + 10</td>
+            <td class="num">8 months, after month 16</td>
+            <td>nothing</td>
+            <td>nowhere</td>
+            <td class="num">4–5 days</td>
+            <td class="num">8–10 days</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel verdict" id="recommendation">
+    <p class="eyebrow">Recommendation</p>
+    <h2>Build What's Going Around</h2>
+    <ul>
+      <li>
+        It is the Two Point moment the gap names, a new ailment announced with a fanfare that sends you to build and
+        train, and it lands about every two months, in the middle and after the end.
+      </li>
+      <li>
+        The pressure is on the floor where it can be seen: a crowd with the same prop and one line growing, warned a
+        week ahead, with a way out that costs nothing.
+      </li>
+      <li>
+        It uses the cast and content that exist: 62 ailments, the techniques and their kit. One new rule; the first
+        slice is about a week.
+      </li>
+      <li>
+        It is the only option that gives a finished center new rooms and new specialists, so the money goes into play
+        while the Foundation stays the karma sink.
+      </li>
+    </ul>
+    <p class="small muted">
+      The Research Room is the runner-up: the faithful port, with a real path to choose, but about twice the work,
+      nothing before the first star, and a late game of refinements that are numbers until gap 1 gives them a show. If
+      waves land, a small Research Desk could later be how a player pulls a wave's technique in earlier.
+    </p>
+  </section>
+</div>
+
+<script>
+  // Each strip: a center's first 24 months, today against the option. Months are The Exchange's at a good pace.
+  const TODAY = [
+    { m: 0, k: 'one', t: 'Open: Swedish' },
+    { m: 4, k: 'star', t: '★1: 2 rooms, 4 techniques' },
+    { m: 8, k: 'star', t: '★2: 2 rooms, 4 techniques' },
+    { m: 13, k: 'star', t: '★3: items, sprinklers' },
+    { m: 17, k: 'gift', t: 'Gift' },
+    { m: 22, k: 'gift', t: 'Gift' },
+  ];
+  const OPTIONS = {
+    A: {
+      name: "What's Going Around",
+      stat: '11 waves between and after the stars',
+      events: [
+        { m: 0, k: 'one', t: 'Open' },
+        { m: 1.5, k: 'one', t: 'Tension Headband' },
+        { m: 3, k: 'one', t: 'Knotted Up: Deep Tissue early' },
+        { m: 4, k: 'star', t: '★1' },
+        { m: 5.5, k: 'one', t: 'Cold Feet: Moxibustion early' },
+        { m: 7, k: 'one', t: 'Flat Battery: Electro early' },
+        { m: 8, k: 'star', t: '★2' },
+        { m: 10, k: 'one', t: 'Text Neck' },
+        { m: 11.5, k: 'one', t: 'Stress Head' },
+        { m: 13, k: 'star', t: '★3' },
+        { m: 14.5, k: 'one', t: 'Sea Legs (Boardwalk)' },
+        { m: 16.5, k: 'one', t: 'Noisy Mind: sound healing + room' },
+        { m: 17, k: 'gift', t: 'Gift' },
+        { m: 18.5, k: 'one', t: 'Lobstered (Boardwalk)' },
+        { m: 20.5, k: 'one', t: 'Earworm: Tuning Forks' },
+        { m: 22, k: 'gift', t: 'Gift' },
+        { m: 22.8, k: 'one', t: 'Frozen Stiff (High Pines)' },
+      ],
+    },
+    B: {
+      name: 'The Research Room',
+      stat: '12 studies finished, none before the first star',
+      events: [
+        { m: 0, k: 'one', t: 'Open' },
+        { m: 4, k: 'star', t: '★1 + Research Room' },
+        { m: 5, k: 'one', t: 'Moxibustion' },
+        { m: 6, k: 'one', t: 'Tables level 2' },
+        { m: 7.2, k: 'one', t: 'Electro' },
+        { m: 8, k: 'star', t: '★2' },
+        { m: 9.5, k: 'one', t: 'Tables level 3' },
+        { m: 11, k: 'one', t: 'Pin Press level 2' },
+        { m: 13, k: 'star', t: '★3' },
+        { m: 14, k: 'one', t: 'Cupping, refined' },
+        { m: 15.5, k: 'one', t: 'Needling, refined' },
+        { m: 17, k: 'gift', t: 'Gift' },
+        { m: 17.4, k: 'one', t: 'Deep Tissue, refined' },
+        { m: 18.8, k: 'one', t: 'Moxa, refined' },
+        { m: 20.2, k: 'one', t: 'Electro, refined' },
+        { m: 21.6, k: 'one', t: 'Hot Stone, refined' },
+        { m: 22, k: 'gift', t: 'Gift' },
+        { m: 23.2, k: 'one', t: 'Cranio, refined' },
+      ],
+    },
+    C: {
+      name: 'The Wholesale Catalog',
+      stat: 'an issue every month; arrivals only when you buy',
+      issues: true,
+      events: [
+        { m: 0, k: 'one', t: 'Open' },
+        { m: 4, k: 'star', t: '★1' },
+        { m: 8, k: 'star', t: '★2' },
+        { m: 13, k: 'star', t: '★3' },
+        { m: 17, k: 'gift', t: 'Gift' },
+        { m: 22, k: 'gift', t: 'Gift' },
+        { m: 2, k: 'one', t: 'Stretch Rack early' },
+        { m: 6, k: 'one', t: 'Moxa Burner early' },
+        { m: 10, k: 'one', t: 'Upgrade kit' },
+        { m: 15, k: 'one', t: "Founder's Gong" },
+        { m: 19, k: 'one', t: 'Table level 4' },
+        { m: 23, k: 'one', t: 'Salt Wall' },
+      ],
+    },
+    D: {
+      name: 'Discipline Ladders',
+      stat: '10 rungs, the last at month 16',
+      events: [
+        { m: 0, k: 'one', t: 'Open' },
+        { m: 1.5, k: 'one', t: 'Deep Tissue' },
+        { m: 3, k: 'one', t: 'Sports' },
+        { m: 4, k: 'star', t: '★1' },
+        { m: 5, k: 'one', t: 'Needling' },
+        { m: 6, k: 'one', t: 'Cupping' },
+        { m: 7, k: 'one', t: 'Tables level 2' },
+        { m: 8, k: 'star', t: '★2' },
+        { m: 9, k: 'one', t: 'Hot Stone' },
+        { m: 10.5, k: 'one', t: 'Moxibustion' },
+        { m: 12, k: 'one', t: 'Cranio' },
+        { m: 13, k: 'star', t: '★3' },
+        { m: 14, k: 'one', t: 'Electro' },
+        { m: 16, k: 'one', t: 'Tables level 3' },
+        { m: 17, k: 'gift', t: 'Gift' },
+        { m: 22, k: 'gift', t: 'Gift' },
+      ],
+    },
+  };
+
+  const W = 980,
+    L = 112,
+    R = 34,
+    ROW = 62;
+  const x = (m) => L + (m / 24) * (W - L - R);
+  const NS = 'http://www.w3.org/2000/svg';
+  function el(name, attrs, text) {
+    const e = document.createElementNS(NS, name);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  /** The stretches of three months or more with nothing new arriving, gifts aside (the player makes those). */
+  function gaps(events) {
+    const ms = events
+      .filter((e) => e.k !== 'gift')
+      .map((e) => e.m)
+      .sort((a, b) => a - b);
+    ms.push(24);
+    const out = [];
+    for (let i = 1; i < ms.length; i++) if (ms[i] - ms[i - 1] >= 3) out.push([ms[i - 1], ms[i]]);
+    return out;
+  }
+  function marker(g, e, y) {
+    const cx = x(e.m);
+    let shape;
+    if (e.k === 'star') {
+      const r = 9,
+        pts = [];
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI) / 5,
+          rr = i % 2 ? r * 0.45 : r;
+        pts.push(`${cx + rr * Math.cos(a)},${y + rr * Math.sin(a)}`);
+      }
+      shape = el('polygon', { points: pts.join(' '), class: 'star' });
+    } else if (e.k === 'gift')
+      shape = el('rect', {
+        x: cx - 5,
+        y: y - 5,
+        width: 10,
+        height: 10,
+        class: 'gift',
+        transform: `rotate(45 ${cx} ${y})`,
+      });
+    else shape = el('circle', { cx, cy: y, r: 5.5, class: 'one' });
+    shape.appendChild(el('title', {}, `Month ${e.m}: ${e.t}`));
+    g.appendChild(shape);
+  }
+  function row(svg, label, events, y, opts = {}) {
+    svg.appendChild(el('text', { x: 0, y: y + 4, class: 'rowlabel' }, label));
+    for (const [a, b] of gaps(events)) {
+      svg.appendChild(
+        el('rect', {
+          x: x(a) + 7,
+          y: y - 13,
+          width: Math.max(0, x(b) - x(a) - 14),
+          height: 26,
+          rx: 6,
+          class: 'gapband',
+        }),
+      );
+      if (b - a >= 4)
+        svg.appendChild(
+          el(
+            'text',
+            { x: (x(a) + x(b)) / 2, y: y + 24, 'text-anchor': 'middle', class: 'gaptext' },
+            `nothing new for ${Math.round(b - a)}${b === 24 ? '+' : ''} months`,
+          ),
+        );
+    }
+    svg.appendChild(el('line', { x1: L, x2: W - R, y1: y, y2: y, class: 'axis', 'stroke-width': 2 }));
+    if (opts.issues)
+      for (let m = 1; m <= 24; m++) svg.appendChild(el('circle', { cx: x(m), cy: y, r: 3, class: 'issue' }));
+    const g = el('g', {});
+    for (const e of events) marker(g, e, y);
+    svg.appendChild(g);
+  }
+  function draw(host) {
+    const key = host.dataset.strip,
+      opt = OPTIONS[key];
+    const rec = host.classList.contains('rec-frame');
+    const head = document.createElement('div');
+    head.className = 'strip-head';
+    head.innerHTML = `<h4>The first 24 months at The Exchange: today against ${opt.name}</h4><span class="stat">${opt.stat}</span>`;
+    if (rec) {
+      const b = document.createElement('span');
+      b.className = 'rec-badge';
+      b.textContent = 'Recommended';
+      head.appendChild(b);
+    }
+    host.appendChild(head);
+    const H = 24 + ROW * 2 + 26;
+    const svg = el('svg', {
+      viewBox: `0 0 ${W} ${H}`,
+      role: 'img',
+      'aria-label': `Timeline of months 0 to 24, today against ${opt.name}`,
+    });
+    for (let m = 0; m <= 24; m += 3) {
+      svg.appendChild(el('line', { x1: x(m), x2: x(m), y1: 14, y2: H - 18, class: 'axis', 'stroke-dasharray': '2 4' }));
+      svg.appendChild(
+        el(
+          'text',
+          { x: x(m), y: H - 4, 'text-anchor': 'middle', class: 'tick' },
+          m === 0 ? 'opens' : m === 12 ? 'month 12' : m === 24 ? 'month 24' : `${m}`,
+        ),
+      );
+    }
+    row(svg, 'Today', TODAY, 30);
+    row(svg, `Option ${key}`, opt.events, 30 + ROW, { issues: opt.issues });
+    const scroll = document.createElement('div');
+    scroll.className = 'strip-scroll';
+    scroll.appendChild(svg);
+    host.appendChild(scroll);
+    const legend = document.createElement('div');
+    legend.className = 'legend';
+    legend.innerHTML =
+      '<span><i class="sw star"></i>a star\'s lump</span><span><i class="sw one"></i>one new thing</span><span><i class="sw gift"></i>a Foundation gift</span>' +
+      (opt.issues ? '<span><i class="sw" style="background:var(--card)"></i>a catalog issue</span>' : '') +
+      '<span><i class="sw gap"></i>three months or more with nothing new</span>';
+    host.appendChild(legend);
+    const list = document.createElement('p');
+    list.className = 'small muted';
+    list.textContent = opt.events
+      .filter((e) => e.k === 'one' && e.m > 0)
+      .map((e) => `m${e.m} ${e.t}`)
+      .join(' · ');
+    host.appendChild(list);
+  }
+  document.querySelectorAll('[data-strip]').forEach(draw);
+
+  // a picture opens full size; the recommended option's keep their frame and tag there too
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  box.hidden = true;
+  box.innerHTML =
+    '<div class="box"><div class="frame"><img alt=""></div><div class="cap"><span></span><button type="button">Close</button></div></div>';
+  document.body.appendChild(box);
+  const frame = box.querySelector('.frame'),
+    big = box.querySelector('img'),
+    cap = box.querySelector('.cap span');
+  let back = null;
+  function open(btn) {
+    back = btn;
+    big.src = btn.dataset.full;
+    big.alt = btn.querySelector('img').alt;
+    cap.textContent = btn.dataset.cap || '';
+    frame.querySelectorAll('.rec-badge, .tag').forEach((n) => n.remove());
+    frame.classList.toggle('rec-frame', btn.hasAttribute('data-rec'));
+    const tag = btn.querySelector('.tag');
+    if (tag) frame.appendChild(tag.cloneNode(true));
+    if (btn.hasAttribute('data-rec')) {
+      const b = document.createElement('span');
+      b.className = 'rec-badge';
+      b.textContent = 'Recommended';
+      frame.appendChild(b);
+    }
+    box.hidden = false;
+    box.querySelector('button').focus();
+  }
+  function close() {
+    box.hidden = true;
+    big.removeAttribute('src');
+    back?.focus();
+  }
+  document.querySelectorAll('.shot').forEach((b) => b.addEventListener('click', () => open(b)));
+  box.addEventListener('click', (e) => {
+    if (e.target === box || e.target.tagName === 'BUTTON') close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !box.hidden) close();
+  });
+</script>

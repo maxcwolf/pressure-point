@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **Staff with more to them.** Every applicant now has one to three quirks, never more than one that costs you, and about one in seven has a rare one as well: a Former Influencer, a Burnout Survivor, Healing Hands or someone who Holds Space. Each shows as a chip on their card, their row and their inspector, with what it does when you point at it, and pay follows them. Staff you already have keep the quirks they came with.
+- **Ailments going around, being tried out.** Off until switched on under Feature testing in Settings. At The Exchange, about a month and a half after the first star, Cold Feet goes around town: a week's warning opens Moxibustion and its Moxa Burner ahead of the second star, then for 30 days its guests come on top of the usual ones. Guests the center isn't ready for turn back at the door and come another time, at no cost.
 
 ## v0.34.3
 

@@ -36,6 +36,7 @@ import { itemNoise } from './noise';
 import type { VisitEnd } from './records';
 import { isGroupStation, matsPlayed } from './sessions';
 import { offered, unlocked } from './treatments';
+import { openedEarly, waveReady } from './waves';
 
 /** How often guests turn up with a condition nobody on the payroll is trained in, against one they are. */
 export const UNTRAINED_PULL = 0.4;
@@ -170,7 +171,9 @@ export interface Weighted {
  */
 export function sentFor(ctx: SimContext, m: Modality): boolean {
   if (MODALITIES[m].machine) return practicable(ctx, m);
-  return unlocked(ctx, m) && offered(ctx, MODALITIES[m].discipline);
+  if (!unlocked(ctx, m) || !offered(ctx, MODALITIES[m].discipline)) return false;
+  // a technique opened early by an ailment going around draws guests of its own only once someone here can do it
+  return !openedEarly(ctx.s, m) || waveReady(ctx, m);
 }
 
 /** Some conditions guests could come with now, each with its weight against the others. */

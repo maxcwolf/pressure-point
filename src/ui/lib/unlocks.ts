@@ -4,6 +4,7 @@ import {
   type CenterId,
   type Discipline,
   MODALITIES,
+  type Modality,
   MODALITY_ORDER,
   modalityLabel,
   type Offering,
@@ -34,11 +35,16 @@ export function newRoomsText(star: number, enabled: (d: Offering) => boolean, ce
 }
 
 /**
- * The treatments a star unlocks, each with its icon, leaving out any whose discipline is switched off, and a machine's
- * own, which comes with its room.
+ * The treatments a star unlocks, each with its icon, leaving out any whose discipline is switched off, a machine's
+ * own, which comes with its room, and any an ailment going around opened already.
  */
-export function treatmentsUnlockedAt(star: number, enabled: (d: Discipline) => boolean): IconLine[] {
+export function treatmentsUnlockedAt(
+  star: number,
+  enabled: (d: Discipline) => boolean,
+  opened: readonly Modality[] = [],
+): IconLine[] {
   return MODALITY_ORDER.filter(
-    (m) => MODALITIES[m].star === star && !MODALITIES[m].machine && enabled(MODALITIES[m].discipline),
+    (m) =>
+      MODALITIES[m].star === star && !MODALITIES[m].machine && enabled(MODALITIES[m].discipline) && !opened.includes(m),
   ).map((m) => ({ icon: MODALITIES[m].icon, text: modalityLabel(m) }));
 }

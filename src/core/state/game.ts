@@ -10,11 +10,16 @@ import {
   DIAGNOSIS_TARGET,
   type Discipline,
   DISCIPLINES,
+  type FeatureId,
+  FEATURES,
   FIRST_OUTBREAK_DAY,
   FOLLOWING,
   INSPECTION_FIRST_DAY,
+  type ItemType,
   MISHAP_FIRST_DAY,
   MISHAP_GAP_DAYS,
+  MODALITIES,
+  type Modality,
   type Offering,
   OUTBREAK_GAP_MIN,
   POACH_GAP_DAYS,
@@ -58,6 +63,7 @@ export const emptyStats = (): Stats => ({
   sent: 0,
   worse: 0,
   arrived: 0,
+  later: 0,
   healedBy: {},
   emergencies: 0,
   lastQuit: -1,
@@ -133,8 +139,9 @@ export const defaultPolicy = (): Policy => ({
  * 39: the Practice Spot's front turned round to the way its guest faces.
  * 40: rooms pencilled in for later.
  * 41: the four rare quirks. Staff and applicants already in a save keep the quirks they have.
+ * 42: ailments going around, the techniques they opened early, and the features being tried out.
  */
-export const SAVE_VERSION = 41;
+export const SAVE_VERSION = 42;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -222,6 +229,11 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     mishap: null,
     nextMishap: firstOn(day, MISHAP_FIRST_DAY, MISHAP_GAP_DAYS[0]),
     mishapsOn: true,
+    wave: null,
+    pastWaves: [],
+    nextWave: null,
+    opened: [],
+    features: {},
     blazes: [],
     blazesOn: true,
     ceremony: null,
@@ -294,6 +306,23 @@ export const roomStart = () =>
 export function unlockedUpTo(s: GameState): number {
   // a center can open with some of what the stars bring already open
   return s.unlockAll ? Infinity : Math.max(s.stars, CENTERS[s.center].unlockedFrom ?? 0);
+}
+
+/** Whether a technique is open in this game by now: its star is reached, or an ailment going around opened it early. */
+export function techniqueOpen(s: GameState, m: Modality): boolean {
+  return unlockedUpTo(s) >= MODALITIES[m].star || s.opened.includes(m);
+}
+
+/** The equipment of the techniques opened early, which opens with them, since a technique is no use without it. */
+export const openedKit = (s: GameState): ItemType[] =>
+  s.opened.flatMap((m) => {
+    const kit = MODALITIES[m].equipment;
+    return kit ? [kit] : [];
+  });
+
+/** Whether a feature still being tried out is on in this game: as switched in Settings, or as its default. */
+export function featureOn(s: GameState, f: FeatureId): boolean {
+  return s.features[f] ?? FEATURES[f].on;
 }
 
 /**

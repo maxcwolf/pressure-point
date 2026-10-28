@@ -34,6 +34,11 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
     return;
   }
   const { stats, tally, casebook } = ctx.s;
+  // a guest come with an ailment going around counts toward that wave, even if its month ended while they were here
+  if (end === 'healed' && g.wave) {
+    const wave = [...ctx.s.pastWaves, ctx.s.wave].filter((w) => w?.condition === g.condition).at(-1);
+    if (wave) wave.healed++;
+  }
   stats[end]++;
   tally[end]++;
   const record = (casebook[g.condition] ??= { healed: 0, failed: 0, stormed: 0, sent: 0, priced: 0, worse: 0 });

@@ -24,7 +24,7 @@ import {
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
-import { disciplineOn, emptyLedger, unlockedUpTo } from '../state/game';
+import { disciplineOn, emptyLedger, techniqueOpen } from '../state/game';
 import type { GameState, Item, Ledger, Staff } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
@@ -761,7 +761,7 @@ export function putOffChance(price: number, reputation: number): number {
  */
 export function averagePrice(s: GameState): number {
   const offered = MODALITY_ORDER.filter(
-    (m) => MODALITIES[m].star <= unlockedUpTo(s) && disciplineOn(s, MODALITIES[m].discipline) && machineBuilt(s, m),
+    (m) => techniqueOpen(s, m) && disciplineOn(s, MODALITIES[m].discipline) && machineBuilt(s, m),
   );
   if (!offered.length) return s.priceLevel;
   return offered.reduce((sum, m) => sum + priceFor(s, m), 0) / offered.length;

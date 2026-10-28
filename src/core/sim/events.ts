@@ -48,6 +48,8 @@ export type SimEvent =
   | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }
   | { type: 'star'; stars: number }
+  /** An ailment is going around: its dialog, a week before its guests come. */
+  | { type: 'wave' }
   | { type: 'awards'; year: number }
   | { type: 'visit' }
   | { type: 'achievement'; id: AchievementId }

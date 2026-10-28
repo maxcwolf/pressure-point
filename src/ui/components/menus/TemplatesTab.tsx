@@ -6,7 +6,7 @@ import { decorOpen } from '../../../core/campaign';
 import { type DecorKey, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
-import { unlockedUpTo } from '../../../core/state/game';
+import { openedKit, unlockedUpTo } from '../../../core/state/game';
 import {
   describeLayout,
   MAX_NAME,
@@ -195,7 +195,7 @@ export function TemplatesTab({ pencil }: { pencil: boolean }) {
   const campaign = loadCampaign();
   const allowed = {
     upTo: unlockedUpTo(sim.s),
-    unlocked: campaign.unlocked,
+    unlocked: [...campaign.unlocked, ...openedKit(sim.s)],
     enabled: sim.enabled.bind(sim),
     center: sim.s.center,
   };
