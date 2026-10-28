@@ -977,12 +977,20 @@ describe('a symptom worn whole', () => {
     expect(new Set(heights.map(([, b]) => b)).size).toBeGreaterThan(1);
   });
 
-  it('puts someone scattered together while they lie down, to lie on what they lie on', () => {
+  it('keeps someone scattered apart lying down, floating up off what they lie on rather than off the end of it', () => {
     const whole = buildCharacter(LAB_LOOK);
     const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
-    poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), pose: 'lie' }, 0.3, 1, { style: null });
-    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
-    expect(rig.torso.position.toArray()).toEqual(whole.torso.position.toArray());
+    for (const lie of ['back', 'prone'] as const) {
+      // up off the table is out of the back lying on it, out of the front face down
+      const up = lie === 'back' ? 1 : -1;
+      for (let t = 0; t < 8; t += 0.5) {
+        poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), pose: 'lie' }, t, 1, { style: null, lie, lying: 1 });
+        expect((rig.torso.position.z - whole.torso.position.z) * up, lie).toBeGreaterThan(0.08);
+        expect((rig.head.position.z - whole.head.position.z) * up, lie).toBeGreaterThan(0.12);
+        // along the body no further than they drift round, so the head stays over the pillow
+        expect(Math.abs(rig.head.position.y - whole.head.position.y), lie).toBeLessThan(0.1);
+      }
+    }
   });
 
   it('puts someone scattered back together with the cure, the head free to turn again', () => {
