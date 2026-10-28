@@ -1295,4 +1295,14 @@ describe('symptoms where they are: round 11', () => {
     // from the game's camera the eyes show under the top of the core
     expect(hides(core, eyes.getCenter(new THREE.Vector3()))).toBe(false);
   });
+
+  it("sweeps the lobster's feelers back over the head, so they never cross the face from above", () => {
+    const rig = built('sunburn');
+    const feelers = rig.props.find((p) => p.parent === rig.head && p.children.length > 2)!;
+    for (const part of [rig.face.eyes, rig.face.mouth])
+      expect(hides(feelers, new THREE.Box3().setFromObject(part).getCenter(new THREE.Vector3()))).toBe(false);
+    // none of them out in front of the face
+    const face = new THREE.Box3().setFromObject(rig.face.eyes);
+    expect(new THREE.Box3().setFromObject(feelers).max.z).toBeLessThan(face.max.z + 0.04);
+  });
 });

@@ -389,15 +389,18 @@ function claw(rig: CharRig, fore: THREE.Object3D) {
   return put(fore, crusher(), mat(LOBSTER, 0.45), at.x, at.y + 0.04, at.z);
 }
 
-/** A lobster's long feeler out of the forehead on one side, sweeping up, out and back over the head, thinning to a tip. */
+/**
+ * A lobster's long feeler out of the forehead on one side, sweeping up, out and straight back over the head, thinning
+ * to a tip, so it never crosses the face from above.
+ */
 function feeler(side: number): readonly (readonly [number, number, number])[] {
   return [
-    [side * 0.05, 0.14, 0.17],
-    [side * 0.1, 0.3, 0.22],
-    [side * 0.2, 0.48, 0.14],
-    [side * 0.32, 0.58, -0.08],
-    [side * 0.42, 0.58, -0.36],
-    [side * 0.5, 0.48, -0.62],
+    [side * 0.06, 0.15, 0.14],
+    [side * 0.1, 0.3, 0.1],
+    [side * 0.2, 0.45, -0.03],
+    [side * 0.32, 0.52, -0.24],
+    [side * 0.42, 0.5, -0.48],
+    [side * 0.5, 0.4, -0.72],
   ];
 }
 
@@ -421,9 +424,9 @@ function lobster(rig: CharRig) {
       tube(
         `lobster feelerette ${side}`,
         [
-          [side * 0.03, 0.12, 0.19],
-          [side * 0.07, 0.2, 0.28],
-          [side * 0.1, 0.22, 0.36],
+          [side * 0.04, 0.15, 0.16],
+          [side * 0.07, 0.24, 0.2],
+          [side * 0.1, 0.3, 0.22],
         ],
         0.008,
       ),
