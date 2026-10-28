@@ -28,7 +28,7 @@ import {
   GLASSES_OUT,
   KNEE,
 } from './character-detail';
-import { headSymptom } from './character-heads';
+import { headSymptom, upright } from './character-heads';
 import { machineSymptom } from './character-machines';
 import { transformSymptom } from './character-transform';
 import type { HeldKind } from './held';
@@ -63,7 +63,6 @@ export interface CharRig {
   headMesh: THREE.Mesh;
   pick: THREE.Mesh;
   bubble: THREE.Sprite;
-  knot?: THREE.Mesh;
   steam?: THREE.Group;
   orbit?: THREE.Group;
   /** Drops of water falling off a wet blanket, each from where it starts. */
@@ -148,6 +147,9 @@ export const CAP_TIP = -0.38;
 
 /** How much bigger than life the hen is drawn, the game's signature, to be seen from its usual distance. */
 const HEN_SIZE = 1.7;
+
+/** How many times the size of a phone in the hand someone with text neck holds theirs: as big as their chest. */
+const GIANT_PHONE = 2.8;
 
 /**
  * A ram's horn on one side of the head: rooted on top, curling back, down round the ear and forward again, thick at the
@@ -500,15 +502,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'battery') {
     headSymptom(rig, visual);
   } else if (visual === 'wires') {
-    const tangle = new THREE.Group();
-    const knot = cached('knot', () => new THREE.TorusKnotGeometry(0.1, 0.038, 56, 8));
-    put(tangle, knot, mat(0xe5484d, 0.5), 0, 0, 0).scale.setScalar(0.85);
-    const second = put(tangle, knot, mat(0x4a9fe0, 0.5), 0, 0, 0);
-    second.scale.setScalar(0.85);
-    second.rotation.set(1.2, 0.6, 0);
-    tangle.position.y = 0.3;
-    head.add(tangle);
-    rig.knot = tangle as unknown as THREE.Mesh;
+    headSymptom(rig, visual);
   } else if (visual === 'pale') {
     headMesh.material = mat(0xd3cfcb, 0.65);
   } else if (visual === 'static') {
@@ -632,6 +626,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     for (const x of [-0.075, 0.075])
       rig.props.push(put(head, rbox(0.1, 0.06, 0.02, 0.01), shades, x, 0.025, 0.2 + GLASSES_OUT));
     rig.props.push(put(head, rbox(0.06, 0.012, 0.012, 0.004), shades, 0, 0.04, 0.205 + GLASSES_OUT));
+    // and a lobster's claws and feelers
+    bodySymptom(rig, visual);
   } else if (visual === 'icicles') {
     // frozen blue, with snow settled on the shoulders and icicles hanging off the chin
     headMesh.material = mat(0xb9d7e8, 0.5);
@@ -801,7 +797,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'compass') {
     headSymptom(rig, visual);
   } else if (visual === 'neck') {
-    // a phone held up in front of them, its screen lit, that they cannot look up from
+    // a phone as big as their chest held out in front of them, its screen lit, that they cannot look up from
     const phone = new THREE.Group();
     put(phone, rbox(0.13, 0.22, 0.02, 0.015), mat(0x1d1f24, 0.3), 0, 0, 0);
     // lit on both faces, so it glows whichever way it is seen
@@ -810,14 +806,18 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       [rbox(0.11, 0.19, 0.006, 0.005), 0, 0, -0.012],
     ]);
     put(phone, glow, mat(0x8fd3ff, 0.3, 1.2), 0, 0, 0);
-    // lying on the hand, on the thumb's side, which faces up with the forearm raised, the screen tipped to the face
-    phone.position.set(0, -0.32 + handUp, 0.068);
+    // held by its near end on the hand, on the thumb's side, which faces up with the forearm raised, the screen tipped
+    // to the face: out past the hand and a little down, so it is clear of the chest and shoulder and below the face
+    phone.scale.setScalar(GIANT_PHONE);
+    phone.position.set(0, -0.6 + handUp, -0.032);
     phone.rotation.x = 0.45;
     phone.name = 'phone';
     holdR.add(phone);
+    // put away while they lie down, where it would stick out over the edge of whatever they lie on
+    upright(rig, phone);
     rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
-  for (const o of [rig.knot, rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
+  for (const o of [rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   transformSymptom(rig, visual);
   if (rig.bob) rig.bobAt = rig.bob.position.y;
   if (role === 'practitioner' || role === 'caretaker') {

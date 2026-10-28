@@ -1,7 +1,7 @@
 // The symptoms of the ailments only a machine cures, drawn on a guest: an office chair stuck to them, shopping bags, an old
-// monitor for a head, a beach umbrella over the head, a crust of salt, seaweed, an echo, a cap of snow, a bunch of sour
+// monitor for a head, a beach umbrella over the head, a crust of salt, seaweed, an echo, a snow globe, a bunch of sour
 // grapes, an apple core for a head, a flat cap and walking stick, and a Tudor ruff. The chair is drawn with the symptoms
-// worn whole, in character-bodies.ts, and the two heads with the others that stand in for a head, in
+// worn whole, in character-bodies.ts, and the two heads and the globe with the others that stand in for a head, in
 // character-heads.ts.
 
 import * as THREE from 'three';
@@ -109,10 +109,7 @@ export function machineSymptom(rig: CharRig, visual: Visual | undefined, b: Body
     rig.orbit.position.y = 0.05;
     head.add(rig.orbit);
   } else if (visual === 'snowcap') {
-    // a heap of snow on the head, as if they had been out in it for months
-    const snow = put(head, sph(0.2, 12), mat(0xffffff, 0.6), 0, 0.2, 0);
-    snow.scale.y = 0.55;
-    props(rig, snow, capOn(head, mat(0xc0392b, 0.8), 'peaked'));
+    headSymptom(rig, visual);
   } else if (visual === 'grapes') {
     // a bunch of sour grapes hanging over them, and a sour look
     const bunch = new THREE.Group();

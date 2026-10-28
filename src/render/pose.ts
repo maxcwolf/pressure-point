@@ -888,7 +888,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.orbit.rotation.y = t * 3.5 + c.id;
     rig.orbit.visible = c.pose !== 'lie';
   }
-  if (rig.knot?.visible) rig.knot.rotation.z = Math.sin(t * 2 + c.id) * 0.2;
   if (rig.flash) {
     const { bolts, glow } = rig.flash;
     const f = flashAt(c.id, t);

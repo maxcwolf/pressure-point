@@ -759,11 +759,46 @@ describe('a symptom in place of the head', () => {
     expect(shown(rig.face.mouth)).toBe(true);
   });
 
-  it('gives a tension headband, a bad apple and a blue screen their heads back with the cure', () => {
+  it("makes crossed wires' head a wall plug, the face on it and its cable wound round and round them", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'wires');
+    expect(shown(rig.headMesh)).toBe(false);
+    expect(hair(rig).some(shown)).toBe(false);
+    expect(shown(rig.face.eyes)).toBe(true);
+    const wound = rig.props.filter((p) => p.parent === rig.torso);
+    expect(wound.length).toBeGreaterThanOrEqual(2);
+    // round them, wider than the body
+    rig.group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(wound[0]!);
+    expect(box.max.x - box.min.x).toBeGreaterThan(0.5);
+  });
+
+  it('stands someone snowed in in a snow globe, snowed up to the nose, the eyes clear over it', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'snowcap');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(shown(rig.face.eyes)).toBe(true);
+    const globe = rig.props[0]!;
+    expect(globe.parent).toBe(rig.head);
+    rig.group.updateMatrixWorld(true);
+    const eyes = new THREE.Box3().setFromObject(rig.face.eyes);
+    const mouth = new THREE.Box3().setFromObject(rig.face.mouth);
+    const snow = globe.children.find(
+      (o) => o instanceof THREE.Mesh && (o.material as THREE.MeshStandardMaterial).color.getHex() === 0xffffff,
+    )!;
+    const top = new THREE.Box3().setFromObject(snow).max.y;
+    // the lumps on the drift reach a little higher than its top
+    expect(top).toBeLessThan(eyes.min.y + 0.08);
+    expect(top).toBeGreaterThan(mouth.max.y);
+    // the old cap of snow is gone
+    expect(rig.props).toHaveLength(1);
+  });
+
+  it('gives a tension headband, a bad apple, a blue screen, crossed wires and the snowed in their heads back with the cure', () => {
     for (const [visual, id] of [
       ['band', 'band'],
       ['rotten', 'badapple'],
       ['bluescreen', 'bluescreen'],
+      ['wires', 'wires'],
+      ['snowcap', 'snowedin'],
     ] as const) {
       const rig = buildCharacter(LAB_LOOK, undefined, visual);
       poseChar(rig, { ...demoGuest(LAB_LOOK, id), outcome: 'healed' }, 5, 1, { style: null });
@@ -930,6 +965,42 @@ describe('a symptom worn whole', () => {
       poseChar(rig, { ...g, pose }, 1, 1, { style: null });
       expect(chair.visible, pose).toBe(shows);
     }
+  });
+
+  it('gives someone lobstered a claw for each hand and feelers, put away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'sunburn');
+    const { foreL, foreR } = rig.joints;
+    for (const fore of [foreL, foreR]) {
+      expect(rig.props.some((p) => p.parent === fore)).toBe(true);
+      expect(fore.getObjectByName('hand')!.visible).toBe(false);
+    }
+    const feelers = rig.props.find((p) => p.parent === rig.head && p.children.length > 2)!;
+    const g = demoGuest(LAB_LOOK, 'lobstered');
+    poseChar(rig, { ...g, pose: 'lie' }, 0, 1, { style: null });
+    expect(feelers.visible).toBe(false);
+    poseChar(rig, g, 1, 1, { style: null });
+    expect(feelers.visible).toBe(true);
+    const cured = buildCharacter(LAB_LOOK, undefined, 'sunburn');
+    poseChar(cured, { ...g, outcome: 'healed' }, 5, 1, { style: null });
+    for (const fore of [cured.joints.foreL, cured.joints.foreR])
+      expect(fore.getObjectByName('hand')!.visible).toBe(true);
+    expect(cured.props.some((p) => p.visible)).toBe(false);
+  });
+
+  it('gives someone with text neck a phone as big as their chest, held clear of them, put away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'neck');
+    const phone = rig.joints.foreR.getObjectByName('phone')!;
+    expect(phone.scale.x).toBeGreaterThan(2);
+    const g = demoGuest(LAB_LOOK, 'neck');
+    poseChar(rig, g, 1, 1, { style: null });
+    expect(phone.visible).toBe(true);
+    // in front of the chest, not through it
+    rig.group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(phone);
+    const chest = new THREE.Box3().setFromObject(rig.torso.getObjectByName('torso') ?? rig.torso);
+    expect(box.min.z).toBeGreaterThan(chest.min.z);
+    poseChar(rig, { ...g, pose: 'lie' }, 2, 1, { style: null });
+    expect(phone.visible).toBe(false);
   });
 
   it('leaves midlife fog its own cloud over the head', () => {

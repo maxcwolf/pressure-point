@@ -2,8 +2,9 @@
 // distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off, a flat
 // battery's a battery on its side, a stress head's a whistling kettle, a noisy mind's a boombox left on too loud,
 // someone who has lost their way has a signpost growing out of the top of theirs, a tension headband's is screwed down
-// in a G-clamp, a bad apple's is an apple core and a blue screen's an old monitor. The face stays on, so how the guest
-// feels still shows, and the head comes back halfway through the cure.
+// in a G-clamp, a bad apple's is an apple core, a blue screen's an old monitor, someone with crossed wires has a wall
+// plug for a head, its cable wound round and round them, and someone snowed in is in a snow globe, snowed up to the
+// nose. The face stays on, so how the guest feels still shows, and the head comes back halfway through the cure.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -11,7 +12,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Visual } from '../../core/data';
 import { owned } from '../disposal';
 import type { CharRig } from './character';
-import { cached, cyl, joined, mat, put, rbox, sph, torus } from './parts';
+import { cached, cyl, joined, mat, type Piece, put, rbox, sph, torus, tube } from './parts';
 
 /** Keep a symptom's parts from casting shadows, and note them as the symptom's, to go when the guest is healed. */
 export function props(rig: CharRig, ...parts: THREE.Object3D[]) {
@@ -372,7 +373,7 @@ function signpost(rig: CharRig) {
  * Set a symptom's part to be put away while they lie down, where it would poke into what they lie on or off the end of
  * it (see `pose`).
  */
-function upright(rig: CharRig, o: THREE.Object3D) {
+export function upright(rig: CharRig, o: THREE.Object3D) {
   o.userData.upright = true;
   if (!rig.spin?.includes(o)) (rig.spin ??= []).push(o);
 }
@@ -562,6 +563,121 @@ function oldMonitor(rig: CharRig) {
   rig.head.add(g);
 }
 
+/** Points along a cable wound round and round the body, wobbling, from the back of the neck down to the hips. */
+function wound(turns: number, from: number, to: number, rx: number, rz: number, wobble: number, phase: number) {
+  const points: [number, number, number][] = [[0, from + 0.06, -0.16]];
+  const n = Math.round(turns * 8);
+  for (let i = 0; i <= n; i++) {
+    const f = i / n;
+    const a = phase + f * turns * Math.PI * 2;
+    const w = 1 + Math.sin(i * 2.3 + phase) * wobble;
+    points.push([Math.sin(a) * rx * w, from + (to - from) * f + Math.sin(i * 1.7) * 0.04, -Math.cos(a) * rz * w]);
+  }
+  return points;
+}
+
+/**
+ * Crossed wires: the head a white wall plug, two brass prongs out of the top and the face on its front, its black cable
+ * wound three times round the body every which way, an orange extension cord tangled in with it, and the two plugs at
+ * their ends dangling at the hips.
+ */
+function plugHead(rig: CharRig) {
+  hideUntilCured(rig, [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')]);
+  const g = new THREE.Group();
+  put(g, rbox(0.42, 0.46, 0.38, 0.09), mat(0xf4f1ea, 0.45), 0, 0, -0.01);
+  put(
+    g,
+    joined('plug prongs', [
+      [rbox(0.045, 0.16, 0.014, 0.004), -0.08, 0.3, 0],
+      [rbox(0.045, 0.16, 0.014, 0.004), 0.08, 0.3, 0],
+    ]),
+    mat(0xc9a13a, 0.25),
+    0,
+    0,
+    0,
+  );
+  props(rig, g);
+  rig.head.add(g);
+  faceOut(rig, { eyes: -0.01, brows: -0.012, mouth: -0.01 });
+  const black = wound(3, 0.56, -0.12, 0.31, 0.21, 0.18, 0);
+  black.push([0.24, -0.24, 0.12]);
+  const orange = wound(2.5, 0.46, -0.04, 0.34, 0.24, 0.22, 2.1);
+  orange.push([-0.24, -0.22, 0.14]);
+  const cable = put(rig.torso, tube('plug cable wound', black, 0.022), mat(0x1d1f24, 0.5), 0, 0, 0);
+  const cord = put(rig.torso, tube('extension cord wound', orange, 0.022), mat(0xf08a24, 0.5), 0, 0, 0);
+  const plugs = put(
+    rig.torso,
+    joined('dangling plugs', [
+      [rbox(0.06, 0.09, 0.05, 0.012), 0.24, -0.3, 0.12],
+      [rbox(0.06, 0.09, 0.05, 0.012), -0.24, -0.28, 0.14],
+    ]),
+    mat(0xf4f1ea, 0.45),
+    0,
+    0,
+    0,
+  );
+  props(rig, cable, cord, plugs);
+  swell(rig, 1.04, 1.04);
+}
+
+/**
+ * The glass of a snow globe, one for every guest in one. It is see-through, so the crowd cannot draw it in a batch and
+ * it draws itself; it is shared, so it is never freed.
+ */
+const GLOBE = new THREE.MeshStandardMaterial({
+  color: 0xe8f4fa,
+  transparent: true,
+  opacity: 0.32,
+  roughness: 0.05,
+  depthWrite: false,
+});
+
+/** How far over the globe's middle the snow in it is heaped: up to the nose, just under the eyes. */
+const SNOWED_TO = -0.13;
+
+/** The snow heaped in the bottom of a globe of a radius, up to a height over its middle, with a few lumps on top. */
+const heap = (r: number, top: number) =>
+  joined(`globe snow ${r} ${top}`, [
+    [new THREE.SphereGeometry(r, 24, 12, 0, Math.PI * 2, Math.acos(top / r), Math.PI - Math.acos(top / r)), 0, 0, 0],
+    [new THREE.CircleGeometry(Math.sqrt(r * r - top * top), 24), 0, top, 0, -Math.PI / 2, 0, 0],
+    [sph(0.07, 10), 0.16, top, 0.12],
+    [sph(0.06, 10), -0.18, top, -0.06],
+    [sph(0.05, 10), 0.04, top, -0.2],
+  ]);
+
+/**
+ * Snowed in: the head and shoulders inside a snow globe on a wooden base, the snow heaped up inside it to the nose and
+ * the flakes still swirling over it, only the eyes and the top of the head clear.
+ */
+function snowGlobe(rig: CharRig) {
+  const snow = mat(0xffffff, 0.6);
+  const g = new THREE.Group();
+  put(g, sph(0.36, 24), GLOBE, 0, 0.12, 0);
+  put(g, cyl(0.24, 0.3, 0.12, 20), mat(0x8a5a2c, 0.6), 0, -0.22, 0);
+  put(g, cyl(0.25, 0.25, 0.03, 20), mat(0xc9a13a, 0.3), 0, -0.15, 0);
+  put(g, heap(0.345, SNOWED_TO), snow, 0, 0.12, 0);
+  const flakes = new THREE.Group();
+  put(
+    flakes,
+    joined(
+      'globe flakes',
+      Array.from({ length: 9 }, (_, i): Piece => {
+        const a = i * 2.4;
+        const r = 0.24 + (i % 3) * 0.04;
+        return [sph(0.018, 6), Math.cos(a) * r, 0.06 + ((i * 0.37) % 0.4), Math.sin(a) * r];
+      }),
+    ),
+    snow,
+    0,
+    0,
+    0,
+  );
+  g.add(flakes);
+  spin(rig, flakes, 0.9);
+  props(rig, g);
+  rig.head.add(g);
+}
+
 /** Draw a symptom that stands in for the head, if it is one. */
 export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'egg') egg(rig);
@@ -572,4 +688,6 @@ export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   else if (visual === 'band') gClamp(rig);
   else if (visual === 'rotten') appleCore(rig);
   else if (visual === 'bluescreen') oldMonitor(rig);
+  else if (visual === 'wires') plugHead(rig);
+  else if (visual === 'snowcap') snowGlobe(rig);
 }

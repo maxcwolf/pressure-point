@@ -2,16 +2,17 @@
 // bottled up stands in a big green bottle, corked over their head, someone glass half empty in a tall tumbler with the
 // water up to their waist, someone spiritually dehydrated is a cactus potted from the waist down, and someone with
 // blocked qi has a storm going on round their chest, someone scattered comes apart, head and body floating loose of
-// each other, someone knotted up is tied up in rope, and someone chair-shaped has an office chair stuck to them. The face still shows, through the glass or on the cactus, so how they feel does too, and it all goes
-// in the puff of the cure.
+// each other, someone knotted up is tied up in rope, someone chair-shaped has an office chair stuck to them, and
+// someone lobstered has a lobster's claws and feelers. The face still shows, through the glass or on the cactus, so
+// how they feel does too, and it all goes in the puff of the cure.
 
 import * as THREE from 'three';
 
 import type { Visual } from '../../core/data';
 import { owned } from '../disposal';
 import type { CharRig } from './character';
-import { faceOut, hideUntilCured, named, props, spin } from './character-heads';
-import { cached, capsule, cyl, joined, mat, type Piece, put, rbox, sph, torus } from './parts';
+import { faceOut, hideUntilCured, named, props, spin, upright } from './character-heads';
+import { cached, capsule, cyl, joined, mat, type Piece, put, rbox, sph, torus, tube } from './parts';
 
 /**
  * The bottle's green glass, one for every bottled guest. It is see-through, so the crowd cannot draw it in a batch and
@@ -346,6 +347,94 @@ function officeChair(rig: CharRig) {
   props(rig, chair);
 }
 
+const LOBSTER = 0xd9452f;
+const LOBSTER_DARK = 0xa8321f;
+
+/**
+ * A lobster's crusher claw, as one shape pointing down along -y from the wrist: a fat oval palm, bumpy along its top,
+ * and two curved, tapering fingers with a gap between, the lower one shorter.
+ */
+const crusher = () =>
+  joined('lobster crusher', [
+    [cyl(0.04, 0.05, 0.08, 10), 0, 0.02, 0],
+    [cached('crusher palm', () => new THREE.SphereGeometry(0.075, 16, 12).scale(1.15, 1.75, 0.8)), 0, -0.13, 0],
+    [sph(0.022, 6), 0.06, -0.09, 0.04],
+    [sph(0.02, 6), 0.075, -0.15, 0.03],
+    [sph(0.018, 6), 0.065, -0.2, 0.035],
+    // the fixed finger, on the outside, long
+    [cyl(0.045, 0.032, 0.11, 10), 0.045, -0.3, 0, 0, 0, 0.16],
+    [cyl(0.032, 0.006, 0.12, 10), 0.012, -0.41, 0, 0, 0, 0.45],
+    // the moving finger, on the inside, shorter, opened a little
+    [cyl(0.04, 0.028, 0.09, 10), -0.05, -0.28, 0, 0, 0, -0.32],
+    [cyl(0.028, 0.006, 0.1, 10), -0.065, -0.37, 0, 0, 0, 0.12],
+  ]);
+
+/** Where someone's hand is on its forearm. */
+function handAt(fore: THREE.Object3D) {
+  const hand = fore.getObjectByName('hand') as THREE.Mesh | undefined;
+  if (!hand) return new THREE.Vector3(0, -0.2, 0);
+  hand.geometry.computeBoundingBox();
+  const box = hand.geometry.boundingBox ?? new THREE.Box3();
+  return box.getCenter(new THREE.Vector3()).add(hand.position);
+}
+
+/** A lobster's claw on the hand of a forearm, the hand hidden behind it. */
+function claw(rig: CharRig, fore: THREE.Object3D) {
+  const hand = fore.getObjectByName('hand');
+  if (hand) hideUntilCured(rig, [hand]);
+  const at = handAt(fore);
+  return put(fore, crusher(), mat(LOBSTER, 0.45), at.x, at.y + 0.04, at.z);
+}
+
+/** A lobster's long feeler out of the forehead on one side, sweeping up, out and back over the head, thinning to a tip. */
+function feeler(side: number): readonly (readonly [number, number, number])[] {
+  return [
+    [side * 0.05, 0.14, 0.17],
+    [side * 0.1, 0.3, 0.22],
+    [side * 0.2, 0.48, 0.14],
+    [side * 0.32, 0.58, -0.08],
+    [side * 0.42, 0.58, -0.36],
+    [side * 0.5, 0.48, -0.62],
+  ];
+}
+
+/**
+ * Lobstered: lobster red behind the sunglasses (see `buildCharacter`), a big crusher claw for each hand, and two long
+ * feelers out of the forehead sweeping up and back over the head as a lobster's do, thick at the root and thin at the
+ * tip, with a pair of short ones out front. The feelers are put away while they lie down, as they would sweep back
+ * through what they lie on.
+ */
+function lobster(rig: CharRig) {
+  const red = mat(LOBSTER, 0.45);
+  const dark = mat(LOBSTER_DARK, 0.5);
+  const feelers = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const path = feeler(side);
+    // thick at the root and thin to the tip: the first stretch fatter, the rest fine
+    put(feelers, tube(`lobster feeler root ${side}`, path.slice(0, 3), 0.014), red, 0, 0, 0);
+    put(feelers, tube(`lobster feeler ${side}`, path.slice(1), 0.007), dark, 0, 0, 0);
+    put(
+      feelers,
+      tube(
+        `lobster feelerette ${side}`,
+        [
+          [side * 0.03, 0.12, 0.19],
+          [side * 0.07, 0.2, 0.28],
+          [side * 0.1, 0.22, 0.36],
+        ],
+        0.008,
+      ),
+      dark,
+      0,
+      0,
+      0,
+    );
+  }
+  upright(rig, feelers);
+  props(rig, feelers, claw(rig, rig.joints.foreL), claw(rig, rig.joints.foreR));
+  rig.head.add(feelers);
+}
+
 /** Draw a symptom the guest wears whole, if it is one. */
 export function bodySymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'cork') bottle(rig);
@@ -355,4 +444,5 @@ export function bodySymptom(rig: CharRig, visual: Visual | undefined) {
   else if (visual === 'shards') inPieces(rig);
   else if (visual === 'knot') rope(rig);
   else if (visual === 'chairshape') officeChair(rig);
+  else if (visual === 'sunburn') lobster(rig);
 }

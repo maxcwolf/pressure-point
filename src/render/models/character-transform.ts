@@ -14,7 +14,7 @@ import { GROW, GROW_START, SYMPTOM_OPTION, variantOf } from '../symptom-options'
 import type { CharRig } from './character';
 import { props } from './character-heads';
 import { mat, put, sph } from './parts';
-import { earworm, lobster, phoneHead, plugged, snowedIn } from './symptom-proposals';
+import { earworm } from './symptom-proposals';
 
 /**
  * Recolor every part of a person, each shared material swapped for the shared one of its new color so the crowd still
@@ -40,10 +40,6 @@ function propParts(rig: CharRig) {
 /** The proposals for each look under `body`, by the look's name, each given the variant asked for. */
 const PROPOSALS: Partial<Record<Visual, (rig: CharRig, variant: number) => void>> = {
   worm: earworm,
-  wires: plugged,
-  neck: phoneHead,
-  snowcap: snowedIn,
-  sunburn: lobster,
 };
 
 /** The head or the whole body as the symptom, for the ailments prototyped under `body`. */
