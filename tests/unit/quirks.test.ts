@@ -52,6 +52,17 @@ describe('the roll', () => {
     for (const r of rolls) expect(r.filter((t) => traitOf(t).bad).length).toBeLessThanOrEqual(1);
   });
 
+  it('never gives a Former Influencer, slower at the table, a common flaw as well', () => {
+    expect(traitOf('influencer').bad).toBe(true);
+    const many = Array.from({ length: 20000 }, (_, i) => rollQuirks({ rng: i * 6151 + 5 }, 'therapist'));
+    const influencers = many.filter((r) => r.includes('influencer'));
+    // enough of them, and enough with a flaw to be had, that a slip would show
+    expect(influencers.length).toBeGreaterThan(150);
+    for (const r of influencers) expect(r.filter((t) => t !== 'influencer' && traitOf(t).bad)).toEqual([]);
+    // the other rare quirks still go to the flawed
+    expect(many.some((r) => r.includes('hands') && r.some((t) => !traitOf(t).rare && traitOf(t).bad))).toBe(true);
+  });
+
   it('never puts two clashing quirks on one person', () => {
     for (const r of rolls) for (const a of r) for (const b of r) expect(clashes(a, b)).toBe(false);
   });

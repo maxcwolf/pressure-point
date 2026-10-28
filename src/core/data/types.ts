@@ -378,7 +378,10 @@ export interface TraitDef {
   learn?: number;
   /** Something they do that can be seen: drop litter, put guests off, cheer colleagues, or water plants in passing. */
   habit?: 'litter' | 'grump' | 'cheer' | 'water';
-  /** Whether it costs you, in slower work, faster tiring, litter or put-off guests: shown red, where the rest show green. */
+  /**
+   * Whether it costs you, in slower work, faster tiring, litter or put-off guests: shown red, where the rest show green,
+   * but for a rare one, which shows gold whatever it costs. Nobody is given more than one.
+   */
   bad?: boolean;
   /** A rare quirk: stronger than the rest, rolled by about one applicant in seven, on top of their common ones. */
   rare?: boolean;

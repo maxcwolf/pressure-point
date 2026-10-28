@@ -134,6 +134,8 @@ export const TRAITS: readonly TraitDef[] = [
     rep: 1,
     rare: true,
     treats: true,
+    // slower at the table, so it is the one flaw anyone who has it is given
+    bad: true,
   },
   {
     id: 'survivor',

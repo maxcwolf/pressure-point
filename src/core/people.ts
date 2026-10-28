@@ -23,6 +23,7 @@ import {
   ROLE_ORDER,
   ROLES,
   type Sex,
+  type TraitDef,
   type TraitId,
   traitOf,
   WOMEN_APPLY,
@@ -240,27 +241,25 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
 }
 
 /**
- * An applicant's quirks: one to three common ones, none of them clashing with another and at most one of them a
- * flaw, and now and then a rare one as well, last, of those that fit their role.
+ * An applicant's quirks: one to three common ones, none of them clashing with another, and now and then a rare one as
+ * well, last, of those that fit their role. At most one of them all is a flaw, a rare one that costs (Former
+ * Influencer) among them.
  */
 export function rollQuirks(r: Rng, role: Role): TraitId[] {
   const count = QUIRKS_MIN + Math.floor(random(r) * (QUIRKS_MAX - QUIRKS_MIN + 1));
   const quirks: TraitId[] = [];
+  /** Whether a quirk could be added: not had already, clashing with none, and not a second flaw. */
+  const free = (t: TraitDef) =>
+    !quirks.includes(t.id) && !quirks.some((q) => clashes(q, t.id)) && !(t.bad && quirks.some((q) => traitOf(q).bad));
   while (quirks.length < count) {
-    const flawed = quirks.some((q) => traitOf(q).bad);
-    const free = COMMON_TRAITS.filter(
-      (t) => !quirks.includes(t.id) && !quirks.some((q) => clashes(q, t.id)) && !(flawed && t.bad),
-    );
-    if (!free.length) break;
-    quirks.push(pick(r, free).id);
+    const open = COMMON_TRAITS.filter(free);
+    if (!open.length) break;
+    quirks.push(pick(r, open).id);
   }
-  if (random(r) < RARE_CHANCE)
-    quirks.push(
-      pick(
-        r,
-        RARE_TRAITS.filter((t) => quirkFits(t.id, role)),
-      ).id,
-    );
+  if (random(r) < RARE_CHANCE) {
+    const rare = RARE_TRAITS.filter((t) => quirkFits(t.id, role) && free(t));
+    if (rare.length) quirks.push(pick(r, rare).id);
+  }
   return quirks;
 }
 
