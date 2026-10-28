@@ -6,6 +6,52 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 28 October 2026, evening: a Chatterbox's pay
+
+Measured with `yarn balance` on `claude/chatterbox-pay-dbab96` (on `bd334094`, the 0.35.0 candidate with entry 52 merged), Willow Lane and The Exchange, seeds 0 to 24, four years a game, six slots. Four runs: Chatterbox at its old ×0.92 and at ×0.85, each with the bot blind to quirks (`BOT_OFF=quirks`, the best rank and then the cheapest) and with the bot reading the card. The two ×0.92 runs are entry 52's own games for these centers and seeds: nothing under `src/core` changed between its branch and `bd334094`, only the renderer and the lab, so the same seeds play the same games. Each ×0.85 run took about six minutes for 50 games. v0.34.3, also from entry 52, is there for reference. A mean star month counts a star never earned as month 48, and a lost game's bank at month 47 is its last month's; differences are paired seed by seed, with their standard error and each half's (seeds 0 to 12 and 13 to 24).
+
+### 53. A Chatterbox at 15% less brings the quirk-blind player level with 0.34.3, and the card reader stays there
+
+**Done** (`src/core/data/staff.ts`): a Chatterbox, who works 15% slower, asks 15% less (pay ×0.85, from ×0.92), as entry 52 recommended. The card's words are unchanged: they never gave the discount.
+
+| Run                     | Center       | Games lost | Stars, median month (games that earned it) | Mean star month | Bank at month 47, median | Payroll at month 47, median | Chatterboxes hired (treating, consulting or teaching) |
+| ----------------------- | ------------ | ---------- | ------------------------------------------ | --------------- | ------------------------ | --------------------------- | ----------------------------------------------------- |
+| v0.34.3, its own bot    | Willow Lane  | 0          | 0.9 / 5.8 / 8.6 (25 / 25 / 25)             | 6.1             | $632k                    | $27k                        | 34 of 484, 7% (15)                                    |
+|                         | The Exchange | 0          | 7.6 / 12.5 / 18.6 (25 / 25 / 25)           | 13.0            | $385k                    | $46k                        | 59 of 903, 7% (39)                                    |
+| Blind, ×0.92            | Willow Lane  | 0          | 0.8 / 5.9 / 9.6 (25 / 24 / 23)             | 9.1             | $481k                    | $28k                        | 53 of 482, 11% (28)                                   |
+|                         | The Exchange | 0          | 7.9 / 12.5 / 18.9 (25 / 25 / 25)           | 13.9            | $290k                    | $42k                        | 107 of 880, 12% (76)                                  |
+| Blind, ×0.85            | Willow Lane  | 0          | 0.8 / 5.8 / 8.8 (25 / 25 / 25)             | 6.3             | $538k                    | $27k                        | 69 of 516, 13% (45)                                   |
+|                         | The Exchange | 2          | 6.6 / 11.9 / 18.9 (25 / 25 / 22)           | 13.9            | $332k                    | $36k                        | 127 of 870, 15% (91)                                  |
+| Reading the card, ×0.92 | Willow Lane  | 1          | 0.8 / 5.9 / 9.6 (25 / 24 / 24)             | 7.7             | $596k                    | $28k                        | 45 of 484, 9% (27)                                    |
+|                         | The Exchange | 2          | 7.5 / 11.7 / 17.8 (25 / 25 / 23)           | 13.5            | $410k                    | $49k                        | 68 of 864, 8% (51)                                    |
+| Reading the card, ×0.85 | Willow Lane  | 0          | 0.8 / 5.9 / 8.9 (25 / 25 / 25)             | 6.2             | $513k                    | $27k                        | 51 of 483, 11% (33)                                   |
+|                         | The Exchange | 0          | 7.5 / 11.9 / 18.8 (25 / 25 / 24)           | 13.3            | $433k                    | $42k                        | 93 of 871, 11% (62)                                   |
+
+**Paired by seed**, the mean star month and the bank at month 47 in $k (halves in brackets):
+
+| Comparison                        | Willow Lane: star month | bank                  | The Exchange: star month | bank                  | Both: star month | bank     |
+| --------------------------------- | ----------------------- | --------------------- | ------------------------ | --------------------- | ---------------- | -------- |
+| Blind, ×0.92 → ×0.85              | −2.8 ±1.2 (−2.3 / −3.3) | +7 ±66 (+31 / −20)    | +0.0 ±0.9 (−0.4 / +0.5)  | +13 ±61 (+35 / −10)   | −1.39 ±0.77      | +10 ±44  |
+| Reading the card, ×0.92 → ×0.85   | −1.5 ±1.3 (−3.1 / +0.2) | −11 ±32 (−3 / −21)    | −0.2 ±0.8 (−0.0 / −0.4)  | +57 ±57 (+80 / +32)   | −0.88 ±0.74      | +23 ±33  |
+| Blind → reading, at ×0.92         | −1.4 ±1.7 (+0.8 / −3.8) | +74 ±64 (+86 / +62)   | −0.3 ±0.8 (−1.3 / +0.7)  | +72 ±56 (+126 / +12)  | −0.88 ±0.94      | +73 ±42  |
+| Blind → reading, at ×0.85         | −0.2 ±0.8 (+0.0 / −0.4) | +56 ±61 (+52 / +61)   | −0.6 ±1.0 (−0.9 / −0.2)  | +115 ±69 (+171 / +55) | −0.36 ±0.62      | +86 ±46  |
+| v0.34.3 → blind, ×0.92            | +3.0 ±1.7 (+2.5 / +3.6) | −136 ±71 (−232 / −31) | +0.9 ±0.6 (+0.9 / +0.8)  | −115 ±52 (−154 / −74) | +1.95 ±0.88      | −126 ±43 |
+| v0.34.3 → blind, ×0.85            | +0.2 ±0.9 (+0.2 / +0.3) | −129 ±76 (−201 / −51) | +0.9 ±0.8 (+0.5 / +1.2)  | −102 ±60 (−118 / −84) | +0.55 ±0.59      | −116 ±48 |
+| v0.34.3 → reading the card, ×0.92 | +1.6 ±1.2 (+3.3 / −0.2) | −62 ±67 (−146 / +30)  | +0.5 ±0.7 (−0.4 / +1.5)  | −44 ±60 (−28 / −61)   | +1.06 ±0.71      | −53 ±45  |
+| v0.34.3 → reading the card, ×0.85 | +0.1 ±0.7 (+0.2 / −0.1) | −73 ±64 (−149 / +9)   | +0.3 ±0.9 (−0.4 / +1.1)  | +13 ±55 (+53 / −29)   | +0.19 ±0.56      | −30 ±42  |
+
+**Read:**
+
+- **The quirk-blind player gains the most, as meant.** At Willow Lane the mean star month comes 2.8 ±1.2 months sooner, both halves agreeing, and against v0.34.3 the blind player there goes from three months behind to level. Most of it is the tail: seeds 1 and 15, which never earned the third star at ×0.92, earn all three at ×0.85, and the median third star comes 0.8 months sooner. The Exchange does not move (+0.0 ±0.9). Over both centers the blind player is +0.55 ±0.59 months against v0.34.3, from +1.95 ±0.88. Its bank stays about $116k ±48 below v0.34.3's at both centers, in both halves: the stars came back, the money did not.
+- **The cheapest card is now a worse worker, not a trap.** The blind bot takes more Chatterboxes than ever (13 to 15% of its hires, 91 at the tables at The Exchange against 76), since it takes the cheapest of the best rank and a Chatterbox now asks less, and its game is no worse for it.
+- **The card reader's game does not get measurably easier.** −0.88 ±0.74 months over both centers, 1.2 standard errors; Willow Lane's −1.5 ±1.3 has halves that disagree (−3.1 / +0.2), and The Exchange's −0.2 ±0.8 is nothing. The bank is +$23k ±33. It leans sooner, and against v0.34.3 it is +0.19 ±0.56 months: level with the released game, not ahead of it. It hires a few more Chatterboxes (11% against 8 to 9%), since one now costs it less against their slower hands.
+- **The gap between reading the card and not narrows**, from −0.88 ±0.94 months to −0.36 ±0.62, both within the noise. Reading the card still buys money: $86k ±46 more at month 47, in both halves at both centers.
+- **Games lost: 3 at ×0.92, 2 at ×0.85, over 100 games each way.** The card reader lost 3 at ×0.92 (Willow Lane seed 8 on day 671, The Exchange seeds 7 and 17 on days 581 and 521) and none at ×0.85. The blind bot lost none at ×0.92 and 2 at The Exchange at ×0.85: seed 9 on day 1360, eight months after its third star, and seed 15 on day 1030 with two stars, a fifth of its 38 hires Chatterboxes; both had the bank's countdown before the end. Fifty games a run cannot tell these from chance.
+- **Payroll at month 47** is lower at The Exchange with both bots ($36k against $42k blind, $42k against $49k reading), mostly fewer staff (the card reader's median 13 against 16), not the discount: a Chatterbox is about a tenth of the hires and 7 points cheaper, under 1% of the payroll. The quirks' net pay falls by 0.8 to 1.6 points of the payroll.
+- **25 seeds a center is short of the 72 the harness asks for a call.** It is enough here because the decision only needs the card reader not to get measurably easier, and the change is one price on one flaw. Willow Lane's ×0.92 blind run is also on the high side of its own spread: over entry 52's 73 seeds its mean star month was 8.2, not 9.1.
+
+**Decision: it ships.** The blind player's gap to the card reader narrows, and the card reader is within the noise of its ×0.92 games and level with v0.34.3. Nothing else changes: `QUIRKS_MAX` stays at 3 and Holds Space at 15%.
+
 ## 28 October 2026: the staff quirks, measured across the campaign
 
 Measured with `yarn balance` on `claude/quirks-balance-f2055e` (on `f2970995`, the 0.35.0 candidate with the quirks and their cues) against a v0.34.3 worktree, every campaign center, seeds 0 to 24, four years a game (the seed list came out of macOS `seq -s,` with a trailing comma, which the harness reads as seed 0 as well; every run played the same 25). High Pines and Willow Lane, the two centers the pre-tag spot check lost a game at, were then played on to seed 72. Three runs: v0.34.3 with its own bot; this branch with the bot blind to quirks (`BOT_OFF=quirks`, which plays exactly as the good bot did at `f2970995`: its seed 1 games are the spot check's, star for star); and this branch with the bot reading the card (the good bot as it now is). v0.34.3's bot was given the logging below and nothing else, so its games are as released. Six slots a run, 38 to 44 minutes for 125 games. A mean star month counts a star never earned as month 48; differences are paired seed by seed, with their standard error, and each half of the seeds' own.
