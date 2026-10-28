@@ -943,7 +943,7 @@ export interface GameState {
   nextWave: { day: number; moves: number } | null;
   /** Techniques opened early by an ailment going around, which stay open. */
   opened: Modality[];
-  /** The features being tried out, each switched on or off for this game; one left out is as its default. */
+  /** The features being tried out, each switched on or off for this game; one left out is off, as in older saves. */
   features: Partial<Record<FeatureId, boolean>>;
   /**
    * Whatever is on fire now, the fire brigade if it has been called and is not yet gone, and whether anything catches

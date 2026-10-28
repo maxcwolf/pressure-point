@@ -143,9 +143,13 @@ export function waveClash(s: GameState): string {
   return '';
 }
 
-/** Set the wave a star brings: due a while after it, so its guests start coming `WAVE_AFTER_STAR` days on. */
+/**
+ * Set the wave a star brings: due a while after it, so its guests start coming `WAVE_AFTER_STAR` days on. None with
+ * the feature off: switched on later, `wavesSwitched` brings it within the week.
+ */
 export function scheduleWave(ctx: SimContext) {
   const s = ctx.s;
+  if (!featureOn(s, 'waves')) return;
   const def = waveDue(s);
   if (def?.afterStar !== s.stars) return;
   s.nextWave = { day: s.day + WAVE_AFTER_STAR - WAVE_WARNING_DAYS, moves: 0 };

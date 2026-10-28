@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  FEATURES,
   MODALITIES,
   modalityLabel,
   WAVE_AFTER_STAR,
@@ -30,7 +31,7 @@ import {
   waveReady,
   waveTodo,
 } from '../../src/core/sim/waves';
-import { newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
+import { featureOn, featureValues, newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
@@ -351,6 +352,36 @@ describe('the feature switch', () => {
     expect(new Sim(s).featureOn('waves')).toBe(false);
   });
 
+  it('sets no wave with the feature off, which comes within the week once it is switched on', () => {
+    const { sim, s, ctx } = exchange(false);
+    s.day = 100;
+    awardStar(ctx);
+    expect(s.nextWave).toBeNull();
+    s.day = 130;
+    sim.setFeature('waves', true);
+    expect(s.nextWave).toEqual({ day: 130 + WAVE_SOON_DAYS, moves: 0 });
+  });
+
+  it('is written into a new game, so a default changed later leaves games under way as they were', () => {
+    setSeed(1);
+    expect(newGame('exchange').features).toEqual({ waves: false });
+    expect(featureValues({ waves: true })).toEqual({ waves: true });
+    const def = FEATURES.waves as { on: boolean };
+    def.on = true;
+    try {
+      // a new game takes the new default, and a game with its value, or an old one with none, keeps its own
+      expect(featureValues()).toEqual({ waves: true });
+      expect(featureOn(newGame('exchange'), 'waves')).toBe(true);
+      const old = newGame('exchange');
+      old.features = {};
+      expect(featureOn(old, 'waves')).toBe(false);
+      old.features = { waves: false };
+      expect(featureOn(old, 'waves')).toBe(false);
+    } finally {
+      def.on = false;
+    }
+  });
+
   it('gates the cheat', () => {
     const off = exchange(false);
     expect(off.sim.cheat('wave')).toMatchObject({ ok: false });
@@ -364,7 +395,7 @@ describe('the feature switch', () => {
 });
 
 describe('a save from before ailments went around', () => {
-  it('loads with none going around, nothing opened and every feature at its default', () => {
+  it('loads with none going around, nothing opened and every feature off', () => {
     const { s } = exchange();
     const old = JSON.parse(JSON.stringify(s)) as Record<string, unknown>;
     for (const key of ['wave', 'pastWaves', 'nextWave', 'opened', 'features']) Reflect.deleteProperty(old, key);
@@ -372,6 +403,8 @@ describe('a save from before ailments went around', () => {
     upgradeSave(old as unknown as GameState);
     const loaded = old as unknown as GameState;
     expect(loaded).toMatchObject({ wave: null, pastWaves: [], nextWave: null, opened: [], features: {} });
+    expect(loaded.features).toEqual({});
+    expect(featureOn(loaded, 'waves')).toBe(false);
     expect(loaded.stats.later).toBe(0);
   });
 });

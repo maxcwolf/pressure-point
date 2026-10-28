@@ -10,6 +10,7 @@ import {
   DIAGNOSIS_TARGET,
   type Discipline,
   DISCIPLINES,
+  FEATURE_ORDER,
   type FeatureId,
   FEATURES,
   FIRST_OUTBREAK_DAY,
@@ -235,6 +236,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     pastWaves: [],
     nextWave: null,
     opened: [],
+    // a save from before games kept a value for each feature is filled with none, and so has every feature off
     features: {},
     blazes: [],
     blazesOn: true,
@@ -271,6 +273,7 @@ export const OPENING_MONTH: Partial<Record<CenterId, number>> = { willow: 2 };
 export function newGame(center: CenterId = 'sandbox'): GameState {
   const s = startingState(center, 0, newSeed());
   s.startMonth = OPENING_MONTH[center] ?? 0;
+  s.features = featureValues();
   refillCandidates(s);
   return s;
 }
@@ -322,9 +325,20 @@ export const openedKit = (s: GameState): ItemType[] =>
     return kit ? [kit] : [];
   });
 
-/** Whether a feature still being tried out is on in this game: as switched in Settings, or as its default. */
+/**
+ * Every feature being tried out, each as switched in `prefs` or at its default today. A new game keeps each one's
+ * value, so a default that changes later never switches a feature in a game already under way.
+ */
+export function featureValues(prefs: Partial<Record<FeatureId, boolean>> = {}): Record<FeatureId, boolean> {
+  return Object.fromEntries(FEATURE_ORDER.map((f) => [f, prefs[f] ?? FEATURES[f].on])) as Record<FeatureId, boolean>;
+}
+
+/**
+ * Whether a feature still being tried out is on in this game, as it was switched. A game without a value for it is
+ * from before games kept one, when every feature was off unless switched on, so it stays off.
+ */
 export function featureOn(s: GameState, f: FeatureId): boolean {
-  return s.features[f] ?? FEATURES[f].on;
+  return s.features[f] ?? false;
 }
 
 /**
