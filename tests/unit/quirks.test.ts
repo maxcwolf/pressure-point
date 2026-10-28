@@ -347,6 +347,12 @@ describe('the rare quirks', () => {
     expect(serviceSeconds(60, therapist, 1.15)).toBeCloseTo(serviceSeconds(60, therapist) / 1.15);
   });
 
+  it('Holds Space says what it reaches: colleagues at a desk, table or mat, while the holder is at their own', () => {
+    const desc = traitOf('space').desc;
+    for (const words of ['desk, table or mat', 'While at their post', 'through walls']) expect(desc).toContain(words);
+    expect(desc).not.toContain('working nearby');
+  });
+
   it("Holds Space says whom it speeds up, in the holder's inspector and in each colleague's", () => {
     const { sim, therapist, consultant, receptionist } = openCenter(1);
     const ctx = ctxOf(sim);
