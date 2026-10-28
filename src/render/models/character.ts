@@ -162,8 +162,8 @@ const HEN_SIZE = 1.7;
 /** How many times the size of a phone in the hand someone with text neck holds theirs: as big as their chest. */
 export const GIANT_PHONE = 2.8;
 
-/** How far out along the forearm past the hand the middle of a phone of each size held in it is, in meters. */
-export const PHONE_OUT = 0.214;
+/** How far out along the forearm past the hand the middle of a phone held in it is, in meters, for each time its size. */
+export const PHONE_OUT = 0.6 / GIANT_PHONE;
 
 /**
  * A ram's horn on one side of the head: rooted on top, curling back, down round the ear and forward again, thick at the
