@@ -64,7 +64,6 @@ export const emptyStats = (): Stats => ({
   sent: 0,
   worse: 0,
   arrived: 0,
-  later: 0,
   healedBy: {},
   emergencies: 0,
   lastQuit: -1,

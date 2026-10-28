@@ -249,7 +249,6 @@ export function waveArrival(ctx: SimContext, wave: number, perMonth: number): Co
   const c = s.wave.condition;
   if (waveReady(ctx, techniqueFor(c))) return c;
   s.wave.turned++;
-  s.stats.later++;
   const door = ctx.world.building.entrances[0];
   if (door) emit(ctx, { type: 'float', text: `${conditionOf(c).name}: next time`, x: door.x, y: door.y, kind: 'info' });
   return 'turned';

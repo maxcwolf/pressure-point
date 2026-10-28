@@ -537,7 +537,10 @@ export class Sim {
     return waveChecks(this.ctx, m);
   }
 
-  /** Whether the center can treat a technique properly now: someone qualified, its kit, and its room. */
+  /**
+   * Whether the center can treat a technique properly now: its room, someone qualified and here, its kit, and a
+   * Recovery Lounge if its guests need a rest after.
+   */
   waveReady(m: Modality): boolean {
     return waveReady(this.ctx, m);
   }

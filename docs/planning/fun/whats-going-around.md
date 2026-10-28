@@ -144,7 +144,7 @@ They are templates: `{ailment} is going around. {technique} is open; train {a ro
 
 ### 7. The star goals
 
-Goals are measured in `objectiveFor` (`src/core/sim/goals.ts`, line 69). Monthly ones read this month or last (`recentMonths`), and each visit's ending is counted in `countVisit` (`src/core/sim/records.ts`). A wave guest who turns around at the door is counted as a new ending, `later`, which no goal reads.
+Goals are measured in `objectiveFor` (`src/core/sim/goals.ts`, line 69). Monthly ones read this month or last (`recentMonths`), and each visit's ending is counted in `countVisit` (`src/core/sim/records.ts`). A wave guest who turns around at the door is counted only on the wave, in `turned`, which no goal reads.
 
 | Goal                               | Measured as                                            | A wave chased                                                                        | A wave passed                               |
 | ---------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------- |
@@ -161,10 +161,10 @@ Goals are measured in `objectiveFor` (`src/core/sim/goals.ts`, line 69). Monthly
 
 ### 8. Saves, the sandbox, the switches
 
-- **Saves.** `SAVE_VERSION` in `game.ts` is 40 (line 136). The new fields (`wave`, `nextWave`, `features`, `opened`, and `later` in the stats) get defaults in `startingState`, and `upgradeSave` in `src/core/state/upgrade.ts` (line 259) fills any missing key from `startingState` through `fill`, so an old game loads with no wave, nothing opened, and `nextWave` at `Infinity` until its next star. The version goes to the next free number with a line in the changelog comment above it; other branches bump it too, so the number is set at merge time.
+- **Saves.** `SAVE_VERSION` in `game.ts` is 40 (line 136). The new fields (`wave`, `nextWave`, `features` and `opened`) get defaults in `startingState`, and `upgradeSave` in `src/core/state/upgrade.ts` (line 259) fills any missing key from `startingState` through `fill`, so an old game loads with no wave, nothing opened, and `nextWave` at `Infinity` until its next star. The version goes to the next free number with a line in the changelog comment above it; other branches bump it too, so the number is set at merge time.
 - **The sandbox.** No waves in the first slice: it is The Exchange only. Later, the sandbox takes the same Feature testing switch as every other game (see [Switching it on and off](#switching-it-on-and-off)), rather than a switch of its own on the sandbox panel. With `unlockAll` on, a wave still brings its crowd and opens nothing, since everything is open.
 - **Discipline switches.** A wave is never picked for a discipline switched off. If the player switches its discipline off during the warning or the wave, the wave ends quietly, as `setDiscipline` in `treatments.ts` withdraws an emergency today.
-- **Analytics.** One event, `wave_ended`, in `happenings` in `src/app/play-events.ts`, compared once a second as `emergency_ended` is: `condition`, `technique`, `opened_early`, `came`, `healed`, `turned`, and `chased` (true if anyone was trained in the technique, or a kit bought, between the warning and the end). A row in [analytics.md](../../dev/analytics.md) and a case in `tests/unit/play-events.test.ts`. It answers the one question that matters: do players chase, and does passing happen.
+- **Analytics.** One event, `wave_ended`, in `happenings` in `src/app/play-events.ts`, compared once a second as `emergency_ended` is: `condition`, `technique`, `opened_early`, `came`, `healed`, `turned`, and `chased` (true if any of its guests came in, which they do only once the center is ready for them: someone trained, its kit and room, and a Recovery Lounge if it needs one). A row in [analytics.md](../../dev/analytics.md) and a case in `tests/unit/play-events.test.ts`. It answers the one question that matters: do players chase, and does passing happen.
 
 ### 9. The bot
 
@@ -245,10 +245,10 @@ Exactly what the page promised, plus what the walkthrough found it needs to be f
 
 - **One wave at The Exchange:** Cold Feet, opening Moxibustion and the Moxa Burner, announced 38 days after the first star and running 30 days from 45, moved for the four clocks in step 1, dropped if the second star comes first.
 - **The warning:** the dialog (new `DialogId`, `SimEvent` and Modal case), the warning PA line as text, the objectives card with its three readiness lines, and `waveAdvice`.
-- **The rule:** wave arrivals as a share of the pace beside `machineArrival`, and the door (`waveReady`, the "Next time" bubble, the `later` ending).
+- **The rule:** wave arrivals as a share of the pace beside `machineArrival`, and the door (`waveReady`, the "Next time" bubble, the wave's `turned` count).
 - **The plumbing:** `s.opened` in `unlocked`, `itemOpen`, `averagePrice`, the Treatments menu chip and `treatmentsUnlockedAt`; `sentFor` asking `waveReady` for early techniques.
 - **The switch:** the Feature testing section in Settings, `features` on the game, the new-game default, the `wave` cheat command, and `features` in the play statistics' game properties.
-- **State and save:** `wave`, `nextWave`, `features`, `opened`, `later`; the save version; `wave_ended`.
+- **State and save:** `wave`, `nextWave`, `features`, `opened`; the save version; `wave_ended`.
 - **Tests:** unit tests for the clock and its clash check, the door, the item gate, the star dialog not announcing Moxibustion twice, and an old save loading; the play-events test.
 - **The bot:** `chase`, and the three-way rerun at The Exchange.
 

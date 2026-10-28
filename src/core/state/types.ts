@@ -665,8 +665,6 @@ export interface Stats {
   /** Got worse while they waited, and left. */
   worse: number;
   arrived: number;
-  /** Came with an ailment going around, and turned back at the door: nobody here could treat it yet. */
-  later: number;
   /** Would have come, but found the center full: at the building's limit, or the player's own. */
   turnedAway: number;
   /** Guests healed, by the discipline that healed them. */

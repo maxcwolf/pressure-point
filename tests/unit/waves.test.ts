@@ -166,7 +166,6 @@ describe('an ailment going around', () => {
     // a share as large as the whole pace makes every arrival one with the ailment
     expect(waveArrival(ctx, 10, 10)).toBe('turned');
     expect(s.wave).toMatchObject({ turned: 1, came: 0 });
-    expect(s.stats.later).toBe(1);
     expect({ money: s.money, reputation: s.reputation, turnedAway: s.stats.turnedAway }).toEqual(before);
     expect(drainEvents(ctx).some((e) => e.type === 'float' && e.text === 'Cold Feet: next time')).toBe(true);
   });
@@ -399,12 +398,10 @@ describe('a save from before ailments went around', () => {
     const { s } = exchange();
     const old = JSON.parse(JSON.stringify(s)) as Record<string, unknown>;
     for (const key of ['wave', 'pastWaves', 'nextWave', 'opened', 'features']) Reflect.deleteProperty(old, key);
-    Reflect.deleteProperty(old.stats as object, 'later');
     upgradeSave(old as unknown as GameState);
     const loaded = old as unknown as GameState;
     expect(loaded).toMatchObject({ wave: null, pastWaves: [], nextWave: null, opened: [], features: {} });
     expect(loaded.features).toEqual({});
     expect(featureOn(loaded, 'waves')).toBe(false);
-    expect(loaded.stats.later).toBe(0);
   });
 });
