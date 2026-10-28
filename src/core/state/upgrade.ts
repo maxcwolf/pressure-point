@@ -2,6 +2,7 @@
 
 import {
   ACHIEVEMENTS,
+  AMANDA,
   type AwardId,
   AWARDS,
   DAYS_PER_MONTH,
@@ -353,7 +354,21 @@ export function upgradeSave(save: GameState) {
   save.sketches = save.sketches.filter((sk) => Object.hasOwn(ROOMS, sk.type));
   for (const sk of save.sketches) rememberedRoom(sk);
   if (s.version < 44) fitQuirks(save);
+  if (s.version < 45) fixAmanda(save);
   s.version = SAVE_VERSION;
+}
+
+/**
+ * Up to version 44, Amanda Jablonsky rolled her quirks like anyone else: she is given her own, wherever she is. As an
+ * applicant she asks what she is worth with them; on the staff she keeps the pay she was hired at.
+ */
+function fixAmanda(s: GameState) {
+  for (const st of s.staff) if (st.name === AMANDA.name) st.traits = [...AMANDA.traits];
+  for (const c of s.candidates) {
+    if (c.name !== AMANDA.name) continue;
+    c.traits = [...AMANDA.traits];
+    c.salary = scalePay(fairSalary(c.role, c.skill, c.traits, c.quals), tuning(s, 'salaries'));
+  }
 }
 
 /**

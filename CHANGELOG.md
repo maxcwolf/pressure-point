@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
+
 ## v0.35.0
 
 - **Staff with more to them.** Every applicant now has one to three quirks, never more than one that costs you, and about one in seven has a rare one as well: a Burnout Survivor in any role, someone who Holds Space in any role but Caretaker, and for those who treat guests, a Former Influencer or Healing Hands. An applicant's card and the inspector write each quirk out, its chip and what it does, rare ones first; a row of the Staff menu shows the chips, with what each does when you point at it. Pay follows them, and a Chatterbox, who works 15% slower, now asks 15% less to match. Healing Hands saves one treatment in three that would have failed. Every rare quirk shows at work: Healing Hands and a Former Influencer's posts float up in words and keep a count in the inspector, the inspector says whom someone who Holds Space is speeding up, and a Burnout Survivor says that they never quit and no rival can poach them. Staff you already have keep the quirks they came with, but for Former Influencer and Healing Hands, which are taken from anyone who does not treat guests, and Holds Space, which is taken from Caretakers.

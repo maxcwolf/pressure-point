@@ -224,14 +224,16 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
     // she outranks the best the pool could offer right now, so she keeps pace as the center grows
     const best = clamp(Math.round(reach) + drive + AMANDA.edge, AMANDA.minSkill, 5);
     const hers = [...AMANDA.quals];
+    // her quirks are always the same ones; those rolled above go unused, so everyone else's random numbers stay put
+    const quirks = [...AMANDA.traits];
     Object.assign(look, { hairStyle: AMANDA.hairStyle, hair: AMANDA.hair });
     return {
       id: s.nextId++,
       name: AMANDA.name,
       role,
       skill: best,
-      salary: scalePay(fairSalary(role, best, traits, hers), tuning(s, 'salaries')),
-      traits,
+      salary: scalePay(fairSalary(role, best, quirks, hers), tuning(s, 'salaries')),
+      traits: quirks,
       quals: hers,
       look,
     };

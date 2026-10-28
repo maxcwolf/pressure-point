@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AMANDA,
   CLASHES,
   clashes,
   COMMON_TRAITS,
@@ -28,7 +29,7 @@ import type { SimContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
 import { moraleFloor } from '../../src/core/sim/staffing';
 import { postAboutIt, serviceSeconds, worksAnyway } from '../../src/core/sim/stations';
-import type { Candidate, GameState } from '../../src/core/state/types';
+import type { Candidate, GameState, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { quirkNotes, quirksSaid, rareFirst } from '../../src/ui/lib/quirks';
 import { freshSim, hire, openCenter, run, runUntil } from './helpers';
@@ -79,9 +80,14 @@ describe('the roll', () => {
     }
   });
 
-  it('leaves nobody without a quirk, applicant or Amanda Jablonsky', () => {
+  it('leaves nobody without a quirk, and gives Amanda Jablonsky her own three every time', () => {
+    expect([...AMANDA.traits].sort()).toEqual(['dawdler', 'hands', 'quick']);
     const sim = freshSim(3);
-    for (let i = 0; i < 300; i++) expect(makeCandidate(sim.s, 'therapist').traits.length).toBeGreaterThan(0);
+    const pool = Array.from({ length: 3000 }, () => makeCandidate(sim.s, 'therapist'));
+    for (const c of pool) expect(c.traits.length).toBeGreaterThan(0);
+    const hers = pool.filter((c) => c.name === AMANDA.name);
+    expect(hers.length).toBeGreaterThan(50);
+    for (const c of hers) expect(c.traits).toEqual(AMANDA.traits);
   });
 });
 
@@ -134,6 +140,8 @@ describe('the rare quirks for each role', () => {
 describe('a save from before rare quirks fit the role', () => {
   it('takes them from staff and applicants who do not treat guests, and re-prices only the applicants', () => {
     const { s, receptionist, consultant, therapist } = openCenter(2);
+    // the therapist here is Amanda Jablonsky, whose quirks a later step sets: someone else, so this one stands alone
+    therapist.name = 'Greta Pummell';
     receptionist.traits = ['brisk', 'hands'];
     consultant.traits = ['bargain', 'influencer'];
     therapist.traits = ['green', 'influencer'];
@@ -195,6 +203,43 @@ describe('a save from before Holds Space was kept from Caretakers', () => {
     expect(after.salary).toBe(
       scalePay(fairSalary('caretaker', after.skill, ['quick'], after.quals), tuning(old, 'salaries')),
     );
+  });
+});
+
+describe('a save from before Amanda Jablonsky had her own quirks', () => {
+  /** A save at version 44 with Amanda Jablonsky given rolled quirks, on the staff or applying. */
+  const oldSave = (hired: boolean) => {
+    // the therapist hired here is Amanda Jablonsky: someone else, when she is to be applying instead
+    const { s, therapist } = openCenter(2);
+    if (!hired) therapist.name = 'Greta Pummell';
+    const amanda = hired ? therapist : s.candidates.find((c) => c.role === 'therapist')!;
+    Object.assign(amanda, { name: AMANDA.name, traits: ['brisk', 'grump'], salary: 9999 });
+    const other = s.candidates.find((c) => c.role === 'receptionist')!;
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    old.version = 44;
+    upgradeSave(old);
+    const people: (Candidate | Staff)[] = [...old.staff, ...old.candidates];
+    return {
+      old,
+      amanda: people.find((p) => p.id === amanda.id)!,
+      other: { before: other, after: old.candidates.find((c) => c.id === other.id)! },
+    };
+  };
+
+  it('gives her the three, and re-prices her as an applicant', () => {
+    const { old, amanda: c, other } = oldSave(false);
+    expect(c.traits).toEqual(AMANDA.traits);
+    expect(c.salary).toBe(scalePay(fairSalary(c.role, c.skill, c.traits, c.quals), tuning(old, 'salaries')));
+    expect(c.salary).not.toBe(9999);
+    // nobody else is touched
+    expect(other.after.traits).toEqual(other.before.traits);
+    expect(other.after.salary).toBe(other.before.salary);
+  });
+
+  it('gives her the three on the staff, and leaves her pay alone', () => {
+    const { amanda } = oldSave(true);
+    expect(amanda.traits).toEqual(AMANDA.traits);
+    expect(amanda.salary).toBe(9999);
   });
 });
 

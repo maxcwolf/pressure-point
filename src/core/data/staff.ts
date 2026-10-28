@@ -201,6 +201,12 @@ export const AMANDA = {
   /** Stars above the best applicant the pool could produce at the time (at most five in all). */
   edge: 1,
   quals: ['swedish', 'deep', 'cranio'],
+  /**
+   * Always these quirks, never rolled: Max chose them. Healing Hands for the best therapist on the sheet, Quick Study
+   * for one who picks up a technique fast, and Dawdler, her one flaw, for one who is in no hurry. Rare one last, as
+   * in a roll.
+   */
+  traits: ['quick', 'dawdler', 'hands'] as readonly TraitId[],
   hairStyle: 5,
   /** Always brown. */
   hair: 0x4a2f1d,

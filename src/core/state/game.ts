@@ -142,8 +142,9 @@ export const defaultPolicy = (): Policy => ({
  * 42: ailments going around, the techniques they opened early, and the features being tried out.
  * 43: Former Influencer and Healing Hands only for those who treat guests, taken from anyone else who has one.
  * 44: Holds Space only for those who work at a post, taken from any Caretaker who has it.
+ * 45: Amanda Jablonsky's own quirks, Healing Hands, Quick Study and Dawdler, in place of any she rolled.
  */
-export const SAVE_VERSION = 44;
+export const SAVE_VERSION = 45;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
