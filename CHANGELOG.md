@@ -18,7 +18,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Lost, with a signpost.** A guest who has Lost Their Way now has a signpost growing out of the top of their head, its arrows pointing every which way and turning slowly. It replaces the compass that floated over them, and their mood bubble sits up over the top of the post so it never hides it.
 - **Knotted Up, tied up.** A Knotted Up guest is now tied up in rope, coils round their chest and arms and a big knot on the front.
 - **A Tension Headband you can see.** A guest with a Tension Headband now has their head screwed down in a red G-clamp, its frame down the side of their head, squashed short and wide under it.
-- **Bad Apple, rotten to the core.** A Bad Apple now has an apple core for a head, red top and bottom and bitten to the pips between, with flies going round it.
+- **Bad Apple, rotten to the core.** A Bad Apple now has an apple core for a head, red top and bottom going brown, with patches of rot, and bitten to the pips between, with flies going round it.
 - **Blue Screen, crashed.** A guest with Blue Screen now has an old beige monitor for a head, their face on its blue screen over a line of error text.
 - **Chair-Shaped, with the chair.** A Chair-Shaped guest now has a whole office chair stuck to them, carried about on their own bent legs. It is put away while they sit or lie on something real.
 - **Crossed Wires, plugged in.** A guest with Crossed Wires now has a white wall plug for a head, its black cable and an orange extension cord wound round and round them.

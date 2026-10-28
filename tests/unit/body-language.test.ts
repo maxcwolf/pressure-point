@@ -1308,8 +1308,8 @@ describe('symptoms where they are: round 11', () => {
     const v = new THREE.Vector3();
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i).applyMatrix4(pips.matrixWorld);
-      // none of them on the face's side at the height of the eyes
-      if (v.y > eyes.min.y - 0.02) expect(v.z).toBeLessThan(0);
+      // none of them on the face's side at the height of the eyes (the rot drawn with them is on the red, well clear)
+      if (v.y > eyes.min.y - 0.02 && v.y < eyes.max.y + 0.02) expect(v.z).toBeLessThan(0);
     }
     // from the game's camera the eyes show under the top of the core
     expect(hides(core, eyes.getCenter(new THREE.Vector3()))).toBe(false);

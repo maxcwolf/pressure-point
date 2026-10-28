@@ -424,8 +424,25 @@ const lathe = (key: string, profile: readonly [number, number][]) =>
       ),
   );
 
-const APPLE = 0x9a3b2a;
-const FLESH = 0xf2e2b8;
+const APPLE = 0x8a3f26;
+const FLESH = 0xe8d4a0;
+
+/** A soft dark patch of rot `r` across, flattened against the skin it sits in. */
+const rotSpot = (r: number) => cached(`rot spot ${r}`, () => new THREE.SphereGeometry(r, 10, 8).scale(1, 0.8, 0.25));
+
+/**
+ * A patch of rot on the outside of the core at a height, `a` radians round from the front, `out` from its middle and
+ * sunk a little into it, its flat face turned outward.
+ */
+const rotAt = (r: number, a: number, y: number, out: number): Piece => [
+  rotSpot(r),
+  Math.sin(a) * (out - r * 0.2),
+  y,
+  Math.cos(a) * (out - r * 0.2),
+  0,
+  a,
+  0,
+];
 
 /**
  * A bad apple, rotten to the core as the croquet club says: the head an apple core, red top and bottom and bitten to
@@ -482,7 +499,8 @@ function appleCore(rig: CharRig) {
     0,
     0,
   );
-  // the pips round the sides and back, long like seeds, off the line of the eyes so they never read as more of them
+  // the pips round the sides and back, long like seeds, off the line of the eyes so they never read as more of them,
+  // and patches of rot on the red, the same dark brown so they draw with the pips
   const pip = cached('core pip', () => new THREE.SphereGeometry(0.02, 8, 6).scale(0.8, 1.5, 0.8));
   put(
     g,
@@ -490,6 +508,12 @@ function appleCore(rig: CharRig) {
       [pip, -0.125, -0.05, -0.03, 0, 0, 0.3],
       [pip, 0.125, -0.07, -0.05, 0, 0, -0.3],
       [pip, 0.02, -0.06, -0.13],
+      rotAt(0.055, 0.75, -0.19, 0.258),
+      rotAt(0.04, 2.5, -0.15, 0.25),
+      rotAt(0.06, -2.3, -0.19, 0.258),
+      rotAt(0.035, -0.6, -0.23, 0.24),
+      rotAt(0.04, 1.0, 0.19, 0.208),
+      rotAt(0.045, -2.6, 0.2, 0.203),
     ]),
     mat(0x3a2414, 0.5),
     0,
@@ -498,9 +522,10 @@ function appleCore(rig: CharRig) {
   );
   put(
     g,
+    // the stalk sunk well into the top, and its leaf growing out of its side near the top, up and out
     joined('apple stalk', [
-      [cyl(0.012, 0.016, 0.1, 6), 0, 0.26, 0, 0, 0, 0.2],
-      [rbox(0.1, 0.012, 0.05, 0.01), 0.06, 0.29, 0, 0, 0, -0.5],
+      [cyl(0.012, 0.016, 0.12, 6), 0, 0.25, 0, 0, 0, 0.2],
+      [rbox(0.1, 0.012, 0.05, 0.01), 0.038, 0.313, 0, 0, 0, 0.5],
     ]),
     mat(0x4a3a24, 0.8),
     0,
