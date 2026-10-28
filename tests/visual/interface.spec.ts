@@ -156,6 +156,31 @@ test.describe('in a game', () => {
     });
   }
 
+  test('an applicant with a rare quirk, and their inspector once hired', async ({ screens, game, page }) => {
+    await screens.play();
+    // three common quirks and a rare one, the most a card holds, beside two with fewer
+    const id = await game.eval((pp) => {
+      const c = pp.state.candidates.find((x) => x.role === 'therapist')!;
+      c.traits = ['brisk', 'tireless', 'quick', 'hands'];
+      return c.id;
+    });
+    await game.menu('Hire');
+    await page.locator('#menu .tab', { hasText: 'Massage Therapist' }).click();
+    await screens.shot('menu-hire-rare');
+    await page
+      .locator('#menu .cv', { hasText: 'Healing Hands' })
+      .getByRole('button', { name: 'Hire', exact: true })
+      .click();
+    // hired, and with a few treatments their Healing Hands saved
+    await game.eval((pp, id) => {
+      const st = pp.state.staff.at(-1)!;
+      if (pp.state.candidates.some((c) => c.id === id)) throw new Error('not hired');
+      st.rescued = 4;
+      pp.tools.select({ kind: 'staff', id: st.id });
+    }, id);
+    await screens.shot('inspector-rare');
+  });
+
   test('the inspector comparing two of the staff', async ({ screens, game, page }) => {
     await screens.play();
     await game.eval((pp) =>
