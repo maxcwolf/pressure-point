@@ -769,6 +769,8 @@ export interface Wave {
   came: number;
   healed: number;
   turned: number;
+  /** The player has its guests turned back at the door, ready or not. Left out in a save from before: let in. */
+  turnBack?: boolean;
 }
 
 /** A year-end awards ceremony. */

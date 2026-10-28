@@ -8,7 +8,7 @@ import { money } from '../../core/format';
 import type { Objective } from '../../core/sim/goals';
 import type { TutorialLine } from '../../core/sim/tutorial';
 import { css } from '../../styled-system/css';
-import { panelCard } from '../../styled-system/recipes';
+import { panelCard, toggleSwitch } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
@@ -137,6 +137,9 @@ const waveCard = css(card, {
   '& .ready.warn': { color: 'warn' },
 });
 
+/** The switch on the wave card that lets its guests in or turns them back, with its words beside it. */
+const waveSwitch = css({ display: 'flex', alignItems: 'center', gap: '8', fontSize: '12', mt: '2', cursor: 'pointer' });
+
 /** The wave card's heading and how it stands, which open its dialog again when clicked. */
 const waveOpener = css(opener, { display: 'flex', flexDirection: 'column', gap: '2' });
 
@@ -190,7 +193,8 @@ function ChallengeCard() {
 
 /**
  * The ailment going around, if any: before its guests come, how soon, and a line for each part of getting ready for
- * its treatment; while they come, the days left and how they have fared.
+ * its treatment; while they come, the days left and how they have fared. A switch lets its guests in once the center
+ * is ready, or turns them back at the door all the same.
  */
 function WaveCard() {
   const hud = useHud();
@@ -203,6 +207,7 @@ function WaveCard() {
   const lines = shownLines(readyLines(s, m.id, sim.waveChecks(m.id)));
   // the wave's guests in the center now, being seen or waiting
   const here = s.guests.filter((g) => g.wave && g.state !== 'leaving').length;
+  const letIn = !w.turnBack;
   return (
     <div class={cx('wave', waveCard)}>
       <Button
@@ -222,6 +227,23 @@ function WaveCard() {
           {ok ? `✔ ${text}` : <IconText id="ui-warning">{text}</IconText>}
         </p>
       ))}
+      <label class={waveSwitch}>
+        <button
+          class={cx(toggleSwitch(), letIn && 'on')}
+          role="switch"
+          aria-checked={letIn ? 'true' : 'false'}
+          aria-label="Let them in"
+          title={letIn ? 'Turn its guests back at the door, at no cost' : 'Let its guests in once you are ready'}
+          onClick={() => {
+            sim.letWaveIn(!letIn);
+            hud.host.audio.play('blip');
+            hud.update();
+          }}
+        >
+          <span />
+        </button>
+        <span>{letIn ? 'Let them in' : 'Turn them back'}</span>
+      </label>
     </div>
   );
 }

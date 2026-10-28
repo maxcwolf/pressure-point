@@ -162,10 +162,14 @@ export function waveWarning(c: ConditionId): string {
   return `${conditionOf(c).name} is going around. ${m.name} is open; train ${an(role)} now.`;
 }
 
-/** The PA line as a wave's guests start to come: where they go, or that they will come back later. */
+/**
+ * The PA line as a wave's guests start to come: where they go, that they will come back later, or, if the player has
+ * them turned back, that they are asked to.
+ */
 export function waveStarting(ctx: SimContext, c: ConditionId): string {
   const m = MODALITIES[techniqueFor(c)];
   const name = conditionOf(c).name;
+  if (ctx.s.wave?.turnBack) return `Guests with ${name} will be asked to come back another time.`;
   if (waveReady(ctx, m.id))
     return `Guests with ${name} arrive from today. ${m.name} is in the ${ROOMS[DISCIPLINES[m.discipline].room].name}.`;
   return `Guests with ${name} will come back later, once we are ready for them.`;
@@ -187,6 +191,7 @@ export function announceWave(ctx: SimContext, def: WaveDef) {
     came: 0,
     healed: 0,
     turned: 0,
+    turnBack: false,
   };
   s.nextWave = null;
   emit(ctx, { type: 'wave' });
@@ -239,15 +244,15 @@ export function updateWaves(ctx: SimContext) {
 
 /**
  * Whether the guest arriving now comes with the ailment going around: by its share of the pace, rolled only while a
- * wave brings guests, so a game without one rolls as it always has. One the center cannot treat yet turns back at
- * the door, uncounted: 'turned'. Undefined for anyone else.
+ * wave brings guests, so a game without one rolls as it always has. One the center cannot treat yet, or one the player
+ * has turned back, turns back at the door, uncounted: 'turned'. Undefined for anyone else.
  */
 export function waveArrival(ctx: SimContext, wave: number, perMonth: number): ConditionId | 'turned' | undefined {
   const s = ctx.s;
   if (wave <= 0 || !s.wave) return undefined;
   if (random(s) * perMonth >= wave) return undefined;
   const c = s.wave.condition;
-  if (waveReady(ctx, techniqueFor(c))) return c;
+  if (!s.wave.turnBack && waveReady(ctx, techniqueFor(c))) return c;
   s.wave.turned++;
   const door = ctx.world.building.entrances[0];
   if (door) emit(ctx, { type: 'float', text: `${conditionOf(c).name}: next time`, x: door.x, y: door.y, kind: 'info' });
@@ -274,6 +279,14 @@ export function wavesSwitched(ctx: SimContext, on: boolean) {
   const soon = s.day + WAVE_SOON_DAYS;
   const day = s.nextWave?.day;
   if (day === undefined || day > soon || day <= s.day) s.nextWave = { day: soon, moves: 0 };
+}
+
+/**
+ * Let the guests of the wave going around in, once the center is ready for them, or have them turned back at the door
+ * all the same, at no cost, as if it were not ready.
+ */
+export function letWaveIn(s: GameState, letIn: boolean) {
+  if (s.wave) s.wave.turnBack = !letIn;
 }
 
 /** Announce the wave now, skipping its clock: the cheat console's `wave`. Its ailment, or undefined if none is to come. */

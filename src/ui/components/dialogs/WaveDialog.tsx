@@ -76,8 +76,9 @@ export function WaveDialog() {
           ' Its guests need a rest after, so they come in only once there is a Recovery Lounge too.'}
       </p>
       <p class="sub">
-        Not ready? They turn back at the door and come another time, at no cost. Ready, they come in like any guest, so
-        keep the line short.
+        Not ready, or would rather not? They turn back at the door and come another time, at no cost: the switch on the
+        Going around card turns them back even once you are ready. Ready, they come in like any guest, so keep the line
+        short.
       </p>
       <div class={buttonRow()}>
         <Button

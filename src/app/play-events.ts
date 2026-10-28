@@ -222,6 +222,8 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
         turned: w.turned,
         // a wave guest only comes in once the center is ready for them, so any who came means it was chased
         chased: w.came > 0,
+        // the player had its guests turned back at the door when the wave ended, ready or not
+        turned_back: !!w.turnBack,
       },
     });
   }

@@ -23,12 +23,14 @@ import { countVisit } from '../../src/core/sim/records';
 import { Sim } from '../../src/core/sim/sim';
 import {
   announceWave,
+  letWaveIn,
   updateWaves,
   waveArrival,
   waveChecks,
   waveClash,
   wavePerWeek,
   waveReady,
+  waveStarting,
   waveTodo,
 } from '../../src/core/sim/waves';
 import { featureOn, featureValues, newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
@@ -245,6 +247,63 @@ describe('a center ready for a wave', () => {
     expect(waveTodo(ctx, 'moxa')).toBe('Train an Acupuncturist in Moxibustion');
     acu.state = 'atPost';
     expect(waveReady(ctx, 'moxa')).toBe(true);
+  });
+});
+
+describe('the switch that turns a wave back', () => {
+  /** A wave under way at a center ready for it: an Acupuncturist trained in Moxibustion, the burner and the lounge. */
+  function readyWave() {
+    const { sim, s } = openCenter();
+    const ctx = createContext(s);
+    s.opened = ['moxa'];
+    addAcupuncture(sim);
+    expect(sim.placeItem('moxa_burner', 27, 9, 0)).not.toBeNull();
+    addRecovery(sim);
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    announceWave(ctx, { condition: 'coldfeet', afterStar: 1, cause: '' });
+    s.day = s.wave!.starts;
+    drainEvents(ctx);
+    return { sim, s, ctx };
+  }
+
+  it('lets a wave in by default, and keeps a wave from before the switch letting them in', () => {
+    const { s, ctx } = readyWave();
+    expect(s.wave?.turnBack).toBe(false);
+    expect(waveArrival(ctx, 10, 10)).toBe('coldfeet');
+    delete s.wave!.turnBack;
+    expect(waveArrival(ctx, 10, 10)).toBe('coldfeet');
+  });
+
+  it('turns a ready center’s guests back at the door at no cost, as an unready one’s, until switched back', () => {
+    const { sim, s, ctx } = readyWave();
+    sim.letWaveIn(false);
+    expect(s.wave?.turnBack).toBe(true);
+    const before = { money: s.money, reputation: s.reputation, turnedAway: s.stats.turnedAway };
+    expect(waveArrival(ctx, 10, 10)).toBe('turned');
+    expect(s.wave).toMatchObject({ turned: 1, came: 0 });
+    expect({ money: s.money, reputation: s.reputation, turnedAway: s.stats.turnedAway }).toEqual(before);
+    expect(drainEvents(ctx).some((e) => e.type === 'float' && e.text === 'Cold Feet: next time')).toBe(true);
+    sim.letWaveIn(true);
+    expect(waveArrival(ctx, 10, 10)).toBe('coldfeet');
+  });
+
+  it('says so over the PA as its guests start to come, and the advisor asks nothing', () => {
+    const { s, ctx } = readyWave();
+    letWaveIn(s, false);
+    expect(waveStarting(ctx, 'coldfeet')).toBe('Guests with Cold Feet will be asked to come back another time.');
+    // not ready, with guests already sent back, the advisor would ask for what it takes
+    s.features.waves = true;
+    s.wave!.turned = 1;
+    s.staff.find((st) => st.role === 'acupuncturist')!.quals = [];
+    expect(waveAdvice(ctx)).toBe('');
+    letWaveIn(s, true);
+    expect(waveAdvice(ctx)).not.toBe('');
+  });
+
+  it('does nothing with no wave going around', () => {
+    const { s } = openCenter();
+    letWaveIn(s, false);
+    expect(s.wave).toBeNull();
   });
 });
 

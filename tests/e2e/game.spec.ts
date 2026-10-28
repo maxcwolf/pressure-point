@@ -3650,6 +3650,36 @@ test.describe('ailments going around', () => {
     await expect(dialog).toBeEmpty();
     await card.getByRole('button', { name: /Going around: Cold Feet/ }).click();
     await expect(dialog).toContainText('Going around town');
+    await expect(dialog).toContainText('the switch on the Going around card turns them back');
+    expect(game.errors).toEqual([]);
+  });
+
+  test('the switch on the card turns its guests back, and lets them in again', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.sim.setFeature('waves', true);
+      const day = pp.state.day;
+      pp.state.wave = {
+        condition: 'coldfeet',
+        warned: day,
+        starts: day + 7,
+        ends: day + 37,
+        opened: true,
+        begun: false,
+        came: 0,
+        healed: 0,
+        turned: 0,
+        turnBack: false,
+      };
+    });
+    const toggle = page.locator('#objectives .wave').getByRole('switch', { name: 'Let them in' });
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await expect(page.locator('#objectives .wave')).toContainText('Turn them back');
+    expect(await game.eval((pp) => pp.state.wave?.turnBack)).toBe(true);
+    await toggle.click();
+    expect(await game.eval((pp) => pp.state.wave?.turnBack)).toBe(false);
     expect(game.errors).toEqual([]);
   });
 });

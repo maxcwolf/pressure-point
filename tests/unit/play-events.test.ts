@@ -224,8 +224,14 @@ describe('play events', () => {
       opened_early: true,
       turned: 5,
       chased: false,
+      turned_back: false,
     });
     expect(playEvents(markOf(sim.s), sim.s).filter((e) => e.name === 'wave_ended')).toEqual([]);
+    // and whether the player had its guests turned back as it ended
+    sim.s.wave = { ...sim.s.pastWaves[0]!, turnBack: true };
+    const turning = markOf(sim.s);
+    sim.s.wave = null;
+    expect(playEvents(turning, sim.s).find((e) => e.name === 'wave_ended')?.props).toMatchObject({ turned_back: true });
   });
 
   it('say which features being tried out are on', () => {
