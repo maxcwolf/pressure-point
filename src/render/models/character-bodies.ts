@@ -1,8 +1,9 @@
 // The symptoms a guest wears whole, so the ailment reads from across the room at the game's usual distance: someone
 // bottled up stands in a big green bottle, corked over their head, someone glass half empty in a tall tumbler with the
 // water up to their waist, someone spiritually dehydrated is a cactus potted from the waist down, and someone with
-// blocked qi has a storm going on round their chest. The face still shows, through the glass or on the cactus, so how they feel does too, and
-// it all goes in the puff of the cure.
+// blocked qi has a storm going on round their chest, and someone scattered comes apart, head and body floating loose
+// of each other. The face still shows, through the glass or on the cactus, so how they feel does too, and it all goes
+// in the puff of the cure.
 
 import * as THREE from 'three';
 
@@ -253,10 +254,41 @@ function storm(rig: CharRig) {
   rig.torso.add(weather, rig.drips);
 }
 
+/**
+ * Float a part of someone `up` meters up from where it belongs and `aside` meters to one side, and set it drifting up
+ * and down `drift` meters (see `pose`), to be put back with the cure and left to the rest of the pose from then on.
+ */
+function floatApart(rig: CharRig, part: THREE.Object3D, up: number, aside: number, drift: number) {
+  const home = part.position.clone();
+  part.userData.home = home;
+  part.userData.apart = new THREE.Vector3(aside, up, 0);
+  part.userData.drift = drift;
+  part.position.add(part.userData.apart as THREE.Vector3);
+  const spins = (rig.spin ??= []);
+  spins.push(part);
+  (rig.restore ??= []).push(() => {
+    const at = spins.indexOf(part);
+    if (at >= 0) spins.splice(at, 1);
+    part.userData.drift = 0;
+    part.position.copy(home);
+  });
+}
+
+/**
+ * Scattered: in pieces, the head floating a hand's width over the shoulders and the body over the legs, each a little
+ * askew and drifting up and down on its own, the shards of them still drifting round. Lying down they come together,
+ * as the shards are put away then.
+ */
+function inPieces(rig: CharRig) {
+  floatApart(rig, rig.head, 0.2, 0.05, 0.03);
+  floatApart(rig, rig.torso, 0.22, -0.04, 0.025);
+}
+
 /** Draw a symptom the guest wears whole, if it is one. */
 export function bodySymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'cork') bottle(rig);
   else if (visual === 'glass') tumbler(rig);
   else if (visual === 'cactus') cactus(rig);
   else if (visual === 'storm') storm(rig);
+  else if (visual === 'shards') inPieces(rig);
 }

@@ -683,6 +683,36 @@ describe('a symptom in place of the head', () => {
     expect(rig.props.some(shown)).toBe(false);
   });
 
+  it("grows a signpost out of the top of a lost guest's head, its arrows turning slowly every which way", () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    expect(shown(rig.headMesh)).toBe(true);
+    expect(shown(rig.face.eyes)).toBe(true);
+    // the compass that used to float over the head is gone
+    expect(rig.bob).toBeUndefined();
+    expect(rig.orbit).toBeUndefined();
+    const post = rig.props[0]!;
+    expect(post.parent).toBe(rig.head);
+    const g = demoGuest(LAB_LOOK, 'lost');
+    poseChar(rig, g, 0, 1, { style: null });
+    const facing = post.rotation.y;
+    poseChar(rig, g, 1, 1, { style: null });
+    expect(post.rotation.y).not.toBeCloseTo(facing);
+  });
+
+  it('puts the signpost away while they lie down', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'lost'), pose: 'lie' }, 0, 1, { style: null });
+    expect(rig.props[0]!.visible).toBe(false);
+    poseChar(rig, demoGuest(LAB_LOOK, 'lost'), 1, 1, { style: null });
+    expect(rig.props[0]!.visible).toBe(true);
+  });
+
+  it('takes the signpost away with the cure', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'lost'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(rig.props.some(shown)).toBe(false);
+  });
+
   it('gives a flat battery their head back with the cure', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'battery');
     poseChar(rig, { ...demoGuest(LAB_LOOK, 'battery'), outcome: 'healed' }, 5, 1, { style: null });
@@ -780,6 +810,40 @@ describe('a symptom worn whole', () => {
     // a flash now and then, dark most of the time
     expect(flashes).toBeGreaterThan(0);
     expect(dark).toBeGreaterThan(flashes * 5);
+  });
+
+  it('leaves someone scattered in pieces, the head over the shoulders and the body over the legs, each drifting', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    expect(rig.head.position.y - whole.head.position.y).toBeGreaterThan(0.15);
+    expect(rig.torso.position.y - whole.torso.position.y).toBeGreaterThan(0.15);
+    // the shards of them still go round
+    expect(rig.orbit).toBeDefined();
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    const heights = [0, 0.4, 0.8].map((t) => {
+      poseChar(rig, g, t, 1, { style: null });
+      return [rig.head.position.y, rig.torso.position.y];
+    });
+    expect(new Set(heights.map(([h]) => h)).size).toBeGreaterThan(1);
+    expect(new Set(heights.map(([, b]) => b)).size).toBeGreaterThan(1);
+  });
+
+  it('puts someone scattered together while they lie down, to lie on what they lie on', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), pose: 'lie' }, 0.3, 1, { style: null });
+    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
+    expect(rig.torso.position.toArray()).toEqual(whole.torso.position.toArray());
+  });
+
+  it('puts someone scattered back together with the cure, the head free to turn again', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
+    expect(rig.torso.position.toArray()).toEqual(whole.torso.position.toArray());
+    expect(rig.spin ?? []).not.toContain(rig.head);
+    expect(rig.spin ?? []).not.toContain(rig.torso);
   });
 
   it('leaves midlife fog its own cloud over the head', () => {

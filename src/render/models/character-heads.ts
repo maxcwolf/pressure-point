@@ -1,7 +1,8 @@
 // The symptoms that take the place of a guest's head, so the ailment reads from across the room at the game's usual
 // distance rather than as a speck over the head: a scrambled noggin's head is an egg with its top knocked off, a flat
-// battery's a battery on its side, a stress head's a whistling kettle, and a noisy mind's a boombox left on too loud. The face stays on, so how the guest feels
-// still shows, and the head comes back halfway through the cure.
+// battery's a battery on its side, a stress head's a whistling kettle, a noisy mind's a boombox left on too loud, and
+// someone who has lost their way has a signpost growing out of the top of theirs. The face stays on, so how the guest
+// feels still shows, and the head comes back halfway through the cure.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -321,10 +322,50 @@ function boombox(rig: CharRig) {
   swell(rig, 1.05, 1.05);
 }
 
+const SIGN_WOOD = 0x9a6a3c;
+const SIGN_BOARD = 0xf2e6c8;
+const SIGN_TIP = 0xd9362f;
+
+/** A signpost's arrow board pointing out along its length, the tip a square turned on its corner, as one shape. */
+const arrow = () =>
+  joined('signpost arrow', [
+    [rbox(0.26, 0.07, 0.02, 0.008), 0.15, 0, 0],
+    [rbox(0.075, 0.075, 0.02, 0.008), 0.28, 0, 0, 0, 0, Math.PI / 4],
+  ]);
+
+/**
+ * Lost their way: a wooden signpost growing out of the top of the head, four arrows pointing every which way and a red
+ * finial on top, the whole post turning slowly as they try one way after another (see `pose`).
+ */
+function signpost(rig: CharRig) {
+  const post = new THREE.Group();
+  put(post, cyl(0.022, 0.026, 0.56, 8), mat(SIGN_WOOD, 0.8), 0, 0.46, 0);
+  const board = mat(SIGN_BOARD, 0.7);
+  for (const [y, a] of [
+    [0.66, 0.3],
+    [0.58, 2.1],
+    [0.5, 3.6],
+    [0.42, 5.0],
+  ] as const) {
+    const arm = new THREE.Group();
+    arm.position.y = y;
+    arm.rotation.y = a;
+    put(arm, arrow(), board, 0, 0, 0);
+    post.add(arm);
+  }
+  put(post, rbox(0.075, 0.075, 0.024, 0.008), mat(SIGN_TIP, 0.5), 0, 0.74, 0).rotation.z = Math.PI / 4;
+  spin(rig, post, 0.5);
+  // put away while they lie down, so it never pokes off the end of a table
+  post.userData.upright = true;
+  props(rig, post);
+  rig.head.add(post);
+}
+
 /** Draw a symptom that stands in for the head, if it is one. */
 export function headSymptom(rig: CharRig, visual: Visual | undefined) {
   if (visual === 'egg') egg(rig);
   else if (visual === 'battery') battery(rig);
   else if (visual === 'steam') kettle(rig);
   else if (visual === 'gears') boombox(rig);
+  else if (visual === 'compass') signpost(rig);
 }

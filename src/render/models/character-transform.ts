@@ -1,7 +1,8 @@
 // Prototypes for symptoms that read from the game's usual distance (see `SYMPTOM_OPTION`): under `body`, the head or
-// the whole body becomes the joke (see symptom-proposals.ts); under `color`, the whole
-// person wears it (a ghost for someone out of their body, frosted for a cold shoulder, pond green for stagnant vibes);
-// under `grow`, the prop over the head grows from afar. Each is put back halfway through the cure, as the skin is.
+// the whole body becomes the joke, and those approved are drawn for real (see character-heads.ts and
+// character-bodies.ts), so none are left here to try; under `color`, the whole person wears it (a ghost for someone
+// out of their body, frosted for a cold shoulder, pond green for stagnant vibes); under `grow`, the prop over the head
+// grows from afar. Each is put back halfway through the cure, as the skin is.
 
 import * as THREE from 'three';
 
@@ -9,11 +10,10 @@ import type { Visual } from '../../core/data';
 import type { Viewpoint } from '../crowd';
 import { owned } from '../disposal';
 import { pixelsPerMeter } from '../readable';
-import { GROW, GROW_START, SYMPTOM_OPTION, variantOf } from '../symptom-options';
+import { GROW, GROW_START, SYMPTOM_OPTION } from '../symptom-options';
 import type { CharRig } from './character';
 import { props } from './character-heads';
 import { mat, put, sph } from './parts';
-import { lost, scattered } from './symptom-proposals';
 
 /**
  * Recolor every part of a person, each shared material swapped for the shared one of its new color so the crowd still
@@ -34,14 +34,6 @@ function propParts(rig: CharRig) {
   const parts = new Set<THREE.Object3D>();
   for (const p of rig.props) p.traverse((o) => parts.add(o));
   return parts;
-}
-
-/** The head or the whole body as the symptom, for the ailments prototyped under `body`. */
-function bodySymptom(rig: CharRig, visual: Visual) {
-  const variant = variantOf(visual);
-  if (!variant) return;
-  if (visual === 'shards') scattered(rig, variant);
-  else if (visual === 'compass') lost(rig, variant);
 }
 
 /** The whole person wearing the symptom as color, for the ailments prototyped under `color`. */
@@ -132,7 +124,6 @@ export function growProps(rig: CharRig, view: Viewpoint) {
 /** Draw a symptom as the prototype option asked for in the address does, for the ailments it has been tried on. */
 export function transformSymptom(rig: CharRig, visual: Visual | undefined) {
   if (!visual) return;
-  if (SYMPTOM_OPTION === 'body') bodySymptom(rig, visual);
-  else if (SYMPTOM_OPTION === 'color') colorSymptom(rig, visual);
+  if (SYMPTOM_OPTION === 'color') colorSymptom(rig, visual);
   else if (SYMPTOM_OPTION === 'grow') growSymptom(rig, visual);
 }

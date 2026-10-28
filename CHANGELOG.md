@@ -12,6 +12,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **Glass half empty, literally.** A Glass Half Empty guest now stands in a tall tumbler, the water up to their waist and the top half empty.
 - **A noisy mind, turned up.** A guest with Noisy Mind now has a boombox for a head, its speakers pumping, its aerial rattling and notes of music rising off it.
 - **Blocked qi, stormy.** A guest with Blocked Qi now has a storm cloud round their chest, with rain falling from it and lightning flashing in it every few seconds. Midlife Fog keeps its cloud over the head.
+- **Scattered, in pieces.** A Scattered guest now comes apart, their head floating over their shoulders and their body over their legs, each drifting on its own. They pull together to lie down, and for good when they are cured.
+- **Lost, with a signpost.** A guest who has Lost Their Way now has a signpost growing out of the top of their head, its arrows pointing every which way and turning slowly. It replaces the compass that floated over them.
 
 ## v0.34.3
 

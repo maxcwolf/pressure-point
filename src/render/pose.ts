@@ -903,16 +903,22 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       rattle = 0,
       pulse = 0,
       drift = 0,
+      upright = false,
     } = o.userData as {
       spin?: number;
       rattle?: number;
       pulse?: number;
       drift?: number;
+      upright?: boolean;
     };
+    // put away while they lie down, as what floats over the head is
+    if (upright && !rig.cured) o.visible = c.pose !== 'lie';
     if (drift) {
-      // floating up and down about where it floats, each part to its own rhythm
-      const floats = (o.userData.floats ??= o.position.y) as number;
-      o.position.y = floats + Math.sin(t * 1.7 + c.id + o.id * 1.3) * drift;
+      // floating loose of where it belongs, up and down to its own rhythm, but put back together lying down, to lie on
+      // whatever they lie on
+      const { home, apart } = o.userData as { home: THREE.Vector3; apart: THREE.Vector3 };
+      o.position.copy(home);
+      if (c.pose !== 'lie') o.position.add(apart).y += Math.sin(t * 1.7 + c.id + o.id * 1.3) * drift;
       continue;
     }
     o.rotation.y = t * spin;

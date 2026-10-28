@@ -555,6 +555,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     }
     rig.orbit.position.y = 0.25;
     torso.add(rig.orbit);
+    bodySymptom(rig, visual);
   } else if (visual === 'bulb') {
     // a dim light bulb that keeps flickering
     const lamp = new THREE.Group();
@@ -804,21 +805,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     head.scale.set(1.45 / wide, 1.45, 1.45 / wide);
     rig.props.push(put(head, cyl(0.1, 0.08, 0.07, 6), mat(0xd9a93a, 0.3, 0.2), 0, 0.24, 0));
   } else if (visual === 'compass') {
-    // a compass floating over their head, its needle spinning round and never settling
-    const compass = new THREE.Group();
-    put(compass, cyl(0.11, 0.11, 0.025, 18), mat(0xc9a13a, 0.35, 0.3), 0, 0, 0);
-    put(compass, cyl(0.095, 0.095, 0.03, 18), mat(0xf4f1ea, 0.6), 0, 0.002, 0);
-    rig.orbit = new THREE.Group();
-    put(rig.orbit, rbox(0.15, 0.012, 0.025, 0.004), mat(0xd9362f, 0.5), 0.04, 0, 0);
-    put(rig.orbit, rbox(0.08, 0.012, 0.025, 0.004), mat(0x3a3a46, 0.5), -0.04, 0, 0);
-    rig.orbit.position.y = 0.025;
-    compass.add(rig.orbit);
-    for (const o of [...compass.children, ...rig.orbit.children]) o.castShadow = false;
-    // bobbing gently, and put away while they lie down
-    compass.scale.setScalar(1.5);
-    compass.position.y = 0.4;
-    head.add(compass);
-    rig.bob = compass;
+    headSymptom(rig, visual);
   } else if (visual === 'neck') {
     // a phone held up in front of them, its screen lit, that they cannot look up from
     const phone = new THREE.Group();
