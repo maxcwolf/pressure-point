@@ -14,8 +14,10 @@ export function usePop(open: boolean): string {
     const timer = setTimeout(() => {
       setPopping(false);
     }, 220);
+    // shut before the pop is over, it stops popping too, or the class stays on the empty panel until it next opens
     return () => {
       clearTimeout(timer);
+      setPopping(false);
     };
   }, [open]);
   return popping ? 'pop' : '';
