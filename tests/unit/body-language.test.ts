@@ -9,6 +9,9 @@ import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
 import { BUBBLE_STANDING } from '../../src/render/bubbles';
+import { applyGuestGag } from '../../src/render/gags/apply';
+import { gagFrame } from '../../src/render/gags/beats';
+import { GEODE } from '../../src/render/gags/scripts/upgrades';
 import { rattle } from '../../src/render/item-cues';
 import { buildCharacter, CAP_TIP, type CharRig, cureRig, topOf } from '../../src/render/models/character';
 import { HELD_SIZE } from '../../src/render/models/held';
@@ -1260,6 +1263,33 @@ describe('symptoms where they are: round 11', () => {
     expect(new Set(at.map(([h]) => h.z.toFixed(3))).size).toBe(3);
     const [[h0, b0], [h1, b1]] = at as [[THREE.Vector3, THREE.Vector3], [THREE.Vector3, THREE.Vector3]];
     expect(Math.sign(h1.x - h0.x)).toBe(-Math.sign(b1.x - b0.x));
+  });
+
+  it('draws someone scattered back together while the Geode is shut round them, so no piece pokes out', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    /** The guest in the Geode at a point in its session, posed and then moved by its gag. */
+    const inGeode = (progress: number) => {
+      poseChar(rig, g, 2, 1, { style: null });
+      const input = {
+        stage: 'running',
+        progress,
+        since: 0,
+        healed: true,
+        hiccup: false,
+        t: 2,
+        smoking: false,
+        down: false,
+      };
+      applyGuestGag(rig, gagFrame(GEODE, input as Parameters<typeof gagFrame>[1]).guest, 0);
+    };
+    inGeode(0.5);
+    expect(rig.head.position.distanceTo(whole.head.position)).toBeLessThan(1e-6);
+    expect(rig.torso.position.distanceTo(whole.torso.position)).toBeLessThan(1e-6);
+    // and apart again once it stands open
+    inGeode(0.99);
+    expect(rig.head.position.y - whole.head.position.y).toBeGreaterThan(0.2);
   });
 
   it('eases someone scattered back together over the puff of the cure, rather than in one frame', () => {

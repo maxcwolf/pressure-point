@@ -58,7 +58,7 @@ export const OCTOPUS: GagScript = {
   },
 };
 
-/** The geode closes round the guest, glows, and opens again. */
+/** The geode closes round the guest, drawing someone scattered back together, glows, and opens again. */
 export const GEODE: GagScript = {
   outro: 1,
   hiccup: 0,
@@ -69,6 +69,8 @@ export const GEODE: GagScript = {
     const shut = i.stage === 'running' ? ease(p, 0.05, 0.2) * (1 - ease(p, 0.85, 0.97)) : 0;
     f.parts.left = { ry: 0.55 * (1 - shut) };
     f.parts.right = { ry: -0.55 * (1 - shut) };
+    // someone scattered drawn together while it is shut, so no piece of them pokes out of the top
+    f.guest.gather = shut;
     f.shine = i.down ? 0 : 0.3 + 1.6 * bump(p, 0.15, 0.9);
     f.emit.sparkle = within(p, 0.25, 0.85) ? 1 : 0;
     return f;
