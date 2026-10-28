@@ -1096,7 +1096,7 @@ describe('a symptom worn whole', () => {
     expect(rig.props.some((p) => p.parent === rig.body)).toBe(true);
   });
 
-  it('keeps their legs inside the pot walking, a shuffle, and sits them as anyone with the pot put away', () => {
+  it('keeps their legs inside the pot walking, a shuffle, and sits them as anyone, the pot cut down at the seat', () => {
     const g = demoGuest(LAB_LOOK, 'parched');
     expect(swing(buildCharacter(LAB_LOOK, undefined, 'cactus'), g)).toBeLessThanOrEqual(POTTED.stride + 0.01);
     const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
@@ -1104,7 +1104,7 @@ describe('a symptom worn whole', () => {
     poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 0, 1, { style: null });
     // the thighs out along the seat rather than down through it in the pot
     expect(rig.legL.rotation.x).toBeLessThan(-1.2);
-    expect(pot.visible).toBe(false);
+    expect(pot.visible).toBe(true);
   });
 
   it('walks them as anyone does once the pot is gone with the cure', () => {
@@ -1376,7 +1376,18 @@ describe('symptoms where they are: round 11', () => {
     expect(rig.phone!.visible).toBe(true);
   });
 
-  it('puts a bottle, a tumbler or a pot away while they sit, rather than down through the seat', () => {
+  it('cuts a bottle, a tumbler or a pot short at the seat while they sit, rather than down through it', () => {
+    /** How low the lowest part of a shell reaches, in meters up the body. */
+    const bottom = (shell: THREE.Object3D) => {
+      let low = Infinity;
+      shell.traverse((o) => {
+        if (!(o instanceof THREE.Mesh)) return;
+        const geo = o.geometry as THREE.BufferGeometry;
+        geo.computeBoundingBox();
+        low = Math.min(low, geo.boundingBox!.min.y + o.position.y + shell.position.y);
+      });
+      return low;
+    };
     for (const [visual, id] of [
       ['cork', 'bottled'],
       ['glass', 'glasshalf'],
@@ -1384,9 +1395,13 @@ describe('symptoms where they are: round 11', () => {
     ] as const) {
       const rig = buildCharacter(LAB_LOOK, undefined, visual);
       const shell = rig.props.find((p) => p.parent === rig.body) ?? rig.props[0]!;
-      poseChar(rig, { ...demoGuest(LAB_LOOK, id), pose: 'sit', h: 0.4 }, 1, 1, { style: null });
-      expect(shell.visible, visual).toBe(false);
-      if (visual !== 'cactus') expect(rig.bubbleSitting, visual).toBeLessThan(rig.bubbleAt);
+      const g = demoGuest(LAB_LOOK, id);
+      poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 1, 1, { style: null });
+      expect(shell.visible, visual).toBe(true);
+      expect(bottom(shell), visual).toBeGreaterThan(0.34);
+      // whole again once they stand
+      poseChar(rig, g, 2, 1, { style: null });
+      expect(bottom(shell), visual).toBeLessThan(0.3);
     }
   });
 });

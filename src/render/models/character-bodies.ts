@@ -29,9 +29,15 @@ const GLASS = new THREE.MeshStandardMaterial({
 /** How far up the body the middle of the bottle is, which it shrinks toward with the cure. */
 const MIDDLE = 1;
 
-/** Put a shell round someone away while they sit, as it would go into the seat (see `pose`). */
-function seated(rig: CharRig, shell: THREE.Object3D) {
-  shell.userData.standing = true;
+/** How far up the body the seat is while they sit, where a bottle, a tumbler or a pot round them is cut short. */
+const SEAT = 0.35;
+
+/**
+ * Cut a shell round someone off at the seat while they sit, rather than down through it, each part of it given a shape
+ * of its own that stops there (see `pose`).
+ */
+function seated(rig: CharRig, shell: THREE.Object3D, cuts: [THREE.Mesh, THREE.BufferGeometry][]) {
+  shell.userData.cuts = cuts.map(([m, short]) => [m, m.geometry, short]);
   (rig.spin ??= []).push(shell);
 }
 
@@ -84,38 +90,40 @@ const tumblerWater = (from: number) =>
 
 /**
  * Bottled up: the whole person in a big green bottle, the cork in its neck above their head and a cream label with a
- * red stripe round the middle, their legs out of the bottom to walk on. Put away while they sit (see `seated`). The
- * glass is one shape, as each part of it
- * drawn alone is a draw call more for every bottled guest.
+ * red stripe round the middle, their legs out of the bottom to walk on. Cut short at the seat while they sit (see
+ * `seated`). The glass is one shape, as each part of it drawn alone is a draw call more for every bottled guest.
  */
 function bottle(rig: CharRig) {
   const bottle = new THREE.Group();
   /** A height up the body, as a height in the bottle, whose middle is at `MIDDLE`. */
   const at = (y: number) => y - MIDDLE;
-  put(bottle, bottleGlass(0.255), GLASS, 0, 0, 0);
+  const glass = put(bottle, bottleGlass(0.255), GLASS, 0, 0, 0);
   put(bottle, cyl(0.115, 0.1, 0.16, 14), mat(0xc9a56a, 0.95), 0, at(1.66), 0);
   put(bottle, cyl(0.315, 0.315, 0.3, 24), mat(0xf2e6c8, 0.8), 0, at(0.62), 0);
   put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, at(0.68), 0);
   bottle.position.y = MIDDLE;
-  seated(rig, bottle);
+  seated(rig, bottle, [[glass, bottleGlass(SEAT)]]);
   props(rig, bottle);
   rig.body.add(bottle);
 }
 
 /**
  * Glass half empty: the whole person standing in a tall clear tumbler, the water up to the waist and the top half
- * empty, their own head and face dry in the empty half and their legs out of the bottom. Put away while they
- * sit (see `seated`). The glass is one shape, as the bottle's is.
+ * empty, their own head and face dry in the empty half and their legs out of the bottom. Cut short at the
+ * seat while they sit (see `seated`). The glass is one shape, as the bottle's is.
  */
 function tumbler(rig: CharRig) {
   const glass = new THREE.Group();
   /** A height up the body, as a height in the tumbler, whose middle is at `TUMBLER_MIDDLE`. */
   const at = (y: number) => y - TUMBLER_MIDDLE;
-  put(glass, tumblerGlass(0.27), CLEAR, 0, 0, 0);
-  put(glass, tumblerWater(0.325), WATER, 0, 0, 0);
+  const sides = put(glass, tumblerGlass(0.27), CLEAR, 0, 0, 0);
+  const water = put(glass, tumblerWater(0.325), WATER, 0, 0, 0);
   put(glass, cyl(0.312, 0.312, 0.012, 28), mat(SURFACE, 0.1), 0, at(0.88), 0);
   glass.position.y = TUMBLER_MIDDLE;
-  seated(rig, glass);
+  seated(rig, glass, [
+    [sides, tumblerGlass(SEAT)],
+    [water, tumblerWater(SEAT + 0.06)],
+  ]);
   props(rig, glass);
   rig.body.add(glass);
 }
@@ -172,7 +180,8 @@ function spines(r: number, from: number, to: number) {
 /**
  * Spiritually dehydrated: the head a ribbed cactus, prickly, an arm bent up off one side and a pink flower on top, the
  * face on its front; the shirt and sleeves gone cactus green, and a terracotta pot round them from the waist down, the
- * feet out of the bottom to shuffle along on (see `pose`). Put away while they sit (see `seated`).
+ * feet out of the bottom to shuffle along on (see `pose`). Cut down to a collar round the hips at the seat while they
+ * sit (see `seated`).
  */
 function cactus(rig: CharRig) {
   const { head } = rig;
@@ -206,10 +215,10 @@ function cactus(rig: CharRig) {
   });
   const pot = new THREE.Group();
   const clay = mat(POT, 0.8);
-  put(pot, potSides(0.06), clay, 0, 0, 0);
+  const sides = put(pot, potSides(0.06), clay, 0, 0, 0);
   put(pot, cyl(0.3, 0.3, 0.07, 28), clay, 0, 0.46, 0);
   put(pot, cyl(0.25, 0.25, 0.02, 28), mat(SOIL, 0.9), 0, 0.495, 0);
-  seated(rig, pot);
+  seated(rig, pot, [[sides, potSides(SEAT)]]);
   props(rig, top, pot);
   rig.body.add(pot);
 }

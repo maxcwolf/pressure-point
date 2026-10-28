@@ -904,6 +904,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift = 0,
       upright = false,
       standing = false,
+      cuts,
     } = o.userData as {
       spin?: number;
       rattle?: number;
@@ -911,10 +912,13 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift?: number;
       upright?: boolean;
       standing?: boolean;
+      cuts?: [THREE.Mesh, THREE.BufferGeometry, THREE.BufferGeometry][];
     };
     // put away while they lie down, as what floats over the head is, and, `standing`, while they sit
     if ((upright || standing) && !rig.cured)
       o.visible = !(upright && c.pose === 'lie') && !(standing && c.pose === 'sit');
+    // cut short at the seat while they sit, each part in its shape that stops there
+    if (cuts) for (const [part, whole, short] of cuts) part.geometry = c.pose === 'sit' ? short : whole;
     if (drift) {
       // floating loose of where it belongs, up and down and round to its own rhythm, and lying down floating up off
       // whatever they lie on rather than along it, off the end; eased back together over the puff of the cure
