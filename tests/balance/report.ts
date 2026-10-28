@@ -3,7 +3,7 @@
 // docs/research/fair-challenge.md (per-seed survival, the warning before each loss, reputation cliffs, spirals after
 // adverse events, and how much of the income is not treatments). Pure: no files, no game code, so that
 // scripts/balance-report.mjs can run it with Node's own type stripping. See docs/balance/harness.md.
-import type { IncomeBy, MonthLog, Playtest, RunnerLog } from './bot';
+import type { IncomeBy, MonthLog, Playtest, QuirkLog, RunnerLog } from './bot';
 
 /**
  * A run as the report reads it. Logs written before the bot kept every adverse event, the warnings, the day of
@@ -459,6 +459,72 @@ export function runnerTable(after: Run[], before?: Run[]): string {
   );
 }
 
+// ---- quirks hired -------------------------------------------------------------------
+
+/** The rare quirks, by id, as the table names them. */
+const RARE_NAMES: Record<string, string> = {
+  influencer: 'Influencer',
+  survivor: 'Survivor',
+  hands: 'Hands',
+  space: 'Space',
+};
+
+/** One center's quirks over every seed: the games' `QuirkLog`s summed, or null if no game logged them. */
+export function quirkTotals(runs: Run[]): QuirkLog | null {
+  const logs = runs.map((r) => r.quirks).filter((q) => q !== undefined);
+  if (!logs.length) return null;
+  const rares: QuirkLog['rares'] = {};
+  for (const q of logs)
+    for (const [id, n] of Object.entries(q.rares))
+      rares[id as keyof typeof rares] = (rares[id as keyof typeof rares] ?? 0) + n;
+  /** One count, summed over the games. */
+  const sum = (k: 'hired' | 'flaws' | 'adds' | 'saves' | 'payroll') => logs.reduce((a, q) => a + q[k], 0);
+  return {
+    hired: sum('hired'),
+    flaws: sum('flaws'),
+    rares,
+    adds: sum('adds'),
+    saves: sum('saves'),
+    payroll: sum('payroll'),
+  };
+}
+
+/** A share of the payroll with its sign, to a tenth of a percent: `+1.2%`, `−3.4%`. */
+const signedPct = (x: number) => `${x < 0 ? '−' : '+'}${Math.abs(x * 100).toFixed(1)}%`;
+
+/** The cells of one center's row of quirks, after the name. */
+function quirkCells(q: QuirkLog | null): string[] {
+  if (!q) return ['–', '–', '–', '–', '–'];
+  const rares = Object.entries(q.rares)
+    .filter(([, n]) => n > 0)
+    .map(([id, n]) => `${RARE_NAMES[id] ?? id} ${n}`)
+    .join(', ');
+  /** A sum of quirk pay as a share of the payroll. */
+  const share = (x: number) => (q.payroll ? signedPct(x / q.payroll) : '–');
+  return [
+    String(q.hired),
+    q.hired ? `${q.flaws} (${pct(q.flaws / q.hired)})` : '0',
+    rares || 'none',
+    `${share(q.adds)} / ${share(-q.saves)}`,
+    share(q.adds - q.saves),
+  ];
+}
+
+/** Every center's quirks hired, before → after with a second run; empty if no run logged them. */
+export function quirkTable(after: Run[], before?: Run[]): string {
+  const old = new Map(byCenter(before ?? []));
+  const rows = byCenter(after)
+    .map(([center, rs]) => {
+      const now = quirkTotals(rs);
+      if (!now) return null;
+      const was = before ? quirkCells(quirkTotals(old.get(center) ?? [])) : null;
+      return [nameOf(center), ...quirkCells(now).map((c, i) => (was ? `${was[i] ?? '–'} → ${c}` : c))];
+    })
+    .filter((r) => r !== null);
+  if (!rows.length) return '';
+  return table(['Center', 'Hired', 'With a flaw', 'Rare quirks', 'Quirk pay adds / saves', 'Net, of payroll'], rows);
+}
+
 /** The whole report: the table (before → after with a second run), then the fairness slices of the first. */
 export function report(after: Run[], before?: Run[]): string {
   const days = Math.max(...after.map((r) => r.months.length)) * DAYS_PER_MONTH;
@@ -474,6 +540,14 @@ export function report(after: Run[], before?: Run[]): string {
   }
   const runners = runnerTable(after, before);
   if (runners) out.push(`\n### Really bad trips${before ? ', before → after' : ''}\n`, runners);
+  const quirks = quirkTable(after, before);
+  if (quirks)
+    out.push(
+      `\n### Quirks hired${before ? ', before → after' : ''}\n`,
+      'Everyone taken on over every seed; quirk pay is what the quirks add to the salaries and save from them, summed ' +
+        'over the month ends, as a share of the payroll.\n',
+      quirks,
+    );
   out.push(`\n${fairness(after)}`);
   return out.join('\n');
 }

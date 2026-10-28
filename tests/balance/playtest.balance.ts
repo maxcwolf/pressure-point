@@ -45,6 +45,15 @@ for (const { center, seed, index } of RUNS) {
       `${center.padEnd(10)} seed ${seed}: opened day ${l.openedDay}, stars at months ${l.starDays.map(months).join(' ')}` +
         `  lowest $${Math.round(l.lowestMoney)} peak loan $${l.peakLoan}  open: ${l.openGoals.join('; ')}\n`,
     );
+    const q = l.quirks;
+    if (q)
+      process.stdout.write(
+        `           hired ${q.hired}, ${q.flaws} with a flaw, rare: ${
+          Object.entries(q.rares)
+            .map(([id, n]) => `${id} ${n}`)
+            .join(', ') || 'none'
+        }; quirk pay ${q.payroll ? (((q.adds - q.saves) / q.payroll) * 100).toFixed(1) : 0}% of payroll\n`,
+      );
     for (const m of l.machines)
       process.stdout.write(
         m.site === 'skipped'
