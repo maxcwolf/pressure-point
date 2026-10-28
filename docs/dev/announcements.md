@@ -105,10 +105,11 @@ As the week's warning is given:
 
 - ⬜ Cold Feet is going around. Moxibustion is open; train an Acupuncturist now.
 
-As its guests start to come, one or the other by whether the center is ready:
+As its guests start to come, one of these by whether the center is ready, or has them turned back:
 
 - ⬜ Guests with Cold Feet arrive from today. Moxibustion is in the Acupuncture Clinic.
 - ⬜ Guests with Cold Feet will come back later, once we are ready for them.
+- ⬜ Guests with Cold Feet will be asked to come back another time.
 
 ## A really bad trip (`RUNAWAY_LINES` in `src/core/sim/runaways.ts`, one or the other by the guest)
 

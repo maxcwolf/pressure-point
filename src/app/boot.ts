@@ -4,7 +4,7 @@ import { logger, setTag } from '@sentry/browser';
 
 import { Audio } from '../audio/audio';
 import { CAMPAIGN } from '../core/data';
-import { newGame } from '../core/state/game';
+import { featureValues, newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';
 import { loadCampaign } from '../storage/campaign';
@@ -100,8 +100,9 @@ function open(what: string | null): GameState | 'no-room' | null {
     state.bankruptcyOn = bankruptcy;
     state.difficulty = difficulty;
   }
-  // every new game, in the campaign or the sandbox, has the features still being tried out as switched in Settings
-  if (state && center) state.features = loadFeaturePrefs();
+  // every new game, in the campaign or the sandbox, has the features still being tried out as switched in Settings,
+  // and each one's value written down, so a later change to a default does not switch it in this game
+  if (state && center) state.features = featureValues(loadFeaturePrefs());
   // a first go at the campaign's first center, with nothing earned yet, looks ahead to what it will soon need
   if (state && center === CAMPAIGN[0] && !Object.keys(loadCampaign().stars).length) state.primer = true;
   // a new Willow Lane game is walked through its opening while the tutorial is on, the heads-ups among its steps, and a

@@ -669,8 +669,6 @@ export interface Stats {
   /** Got worse while they waited, and left. */
   worse: number;
   arrived: number;
-  /** Came with an ailment going around, and turned back at the door: nobody here could treat it yet. */
-  later: number;
   /** Would have come, but found the center full: at the building's limit, or the player's own. */
   turnedAway: number;
   /** Guests healed, by the discipline that healed them. */
@@ -775,6 +773,8 @@ export interface Wave {
   came: number;
   healed: number;
   turned: number;
+  /** The player has its guests turned back at the door, ready or not. Left out in a save from before: let in. */
+  turnBack?: boolean;
 }
 
 /** A year-end awards ceremony. */
@@ -947,7 +947,7 @@ export interface GameState {
   nextWave: { day: number; moves: number } | null;
   /** Techniques opened early by an ailment going around, which stay open. */
   opened: Modality[];
-  /** The features being tried out, each switched on or off for this game; one left out is as its default. */
+  /** The features being tried out, each switched on or off for this game; one left out is off, as in older saves. */
   features: Partial<Record<FeatureId, boolean>>;
   /**
    * Whatever is on fire now, the fire brigade if it has been called and is not yet gone, and whether anything catches

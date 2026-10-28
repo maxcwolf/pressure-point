@@ -30,6 +30,7 @@ import { random } from '../random';
 import { featureOn, unlockedUpTo } from '../state/game';
 import type { GameState, Wave } from '../state/types';
 import type { SimContext } from './context';
+import { atWork } from './demand';
 import { emit, toast } from './events';
 import { hasRoom } from './progress';
 import { enabled, equipmentProblem, offered } from './treatments';
@@ -52,8 +53,9 @@ export const openedEarly = (s: GameState, m: Modality): boolean =>
 
 /**
  * Whether the center can treat a technique properly now: its discipline offered, with a finished room; someone on the
- * staff and staying who is qualified in it; its kit, if it needs any, working beside one of the discipline's tables;
- * and a Recovery Lounge, if its guests need a rest after, since without one it works less often.
+ * staff, staying and here, who is qualified in it, not away on a house call or a course; its kit, if it needs any,
+ * working beside one of the discipline's tables; and a Recovery Lounge, if its guests need a rest after, since without
+ * one it works less often.
  */
 export function waveReady(ctx: SimContext, m: Modality): boolean {
   const c = waveChecks(ctx, m);
@@ -66,14 +68,20 @@ export function waveTodo(ctx: SimContext, m: Modality): string {
   const disc = DISCIPLINES[def.discipline];
   const c = waveChecks(ctx, m);
   if (!c.room) return `Build ${an(ROOMS[disc.room].name)}`;
-  if (!c.qualified) return `Train ${an(ROLES[disc.role].name)} in ${def.name}`;
+  if (!c.qualified)
+    return trainedAway(ctx.s, m)
+      ? `Wait for someone trained in ${def.name} to be back`
+      : `Train ${an(ROLES[disc.role].name)} in ${def.name}`;
   if (!c.kit && def.equipment)
     return `Put ${an(ITEMS[def.equipment].name)} beside a table in the ${ROOMS[disc.room].name}`;
   if (!c.rest) return `Build a Recovery Lounge for the rest after ${def.name}`;
   return '';
 }
 
-/** What getting ready for a technique takes, each part done or not: its room, someone qualified, its kit, a rest. */
+/**
+ * What getting ready for a technique takes, each part done or not: its room, someone qualified and here, its kit, a
+ * rest.
+ */
 export interface WaveChecks {
   room: boolean;
   qualified: boolean;
@@ -81,6 +89,10 @@ export interface WaveChecks {
   /** Its guests need a rest after, and a Recovery Lounge is built (true when they need none). */
   rest: boolean;
 }
+
+/** Whether someone staying is trained in a technique, but away now on a house call or a course. */
+export const trainedAway = (s: GameState, m: Modality): boolean =>
+  s.staff.some((st) => st.state !== 'leaving' && !atWork(st) && st.quals.includes(m));
 
 /** How ready the center is for a technique, part by part. */
 export function waveChecks(ctx: SimContext, m: Modality): WaveChecks {
@@ -98,7 +110,7 @@ export function waveChecks(ctx: SimContext, m: Modality): WaveChecks {
     });
   return {
     room: offered(ctx, def.discipline),
-    qualified: ctx.s.staff.some((st) => st.state !== 'leaving' && st.quals.includes(m)),
+    qualified: ctx.s.staff.some((st) => atWork(st) && st.quals.includes(m)),
     kit,
     rest: !def.rest || hasRoom(ctx, 'recovery'),
   };
@@ -131,9 +143,13 @@ export function waveClash(s: GameState): string {
   return '';
 }
 
-/** Set the wave a star brings: due a while after it, so its guests start coming `WAVE_AFTER_STAR` days on. */
+/**
+ * Set the wave a star brings: due a while after it, so its guests start coming `WAVE_AFTER_STAR` days on. None with
+ * the feature off: switched on later, `wavesSwitched` brings it within the week.
+ */
 export function scheduleWave(ctx: SimContext) {
   const s = ctx.s;
+  if (!featureOn(s, 'waves')) return;
   const def = waveDue(s);
   if (def?.afterStar !== s.stars) return;
   s.nextWave = { day: s.day + WAVE_AFTER_STAR - WAVE_WARNING_DAYS, moves: 0 };
@@ -146,10 +162,14 @@ export function waveWarning(c: ConditionId): string {
   return `${conditionOf(c).name} is going around. ${m.name} is open; train ${an(role)} now.`;
 }
 
-/** The PA line as a wave's guests start to come: where they go, or that they will come back later. */
+/**
+ * The PA line as a wave's guests start to come: where they go, that they will come back later, or, if the player has
+ * them turned back, that they are asked to.
+ */
 export function waveStarting(ctx: SimContext, c: ConditionId): string {
   const m = MODALITIES[techniqueFor(c)];
   const name = conditionOf(c).name;
+  if (ctx.s.wave?.turnBack) return `Guests with ${name} will be asked to come back another time.`;
   if (waveReady(ctx, m.id))
     return `Guests with ${name} arrive from today. ${m.name} is in the ${ROOMS[DISCIPLINES[m.discipline].room].name}.`;
   return `Guests with ${name} will come back later, once we are ready for them.`;
@@ -171,6 +191,7 @@ export function announceWave(ctx: SimContext, def: WaveDef) {
     came: 0,
     healed: 0,
     turned: 0,
+    turnBack: false,
   };
   s.nextWave = null;
   emit(ctx, { type: 'wave' });
@@ -223,17 +244,16 @@ export function updateWaves(ctx: SimContext) {
 
 /**
  * Whether the guest arriving now comes with the ailment going around: by its share of the pace, rolled only while a
- * wave brings guests, so a game without one rolls as it always has. One the center cannot treat yet turns back at
- * the door, uncounted: 'turned'. Undefined for anyone else.
+ * wave brings guests, so a game without one rolls as it always has. One the center cannot treat yet, or one the player
+ * has turned back, turns back at the door, uncounted: 'turned'. Undefined for anyone else.
  */
 export function waveArrival(ctx: SimContext, wave: number, perMonth: number): ConditionId | 'turned' | undefined {
   const s = ctx.s;
   if (wave <= 0 || !s.wave) return undefined;
   if (random(s) * perMonth >= wave) return undefined;
   const c = s.wave.condition;
-  if (waveReady(ctx, techniqueFor(c))) return c;
+  if (!s.wave.turnBack && waveReady(ctx, techniqueFor(c))) return c;
   s.wave.turned++;
-  s.stats.later++;
   const door = ctx.world.building.entrances[0];
   if (door) emit(ctx, { type: 'float', text: `${conditionOf(c).name}: next time`, x: door.x, y: door.y, kind: 'info' });
   return 'turned';
@@ -259,6 +279,14 @@ export function wavesSwitched(ctx: SimContext, on: boolean) {
   const soon = s.day + WAVE_SOON_DAYS;
   const day = s.nextWave?.day;
   if (day === undefined || day > soon || day <= s.day) s.nextWave = { day: soon, moves: 0 };
+}
+
+/**
+ * Let the guests of the wave going around in, once the center is ready for them, or have them turned back at the door
+ * all the same, at no cost, as if it were not ready.
+ */
+export function letWaveIn(s: GameState, letIn: boolean) {
+  if (s.wave) s.wave.turnBack = !letIn;
 }
 
 /** Announce the wave now, skipping its clock: the cheat console's `wave`. Its ailment, or undefined if none is to come. */

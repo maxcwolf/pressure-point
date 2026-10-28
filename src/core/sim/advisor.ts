@@ -611,7 +611,8 @@ export function contextAnnouncement(ctx: SimContext): string | null {
 export function waveAdvice(ctx: SimContext): string {
   const s = ctx.s;
   const w = s.wave;
-  if (!w || !featureOn(s, 'waves')) return '';
+  // nothing to get ready for while the player has its guests turned back
+  if (!w || w.turnBack || !featureOn(s, 'waves')) return '';
   const todo = waveTodo(ctx, conditionOf(w.condition).modality);
   if (!todo) return '';
   const name = conditionOf(w.condition).name;

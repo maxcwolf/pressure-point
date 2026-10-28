@@ -293,6 +293,53 @@ test.describe('in a game', () => {
     await screens.shot('confirm-new-game');
   });
 
+  test('the Feature testing section of the settings', async ({ screens, page }) => {
+    await screens.play();
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.locator('#modal h4', { hasText: 'Feature testing' }).scrollIntoViewIfNeeded();
+    await screens.shot('settings-features');
+  });
+
+  test('an ailment going around: its news, and its card before and while it runs', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      pp.sim.setFeature('waves', true);
+      const day = pp.state.day;
+      pp.state.opened = ['moxa'];
+      pp.state.wave = {
+        condition: 'coldfeet',
+        warned: day,
+        starts: day + 7,
+        ends: day + 37,
+        opened: true,
+        begun: false,
+        came: 0,
+        healed: 0,
+        turned: 0,
+        turnBack: false,
+      };
+      pp.sim.emit({ type: 'wave' });
+    });
+    await screens.shot('wave');
+    await page.locator('#modal').getByRole('button', { name: 'Got it' }).click();
+    await screens.shot('wave-card');
+    // a fortnight in, with the Acupuncturist trained but no burner or lounge yet, so some came back later
+    await game.eval((pp) => {
+      const day = pp.state.day;
+      pp.state.staff.find((st) => st.role === 'acupuncturist')!.quals.push('moxa');
+      pp.state.wave = { ...pp.state.wave!, warned: day - 14, starts: day - 7, ends: day + 23, begun: true };
+      Object.assign(pp.state.wave, { came: 0, healed: 0, turned: 3 });
+      // paused, the interface redraws only when asked
+      pp.ui.update();
+    });
+    await screens.shot('wave-card-on');
+    // in a narrow window, its guests turned back by the switch
+    await page.setViewportSize({ width: 700, height: 900 });
+    await page.locator('#objectives .wave').getByRole('switch', { name: 'Let them in' }).click();
+    await screens.shot('wave-card-narrow');
+  });
+
   test('messages and an emergency on offer', async ({ screens, game }) => {
     await screens.play();
     await game.eval((pp, offer) => {

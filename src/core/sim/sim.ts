@@ -202,7 +202,7 @@ import { decayItems, wearByTheDay } from './upkeep';
 import { fadeVibes } from './vibes';
 import { extinguisherNear, lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
-import { updateWaves, type WaveChecks, waveChecks, waveReady, wavesSwitched } from './waves';
+import { letWaveIn, updateWaves, type WaveChecks, waveChecks, waveReady, wavesSwitched } from './waves';
 import { warnWorsening } from './worsening';
 
 /** What switching each feature being tried out on or off part way through a game does to it. */
@@ -543,12 +543,20 @@ export class Sim {
     FEATURE_SWITCHED[f](this.ctx, on);
   }
 
-  /** How ready the center is for a technique, part by part: its room, someone qualified, its kit, a rest after. */
+  /** Let the guests of the wave going around in once the center is ready, or turn them back at the door all the same. */
+  letWaveIn(letIn: boolean) {
+    letWaveIn(this.s, letIn);
+  }
+
+  /** How ready the center is for a technique, part by part: its room, someone qualified here, its kit, a rest after. */
   waveChecks(m: Modality): WaveChecks {
     return waveChecks(this.ctx, m);
   }
 
-  /** Whether the center can treat a technique properly now: someone qualified, its kit, and its room. */
+  /**
+   * Whether the center can treat a technique properly now: its room, someone qualified and here, its kit, and a
+   * Recovery Lounge if its guests need a rest after.
+   */
   waveReady(m: Modality): boolean {
     return waveReady(this.ctx, m);
   }

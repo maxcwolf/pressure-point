@@ -114,9 +114,11 @@ describe('a save from before it was kept whole', () => {
     const old: Record<string, unknown> = { ...structuredClone(s), version: 1 };
     for (const k of Object.keys(old)) if (!kept.has(k)) Reflect.deleteProperty(old, k);
     upgradeSave(old as unknown as GameState);
-    // all but its random numbers, which are its own
+    // all but its random numbers, which are its own, and the features being tried out, which it has no value for and
+    // so has off, where a new game writes each one's default down
     expect(typeof old.rng).toBe('number');
-    expect({ ...old, rng: s.rng }).toEqual(s);
+    expect(old.features).toEqual({});
+    expect({ ...old, rng: s.rng, features: s.features }).toEqual(s);
   });
 
   it('plans what comes now and then from the day it has got to', () => {

@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  FEATURES,
   MODALITIES,
   modalityLabel,
   WAVE_AFTER_STAR,
@@ -22,18 +23,21 @@ import { countVisit } from '../../src/core/sim/records';
 import { Sim } from '../../src/core/sim/sim';
 import {
   announceWave,
+  letWaveIn,
   updateWaves,
   waveArrival,
   waveChecks,
   waveClash,
   wavePerWeek,
   waveReady,
+  waveStarting,
   waveTodo,
 } from '../../src/core/sim/waves';
-import { newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
+import { featureOn, featureValues, newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
+import { readyLines, shownLines, waveSummary } from '../../src/ui/lib/waves';
 import { addAcupuncture, addRecovery, hire, openCenter } from './helpers';
 
 /** A game at The Exchange, with ailments going around switched on or off, and a context on it. */
@@ -164,7 +168,6 @@ describe('an ailment going around', () => {
     // a share as large as the whole pace makes every arrival one with the ailment
     expect(waveArrival(ctx, 10, 10)).toBe('turned');
     expect(s.wave).toMatchObject({ turned: 1, came: 0 });
-    expect(s.stats.later).toBe(1);
     expect({ money: s.money, reputation: s.reputation, turnedAway: s.stats.turnedAway }).toEqual(before);
     expect(drainEvents(ctx).some((e) => e.type === 'float' && e.text === 'Cold Feet: next time')).toBe(true);
   });
@@ -216,6 +219,140 @@ describe('an ailment going around', () => {
     addRecovery(sim);
     expect(waveReady(ctx, 'moxa')).toBe(true);
     expect(waveTodo(ctx, 'moxa')).toBe('');
+  });
+});
+
+describe('a center ready for a wave', () => {
+  it('has someone trained in its technique here, not away on a house call or a course', () => {
+    const { sim, s } = openCenter();
+    const ctx = createContext(s);
+    s.opened = ['moxa'];
+    addAcupuncture(sim);
+    expect(sim.placeItem('moxa_burner', 27, 9, 0)).not.toBeNull();
+    addRecovery(sim);
+    const acu = hire(sim, 'acupuncturist');
+    acu.quals.push('moxa');
+    expect(waveReady(ctx, 'moxa')).toBe(true);
+    for (const away of ['toCall', 'away', 'toTrain', 'training'] as const) {
+      acu.state = away;
+      expect(waveChecks(ctx, 'moxa').qualified).toBe(false);
+      expect(waveReady(ctx, 'moxa')).toBe(false);
+      expect(waveTodo(ctx, 'moxa')).toBe('Wait for someone trained in Moxibustion to be back');
+      expect(readyLines(s, 'moxa', waveChecks(ctx, 'moxa'))[1]).toEqual({
+        ok: false,
+        text: 'Everyone trained in Moxibustion is away',
+      });
+    }
+    acu.state = 'leaving';
+    expect(waveTodo(ctx, 'moxa')).toBe('Train an Acupuncturist in Moxibustion');
+    acu.state = 'atPost';
+    expect(waveReady(ctx, 'moxa')).toBe(true);
+  });
+});
+
+describe('the switch that turns a wave back', () => {
+  /** A wave under way at a center ready for it: an Acupuncturist trained in Moxibustion, the burner and the lounge. */
+  function readyWave() {
+    const { sim, s } = openCenter();
+    const ctx = createContext(s);
+    s.opened = ['moxa'];
+    addAcupuncture(sim);
+    expect(sim.placeItem('moxa_burner', 27, 9, 0)).not.toBeNull();
+    addRecovery(sim);
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    announceWave(ctx, { condition: 'coldfeet', afterStar: 1, cause: '' });
+    s.day = s.wave!.starts;
+    drainEvents(ctx);
+    return { sim, s, ctx };
+  }
+
+  it('lets a wave in by default, and keeps a wave from before the switch letting them in', () => {
+    const { s, ctx } = readyWave();
+    expect(s.wave?.turnBack).toBe(false);
+    expect(waveArrival(ctx, 10, 10)).toBe('coldfeet');
+    delete s.wave!.turnBack;
+    expect(waveArrival(ctx, 10, 10)).toBe('coldfeet');
+  });
+
+  it('turns a ready center’s guests back at the door at no cost, as an unready one’s, until switched back', () => {
+    const { sim, s, ctx } = readyWave();
+    sim.letWaveIn(false);
+    expect(s.wave?.turnBack).toBe(true);
+    const before = { money: s.money, reputation: s.reputation, turnedAway: s.stats.turnedAway };
+    expect(waveArrival(ctx, 10, 10)).toBe('turned');
+    expect(s.wave).toMatchObject({ turned: 1, came: 0 });
+    expect({ money: s.money, reputation: s.reputation, turnedAway: s.stats.turnedAway }).toEqual(before);
+    expect(drainEvents(ctx).some((e) => e.type === 'float' && e.text === 'Cold Feet: next time')).toBe(true);
+    sim.letWaveIn(true);
+    expect(waveArrival(ctx, 10, 10)).toBe('coldfeet');
+  });
+
+  it('says so over the PA as its guests start to come, and the advisor asks nothing', () => {
+    const { s, ctx } = readyWave();
+    letWaveIn(s, false);
+    expect(waveStarting(ctx, 'coldfeet')).toBe('Guests with Cold Feet will be asked to come back another time.');
+    // not ready, with guests already sent back, the advisor would ask for what it takes
+    s.features.waves = true;
+    s.wave!.turned = 1;
+    s.staff.find((st) => st.role === 'acupuncturist')!.quals = [];
+    expect(waveAdvice(ctx)).toBe('');
+    letWaveIn(s, true);
+    expect(waveAdvice(ctx)).not.toBe('');
+  });
+
+  it('does nothing with no wave going around', () => {
+    const { s } = openCenter();
+    letWaveIn(s, false);
+    expect(s.wave).toBeNull();
+  });
+});
+
+describe('the card under the objectives', () => {
+  /** A center with an Acupuncture Clinic, a Moxa Burner and a Recovery Lounge, open to Moxibustion early. */
+  function moxaReady() {
+    const { sim, s } = openCenter();
+    s.opened = ['moxa'];
+    addAcupuncture(sim);
+    expect(sim.placeItem('moxa_burner', 27, 9, 0)).not.toBeNull();
+    addRecovery(sim);
+    return { sim, s, ctx: createContext(s) };
+  }
+
+  it('counts only those trained in the technique as sharing its line', () => {
+    const { sim, s, ctx } = moxaReady();
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    hire(sim, 'acupuncturist');
+    expect(readyLines(s, 'moxa', waveChecks(ctx, 'moxa')).at(-1)).toEqual({
+      ok: false,
+      text: 'Only one practitioner trained in it: the line will grow',
+    });
+    s.staff.filter((st) => st.role === 'acupuncturist')[1]!.quals.push('moxa');
+    expect(readyLines(s, 'moxa', waveChecks(ctx, 'moxa')).at(-1)).toEqual({
+      ok: true,
+      text: '2 practitioners trained in it share the line',
+    });
+  });
+
+  it('folds every part to one line once the center is ready, and lists what is left until then', () => {
+    const { sim, s, ctx } = moxaReady();
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    const one = readyLines(s, 'moxa', waveChecks(ctx, 'moxa'));
+    expect(shownLines(one)).toEqual(one);
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    expect(shownLines(readyLines(s, 'moxa', waveChecks(ctx, 'moxa')))).toEqual([
+      { ok: true, text: 'Ready to see them' },
+    ]);
+  });
+
+  it('says how soon and how long, then the days left and how its guests have fared', () => {
+    const w = { ...announced().s.wave!, warned: 0, starts: 7, ends: 37 };
+    expect(waveSummary(w, 6, 0)).toBe('In 1 day · for 30 days');
+    expect(waveSummary(w, 6.5, 0)).toBe('In less than a day · for 30 days');
+    expect(waveSummary(w, 2, 0)).toBe('In 5 days · for 30 days');
+    expect(waveSummary({ ...w, healed: 3 }, 36, 2)).toBe('1 day left · 2 in now · 3 healed');
+    expect(waveSummary({ ...w, healed: 3, turned: 4 }, 20, 0)).toBe(
+      '17 days left · 0 in now · 3 healed · 4 came back later',
+    );
   });
 });
 
@@ -273,6 +410,36 @@ describe('the feature switch', () => {
     expect(new Sim(s).featureOn('waves')).toBe(false);
   });
 
+  it('sets no wave with the feature off, which comes within the week once it is switched on', () => {
+    const { sim, s, ctx } = exchange(false);
+    s.day = 100;
+    awardStar(ctx);
+    expect(s.nextWave).toBeNull();
+    s.day = 130;
+    sim.setFeature('waves', true);
+    expect(s.nextWave).toEqual({ day: 130 + WAVE_SOON_DAYS, moves: 0 });
+  });
+
+  it('is written into a new game, so a default changed later leaves games under way as they were', () => {
+    setSeed(1);
+    expect(newGame('exchange').features).toEqual({ waves: false });
+    expect(featureValues({ waves: true })).toEqual({ waves: true });
+    const def = FEATURES.waves as { on: boolean };
+    def.on = true;
+    try {
+      // a new game takes the new default, and a game with its value, or an old one with none, keeps its own
+      expect(featureValues()).toEqual({ waves: true });
+      expect(featureOn(newGame('exchange'), 'waves')).toBe(true);
+      const old = newGame('exchange');
+      old.features = {};
+      expect(featureOn(old, 'waves')).toBe(false);
+      old.features = { waves: false };
+      expect(featureOn(old, 'waves')).toBe(false);
+    } finally {
+      def.on = false;
+    }
+  });
+
   it('gates the cheat', () => {
     const off = exchange(false);
     expect(off.sim.cheat('wave')).toMatchObject({ ok: false });
@@ -286,14 +453,14 @@ describe('the feature switch', () => {
 });
 
 describe('a save from before ailments went around', () => {
-  it('loads with none going around, nothing opened and every feature at its default', () => {
+  it('loads with none going around, nothing opened and every feature off', () => {
     const { s } = exchange();
     const old = JSON.parse(JSON.stringify(s)) as Record<string, unknown>;
     for (const key of ['wave', 'pastWaves', 'nextWave', 'opened', 'features']) Reflect.deleteProperty(old, key);
-    Reflect.deleteProperty(old.stats as object, 'later');
     upgradeSave(old as unknown as GameState);
     const loaded = old as unknown as GameState;
     expect(loaded).toMatchObject({ wave: null, pastWaves: [], nextWave: null, opened: [], features: {} });
-    expect(loaded.stats.later).toBe(0);
+    expect(loaded.features).toEqual({});
+    expect(featureOn(loaded, 'waves')).toBe(false);
   });
 });

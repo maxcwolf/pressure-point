@@ -205,7 +205,8 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
     const outcome = o.lost <= o.lostMax ? 'contained' : 'escaped';
     out.push({ name: 'outbreak_ended', props: { ...game, outcome, lost: o.lost, lost_max: o.lostMax } });
   }
-  // a wave ends at the end of its month, or quietly when it is switched off or its discipline is
+  // a wave ends at the end of its month, or quietly when its discipline is switched off; switching the feature off
+  // sets it aside to come round again, which ends this one here too, as its guests stop coming
   const w = mark.wave;
   if (w && s.wave !== w) {
     const technique = conditionOf(w.condition).modality;
@@ -221,6 +222,8 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
         turned: w.turned,
         // a wave guest only comes in once the center is ready for them, so any who came means it was chased
         chased: w.came > 0,
+        // the player had its guests turned back at the door when the wave ended, ready or not
+        turned_back: !!w.turnBack,
       },
     });
   }

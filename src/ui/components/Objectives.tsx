@@ -3,15 +3,16 @@
 
 import { useState } from 'preact/hooks';
 
-import { centerOf, conditionOf, DISCIPLINES, type GoalSpec, ITEMS, MODALITIES, ROLES, ROOMS } from '../../core/data';
-import { an, money } from '../../core/format';
+import { centerOf, conditionOf, type GoalSpec, MODALITIES } from '../../core/data';
+import { money } from '../../core/format';
 import type { Objective } from '../../core/sim/goals';
 import type { TutorialLine } from '../../core/sim/tutorial';
 import { css } from '../../styled-system/css';
-import { panelCard } from '../../styled-system/recipes';
-import { useGame } from '../hooks/use-hud';
+import { panelCard, toggleSwitch } from '../../styled-system/recipes';
+import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
+import { readyLines, shownLines, waveSummary } from '../lib/waves';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
@@ -136,6 +137,12 @@ const waveCard = css(card, {
   '& .ready.warn': { color: 'warn' },
 });
 
+/** The switch on the wave card that lets its guests in or turns them back, with its words beside it. */
+const waveSwitch = css({ display: 'flex', alignItems: 'center', gap: '8', fontSize: '12', mt: '2', cursor: 'pointer' });
+
+/** The wave card's heading and how it stands, which open its dialog again when clicked. */
+const waveOpener = css(opener, { display: 'flex', flexDirection: 'column', gap: '2' });
+
 /** One objective: its label and progress, and on a click the numbers behind it, a line each. */
 function ObjectiveRow({ objective: o, goal }: { objective: Objective; goal: GoalSpec | undefined }) {
   const { sim } = useGame();
@@ -186,54 +193,57 @@ function ChallengeCard() {
 
 /**
  * The ailment going around, if any: before its guests come, how soon, and a line for each part of getting ready for
- * its treatment; while they come, the days left and how they have fared.
+ * its treatment; while they come, the days left and how they have fared. A switch lets its guests in once the center
+ * is ready, or turns them back at the door all the same.
  */
 function WaveCard() {
-  const { sim } = useGame();
+  const hud = useHud();
+  const { sim } = hud.host;
   const s = sim.s;
   const w = s.wave;
   if (!w || !sim.featureOn('waves')) return null;
   const c = conditionOf(w.condition);
   const m = MODALITIES[c.modality];
-  const checks = sim.waveChecks(m.id);
-  const before = s.day < w.starts;
-  const room = ROOMS[DISCIPLINES[m.discipline].room].name;
-  // each part as done, or as the thing still to do
-  const lines: [boolean, string][] = [
-    [checks.room, checks.room ? `${room} open` : `Build ${an(room)}`],
-    [checks.qualified, checks.qualified ? `Someone trained in ${m.name}` : `Train someone in ${m.name}`],
-  ];
-  if (m.equipment) {
-    const kit = ITEMS[m.equipment].name;
-    lines.push([checks.kit, checks.kit ? `${kit} beside a table` : `Put ${an(kit)} beside a table`]);
-  }
-  if (m.rest)
-    lines.push([
-      checks.rest,
-      checks.rest ? 'Recovery Lounge for the rest after' : 'Build a Recovery Lounge for the rest after',
-    ]);
-  // once someone does it, whether the wave's guests share them with the discipline's own line
-  const role = ROLES[DISCIPLINES[m.discipline].role].name;
-  const staff = s.staff.filter((st) => st.role === DISCIPLINES[m.discipline].role && st.state !== 'leaving').length;
-  if (checks.qualified)
-    lines.push([staff > 1, staff > 1 ? `${staff} ${role}s to share the line` : `Only one ${role}: the line will grow`]);
+  const lines = shownLines(readyLines(s, m.id, sim.waveChecks(m.id)));
   // the wave's guests in the center now, being seen or waiting
   const here = s.guests.filter((g) => g.wave && g.state !== 'leaving').length;
+  const letIn = !w.turnBack;
   return (
     <div class={cx('wave', waveCard)}>
-      <b>
-        <IconText id="bubble-sick">{`Going around: ${c.name}`}</IconText>
-      </b>{' '}
-      <span>
-        {before
-          ? `In ${wholeDaysLeft(w.starts - s.day)} days · for ${Math.round(w.ends - w.starts)} days`
-          : `${wholeDaysLeft(w.ends - s.day)} days left · ${here} in now · ${w.healed} healed${w.turned ? ` · ${w.turned} came back later` : ''}`}
-      </span>
-      {lines.map(([ok, text]) => (
+      <Button
+        class={waveOpener}
+        title="What is going around, and what getting ready takes"
+        onPress={() => {
+          hud.open('wave');
+        }}
+      >
+        <b>
+          <IconText id="bubble-sick">{`Going around: ${c.name}`}</IconText>
+        </b>
+        <span>{waveSummary(w, s.day, here)}</span>
+      </Button>
+      {lines.map(({ ok, text }) => (
         <p key={text} class={cx('ready', ok ? 'ok' : 'warn')}>
-          {`${ok ? '✔' : '⚠'} ${text}`}
+          {ok ? `✔ ${text}` : <IconText id="ui-warning">{text}</IconText>}
         </p>
       ))}
+      <label class={waveSwitch}>
+        <button
+          class={cx(toggleSwitch(), letIn && 'on')}
+          role="switch"
+          aria-checked={letIn ? 'true' : 'false'}
+          aria-label="Let them in"
+          title={letIn ? 'Turn its guests back at the door, at no cost' : 'Let its guests in once you are ready'}
+          onClick={() => {
+            sim.letWaveIn(!letIn);
+            hud.host.audio.play('blip');
+            hud.update();
+          }}
+        >
+          <span />
+        </button>
+        <span>{letIn ? 'Let them in' : 'Turn them back'}</span>
+      </label>
     </div>
   );
 }
