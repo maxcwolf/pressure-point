@@ -373,18 +373,18 @@ export function upright(rig: CharRig, o: THREE.Object3D) {
 }
 
 /**
- * A tension headband: a red G-clamp screwed down on the crown, its frame down behind the head to rest on the back of
- * the neck, the head squashed short and wide under it. Put away while they lie down, as its frame would go through the
- * table.
+ * A tension headband: a red G-clamp screwed down on the crown, its frame down the left side of the head, where the
+ * game's camera sees it, clear of the face, to rest on the shoulder, the head squashed short and wide under it. Put
+ * away while they lie down, as its frame would go through the table.
  */
 function gClamp(rig: CharRig) {
   const g = new THREE.Group();
   put(
     g,
     joined('g clamp', [
-      [rbox(0.07, 0.06, 0.42, 0.02), 0, 0.36, -0.1],
-      [rbox(0.07, 0.66, 0.07, 0.02), 0, 0.06, -0.31],
-      [rbox(0.07, 0.06, 0.16, 0.02), 0, -0.24, -0.24],
+      [rbox(0.42, 0.06, 0.07, 0.02), 0.1, 0.36, 0],
+      [rbox(0.07, 0.66, 0.07, 0.02), 0.31, 0.06, 0],
+      [rbox(0.16, 0.06, 0.07, 0.02), 0.24, -0.24, 0],
     ]),
     mat(0xd9362f, 0.45),
     0,
@@ -396,7 +396,7 @@ function gClamp(rig: CharRig) {
     joined('g clamp screw', [
       [cyl(0.018, 0.018, 0.26, 8), 0, 0.32, 0],
       [cyl(0.07, 0.07, 0.02, 14), 0, 0.195, 0],
-      [cyl(0.012, 0.012, 0.26, 8), 0, 0.45, 0, 0, 0, Math.PI / 2],
+      [cyl(0.012, 0.012, 0.26, 8), 0, 0.45, 0, Math.PI / 2, 0, 0],
     ]),
     mat(0x8a96a3, 0.3),
     0,

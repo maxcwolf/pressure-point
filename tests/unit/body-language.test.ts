@@ -1205,6 +1205,16 @@ describe('symptoms where they are: round 11', () => {
       return [v.dot(RIGHT), v.dot(UP)] as const;
     });
   };
+  /** Someone built with a symptom, stood as built, unposed, so their parts are where they were made. */
+  const built = (visual: Parameters<typeof buildCharacter>[2]) => {
+    const rig = buildCharacter(LAB_LOOK, undefined, visual);
+    rig.group.updateMatrixWorld(true);
+    return rig;
+  };
+  /** Whether anything of a part is in the way of the game's camera from a point. */
+  const hides = (o: THREE.Object3D, from: THREE.Vector3) =>
+    new THREE.Raycaster(from.clone().addScaledVector(GAME, 0.01), GAME).intersectObject(o, true).length > 0;
+
   it('floats someone scattered far enough apart that daylight shows between head and body from the game camera', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
     const g = demoGuest(LAB_LOOK, 'scattered');
@@ -1254,5 +1264,17 @@ describe('symptoms where they are: round 11', () => {
     expect(lifts[1]).toBeGreaterThan(lifts[2]!);
     pose(rig, healed, 1 + CURE * 1.5);
     expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
+  });
+
+  it('turns the G-clamp to the side, its frame down beside the head where the camera sees it, clear of the face', () => {
+    const rig = built('band');
+    const clamp = rig.props[0]!;
+    const box = new THREE.Box3().setFromObject(clamp);
+    const head = new THREE.Box3().setFromObject(rig.headMesh);
+    // out past the side of the head, toward the game's camera, and not behind it
+    expect(box.max.x).toBeGreaterThan(head.max.x + 0.03);
+    expect(box.min.z).toBeGreaterThan(head.min.z);
+    for (const part of [rig.face.eyes, rig.face.mouth])
+      expect(hides(clamp, new THREE.Box3().setFromObject(part).getCenter(new THREE.Vector3()))).toBe(false);
   });
 });
