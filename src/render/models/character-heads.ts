@@ -123,6 +123,7 @@ const BROKEN = 0.72;
 /**
  * A scrambled noggin: the head an egg with its top knocked off and the yolk showing, the broken cap floating over it
  * among the stars (bobbing as anything hovering over a head does, and put away lying down), the face on its front.
+ * Lying down, the egg rests on the pillow.
  */
 function egg(rig: CharRig) {
   const { head } = rig;
@@ -143,6 +144,7 @@ function egg(rig: CharRig) {
   for (const o of cap.children) o.castShadow = false;
   rig.props.push(body, pool);
   swell(rig, 1.08, 1.08);
+  rig.pillow = 0.08;
 }
 
 /** A battery's casing, its band and its silver end, and the empty cells of its gauge. */
@@ -373,18 +375,18 @@ export function upright(rig: CharRig, o: THREE.Object3D) {
 }
 
 /**
- * A tension headband: a red G-clamp screwed down on the crown, its frame down behind the head to rest on the back of
- * the neck, the head squashed short and wide under it. Put away while they lie down, as its frame would go through the
- * table.
+ * A tension headband: a red G-clamp screwed down on the crown, its frame down the left side of the head, where the
+ * game's camera sees it, clear of the face, to rest on the shoulder, the head squashed short and wide under it. Lying
+ * down, the frame lies flat beside the head, on what they lie on.
  */
 function gClamp(rig: CharRig) {
   const g = new THREE.Group();
   put(
     g,
     joined('g clamp', [
-      [rbox(0.07, 0.06, 0.42, 0.02), 0, 0.36, -0.1],
-      [rbox(0.07, 0.66, 0.07, 0.02), 0, 0.06, -0.31],
-      [rbox(0.07, 0.06, 0.16, 0.02), 0, -0.24, -0.24],
+      [rbox(0.42, 0.06, 0.07, 0.02), 0.1, 0.36, 0],
+      [rbox(0.07, 0.66, 0.07, 0.02), 0.31, 0.06, 0],
+      [rbox(0.16, 0.06, 0.07, 0.02), 0.24, -0.24, 0],
     ]),
     mat(0xd9362f, 0.45),
     0,
@@ -396,7 +398,7 @@ function gClamp(rig: CharRig) {
     joined('g clamp screw', [
       [cyl(0.018, 0.018, 0.26, 8), 0, 0.32, 0],
       [cyl(0.07, 0.07, 0.02, 14), 0, 0.195, 0],
-      [cyl(0.012, 0.012, 0.26, 8), 0, 0.45, 0, 0, 0, Math.PI / 2],
+      [cyl(0.012, 0.012, 0.26, 8), 0, 0.45, 0, Math.PI / 2, 0, 0],
     ]),
     mat(0x8a96a3, 0.3),
     0,
@@ -407,7 +409,6 @@ function gClamp(rig: CharRig) {
   // the head is squeezed, not the clamp, nor widened by the build the body is
   const s = rig.head.scale;
   g.scale.set(1 / (s.x * rig.wide), 1 / s.y, 1 / (s.z * rig.wide));
-  upright(rig, g);
   props(rig, g);
   rig.head.add(g);
 }
@@ -423,12 +424,30 @@ const lathe = (key: string, profile: readonly [number, number][]) =>
       ),
   );
 
-const APPLE = 0x9a3b2a;
-const FLESH = 0xf2e2b8;
+const APPLE = 0x8a3f26;
+const FLESH = 0xe8d4a0;
+
+/** A soft dark patch of rot `r` across, flattened against the skin it sits in. */
+const rotSpot = (r: number) => cached(`rot spot ${r}`, () => new THREE.SphereGeometry(r, 10, 8).scale(1, 0.8, 0.25));
+
+/**
+ * A patch of rot on the outside of the core at a height, `a` radians round from the front, `out` from its middle and
+ * sunk a little into it, its flat face turned outward.
+ */
+const rotAt = (r: number, a: number, y: number, out: number): Piece => [
+  rotSpot(r),
+  Math.sin(a) * (out - r * 0.2),
+  y,
+  Math.cos(a) * (out - r * 0.2),
+  0,
+  a,
+  0,
+];
 
 /**
  * A bad apple, rotten to the core as the croquet club says: the head an apple core, red top and bottom and bitten to
- * the pips between, the face on the bitten middle and three flies going round it.
+ * the pips between, the face on the bitten middle and three flies going round it. Lying down, the core rests on the
+ * pillow.
  */
 function appleCore(rig: CharRig) {
   hideUntilCured(rig, [rig.headMesh, ...named(rig.head, 'hair', 'moustache', 'beard', 'glasses')]);
@@ -449,15 +468,16 @@ function appleCore(rig: CharRig) {
       0,
     ],
     [
+      // narrower than the bottom and flaring little over the bite, so from above it leaves the face in sight
       lathe('core top', [
-        [0.001, 0.1],
-        [0.15, 0.1],
-        [0.24, 0.12],
-        [0.26, 0.18],
-        [0.22, 0.26],
-        [0.12, 0.3],
-        [0.03, 0.27],
-        [0.001, 0.27],
+        [0.001, 0.11],
+        [0.13, 0.11],
+        [0.18, 0.13],
+        [0.21, 0.18],
+        [0.19, 0.24],
+        [0.11, 0.28],
+        [0.03, 0.26],
+        [0.001, 0.26],
       ]),
       0,
       0,
@@ -479,12 +499,21 @@ function appleCore(rig: CharRig) {
     0,
     0,
   );
+  // the pips round the sides and back, long like seeds, off the line of the eyes so they never read as more of them,
+  // and patches of rot on the red, the same dark brown so they draw with the pips
+  const pip = cached('core pip', () => new THREE.SphereGeometry(0.02, 8, 6).scale(0.8, 1.5, 0.8));
   put(
     g,
     joined('core pips', [
-      [sph(0.022, 6), -0.09, -0.03, 0.08],
-      [sph(0.022, 6), 0.1, 0.02, 0.07],
-      [sph(0.022, 6), 0.02, -0.05, -0.11],
+      [pip, -0.125, -0.05, -0.03, 0, 0, 0.3],
+      [pip, 0.125, -0.07, -0.05, 0, 0, -0.3],
+      [pip, 0.02, -0.06, -0.13],
+      rotAt(0.055, 0.75, -0.19, 0.258),
+      rotAt(0.04, 2.5, -0.15, 0.25),
+      rotAt(0.06, -2.3, -0.19, 0.258),
+      rotAt(0.035, -0.6, -0.23, 0.24),
+      rotAt(0.04, 1.0, 0.19, 0.208),
+      rotAt(0.045, -2.6, 0.2, 0.203),
     ]),
     mat(0x3a2414, 0.5),
     0,
@@ -493,9 +522,10 @@ function appleCore(rig: CharRig) {
   );
   put(
     g,
+    // the stalk sunk well into the top, and its leaf growing out of its side near the top, up and out
     joined('apple stalk', [
-      [cyl(0.012, 0.016, 0.1, 6), 0, 0.26, 0, 0, 0, 0.2],
-      [rbox(0.1, 0.012, 0.05, 0.01), 0.06, 0.29, 0, 0, 0, -0.5],
+      [cyl(0.012, 0.016, 0.12, 6), 0, 0.25, 0, 0, 0, 0.2],
+      [rbox(0.1, 0.012, 0.05, 0.01), 0.038, 0.313, 0, 0, 0, 0.5],
     ]),
     mat(0x4a3a24, 0.8),
     0,
@@ -521,6 +551,7 @@ function appleCore(rig: CharRig) {
   faceOut(rig, { eyes: -0.065, brows: -0.05, mouth: -0.045 });
   props(rig, g);
   rig.head.add(g);
+  rig.pillow = 0.07;
 }
 
 /**
@@ -547,7 +578,8 @@ function oldMonitor(rig: CharRig) {
       [rbox(0.2, 0.014, 0.004, 0.002), -0.04, -0.09, 0],
       [rbox(0.14, 0.014, 0.004, 0.002), -0.07, -0.12, 0],
     ]),
-    mat(0xffffff, 0.4, 0.6),
+    // plain white, not glowing as the screen does, so the crowd draws it with everyone's white in a batch
+    mat(0xffffff, 0.4),
     0,
     0.03,
     0.188,

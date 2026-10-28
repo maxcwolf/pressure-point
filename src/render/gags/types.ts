@@ -55,6 +55,8 @@ export interface GuestMove {
   /** Their size, times this, and their height on its own. */
   s?: number;
   sy?: number;
+  /** How far the pieces of someone scattered are drawn back together, 0 to 1, as in a machine shut round them. */
+  gather?: number;
 }
 
 /** One frame of a gag: how each named part moves, how the guest does, and how fast each emitter puffs, 0 to 1. */

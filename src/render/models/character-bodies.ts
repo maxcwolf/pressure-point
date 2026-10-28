@@ -29,6 +29,27 @@ const GLASS = new THREE.MeshStandardMaterial({
 /** How far up the body the middle of the bottle is, which it shrinks toward with the cure. */
 const MIDDLE = 1;
 
+/** How far up the body the seat is while they sit, where a bottle, a tumbler or a pot round them is cut short. */
+const SEAT = 0.35;
+
+/**
+ * Cut a shell round someone off at the seat while they sit, rather than down through it, each part of it given a shape
+ * of its own that stops there (see `pose`).
+ */
+function seated(rig: CharRig, shell: THREE.Object3D, cuts: [THREE.Mesh, THREE.BufferGeometry][]) {
+  shell.userData.cuts = cuts.map(([m, short]) => [m, m.geometry, short]);
+  (rig.spin ??= []).push(shell);
+}
+
+/** The bottle's glass, as one shape, from `from` up the body to its lip: its body, shoulder, neck and lip. */
+const bottleGlass = (from: number) =>
+  joined(`bottle glass ${from}`, [
+    [cyl(0.31, 0.31, 1.305 - from, 24), 0, (from + 1.305) / 2 - MIDDLE, 0],
+    [cyl(0.13, 0.31, 0.16, 24), 0, 1.38 - MIDDLE, 0],
+    [cyl(0.13, 0.13, 0.15, 20), 0, 1.535 - MIDDLE, 0],
+    [torus(0.135, 0.022), 0, 1.61 - MIDDLE, 0, Math.PI / 2, 0, 0],
+  ]);
+
 /** A tumbler's clear glass and the water in it, one of each for every guest who has them, drawn as the bottle is. */
 const CLEAR = new THREE.MeshStandardMaterial({
   color: 0xdcecf2,
@@ -50,40 +71,59 @@ const SURFACE = 0x9fd0ee;
 /** How far up the body the middle of the tumbler is, which it shrinks toward with the cure. */
 const TUMBLER_MIDDLE = 0.95;
 
+/** How wide a tumbler is at a height up the body: 0.29 across its foot, at 0.27, to 0.34 at its rim, at 1.57. */
+const tumblerAt = (y: number) => 0.29 + (0.05 * (y - 0.27)) / 1.3;
+
+/** A tumbler's glass, as one shape, from its foot at `from` up the body to its rim: its sides, rim and base. */
+const tumblerGlass = (from: number) =>
+  joined(`tumbler glass ${from}`, [
+    [cyl(0.34, tumblerAt(from), 1.57 - from, 28), 0, (from + 1.57) / 2 - TUMBLER_MIDDLE, 0],
+    [torus(0.34, 0.018), 0, 1.57 - TUMBLER_MIDDLE, 0, Math.PI / 2, 0, 0],
+    [cyl(tumblerAt(from), tumblerAt(from), 0.06, 28), 0, from + 0.03 - TUMBLER_MIDDLE, 0],
+  ]);
+
+/** The water in a tumbler, from just over its base at `from` up the body to the waist, as one shape. */
+const tumblerWater = (from: number) =>
+  joined(`tumbler water ${from}`, [
+    [cyl(0.31, tumblerAt(from) - 0.005, 0.875 - from, 28), 0, (from + 0.875) / 2 - TUMBLER_MIDDLE, 0],
+  ]);
+
 /**
  * Bottled up: the whole person in a big green bottle, the cork in its neck above their head and a cream label with a
- * red stripe round the middle, their legs out of the bottom to walk on.
+ * red stripe round the middle, their legs out of the bottom to walk on. Cut short at the seat while they sit (see
+ * `seated`). The glass is one shape, as each part of it drawn alone is a draw call more for every bottled guest.
  */
 function bottle(rig: CharRig) {
   const bottle = new THREE.Group();
   /** A height up the body, as a height in the bottle, whose middle is at `MIDDLE`. */
   const at = (y: number) => y - MIDDLE;
-  put(bottle, cyl(0.31, 0.31, 1.05, 24), GLASS, 0, at(0.78), 0);
-  put(bottle, cyl(0.13, 0.31, 0.16, 24), GLASS, 0, at(1.38), 0);
-  put(bottle, cyl(0.13, 0.13, 0.15, 20), GLASS, 0, at(1.535), 0);
-  put(bottle, torus(0.135, 0.022), GLASS, 0, at(1.61), 0).rotation.x = Math.PI / 2;
+  const glass = put(bottle, bottleGlass(0.255), GLASS, 0, 0, 0);
   put(bottle, cyl(0.115, 0.1, 0.16, 14), mat(0xc9a56a, 0.95), 0, at(1.66), 0);
   put(bottle, cyl(0.315, 0.315, 0.3, 24), mat(0xf2e6c8, 0.8), 0, at(0.62), 0);
   put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, at(0.68), 0);
   bottle.position.y = MIDDLE;
+  seated(rig, bottle, [[glass, bottleGlass(SEAT)]]);
   props(rig, bottle);
   rig.body.add(bottle);
 }
 
 /**
  * Glass half empty: the whole person standing in a tall clear tumbler, the water up to the waist and the top half
- * empty, their own head and face dry in the empty half and their legs out of the bottom.
+ * empty, their own head and face dry in the empty half and their legs out of the bottom. Cut short at the
+ * seat while they sit (see `seated`). The glass is one shape, as the bottle's is.
  */
 function tumbler(rig: CharRig) {
   const glass = new THREE.Group();
   /** A height up the body, as a height in the tumbler, whose middle is at `TUMBLER_MIDDLE`. */
   const at = (y: number) => y - TUMBLER_MIDDLE;
-  put(glass, cyl(0.34, 0.29, 1.3, 28), CLEAR, 0, at(0.92), 0);
-  put(glass, torus(0.34, 0.018), CLEAR, 0, at(1.57), 0).rotation.x = Math.PI / 2;
-  put(glass, cyl(0.29, 0.29, 0.06, 28), CLEAR, 0, at(0.3), 0);
-  put(glass, cyl(0.31, 0.285, 0.55, 28), WATER, 0, at(0.6), 0);
+  const sides = put(glass, tumblerGlass(0.27), CLEAR, 0, 0, 0);
+  const water = put(glass, tumblerWater(0.325), WATER, 0, 0, 0);
   put(glass, cyl(0.312, 0.312, 0.012, 28), mat(SURFACE, 0.1), 0, at(0.88), 0);
   glass.position.y = TUMBLER_MIDDLE;
+  seated(rig, glass, [
+    [sides, tumblerGlass(SEAT)],
+    [water, tumblerWater(SEAT + 0.06)],
+  ]);
   props(rig, glass);
   rig.body.add(glass);
 }
@@ -95,6 +135,12 @@ const FLOWER = 0xe8679a;
 const POLLEN = 0xf2c14e;
 const POT = 0xb5523e;
 const SOIL = 0x6b4a2a;
+
+/** A pot's sides, as one shape, from its foot at `from` up the body to its rim, at 0.44, 0.2 across the foot at 0.06. */
+const potSides = (from: number) =>
+  joined(`pot sides ${from}`, [
+    [cyl(0.27, 0.2 + (0.07 * (from - 0.06)) / 0.38, 0.44 - from, 28), 0, (from + 0.44) / 2, 0],
+  ]);
 
 /** A ribbed column of cactus, `r` across and `len` long between its rounded ends, with eight ribs. */
 const ribbed = (r: number, len: number) =>
@@ -134,7 +180,8 @@ function spines(r: number, from: number, to: number) {
 /**
  * Spiritually dehydrated: the head a ribbed cactus, prickly, an arm bent up off one side and a pink flower on top, the
  * face on its front; the shirt and sleeves gone cactus green, and a terracotta pot round them from the waist down, the
- * feet out of the bottom to shuffle along on (see `pose`).
+ * feet out of the bottom to shuffle along on (see `pose`). Cut down to a collar round the hips at the seat while they
+ * sit (see `seated`).
  */
 function cactus(rig: CharRig) {
   const { head } = rig;
@@ -168,9 +215,10 @@ function cactus(rig: CharRig) {
   });
   const pot = new THREE.Group();
   const clay = mat(POT, 0.8);
-  put(pot, cyl(0.27, 0.2, 0.38, 28), clay, 0, 0.25, 0);
+  const sides = put(pot, potSides(0.06), clay, 0, 0, 0);
   put(pot, cyl(0.3, 0.3, 0.07, 28), clay, 0, 0.46, 0);
   put(pot, cyl(0.25, 0.25, 0.02, 28), mat(SOIL, 0.9), 0, 0.495, 0);
+  seated(rig, pot, [[sides, potSides(SEAT)]]);
   props(rig, top, pot);
   rig.body.add(pot);
 }
@@ -256,33 +304,36 @@ function storm(rig: CharRig) {
 }
 
 /**
- * Float a part of someone `up` meters up from where it belongs and `aside` meters to one side, and set it drifting up
- * and down `drift` meters (see `pose`), to be put back with the cure and left to the rest of the pose from then on.
+ * Float a part of someone loose of where it belongs, by `apart` meters to the side, up and forward, and set it drifting
+ * up and down `drift` meters and round in a slow circle `circle` meters across, from `phase` round it (see `pose`). The
+ * cure eases it back over the puff, and it is left to the rest of the pose from then on (see `endCure`).
  */
-function floatApart(rig: CharRig, part: THREE.Object3D, up: number, aside: number, drift: number) {
-  const home = part.position.clone();
-  part.userData.home = home;
-  part.userData.apart = new THREE.Vector3(aside, up, 0);
+function floatApart(
+  rig: CharRig,
+  part: THREE.Object3D,
+  apart: readonly [aside: number, up: number, forward: number],
+  drift: number,
+  circle: number,
+  phase: number,
+) {
+  part.userData.home = part.position.clone();
+  part.userData.apart = new THREE.Vector3(...apart);
   part.userData.drift = drift;
+  part.userData.circle = circle;
+  part.userData.phase = phase;
   part.position.add(part.userData.apart as THREE.Vector3);
-  const spins = (rig.spin ??= []);
-  spins.push(part);
-  (rig.restore ??= []).push(() => {
-    const at = spins.indexOf(part);
-    if (at >= 0) spins.splice(at, 1);
-    part.userData.drift = 0;
-    part.position.copy(home);
-  });
+  (rig.spin ??= []).push(part);
 }
 
 /**
- * Scattered: in pieces, the head floating a hand's width over the shoulders and the body over the legs, each a little
- * askew and drifting up and down on its own, the shards of them still drifting round. Lying down they come together,
- * as the shards are put away then.
+ * Scattered: in pieces, the head floating well over the shoulders and the body over the legs, each pushed off to one
+ * side and forward, drifting up and down and round in slow circles of their own, the head one way as the body goes the
+ * other, so daylight shows between them from above; the shards of them still drifting round. Lying down they come
+ * together, as the shards are put away then.
  */
 function inPieces(rig: CharRig) {
-  floatApart(rig, rig.head, 0.2, 0.05, 0.03);
-  floatApart(rig, rig.torso, 0.22, -0.04, 0.025);
+  floatApart(rig, rig.head, [0.07, 0.4, 0.04], 0.03, 0.08, 0);
+  floatApart(rig, rig.torso, [-0.05, 0.26, 0.02], 0.025, 0.05, Math.PI);
 }
 
 const ROPE = 0xc8a46a;
@@ -343,7 +394,7 @@ function officeChair(rig: CharRig) {
     -0.05,
   );
   chair.userData.standing = true;
-  (rig.spin ??= []).push(chair);
+  upright(rig, chair);
   props(rig, chair);
 }
 
@@ -352,7 +403,7 @@ const LOBSTER_DARK = 0xa8321f;
 
 /**
  * A lobster's crusher claw, as one shape pointing down along -y from the wrist: a fat oval palm, bumpy along its top,
- * and two curved, tapering fingers with a gap between, the lower one shorter.
+ * and two curved, tapering fingers with a gap between, the inner one shorter, each in one piece from palm to tip.
  */
 const crusher = () =>
   joined('lobster crusher', [
@@ -361,11 +412,13 @@ const crusher = () =>
     [sph(0.022, 6), 0.06, -0.09, 0.04],
     [sph(0.02, 6), 0.075, -0.15, 0.03],
     [sph(0.018, 6), 0.065, -0.2, 0.035],
-    // the fixed finger, on the outside, long
+    // the fixed finger, on the outside, long, its tip going on from the end of its base and curving in
     [cyl(0.045, 0.032, 0.11, 10), 0.045, -0.3, 0, 0, 0, 0.16],
-    [cyl(0.032, 0.006, 0.12, 10), 0.012, -0.41, 0, 0, 0, 0.45],
+    [sph(0.032, 10), 0.054, -0.354, 0],
+    [cyl(0.032, 0.006, 0.12, 10), 0.034, -0.41, 0, 0, 0, -0.34],
     // the moving finger, on the inside, shorter, opened a little
     [cyl(0.04, 0.028, 0.09, 10), -0.05, -0.28, 0, 0, 0, -0.32],
+    [sph(0.028, 10), -0.065, -0.322, 0],
     [cyl(0.028, 0.006, 0.1, 10), -0.065, -0.37, 0, 0, 0, 0.12],
   ]);
 
@@ -386,15 +439,18 @@ function claw(rig: CharRig, fore: THREE.Object3D) {
   return put(fore, crusher(), mat(LOBSTER, 0.45), at.x, at.y + 0.04, at.z);
 }
 
-/** A lobster's long feeler out of the forehead on one side, sweeping up, out and back over the head, thinning to a tip. */
+/**
+ * A lobster's long feeler out of the forehead on one side, sweeping up, out and straight back over the head, thinning
+ * to a tip, so it never crosses the face from above.
+ */
 function feeler(side: number): readonly (readonly [number, number, number])[] {
   return [
-    [side * 0.05, 0.14, 0.17],
-    [side * 0.1, 0.3, 0.22],
-    [side * 0.2, 0.48, 0.14],
-    [side * 0.32, 0.58, -0.08],
-    [side * 0.42, 0.58, -0.36],
-    [side * 0.5, 0.48, -0.62],
+    [side * 0.06, 0.15, 0.14],
+    [side * 0.1, 0.3, 0.1],
+    [side * 0.2, 0.45, -0.03],
+    [side * 0.32, 0.52, -0.24],
+    [side * 0.42, 0.5, -0.48],
+    [side * 0.5, 0.4, -0.72],
   ];
 }
 
@@ -418,9 +474,9 @@ function lobster(rig: CharRig) {
       tube(
         `lobster feelerette ${side}`,
         [
-          [side * 0.03, 0.12, 0.19],
-          [side * 0.07, 0.2, 0.28],
-          [side * 0.1, 0.22, 0.36],
+          [side * 0.04, 0.15, 0.16],
+          [side * 0.07, 0.24, 0.2],
+          [side * 0.1, 0.3, 0.22],
         ],
         0.008,
       ),

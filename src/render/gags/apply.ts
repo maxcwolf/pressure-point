@@ -49,8 +49,8 @@ const offset = new THREE.Vector3();
 const UP = new THREE.Vector3(0, 1, 0);
 
 /**
- * Set a frame of a gag on the guest inside a machine, once they have been posed: hidden, moved, spun, tipped or
- * squashed, in the machine's own frame, which is turned a quarter `rot` times.
+ * Set a frame of a gag on the guest inside a machine, once they have been posed: hidden, moved, spun, tipped,
+ * squashed or drawn together, in the machine's own frame, which is turned a quarter `rot` times.
  */
 export function applyGuestGag(rig: CharRig, move: GuestMove, rot: number) {
   if (move.hide) {
@@ -65,4 +65,8 @@ export function applyGuestGag(rig: CharRig, move: GuestMove, rot: number) {
   rig.group.rotation.x = move.tilt ?? 0;
   const s = move.s ?? 1;
   rig.group.scale.set(rig.group.scale.x * s, rig.group.scale.y * s * (move.sy ?? 1), rig.group.scale.z * s);
+  // pieces floating apart drawn back toward where they belong, from where the pose put them this frame
+  const gather = move.gather ?? 0;
+  if (gather > 0)
+    for (const o of rig.spin ?? []) if (o.userData.drift) o.position.lerp(o.userData.home as THREE.Vector3, gather);
 }

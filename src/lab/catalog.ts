@@ -425,6 +425,18 @@ export const SEATS: readonly (readonly [ItemType, number])[] = (Object.keys(ITEM
   ),
 );
 
+/** Every ailment a guest on an item can be shown with, or none. */
+const AILMENTS: readonly Option[] = [['', 'None'], ...CONDITIONS.map((d) => [d.id, d.name] as const)];
+
+/** A guest with an ailment, or with none, built and as the sim has them. */
+function ailing(id: string) {
+  const def = CONDITIONS.find((d) => d.id === id);
+  return {
+    rig: buildCharacter(LAB_LOOK, undefined, def?.visual),
+    c: demoGuest(LAB_LOOK, (def ?? must(CONDITIONS[0], 'a condition')).id),
+  };
+}
+
 /** An item with someone sitting at one of its seats, placed and posed as the game places and poses them, to see that
  * they sit on it rather than in it: a member of staff at a seat they work at, or else a guest. */
 function seatedSpecimen(type: ItemType, i: number): Specimen {
@@ -432,6 +444,7 @@ function seatedSpecimen(type: ItemType, i: number): Specimen {
   const spot = must(def.access[i], `seat ${i} of ${type}`);
   const staff = spot.role === 'staff' || spot.role === 'study';
   const role = SEATED_STAFF[type] ?? 'therapist';
+  const st = { ailment: '' };
   return {
     id: `seated:${type}:${spot.role}`,
     group: 'Seated',
@@ -442,14 +455,15 @@ function seatedSpecimen(type: ItemType, i: number): Specimen {
       const placed = { type, x: 0, y: 0, rot: 0 };
       const [cx, cy] = itemCenter(placed);
       const at = accessPose(placed, i);
-      const rig = buildCharacter(LAB_LOOK, staff ? role : undefined);
-      const c: Char = staff ? demoStaff(LAB_LOOK, role) : demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      const { rig, c }: { rig: CharRig; c: Char } = staff
+        ? { rig: buildCharacter(LAB_LOOK, role), c: demoStaff(LAB_LOOK, role) }
+        : ailing(st.ailment);
       Object.assign(c, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
       const root = new THREE.Group();
       root.add(buildItem(type, {}), rig.group);
       return {
         root,
-        controls: [],
+        controls: staff ? [] : [choice('Ailment', st, 'ailment', AILMENTS, true)],
         /** Seat them. */
         animate: (t, dt) => poseChar(rig, c, t, dt, { style: null }),
       };
@@ -479,6 +493,7 @@ function lyingSpecimen(type: ItemType): Specimen {
   const role = def.station?.staff;
   const spot = def.access.findIndex((a) => a.pose === 'lie');
   const post = def.access.findIndex((a) => a.role === 'staff');
+  const st = { ailment: '' };
   return {
     id: `lying:${type}`,
     group: 'Lying',
@@ -496,8 +511,8 @@ function lyingSpecimen(type: ItemType): Specimen {
         Object.assign(c, { x: at.x - cx, y: at.y - cy, facing: at.face, pose: at.pose, h: at.h });
         return c;
       };
-      const guest = buildCharacter(LAB_LOOK);
-      const g = place(demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id), spot);
+      const { rig: guest, c } = ailing(st.ailment);
+      const g = place(c, spot);
       // a guest on a Lounger is resting there, after a treatment
       if (def.access[spot]?.role === 'recover') g.state = 'resting';
       const lie = def.access[spot]?.lie;
@@ -510,7 +525,7 @@ function lyingSpecimen(type: ItemType): Specimen {
       }
       return {
         root,
-        controls: [],
+        controls: [choice('Ailment', st, 'ailment', AILMENTS, true)],
         /** Lay them down, and have whoever works on them at it. */
         animate(t, dt) {
           poseChar(guest, g, t, dt, { style: null, lie });

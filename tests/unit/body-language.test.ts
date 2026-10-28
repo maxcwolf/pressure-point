@@ -9,6 +9,9 @@ import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
 import { BUBBLE_STANDING } from '../../src/render/bubbles';
+import { applyGuestGag } from '../../src/render/gags/apply';
+import { gagFrame } from '../../src/render/gags/beats';
+import { GEODE } from '../../src/render/gags/scripts/upgrades';
 import { rattle } from '../../src/render/item-cues';
 import { buildCharacter, CAP_TIP, type CharRig, cureRig, topOf } from '../../src/render/models/character';
 import { HELD_SIZE } from '../../src/render/models/held';
@@ -777,7 +780,7 @@ describe('a symptom in place of the head', () => {
     expect(buildCharacter(LAB_LOOK).bubbleAt).toBe(BUBBLE_STANDING);
   });
 
-  it("screws a tension headband's head down in a G-clamp, squashed under it, put away while they lie down", () => {
+  it("screws a tension headband's head down in a G-clamp, squashed under it, lying flat beside it lying down", () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'band');
     expect(shown(rig.headMesh)).toBe(true);
     expect(rig.head.scale.y).toBeLessThan(1);
@@ -789,10 +792,14 @@ describe('a symptom in place of the head', () => {
     const size = new THREE.Vector3();
     clamp.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), size);
     expect(size.y).toBeCloseTo(size.x);
-    poseChar(rig, { ...demoGuest(LAB_LOOK, 'band'), pose: 'lie' }, 0, 1, { style: null });
-    expect(clamp.visible).toBe(false);
-    poseChar(rig, demoGuest(LAB_LOOK, 'band'), 1, 1, { style: null });
-    expect(clamp.visible).toBe(true);
+    for (const lie of ['back', 'prone'] as const) {
+      poseChar(rig, { ...demoGuest(LAB_LOOK, 'band'), pose: 'lie', h: 0.6 }, 0, 1, { style: null, lie, lying: 1 });
+      rig.group.updateMatrixWorld(true);
+      expect(shown(clamp), lie).toBe(true);
+      // no lower than the head lying on what they lie on, so it never goes into it
+      const under = new THREE.Box3().setFromObject(rig.headMesh).min.y;
+      expect(new THREE.Box3().setFromObject(clamp).min.y, lie).toBeGreaterThan(under);
+    }
   });
 
   it("makes a bad apple's head an apple core, the face on it and flies going round", () => {
@@ -977,12 +984,20 @@ describe('a symptom worn whole', () => {
     expect(new Set(heights.map(([, b]) => b)).size).toBeGreaterThan(1);
   });
 
-  it('puts someone scattered together while they lie down, to lie on what they lie on', () => {
+  it('keeps someone scattered apart lying down, floating up off what they lie on rather than off the end of it', () => {
     const whole = buildCharacter(LAB_LOOK);
     const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
-    poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), pose: 'lie' }, 0.3, 1, { style: null });
-    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
-    expect(rig.torso.position.toArray()).toEqual(whole.torso.position.toArray());
+    for (const lie of ['back', 'prone'] as const) {
+      // up off the table is out of the back lying on it, out of the front face down
+      const up = lie === 'back' ? 1 : -1;
+      for (let t = 0; t < 8; t += 0.5) {
+        poseChar(rig, { ...demoGuest(LAB_LOOK, 'scattered'), pose: 'lie' }, t, 1, { style: null, lie, lying: 1 });
+        expect((rig.torso.position.z - whole.torso.position.z) * up, lie).toBeGreaterThan(0.08);
+        expect((rig.head.position.z - whole.head.position.z) * up, lie).toBeGreaterThan(0.12);
+        // along the body no further than they drift round, so the head stays over the pillow
+        expect(Math.abs(rig.head.position.y - whole.head.position.y), lie).toBeLessThan(0.1);
+      }
+    }
   });
 
   it('puts someone scattered back together with the cure, the head free to turn again', () => {
@@ -1084,13 +1099,15 @@ describe('a symptom worn whole', () => {
     expect(rig.props.some((p) => p.parent === rig.body)).toBe(true);
   });
 
-  it('keeps their legs inside the pot: a shuffle walking, and straight down sitting, even on the floor', () => {
+  it('keeps their legs inside the pot walking, a shuffle, and sits them as anyone, the pot cut down at the seat', () => {
     const g = demoGuest(LAB_LOOK, 'parched');
     expect(swing(buildCharacter(LAB_LOOK, undefined, 'cactus'), g)).toBeLessThanOrEqual(POTTED.stride + 0.01);
     const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
-    poseChar(rig, { ...g, pose: 'sit', h: 0 }, 0, 1, { style: null });
-    expect(rig.legL.rotation.x).toBeCloseTo(0);
-    expect(rig.legL.rotation.y).toBeCloseTo(0);
+    const pot = rig.props.find((p) => p.parent === rig.body)!;
+    poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 0, 1, { style: null });
+    // the thighs out along the seat rather than down through it in the pot
+    expect(rig.legL.rotation.x).toBeLessThan(-1.2);
+    expect(pot.visible).toBe(true);
   });
 
   it('walks them as anyone does once the pot is gone with the cure', () => {
@@ -1186,5 +1203,244 @@ describe('at work', () => {
     const rig = buildCharacter(LAB_LOOK, 'caretaker');
     expect(rig.head.getObjectByName('cap')?.rotation.x).toBe(CAP_TIP);
     expect(CAP_TIP).toBeLessThan(-0.2);
+  });
+});
+
+describe('symptoms where they are: round 11', () => {
+  /** Whether a part of someone is drawn: shown itself, and every parent of it shown too. */
+  const shown = (o: THREE.Object3D) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (!p.visible) return false;
+    return true;
+  };
+  /** The way to the game's camera, looking down at someone from the front and to one side, as the lab's game angle. */
+  const GAME = new THREE.Vector3(1, 1.2, 1).normalize();
+  /** Across the game's picture, to the right. */
+  const RIGHT = new THREE.Vector3(GAME.z, 0, -GAME.x).normalize();
+  /** Up the game's picture. */
+  const UP = new THREE.Vector3().crossVectors(GAME, RIGHT).normalize();
+  /** Every corner of a mesh as drawn, where it shows in the game's picture: across and up, in meters. */
+  const corners = (m: THREE.Mesh) => {
+    const at = m.geometry.getAttribute('position');
+    const v = new THREE.Vector3();
+    return Array.from({ length: at.count }, (_, i) => {
+      v.fromBufferAttribute(at, i).applyMatrix4(m.matrixWorld);
+      return [v.dot(RIGHT), v.dot(UP)] as const;
+    });
+  };
+  /** Someone built with a symptom, stood as built, unposed, so their parts are where they were made. */
+  const built = (visual: Parameters<typeof buildCharacter>[2]) => {
+    const rig = buildCharacter(LAB_LOOK, undefined, visual);
+    rig.group.updateMatrixWorld(true);
+    return rig;
+  };
+  /** Whether anything of a part is in the way of the game's camera from a point. */
+  const hides = (o: THREE.Object3D, from: THREE.Vector3) =>
+    new THREE.Raycaster(from.clone().addScaledVector(GAME, 0.01), GAME).intersectObject(o, true).length > 0;
+
+  it('floats someone scattered far enough apart that daylight shows between head and body from the game camera', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    const shirt = rig.torso.getObjectByName('shirt') as THREE.Mesh;
+    for (let t = 0; t < 8; t += 0.25) {
+      pose(rig, g, t);
+      const head = corners(rig.headMesh);
+      const middle = head.reduce((sum, [x]) => sum + x, 0) / head.length;
+      // straight down the picture from the middle of the head: the bottom of the head, and the top of the shoulders
+      const chin = Math.min(...head.map(([, y]) => y));
+      const shoulders = Math.max(...corners(shirt).flatMap(([x, y]) => (Math.abs(x - middle) < 0.05 ? [y] : [])));
+      expect(chin - shoulders, `at ${t}`).toBeGreaterThan(0.02);
+    }
+  });
+
+  it('drifts the pieces of someone scattered round in slow circles, the head one way as the body goes the other', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    const at = [0, 1.75, 3.5].map((t) => {
+      pose(rig, g, t);
+      return [rig.head.position.clone(), rig.torso.position.clone()] as const;
+    });
+    expect(new Set(at.map(([h]) => h.x.toFixed(3))).size).toBe(3);
+    expect(new Set(at.map(([h]) => h.z.toFixed(3))).size).toBe(3);
+    const [[h0, b0], [h1, b1]] = at as [[THREE.Vector3, THREE.Vector3], [THREE.Vector3, THREE.Vector3]];
+    expect(Math.sign(h1.x - h0.x)).toBe(-Math.sign(b1.x - b0.x));
+  });
+
+  it('draws someone scattered back together while the Geode is shut round them, so no piece pokes out', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    /** The guest in the Geode at a point in its session, posed and then moved by its gag. */
+    const inGeode = (progress: number) => {
+      poseChar(rig, g, 2, 1, { style: null });
+      const input = {
+        stage: 'running',
+        progress,
+        since: 0,
+        healed: true,
+        hiccup: false,
+        t: 2,
+        smoking: false,
+        down: false,
+      };
+      applyGuestGag(rig, gagFrame(GEODE, input as Parameters<typeof gagFrame>[1]).guest, 0);
+    };
+    inGeode(0.5);
+    expect(rig.head.position.distanceTo(whole.head.position)).toBeLessThan(1e-6);
+    expect(rig.torso.position.distanceTo(whole.torso.position)).toBeLessThan(1e-6);
+    // and apart again once it stands open
+    inGeode(0.99);
+    expect(rig.head.position.y - whole.head.position.y).toBeGreaterThan(0.2);
+  });
+
+  it('eases someone scattered back together over the puff of the cure, rather than in one frame', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    pose(rig, g, 0);
+    const apart = rig.head.position.y - whole.head.position.y;
+    cureRig(rig, 1);
+    const healed = { ...g, outcome: 'healed' as const };
+    const lifts = [0.25, 0.5, 0.75].map((u) => {
+      pose(rig, healed, 1 + CURE * u);
+      return rig.head.position.y - whole.head.position.y;
+    });
+    // coming down all the way through, not still apart at the half and then home at once
+    for (const lift of lifts) {
+      expect(lift).toBeGreaterThan(0.001);
+      expect(lift).toBeLessThan(apart);
+    }
+    expect(lifts[0]).toBeGreaterThan(lifts[1]!);
+    expect(lifts[1]).toBeGreaterThan(lifts[2]!);
+    pose(rig, healed, 1 + CURE * 1.5);
+    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
+  });
+
+  it('turns the G-clamp to the side, its frame down beside the head where the camera sees it, clear of the face', () => {
+    const rig = built('band');
+    const clamp = rig.props[0]!;
+    const box = new THREE.Box3().setFromObject(clamp);
+    const head = new THREE.Box3().setFromObject(rig.headMesh);
+    // out past the side of the head, toward the game's camera, and not behind it
+    expect(box.max.x).toBeGreaterThan(head.max.x + 0.03);
+    expect(box.min.z).toBeGreaterThan(head.min.z);
+    for (const part of [rig.face.eyes, rig.face.mouth])
+      expect(hides(clamp, new THREE.Box3().setFromObject(part).getCenter(new THREE.Vector3()))).toBe(false);
+  });
+
+  it("keeps the apple core's pips off the line of the eyes, and its top from hiding the face from above", () => {
+    const rig = built('rotten');
+    const core = rig.props[0]!;
+    const pips = core.children.find(
+      (o) => ((o as THREE.Mesh).material as THREE.MeshStandardMaterial).color.getHex() === 0x3a2414,
+    ) as THREE.Mesh;
+    const eyes = new THREE.Box3().setFromObject(rig.face.eyes);
+    const pos = pips.geometry.getAttribute('position');
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(pips.matrixWorld);
+      // none of them on the face's side at the height of the eyes (the rot drawn with them is on the red, well clear)
+      if (v.y > eyes.min.y - 0.02 && v.y < eyes.max.y + 0.02) expect(v.z).toBeLessThan(0);
+    }
+    // from the game's camera the eyes show under the top of the core
+    expect(hides(core, eyes.getCenter(new THREE.Vector3()))).toBe(false);
+  });
+
+  it("sweeps the lobster's feelers back over the head, so they never cross the face from above", () => {
+    const rig = built('sunburn');
+    const feelers = rig.props.find((p) => p.parent === rig.head && p.children.length > 2)!;
+    for (const part of [rig.face.eyes, rig.face.mouth])
+      expect(hides(feelers, new THREE.Box3().setFromObject(part).getCenter(new THREE.Vector3()))).toBe(false);
+    // none of them out in front of the face
+    const face = new THREE.Box3().setFromObject(rig.face.eyes);
+    expect(new THREE.Box3().setFromObject(feelers).max.z).toBeLessThan(face.max.z + 0.04);
+  });
+
+  /** Lay someone down on their back on a table, all the way down. */
+  const lay = (rig: CharRig, g: Char, t = 1) => {
+    poseChar(rig, { ...g, pose: 'lie', h: 0.6 }, t, 1, { style: null, lie: 'back', lying: 1 });
+    rig.group.updateMatrixWorld(true);
+  };
+
+  it('keeps a shell round someone in sight lying down: the bottle, tumbler, snow globe, pot and storm', () => {
+    for (const [visual, id] of [
+      ['cork', 'bottled'],
+      ['glass', 'glasshalf'],
+      ['snowcap', 'snowedin'],
+      ['cactus', 'parched'],
+      ['storm', 'qi'],
+    ] as const) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      const g = demoGuest(LAB_LOOK, id);
+      // the pot round the hips, or the shell that is the whole symptom
+      const shell = rig.props.find((p) => p.parent === rig.body) ?? rig.props[0]!;
+      lay(rig, g);
+      expect(shown(shell), visual).toBe(true);
+    }
+  });
+
+  it('raises a head that is an egg or an apple core onto the pillow lying down, rather than into it', () => {
+    for (const [visual, id] of [
+      ['egg', 'dizzy'],
+      ['rotten', 'badapple'],
+    ] as const) {
+      const plain = buildCharacter(LAB_LOOK);
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      const g = demoGuest(LAB_LOOK, id);
+      lay(plain, g);
+      lay(rig, g);
+      // the shell of the egg, or the core's red top and bottom, not the flies round it
+      const under = new THREE.Box3().setFromObject(rig.props[0]!.children[0] ?? rig.props[0]!).min.y;
+      // no lower than the back of an ordinary head
+      expect(under, visual).toBeGreaterThan(new THREE.Box3().setFromObject(plain.headMesh).min.y - 0.015);
+      pose(rig, g, 2);
+      expect(rig.head.position.z, visual).toBe(0);
+    }
+  });
+
+  it('holds the giant phone small in the lap while they sit, clear of a desk or the next guest', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'neck');
+    const g = demoGuest(LAB_LOOK, 'neck');
+    /** How far the phone reaches out in front of them, in meters. */
+    const reach = () => {
+      rig.group.updateMatrixWorld(true);
+      return new THREE.Box3().setFromObject(rig.phone!).max.z - rig.group.position.z;
+    };
+    pose(rig, g, 2);
+    const standing = { size: rig.phone!.scale.x, reach: reach() };
+    poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 1, 1, { style: null });
+    expect(rig.phone!.visible).toBe(true);
+    expect(rig.phone!.scale.x).toBeLessThan(standing.size / 2);
+    expect(reach()).toBeLessThan(standing.reach);
+    pose(rig, g, 3);
+    expect(rig.phone!.scale.x).toBe(standing.size);
+  });
+
+  it('cuts a bottle, a tumbler or a pot short at the seat while they sit, rather than down through it', () => {
+    /** How low the lowest part of a shell reaches, in meters up the body. */
+    const bottom = (shell: THREE.Object3D) => {
+      let low = Infinity;
+      shell.traverse((o) => {
+        if (!(o instanceof THREE.Mesh)) return;
+        const geo = o.geometry as THREE.BufferGeometry;
+        geo.computeBoundingBox();
+        low = Math.min(low, geo.boundingBox!.min.y + o.position.y + shell.position.y);
+      });
+      return low;
+    };
+    for (const [visual, id] of [
+      ['cork', 'bottled'],
+      ['glass', 'glasshalf'],
+      ['cactus', 'parched'],
+    ] as const) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      const shell = rig.props.find((p) => p.parent === rig.body) ?? rig.props[0]!;
+      const g = demoGuest(LAB_LOOK, id);
+      poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 1, 1, { style: null });
+      expect(shell.visible, visual).toBe(true);
+      expect(bottom(shell), visual).toBeGreaterThan(0.34);
+      // whole again once they stand
+      poseChar(rig, g, 2, 1, { style: null });
+      expect(bottom(shell), visual).toBeLessThan(0.3);
+    }
   });
 });

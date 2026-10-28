@@ -23,7 +23,17 @@ import { prefersReducedMotion } from './camera-math';
 import { animateEmitter, emitter, type EmitterShape } from './gags/particles';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
-import { BOB, bubbleHeight, type CharRig, cureRig, endCure, type Joints, restoreRig } from './models/character';
+import {
+  BOB,
+  bubbleHeight,
+  type CharRig,
+  cureRig,
+  endCure,
+  GIANT_PHONE,
+  type Joints,
+  PHONE_OUT,
+  restoreRig,
+} from './models/character';
 import { BACK_Y, type Expression, HIP, KNEE, showExpression, showEyes, SIT_Y } from './models/character-detail';
 import { buildHeld, HELD_SIZE, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
@@ -190,6 +200,15 @@ export const PRONE_TURN = 0;
 
 /** How long a healed guest's symptom takes to shrink away in a puff of sparkles, in seconds. */
 export const CURE = 0.8;
+
+/** How many times the size of a phone in the hand someone with text neck holds theirs small in the lap, sitting. */
+const LAP_PHONE = 1.3;
+
+/** How fast the pieces of someone scattered drift round in their circles, in radians a second: once in seven seconds. */
+const SCATTER_TURN = 0.9;
+
+/** How far the pieces of someone scattered float up off what they lie on, as a share of how far apart they float. */
+const SCATTER_LIFT = 0.5;
 
 /** How long the hop for joy as it goes lasts, in seconds, and how high it goes, in meters. */
 export const HOP = { lasts: 0.55, high: 0.2 } as const;
@@ -423,7 +442,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   /** Leaning to one side, for a guest who is off balance. */
   let side = 0;
   /** Whether they sit on the floor rather than a seat. */
-  const onFloor = c.pose === 'sit' && c.h < SIT.floor && visual !== 'cactus';
+  const onFloor = c.pose === 'sit' && c.h < SIT.floor;
+  /** Whether someone with text neck has their phone out: not lying down, and small in the lap sitting. */
+  const phoneOut = visual === 'neck' && c.pose !== 'lie';
   if (c.pose === 'walk') {
     const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
     legL = sw;
@@ -696,12 +717,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (visual === 'slump') {
     lean += 0.42;
     headX += 0.2;
-  } else if (visual === 'neck' && c.pose !== 'lie') {
-    // staring down at the phone held in front of the chest
+  } else if (visual === 'neck') {
+    // staring down at the phone held in front of the chest, or small in the lap sitting, or where it would be
     headX += 0.6;
-    armR = -0.45;
-  } else if (visual === 'neck') headX += 0.6;
-  else if (visual === 'stiff') {
+    if (phoneOut) armR = c.pose === 'sit' ? -0.3 : -0.45;
+  } else if (visual === 'stiff') {
     armOut = 0.32;
     if (c.pose !== 'sit') armL = armR = 0;
   } else if (visual === 'crick') headZ = 0.55;
@@ -721,9 +741,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     bodyY = Math.abs(Math.cos(phase)) * 0.015;
     armL *= 0.4;
     armR *= 0.4;
-  } else if (visual === 'cactus' && c.pose === 'sit') {
-    // sitting potted, the legs straight down in the pot, which sits on the seat
-    legL = legR = 0;
   } else if (visual === 'blanket') lean += 0.12;
   else if (visual === 'flex') {
     armOut = 2.35;
@@ -809,8 +826,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     if (cues.lie === 'prone') life.headYaw = PRONE_TURN;
   }
   if (act) actJoints(life, act, c, t, armL, armR);
-  if (visual === 'neck' && c.pose !== 'lie' && !act) {
-    // the forearm folded up and in, the phone lying in the hand in front of the chest
+  if (phoneOut && !act) {
+    // the forearm folded up and in, the phone lying in the hand in front of the chest, or over the lap
     life.elbowR += bendTo(armR, -1.25, 1);
     life.bendR = 0.55;
   }
@@ -886,6 +903,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift = 0,
       upright = false,
       standing = false,
+      cuts,
     } = o.userData as {
       spin?: number;
       rattle?: number;
@@ -893,15 +911,32 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       drift?: number;
       upright?: boolean;
       standing?: boolean;
+      cuts?: [THREE.Mesh, THREE.BufferGeometry, THREE.BufferGeometry][];
     };
-    // put away while they lie down, as what floats over the head is, or, `standing`, while they sit too
-    if ((upright || standing) && !rig.cured) o.visible = c.pose !== 'lie' && !(standing && c.pose === 'sit');
+    // put away while they lie down, as what floats over the head is, and, `standing`, while they sit
+    if ((upright || standing) && !rig.cured)
+      o.visible = !(upright && c.pose === 'lie') && !(standing && c.pose === 'sit');
+    // cut short at the seat while they sit, each part in its shape that stops there
+    if (cuts) for (const [part, whole, short] of cuts) part.geometry = c.pose === 'sit' ? short : whole;
     if (drift) {
-      // floating loose of where it belongs, up and down to its own rhythm, but put back together lying down, to lie on
-      // whatever they lie on
-      const { home, apart } = o.userData as { home: THREE.Vector3; apart: THREE.Vector3 };
+      // floating loose of where it belongs, up and down and round to its own rhythm, and lying down floating up off
+      // whatever they lie on rather than along it, off the end; eased back together over the puff of the cure
+      const { home, apart, circle, phase } = o.userData as {
+        home: THREE.Vector3;
+        apart: THREE.Vector3;
+        circle: number;
+        phase: number;
+      };
+      const loose = Number.isNaN(curing) ? 1 : 1 - THREE.MathUtils.smoothstep(curing, 0, CURE);
+      const down = c.pose === 'lie' ? lying : 0;
+      const round = t * SCATTER_TURN + c.id + phase;
+      const bob = Math.sin(t * 1.7 + c.id + phase) * drift;
+      // up off the table is out of their back lying on it, out of their front face down
+      const lift = (back ? 1 : -1) * (apart.y * SCATTER_LIFT + bob) * down;
       o.position.copy(home);
-      if (c.pose !== 'lie') o.position.add(apart).y += Math.sin(t * 1.7 + c.id + o.id * 1.3) * drift;
+      o.position.x += (apart.x + Math.cos(round) * circle) * loose;
+      o.position.y += ((apart.y + bob) * (1 - down) + Math.sin(round) * circle * down) * loose;
+      o.position.z += ((apart.z + Math.sin(round) * circle) * (1 - down) + lift) * loose;
       continue;
     }
     o.rotation.y = t * spin;
@@ -930,6 +965,18 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
       d.scale.set(1 - 0.4 * f, 1.5, 1 - 0.4 * f);
       d.visible = c.pose !== 'lie';
     });
+  }
+  if (rig.phone && visual === 'neck') {
+    // as big as their chest, or small in the lap sitting, held by its near end
+    const size = c.pose === 'sit' ? LAP_PHONE : GIANT_PHONE;
+    rig.phone.scale.setScalar(size);
+    rig.phone.position.y = (rig.phone.userData.hand as number) - PHONE_OUT * size;
+  }
+  if (rig.pillow) {
+    // a symptom bigger than the head rests on the pillow lying down, on the back or face down, rather than going into
+    // it, and comes down with the head as it goes in the cure
+    const kept = !healed ? 1 : Number.isNaN(curing) ? 0 : Math.max(0, 1 - curing / CURE);
+    rig.head.position.z = c.pose === 'lie' ? (back ? 1 : -1) * rig.pillow * lying * kept : 0;
   }
   if (rig.mop) rig.mop.visible = mopping;
   if (healed && !rig.cured) showCure(rig, c, t);

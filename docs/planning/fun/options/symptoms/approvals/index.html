@@ -202,6 +202,13 @@
   .card.ref h3 {
     color: var(--muted);
   }
+  .card.pick {
+    border: 2px solid var(--accent);
+  }
+  .shot.picked img {
+    outline: 3px solid var(--accent);
+    outline-offset: -3px;
+  }
   .card.built {
     border: 2px solid var(--ok);
   }
@@ -331,7 +338,7 @@
 
 <main>
   <header>
-    <span class="eyebrow">Symptoms you can see &#183; Round 10 &#183; 27 October 2026 &#183; Cut for 0.35.0</span>
+    <span class="eyebrow">Symptoms you can see &#183; Round 12 &#183; 28 October 2026 &#183; For 0.35.0</span>
     <h1>Symptom model approvals</h1>
     <p>
       Option A, where the guest's body becomes the joke, goes in one ailment at a time, and only once you have approved
@@ -344,8 +351,23 @@
       guest; the switch for trying models out is gone from the game. Earworm 2 is still waiting on approval and stays
       out of the release, kept on the branch claude/earworm-2-proposal for a later round.
     </p>
+    <p>
+      <b>Round 11 is the review&#x27;s fixes for 0.35.0</b>, at the top: four models reworked where the game&#x27;s
+      camera showed them wrong, eight that sank into the table lying down, and two choices for sitting. Each goes in
+      only once approved by name.
+    </p>
     <ul class="summary">
-      <li><a href="#earworm">Earworm</a> <span class="status proposed">Proposed</span></li>
+      <li><a href="#r12">Round 12 &#183; Your notes on round 11</a> <span class="status approved">Approved</span></li>
+      <li><a href="#r11-scattered">Round 11 &#183; Scattered</a> <span class="status approved">Approved</span></li>
+      <li><a href="#r11-band">Round 11 &#183; Tension Headband</a> <span class="status approved">Approved</span></li>
+      <li><a href="#r11-badapple">Round 11 &#183; Bad Apple</a> <span class="status approved">Approved</span></li>
+      <li><a href="#r11-lobstered">Round 11 &#183; Lobstered</a> <span class="status approved">Approved</span></li>
+      <li><a href="#r11-lying">Round 11 &#183; Lying on a table</a> <span class="status approved">Approved</span></li>
+      <li>
+        <a href="#r11-sitting">Round 11 &#183; Sitting in a shell</a> <span class="status approved">Approved</span>
+      </li>
+      <li><a href="#r11-phone">Round 11 &#183; Text Neck, sitting</a> <span class="status approved">Approved</span></li>
+      <li><a href="#earworm">Earworm</a> <span class="status approved">Approved</span></li>
       <li><a href="#wires">Crossed Wires</a> <span class="status approved">Approved</span></li>
       <li><a href="#neck">Text Neck</a> <span class="status approved">Approved</span></li>
       <li><a href="#snowedin">Snowed In</a> <span class="status approved">Approved</span></li>
@@ -369,6 +391,21 @@
     <div class="howto history">
       <b>Decided so far</b>
       <ul>
+        <li>
+          <b>28 Oct, round 12.</b> Scattered 11, drifting apart, approved; lying down reworked to stay apart, floating
+          up off the table, and approved. Vise 2 approved, now in sight lying down. Apple 11 approved with its leaf
+          joined to the stalk and more rot, as Apple 12. Lobster 11 approved with its claws in one piece. Lying 11
+          approved for the egg and the apple core; round 10 kept lying down for Bottled Up, Glass Half Empty, Snowed In,
+          Spiritually Dehydrated, Blocked Qi and Crossed Wires. For sitting in a shell, B, cut short at the seat, chosen
+          for all three. For Text Neck sitting, B, the phone small in the lap. The old monitor&#x27;s error text plain
+          white, so the crowd draws it in a batch, approved. Scattered in the Geode: A, the pieces drawn together while
+          it is shut round them, so the head no longer pokes out of the top. Earworm 2 approved with its head joined to
+          its body, on its branch, to be built in.
+        </li>
+        <li>
+          <b>28 Oct, round 11.</b> The pre-tag review of 0.35.0 looked at every model from the game&#x27;s camera,
+          sitting and lying, and found the weak spots shown at the top; each reworked and waiting on approval by name.
+        </li>
         <li>
           <b>28 Oct, cut for 0.35.0.</b> Round 10 is the cut for release 0.35.0: the nineteen models approved by name
           ship, built in for every guest, and the ?symptoms= switch for trying models out is gone from the game. Earworm
@@ -443,11 +480,1123 @@
       model lab.
     </p>
   </header>
+  <section class="ailment r11" id="r12">
+    <div class="ail-head">
+      <h2>Round 12 · Your notes on round 11</h2>
+      <span class="status approved">Approved</span><span class="room">Round 12 · 28 October 2026</span>
+    </div>
+    <p class="said">
+      <b>Max:</b> &quot;Approve all six&quot;<span
+        >All six built in on the round 11 branch but Earworm 2, which is fixed on its own branch.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card">
+        <h3>Scattered 12 · Apart lying down</h3>
+        <p class="line">
+          Lying down the pieces stay apart and float up off the table, the head over the pillow, rather than coming
+          together or going off the end. Face down they float up off the front.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="r12-scatter-lying.webp">
+            <img
+              src="r12-scatter-lying.webp"
+              alt="On the back on a reiki table, and face down on a massage table"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>On the back on a reiki table, and face down on a massage table</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Vise 2 · Round 12, in sight lying down</h3>
+        <p class="line">
+          No longer put away lying down: with its frame down the side of the head since round 11, it lies flat beside
+          the head on the table, nothing of it lower than the head.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="r12-clamp-lying.webp">
+            <img
+              src="r12-clamp-lying.webp"
+              alt="On the back on a reiki table, and face down on a massage table"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>On the back on a reiki table, and face down on a massage table</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Apple 12 · Joined and rotting</h3>
+        <p class="line">
+          The leaf grows out of the side of the stalk instead of floating off its top, the stalk sunk deeper in the
+          core; the red gone browner, the flesh yellower, and six patches of rot, drawn with the pips at no cost in draw
+          calls.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="r12-apple.webp">
+            <img
+              src="r12-apple.webp"
+              alt="Before and after, close up; after from the game camera, the side, above, sitting and lying"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>
+            Before and after, close up; after from the game camera, the side, above, sitting and lying
+          </figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Lobster 1 · Round 12, claws in one piece</h3>
+        <p class="line">
+          The outer finger of each claw ran off the end of its base, its tip 7 cm across from where the base ended. It
+          now runs on from the base and curves in, both fingers with a rounded knuckle.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="r12-lobster-claws.webp">
+            <img
+              src="r12-lobster-claws.webp"
+              alt="Before and after, close up, and after from the game camera"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>Before and after, close up, and after from the game camera</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Lying · Round 10 again for six</h3>
+        <p class="line">
+          Back as round 10 had them lying down: the bottle, the tumbler, the snow globe, the cactus pot, the storm cloud
+          with its lightning, and the crossed wires. The egg and the apple core keep round 11, on the pillow.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="r12-lying-r10.webp">
+            <img src="r12-lying-r10.webp" alt="On the back on a reiki table, from the game camera" loading="lazy" />
+          </button>
+          <figcaption>On the back on a reiki table, from the game camera</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Earworm 2 · Joined</h3>
+        <p class="line">
+          The worm’s head sits on the end of its body, over its open end, and its tail starts inside the headphone cup.
+          On the branch claude/earworm-2-proposal; approved, still to be built in.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="r12-earworm.webp">
+            <img
+              src="r12-earworm.webp"
+              alt="Before and after, close up, and after from the front, the game camera and the side"
+              loading="lazy"
+            />
+          </button>
+          <figcaption>Before and after, close up, and after from the front, the game camera and the side</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-scattered">
+    <div class="ail-head">
+      <h2>Scattered</h2>
+      <span class="status approved">Approved</span
+      ><span class="room">Round 11 · Treated with Crystal Gathering (crystals)</span>
+    </div>
+    <p class="said">
+      <b></b
+      ><span
+        >From the game camera the pieces closed up and read as a long neck. Approve &quot;scattered 11&quot; by name, or
+        say what to change.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card ref">
+        <h3>Round 10 · Built in</h3>
+        <p class="line">
+          The head a hand’s width over the shoulders and the body over the legs, floating straight up: from above the
+          gaps close.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="pieces-front.webp">
+              <img src="pieces-front.webp" alt="Round 10 · Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="pieces-side.webp">
+              <img src="pieces-side.webp" alt="Round 10 · Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r72-full.webp">
+              <img src="pieces-play.webp" alt="Round 10 · Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Scattered 1 · Round 11, drifting apart</h3>
+        <p class="line">
+          The head floats well clear of the shoulders and the body over the legs, each pushed off to one side and
+          forward and drifting round in a slow circle, the head one way as the body goes the other, so daylight shows
+          between them from the game’s camera at any turn. The cure eases them back together over the puff instead of in
+          one frame.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="scatter11-front.webp">
+              <img
+                src="scatter11-front.webp"
+                alt="Scattered 1 · Round 11, drifting apart, from the front"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="scatter11-side.webp">
+              <img
+                src="scatter11-side.webp"
+                alt="Scattered 1 · Round 11, drifting apart, from the side"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="scatter11-game.webp">
+              <img
+                src="scatter11-game.webp"
+                alt="Scattered 1 · Round 11, drifting apart, from the game&#x27;s angle"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>The game&#x27;s angle</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="scatter11-top.webp">
+              <img src="scatter11-top.webp" alt="Scattered 1 · Round 11, drifting apart, from above" loading="lazy" />
+            </button>
+            <figcaption>From above</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11a-full.webp">
+              <img src="scatter11-play.webp" alt="Scattered 1 · Round 11, drifting apart at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <div class="walks">
+            <button type="button" class="shot" data-full="scatter11-anim-front.webp">
+              <img
+                src="scatter11-anim-front.webp"
+                alt="Scattered 1 · Round 11, drifting apart drifting, from the front"
+                loading="lazy"
+              /></button
+            ><button type="button" class="shot" data-full="scatter11-anim-game.webp">
+              <img
+                src="scatter11-anim-game.webp"
+                alt="Scattered 1 · Round 11, drifting apart drifting, from the game&#x27;s angle"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>Drifting, over six seconds: from the front and from the game’s angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="scatter11-cure.webp">
+            <img src="scatter11-cure.webp" alt="Scattered 1 · Round 11, drifting apart cured" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, three moments of the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Round 11 · Sitting and lying</h3>
+        <p class="line">
+          Sitting, they float apart as standing; lying down they come together to lie on what they lie on, as before.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="scatter11-lab-sit.webp">
+            <img src="scatter11-lab-sit.webp" alt="Seated, in the lab, from the game&#x27;s angle" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab, from the game&#x27;s angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="scatter11-lab-lie.webp">
+            <img src="scatter11-lab-lie.webp" alt="Lying, in the lab: back together" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: back together</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-band">
+    <div class="ail-head">
+      <h2>Tension Headband</h2>
+      <span class="status approved">Approved</span><span class="room">Round 11 · Treated with Swedish Unwinding</span>
+    </div>
+    <p class="said">
+      <b></b
+      ><span
+        >From above the clamp was a red stick, its frame hidden behind the head. Approve &quot;clamp 11&quot; by name,
+        or say what to change.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card ref">
+        <h3>Round 10 · Built in</h3>
+        <p class="line">
+          The frame down behind the head to the back of the neck: from the game camera only the screw shows over the
+          hair.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="clamp-front.webp">
+              <img src="clamp-front.webp" alt="Round 10 · Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="clamp-side.webp">
+              <img src="clamp-side.webp" alt="Round 10 · Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r9b-full.webp">
+              <img src="clamp-play.webp" alt="Round 10 · Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Vise 2 · Round 11, turned to the side</h3>
+        <p class="line">
+          The same red G-clamp, turned a quarter so its frame comes down the left side of the head, where the game’s
+          camera sees the whole G, and rests on the shoulder, clear of the face. Still put away lying down.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="clamp11-front.webp">
+              <img
+                src="clamp11-front.webp"
+                alt="Vise 2 · Round 11, turned to the side, from the front"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="clamp11-side.webp">
+              <img src="clamp11-side.webp" alt="Vise 2 · Round 11, turned to the side, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="clamp11-game.webp">
+              <img
+                src="clamp11-game.webp"
+                alt="Vise 2 · Round 11, turned to the side, from the game&#x27;s angle"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>The game&#x27;s angle</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="clamp11-top.webp">
+              <img src="clamp11-top.webp" alt="Vise 2 · Round 11, turned to the side, from above" loading="lazy" />
+            </button>
+            <figcaption>From above</figcaption>
+          </figure>
+        </div>
+        <figure>
+          <button type="button" class="shot" data-full="clamp11-head.webp">
+            <img src="clamp11-head.webp" alt="Close in, from the front and to one side" loading="lazy" />
+          </button>
+          <figcaption>Close in, from the front and to one side</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11a-full.webp">
+              <img src="clamp11-play.webp" alt="Vise 2 · Round 11, turned to the side at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="clamp11-cure.webp">
+            <img src="clamp11-cure.webp" alt="Vise 2 · Round 11, turned to the side cured" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Round 11 · Sitting and lying</h3>
+        <p class="line">Seated it shows as standing; lying down it is put away, as before.</p>
+        <figure>
+          <button type="button" class="shot" data-full="clamp11-lab-sit.webp">
+            <img src="clamp11-lab-sit.webp" alt="Seated, in the lab, from the game&#x27;s angle" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab, from the game&#x27;s angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="clamp11-lab-lie.webp">
+            <img src="clamp11-lab-lie.webp" alt="Lying, in the lab: the clamp put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: the clamp put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-badapple">
+    <div class="ail-head">
+      <h2>Bad Apple</h2>
+      <span class="status approved">Approved</span><span class="room">Round 11 · Treated with Pressing of Rebirth</span>
+    </div>
+    <p class="said">
+      <b></b
+      ><span
+        >The pips beside the eyes read as more eyes, and the top hid the face from above. Approve &quot;apple 11&quot;
+        by name, or say what to change.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card ref">
+        <h3>Round 10 · Built in</h3>
+        <p class="line">Pips on the bitten middle either side of the face, and a wide red top over it.</p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="core-front.webp">
+              <img src="core-front.webp" alt="Round 10 · Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="core-side.webp">
+              <img src="core-side.webp" alt="Round 10 · Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r9b-full.webp">
+              <img src="core-play.webp" alt="Round 10 · Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Apple 2 · Round 11, pips moved, top trimmed</h3>
+        <p class="line">
+          The pips moved round to the sides and back, below the eyes and drawn long like seeds, so they no longer read
+          as eyes; the red top made narrower and lower over the bite, so the face shows under it from the game’s camera.
+          Lying down, the core rests on the pillow rather than in it.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="core11-front.webp">
+              <img
+                src="core11-front.webp"
+                alt="Apple 2 · Round 11, pips moved, top trimmed, from the front"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="core11-side.webp">
+              <img
+                src="core11-side.webp"
+                alt="Apple 2 · Round 11, pips moved, top trimmed, from the side"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="core11-game.webp">
+              <img
+                src="core11-game.webp"
+                alt="Apple 2 · Round 11, pips moved, top trimmed, from the game&#x27;s angle"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>The game&#x27;s angle</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="core11-top.webp">
+              <img src="core11-top.webp" alt="Apple 2 · Round 11, pips moved, top trimmed, from above" loading="lazy" />
+            </button>
+            <figcaption>From above</figcaption>
+          </figure>
+        </div>
+        <figure>
+          <button type="button" class="shot" data-full="core11-head.webp">
+            <img src="core11-head.webp" alt="Close in, from the front and to one side" loading="lazy" />
+          </button>
+          <figcaption>Close in, from the front and to one side</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11a-full.webp">
+              <img
+                src="core11-play.webp"
+                alt="Apple 2 · Round 11, pips moved, top trimmed at play size"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="core11-cure.webp">
+            <img src="core11-cure.webp" alt="Apple 2 · Round 11, pips moved, top trimmed cured" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Round 11 · Sitting and lying</h3>
+        <p class="line">Seated as standing; lying on a reiki table the core sits on the pillow.</p>
+        <figure>
+          <button type="button" class="shot" data-full="core11-lab-sit.webp">
+            <img src="core11-lab-sit.webp" alt="Seated, in the lab, from the game&#x27;s angle" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab, from the game&#x27;s angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-core.webp">
+            <img src="lie11-core.webp" alt="On a table, round 10 against round 11" loading="lazy" />
+          </button>
+          <figcaption>On a table, round 10 against round 11</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-lobstered">
+    <div class="ail-head">
+      <h2>Lobstered</h2>
+      <span class="status approved">Approved</span><span class="room">Round 11 · Treated with Swedish Cool-down</span>
+    </div>
+    <p class="said">
+      <b></b
+      ><span
+        >The feelers crossed the face from the game camera. Approve &quot;lobster 11&quot; by name, or say what to
+        change.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card ref">
+        <h3>Round 10 · Built in</h3>
+        <p class="line">
+          Feelers rising forward off the forehead before sweeping back, the short pair out over the sunglasses.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="lobster-front.webp">
+              <img src="lobster-front.webp" alt="Round 10 · Built in, from the front" loading="lazy" />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="lobster-side.webp">
+              <img src="lobster-side.webp" alt="Round 10 · Built in, from the side" loading="lazy" />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+        </div>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r10b-full.webp">
+              <img src="lobster-play.webp" alt="Round 10 · Built in at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Lobster 1 · Round 11, feelers swept back</h3>
+        <p class="line">
+          The long feelers rise straight up off the forehead and sweep back over the head from there, and the short pair
+          stands up off the hairline instead of out over the face, so nothing crosses the face from the game’s camera.
+        </p>
+        <div class="views">
+          <figure>
+            <button type="button" class="shot" data-full="lobster11-front.webp">
+              <img
+                src="lobster11-front.webp"
+                alt="Lobster 1 · Round 11, feelers swept back, from the front"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Front</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="lobster11-side.webp">
+              <img
+                src="lobster11-side.webp"
+                alt="Lobster 1 · Round 11, feelers swept back, from the side"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>Side</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="lobster11-game.webp">
+              <img
+                src="lobster11-game.webp"
+                alt="Lobster 1 · Round 11, feelers swept back, from the game&#x27;s angle"
+                loading="lazy"
+              />
+            </button>
+            <figcaption>The game&#x27;s angle</figcaption>
+          </figure>
+          <figure>
+            <button type="button" class="shot" data-full="lobster11-top.webp">
+              <img src="lobster11-top.webp" alt="Lobster 1 · Round 11, feelers swept back, from above" loading="lazy" />
+            </button>
+            <figcaption>From above</figcaption>
+          </figure>
+        </div>
+        <figure>
+          <button type="button" class="shot" data-full="lobster11-head.webp">
+            <img src="lobster11-head.webp" alt="Close in, from the front and to one side" loading="lazy" />
+          </button>
+          <figcaption>Close in, from the front and to one side</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11a-full.webp">
+              <img
+                src="lobster11-play.webp"
+                alt="Lobster 1 · Round 11, feelers swept back at play size"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot cure" data-full="lobster11-cure.webp">
+            <img src="lobster11-cure.webp" alt="Lobster 1 · Round 11, feelers swept back cured" loading="lazy" />
+          </button>
+          <figcaption>The cure: before, in the puff, after</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Round 11 · Sitting and lying</h3>
+        <p class="line">Seated as standing; lying down the feelers are put away, as before.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lobster11-lab-sit.webp">
+            <img src="lobster11-lab-sit.webp" alt="Seated, in the lab, from the game&#x27;s angle" loading="lazy" />
+          </button>
+          <figcaption>Seated, in the lab, from the game&#x27;s angle</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="lobster11-lab-lie.webp">
+            <img src="lobster11-lab-lie.webp" alt="Lying, in the lab: feelers put away" loading="lazy" />
+          </button>
+          <figcaption>Lying, in the lab: feelers put away</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-lying">
+    <div class="ail-head">
+      <h2>Lying on a table</h2>
+      <span class="status approved">Approved</span
+      ><span class="room">Round 11 · Eight models that sank into the table</span>
+    </div>
+    <p class="said">
+      <b></b
+      ><span
+        >Each picture: round 10 on the left, round 11 on the right; on the back on a reiki table from the game’s angle,
+        then face down on a massage table from the side. Approve &quot;lying 11&quot; for all eight, or name the ones to
+        change.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card">
+        <h3>Bottled Up · Round 11</h3>
+        <p class="line">The bottle put away lying down, as the office chair is: it went 8 to 12 cm into the table.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-bottle.webp">
+            <img src="lie11-bottle.webp" alt="Bottled Up lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Glass Half Empty · Round 11</h3>
+        <p class="line">The tumbler put away lying down, the same.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-tumbler.webp">
+            <img src="lie11-tumbler.webp" alt="Glass Half Empty lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Snowed In · Round 11</h3>
+        <p class="line">The snow globe put away lying down, the same: the guest lies there plain until they get up.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-globe.webp">
+            <img src="lie11-globe.webp" alt="Snowed In lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Spiritually Dehydrated · Round 11</h3>
+        <p class="line">The pot put away lying down; the cactus head and the green shirt stay.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-cactus.webp">
+            <img src="lie11-cactus.webp" alt="Spiritually Dehydrated lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Blocked Qi · Round 11</h3>
+        <p class="line">The storm cloud put away lying down, its lightning stopped as its rain already was.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-storm.webp">
+            <img src="lie11-storm.webp" alt="Blocked Qi lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Scrambled Noggin · Round 11</h3>
+        <p class="line">The egg lifted onto the pillow, on the back or face down, rather than sunk into it.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-egg.webp">
+            <img src="lie11-egg.webp" alt="Scrambled Noggin lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Bad Apple · Round 11</h3>
+        <p class="line">The core lifted onto the pillow, the same.</p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-core.webp">
+            <img src="lie11-core.webp" alt="Bad Apple lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Crossed Wires · Round 11</h3>
+        <p class="line">
+          The cable and cord flattened against the body lying down, so they lie on the table rather than through it.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="lie11-plug.webp">
+            <img src="lie11-plug.webp" alt="Crossed Wires lying, round 10 and round 11" loading="lazy" />
+          </button>
+          <figcaption>Round 10 left, round 11 right</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-sitting">
+    <div class="ail-head">
+      <h2>Sitting in a shell</h2>
+      <span class="status approved">Approved</span
+      ><span class="room">Round 11 · A choice: put it away, or cut it short</span>
+    </div>
+    <p class="said">
+      <b></b
+      ><span
+        >A sitting bottle, tumbler or cactus guest’s shell went down through the bench. Choose A or B for all three,
+        such as &quot;shells B&quot;.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card ref">
+        <h3>Bottled Up · Round 10</h3>
+        <p class="line">The shell goes down through the bench and the chair.</p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-bottle-r10-bench.webp">
+            <img src="seat11-bottle-r10-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-bottle-r10-desk.webp">
+            <img src="seat11-bottle-r10-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Bottled Up · A: put away</h3>
+        <p class="line">
+          Put away while they sit, as the office chair is: a bottled guest waiting on a bench looks like anyone.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-bottle-a-bench.webp">
+            <img src="seat11-bottle-a-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-bottle-a-benchside.webp">
+            <img src="seat11-bottle-a-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-bottle-a-desk.webp">
+            <img src="seat11-bottle-a-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11b-full.webp">
+              <img src="seat11-bottle-play-a.webp" alt="Bottled Up, A: put away at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card pick">
+        <h3>Bottled Up · B: cut short · recommended</h3>
+        <p class="line">
+          Cut off at the seat while they sit: the bottle stands on the bench round them, the knees out of the front.
+        </p>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-bottle-b-bench.webp">
+            <img src="seat11-bottle-b-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-bottle-b-benchside.webp">
+            <img src="seat11-bottle-b-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-bottle-b-desk.webp">
+            <img src="seat11-bottle-b-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11c-full.webp">
+              <img src="seat11-bottle-play-b.webp" alt="Bottled Up, B: cut short at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card ref">
+        <h3>Glass Half Empty · Round 10</h3>
+        <p class="line">The shell goes down through the bench and the chair.</p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-tumbler-r10-bench.webp">
+            <img src="seat11-tumbler-r10-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-tumbler-r10-desk.webp">
+            <img src="seat11-tumbler-r10-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Glass Half Empty · A: put away</h3>
+        <p class="line">Put away while they sit, the same.</p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-tumbler-a-bench.webp">
+            <img src="seat11-tumbler-a-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-tumbler-a-benchside.webp">
+            <img src="seat11-tumbler-a-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-tumbler-a-desk.webp">
+            <img src="seat11-tumbler-a-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11b-full.webp">
+              <img src="seat11-tumbler-play-a.webp" alt="Glass Half Empty, A: put away at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card pick">
+        <h3>Glass Half Empty · B: cut short · recommended</h3>
+        <p class="line">Cut off at the seat while they sit, the water with it.</p>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-tumbler-b-bench.webp">
+            <img src="seat11-tumbler-b-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-tumbler-b-benchside.webp">
+            <img src="seat11-tumbler-b-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-tumbler-b-desk.webp">
+            <img src="seat11-tumbler-b-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11c-full.webp">
+              <img src="seat11-tumbler-play-b.webp" alt="Glass Half Empty, B: cut short at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card ref">
+        <h3>Spiritually Dehydrated · Round 10</h3>
+        <p class="line">The shell goes down through the bench and the chair.</p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-cactus-r10-bench.webp">
+            <img src="seat11-cactus-r10-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-cactus-r10-desk.webp">
+            <img src="seat11-cactus-r10-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Spiritually Dehydrated · A: put away</h3>
+        <p class="line">
+          The pot put away while they sit, the legs out along the seat; the cactus head and green shirt stay.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-cactus-a-bench.webp">
+            <img src="seat11-cactus-a-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-cactus-a-benchside.webp">
+            <img src="seat11-cactus-a-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-cactus-a-desk.webp">
+            <img src="seat11-cactus-a-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11b-full.webp">
+              <img
+                src="seat11-cactus-play-a.webp"
+                alt="Spiritually Dehydrated, A: put away at play size"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card pick">
+        <h3>Spiritually Dehydrated · B: cut short · recommended</h3>
+        <p class="line">
+          The pot cut down to its rim at the seat, a collar round the hips, the legs out along the seat.
+        </p>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-cactus-b-bench.webp">
+            <img src="seat11-cactus-b-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-cactus-b-benchside.webp">
+            <img src="seat11-cactus-b-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-cactus-b-desk.webp">
+            <img src="seat11-cactus-b-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11c-full.webp">
+              <img
+                src="seat11-cactus-play-b.webp"
+                alt="Spiritually Dehydrated, B: cut short at play size"
+                loading="lazy"
+              />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-phone">
+    <div class="ail-head">
+      <h2>Text Neck, sitting</h2>
+      <span class="status approved">Approved</span
+      ><span class="room">Round 11 · A choice: put it away, or hold it small</span>
+    </div>
+    <p class="said">
+      <b></b
+      ><span
+        >The giant phone stuck half a meter into desks and the next guest. Choose A or B, such as &quot;phone
+        B&quot;.</span
+      >
+    </p>
+    <div class="cards">
+      <article class="card ref">
+        <h3>Text Neck · Round 10</h3>
+        <p class="line">The shell goes down through the bench and the chair.</p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-phone-r10-bench.webp">
+            <img src="seat11-phone-r10-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-phone-r10-desk.webp">
+            <img src="seat11-phone-r10-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>Text Neck · A: put away</h3>
+        <p class="line">Put away while they sit, as lying down: they still sit bowed over where it was.</p>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-phone-a-bench.webp">
+            <img src="seat11-phone-a-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-phone-a-benchside.webp">
+            <img src="seat11-phone-a-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="seat11-phone-a-desk.webp">
+            <img src="seat11-phone-a-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11b-full.webp">
+              <img src="seat11-phone-play-a.webp" alt="Text Neck, A: put away at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+      <article class="card pick">
+        <h3>Text Neck · B: small in the lap · recommended</h3>
+        <p class="line">
+          Held small, the size of a real phone, over the lap, head bowed to it; giant again once they stand.
+        </p>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-phone-b-bench.webp">
+            <img src="seat11-phone-b-bench.webp" alt="On a bench" loading="lazy" />
+          </button>
+          <figcaption>On a bench</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-phone-b-benchside.webp">
+            <img src="seat11-phone-b-benchside.webp" alt="On a bench, from the side" loading="lazy" />
+          </button>
+          <figcaption>On a bench, from the side</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot picked" data-full="seat11-phone-b-desk.webp">
+            <img src="seat11-phone-b-desk.webp" alt="At a desk" loading="lazy" />
+          </button>
+          <figcaption>At a desk</figcaption>
+        </figure>
+        <figure class="play">
+          <div class="play-pair">
+            <button type="button" class="shot native" data-full="corridor-r11c-full.webp">
+              <img src="seat11-phone-play-b.webp" alt="Text Neck, B: small in the lap at play size" loading="lazy" />
+            </button>
+          </div>
+          <figcaption>At play size, in real pixels. Click for the whole screen.</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+  <section class="ailment r11" id="r11-notes">
+    <div class="ail-head"><h2>Also in round 11</h2></div>
+    <div class="cards">
+      <article class="card">
+        <h3>Draw calls</h3>
+        <p class="line">
+          The bottle’s four see-through parts are now one shape, and the tumbler’s glass one with the water its own: 5
+          draw calls fewer, the catalog at 3885 of its 3900 budget instead of 3890. The monitor’s error text is plain
+          white, so the crowd draws it in a batch: only the screen draws on its own now. Approved.
+        </p>
+        <figure>
+          <button type="button" class="shot" data-full="crt11-head.webp">
+            <img src="crt11-head.webp" alt="The old monitor, its error text plain white" loading="lazy" />
+          </button>
+          <figcaption>The old monitor, its error text plain white</figcaption>
+        </figure>
+      </article>
+      <article class="card">
+        <h3>The lab</h3>
+        <p class="line">
+          A guest’s Healed setting now works from the address, &amp;healed=1, as it did not before; &amp;pose=sit or
+          &amp;pose=lie poses a guest, and a guest seated or lying on an item takes an &amp;ailment, so these sheets are
+          scripted.
+        </p>
+      </article>
+    </div>
+  </section>
 
   <section class="ailment" id="earworm">
     <div class="ail-head">
       <h2>Earworm</h2>
-      <span class="status proposed">Proposed</span>
+      <span class="status approved">Approved</span>
       <span class="room">Treated with Fork Eviction</span>
     </div>
     <p class="said">

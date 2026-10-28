@@ -66,6 +66,13 @@ export interface CharRig {
   orbit?: THREE.Group;
   /** Drops of water falling off a wet blanket, each from where it starts. */
   drips?: THREE.Group;
+  /** The phone as big as their chest that someone with text neck holds, which they put away or hold small to sit. */
+  phone?: THREE.Group;
+  /**
+   * How far a symptom standing in for the head reaches past the head behind and in front, in meters: the head is
+   * raised that far off what they lie on, so it lies on the pillow rather than in it (see `pose`).
+   */
+  pillow?: number;
   /** Something that hovers over the head and bobs gently, and how high it hovers. */
   bob?: THREE.Object3D;
   bobAt: number;
@@ -152,7 +159,10 @@ export const CAP_TIP = -0.38;
 const HEN_SIZE = 1.7;
 
 /** How many times the size of a phone in the hand someone with text neck holds theirs: as big as their chest. */
-const GIANT_PHONE = 2.8;
+export const GIANT_PHONE = 2.8;
+
+/** How far out along the forearm past the hand the middle of a phone held in it is, in meters, for each time its size. */
+export const PHONE_OUT = 0.6 / GIANT_PHONE;
 
 /**
  * A ram's horn on one side of the head: rooted on top, curling back, down round the ear and forward again, thick at the
@@ -815,12 +825,15 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     // held by its near end on the hand, on the thumb's side, which faces up with the forearm raised, the screen tipped
     // to the face: out past the hand and a little down, so it is clear of the chest and shoulder and below the face
     phone.scale.setScalar(GIANT_PHONE);
-    phone.position.set(0, -0.6 + handUp, -0.032);
+    phone.userData.hand = handUp;
+    phone.position.set(0, handUp - PHONE_OUT * GIANT_PHONE, -0.032);
     phone.rotation.x = 0.45;
     phone.name = 'phone';
     holdR.add(phone);
-    // put away while they lie down, where it would stick out over the edge of whatever they lie on
+    // put away while they lie down, where it would stick out over the edge of whatever they lie on; sitting, it is held
+    // small in the lap, clear of a desk or the next guest (see `pose`)
     upright(rig, phone);
+    rig.phone = phone;
     rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
@@ -921,6 +934,11 @@ export function cureRig(rig: CharRig, t: number) {
  */
 export function endCure(rig: CharRig, look: Look) {
   rig.cured = true;
+  // the pieces of someone scattered, home and left to the rest of the pose
+  if (rig.spin) {
+    for (const o of rig.spin) if (o.userData.drift) o.position.copy(o.userData.home as THREE.Vector3);
+    rig.spin = rig.spin.filter((o) => !o.userData.drift);
+  }
   rig.props.forEach((o, i) => {
     o.visible = false;
     const rest = rig.rest?.[i];
