@@ -70,7 +70,7 @@ export const GEODE: GagScript = {
     f.parts.left = { ry: 0.55 * (1 - shut) };
     f.parts.right = { ry: -0.55 * (1 - shut) };
     // someone scattered drawn together while it is shut, so no piece of them pokes out of the top
-    f.guest.gather = shut;
+    if (shut > 0) f.guest.gather = shut;
     f.shine = i.down ? 0 : 0.3 + 1.6 * bump(p, 0.15, 0.9);
     f.emit.sparkle = within(p, 0.25, 0.85) ? 1 : 0;
     return f;
