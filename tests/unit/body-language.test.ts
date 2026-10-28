@@ -777,7 +777,7 @@ describe('a symptom in place of the head', () => {
     expect(buildCharacter(LAB_LOOK).bubbleAt).toBe(BUBBLE_STANDING);
   });
 
-  it("screws a tension headband's head down in a G-clamp, squashed under it, put away while they lie down", () => {
+  it("screws a tension headband's head down in a G-clamp, squashed under it, lying flat beside it lying down", () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'band');
     expect(shown(rig.headMesh)).toBe(true);
     expect(rig.head.scale.y).toBeLessThan(1);
@@ -789,10 +789,14 @@ describe('a symptom in place of the head', () => {
     const size = new THREE.Vector3();
     clamp.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), size);
     expect(size.y).toBeCloseTo(size.x);
-    poseChar(rig, { ...demoGuest(LAB_LOOK, 'band'), pose: 'lie' }, 0, 1, { style: null });
-    expect(clamp.visible).toBe(false);
-    poseChar(rig, demoGuest(LAB_LOOK, 'band'), 1, 1, { style: null });
-    expect(clamp.visible).toBe(true);
+    for (const lie of ['back', 'prone'] as const) {
+      poseChar(rig, { ...demoGuest(LAB_LOOK, 'band'), pose: 'lie', h: 0.6 }, 0, 1, { style: null, lie, lying: 1 });
+      rig.group.updateMatrixWorld(true);
+      expect(shown(clamp), lie).toBe(true);
+      // no lower than the head lying on what they lie on, so it never goes into it
+      const under = new THREE.Box3().setFromObject(rig.headMesh).min.y;
+      expect(new THREE.Box3().setFromObject(clamp).min.y, lie).toBeGreaterThan(under);
+    }
   });
 
   it("makes a bad apple's head an apple core, the face on it and flies going round", () => {

@@ -376,8 +376,8 @@ export function upright(rig: CharRig, o: THREE.Object3D) {
 
 /**
  * A tension headband: a red G-clamp screwed down on the crown, its frame down the left side of the head, where the
- * game's camera sees it, clear of the face, to rest on the shoulder, the head squashed short and wide under it. Put
- * away while they lie down, as its frame would go through the table.
+ * game's camera sees it, clear of the face, to rest on the shoulder, the head squashed short and wide under it. Lying
+ * down, the frame lies flat beside the head, on what they lie on.
  */
 function gClamp(rig: CharRig) {
   const g = new THREE.Group();
@@ -409,7 +409,6 @@ function gClamp(rig: CharRig) {
   // the head is squeezed, not the clamp, nor widened by the build the body is
   const s = rig.head.scale;
   g.scale.set(1 / (s.x * rig.wide), 1 / s.y, 1 / (s.z * rig.wide));
-  upright(rig, g);
   props(rig, g);
   rig.head.add(g);
 }
