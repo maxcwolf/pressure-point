@@ -1,7 +1,8 @@
 // The model lab: a page for the dev server only, to look at any of the game's models on its own.
 // Open /lab.html, or /lab.html?model=item:bench for one model. Add &still to stop everything moving, for pictures,
 // and &view=head (or front, side, top) to start from another angle. Any of the model's settings can be given too, by
-// the name it is kept under, such as &wear=85 or &inUse=1.
+// the name it is kept under, such as &wear=85 or &inUse=1, a guest's &pose=sit or &healed=1, or the &ailment of the
+// guest lying on a table.
 import '@fontsource/fredoka/latin-400.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
@@ -309,21 +310,27 @@ function fillPanel(panel: HTMLElement, controls: readonly Control[], changed: (r
   if (!controls.length) panel.append(el('p', noneStyle, 'Nothing to change on this one.'));
 }
 
-/** Set the model's settings to any given in the address, for the first model shown. */
+/**
+ * Set the model's settings to any given in the address, for the first model shown, and say whether one of them is a
+ * setting the model is built with, so it must be built again for it to show.
+ */
 function settingsFromAddress(controls: readonly Control[]) {
+  let built = false;
   for (const c of controls) {
     if (c.kind === 'button') continue;
     const value = params.get(c.key);
     if (value === null) continue;
     c.of[c.key] = c.kind === 'range' ? Number(value) : c.kind === 'toggle' ? value !== '0' && value !== 'false' : value;
+    built ||= c.rebuild;
   }
+  return built;
 }
 
 let fromAddress = true;
 /** Build the model on show afresh, with the settings it was left at, and put it on the stage. */
 function rebuild(reframe: boolean) {
   model = current.build();
-  if (fromAddress) settingsFromAddress(model.controls);
+  if (fromAddress && settingsFromAddress(model.controls)) model = current.build();
   fromAddress = false;
   stage.show(model, current.footprint);
   fillPanel(modelPanel, model.controls, (again) => {
