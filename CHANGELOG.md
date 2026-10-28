@@ -22,7 +22,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Blue Screen, crashed.** A guest with Blue Screen now has an old beige monitor for a head, their face on its blue screen over a line of error text.
 - **Chair-Shaped, with the chair.** A Chair-Shaped guest now has a whole office chair stuck to them, carried about on their own bent legs. It is put away while they sit or lie on something real.
 - **Crossed Wires, plugged in.** A guest with Crossed Wires now has a white wall plug for a head, its black cable and an orange extension cord wound round and round them.
-- **Text Neck, the giant phone.** A guest with Text Neck now holds a phone as big as their chest out in front of them, their head still bent over it. It is put away while they sit or lie down.
+- **Text Neck, the giant phone.** A guest with Text Neck now holds a phone as big as their chest out in front of them, their head still bent over it. Sitting, they hold it small in their lap, and it is put away while they lie down.
 - **Snowed In, in a snow globe.** A Snowed In guest now stands in a snow globe, the snow heaped up inside it to their nose and the flakes swirling over it.
 - **Lobstered, all the way.** A Lobstered guest now has a big crusher claw for each hand and two long feelers sweeping back over their head, still lobster red behind the sunglasses.
 

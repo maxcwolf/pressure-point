@@ -1367,13 +1367,22 @@ describe('symptoms where they are: round 11', () => {
     }
   });
 
-  it('puts the giant phone away while they sit, where it would go into a desk or the next guest', () => {
+  it('holds the giant phone small in the lap while they sit, clear of a desk or the next guest', () => {
     const rig = buildCharacter(LAB_LOOK, undefined, 'neck');
     const g = demoGuest(LAB_LOOK, 'neck');
-    poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 1, 1, { style: null });
-    expect(rig.phone!.visible).toBe(false);
+    /** How far the phone reaches out in front of them, in meters. */
+    const reach = () => {
+      rig.group.updateMatrixWorld(true);
+      return new THREE.Box3().setFromObject(rig.phone!).max.z - rig.group.position.z;
+    };
     pose(rig, g, 2);
+    const standing = { size: rig.phone!.scale.x, reach: reach() };
+    poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 1, 1, { style: null });
     expect(rig.phone!.visible).toBe(true);
+    expect(rig.phone!.scale.x).toBeLessThan(standing.size / 2);
+    expect(reach()).toBeLessThan(standing.reach);
+    pose(rig, g, 3);
+    expect(rig.phone!.scale.x).toBe(standing.size);
   });
 
   it('cuts a bottle, a tumbler or a pot short at the seat while they sit, rather than down through it', () => {

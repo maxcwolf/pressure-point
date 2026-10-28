@@ -49,7 +49,6 @@ import {
   trimShadows,
 } from './parts';
 import { buildSage, buildSmoke } from './sage';
-import { CHOICES } from './symptom-choices';
 
 export interface CharRig {
   group: THREE.Group;
@@ -831,9 +830,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     phone.rotation.x = 0.45;
     phone.name = 'phone';
     holdR.add(phone);
-    // put away while they lie down, where it would stick out over the edge of whatever they lie on, and while they sit,
-    // where it would go into a desk or the next guest, unless held small in the lap there (see `pose`)
-    if (CHOICES.phone === 'away') phone.userData.standing = true;
+    // put away while they lie down, where it would stick out over the edge of whatever they lie on; sitting, it is held
+    // small in the lap, clear of a desk or the next guest (see `pose`)
     upright(rig, phone);
     rig.phone = phone;
     rig.props.push(phone);

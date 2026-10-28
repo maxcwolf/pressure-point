@@ -41,7 +41,6 @@ import { blob } from './models/items/machine-kit';
 import { mat } from './models/parts';
 import { driftSmoke } from './models/sage';
 import { buildSoles } from './models/soles';
-import { CHOICES } from './models/symptom-choices';
 
 /**
  * A hip's rotation that points its thigh along `along` and turns it on its own length so the knee hinges about
@@ -444,8 +443,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   let side = 0;
   /** Whether they sit on the floor rather than a seat. */
   const onFloor = c.pose === 'sit' && c.h < SIT.floor;
-  /** Whether someone with text neck has their phone out: not lying down, nor sitting if they put it away to sit. */
-  const phoneOut = visual === 'neck' && c.pose !== 'lie' && !(c.pose === 'sit' && CHOICES.phone === 'away');
+  /** Whether someone with text neck has their phone out: not lying down, and small in the lap sitting. */
+  const phoneOut = visual === 'neck' && c.pose !== 'lie';
   if (c.pose === 'walk') {
     const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
     legL = sw;
@@ -969,7 +968,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   }
   if (rig.phone && visual === 'neck') {
     // as big as their chest, or small in the lap sitting, held by its near end
-    const size = c.pose === 'sit' && CHOICES.phone === 'lap' ? LAP_PHONE : GIANT_PHONE;
+    const size = c.pose === 'sit' ? LAP_PHONE : GIANT_PHONE;
     rig.phone.scale.setScalar(size);
     rig.phone.position.y = (rig.phone.userData.hand as number) - PHONE_OUT * size;
   }
