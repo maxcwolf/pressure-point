@@ -70,8 +70,8 @@ export function QuirkChips({ traits, spell = false }: { traits: readonly TraitId
       {ordered.map((t) => (
         <div key={t} class="quirk-line">
           <Chip id={t} />
-          {/* the dot is kept with the word, so neither starts a line alone */}
-          {traitOf(t).rare && <span class={rareWord}>{'rare · '}</span>}
+          {/* the word and its dot are held to the first word of what it does, so they never end a line alone */}
+          {traitOf(t).rare && <span class={rareWord}>{'rare\u00a0·\u00a0'}</span>}
           {traitOf(t).desc}
         </div>
       ))}

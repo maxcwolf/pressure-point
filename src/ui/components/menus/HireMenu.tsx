@@ -20,12 +20,14 @@ import { Stars } from '../common/Stars';
 import { cardLook, cards, menuHead, menuPanel } from './looks';
 
 /**
- * An applicant's card: their rank and stars on a line, their pay in the gold tag under their quirks rather than at the
- * top, and the buttons to hire or turn them down along the bottom.
+ * An applicant's card: their rank and stars on a line, then their quirks, and at the foot, their pay in the gold tag
+ * rather than at the top, over the buttons to hire or turn them down. A row stretches to its tallest card, so the foot
+ * is pinned to the bottom of each and the quirks take the room between.
  */
 const cv = css(cardLook, {
-  '& .cost': { position: 'static', alignSelf: 'flex-start', mt: '4', mb: '8' },
-  '& .btnrow': { mt: 'auto', display: 'flex', gap: '6' },
+  '& .foot': { mt: 'auto', pt: '4', display: 'flex', flexDirection: 'column', gap: '2' },
+  '& .cost': { position: 'static', alignSelf: 'flex-start', mb: '8' },
+  '& .btnrow': { mt: '0', display: 'flex', gap: '6' },
   '& .btnrow .go': { flex: '1' },
   '& .reject': {
     border: 'outline.thin',
@@ -87,32 +89,34 @@ export function HireMenu() {
             <QualChips quals={c.quals} />
             {/* an applicant from an older game can have none */}
             {c.traits.length ? <QuirkChips traits={c.traits} spell /> : <em class="none">No notable quirks</em>}{' '}
-            <span class="cost">
-              {money(c.salary)}
-              <small>/month</small>
-            </span>{' '}
-            <div class={buttonRow()}>
-              <Button
-                class={goButton()}
-                quiet
-                onPress={() => {
-                  // the step changes once the hire is done, so what it asked is read before
-                  const asked = wantsHire(sim.tutorialStep(), c.role);
-                  // the hire the tutorial asked for is done: out of the way of its next card
-                  if (sim.hire(c.id) && asked) hud.closeMenu();
-                }}
-              >
-                Hire
-              </Button>
-              <Button
-                class="reject"
-                title="Turn them down, to make room for someone new"
-                onPress={() => {
-                  sim.reject(c.id);
-                }}
-              >
-                Reject
-              </Button>
+            <div class="foot">
+              <span class="cost">
+                {money(c.salary)}
+                <small>/month</small>
+              </span>{' '}
+              <div class={buttonRow()}>
+                <Button
+                  class={goButton()}
+                  quiet
+                  onPress={() => {
+                    // the step changes once the hire is done, so what it asked is read before
+                    const asked = wantsHire(sim.tutorialStep(), c.role);
+                    // the hire the tutorial asked for is done: out of the way of its next card
+                    if (sim.hire(c.id) && asked) hud.closeMenu();
+                  }}
+                >
+                  Hire
+                </Button>
+                <Button
+                  class="reject"
+                  title="Turn them down, to make room for someone new"
+                  onPress={() => {
+                    sim.reject(c.id);
+                  }}
+                >
+                  Reject
+                </Button>
+              </div>
             </div>
           </div>
         ))}
