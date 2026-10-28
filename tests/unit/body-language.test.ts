@@ -1084,13 +1084,15 @@ describe('a symptom worn whole', () => {
     expect(rig.props.some((p) => p.parent === rig.body)).toBe(true);
   });
 
-  it('keeps their legs inside the pot: a shuffle walking, and straight down sitting, even on the floor', () => {
+  it('keeps their legs inside the pot walking, a shuffle, and sits them as anyone with the pot put away', () => {
     const g = demoGuest(LAB_LOOK, 'parched');
     expect(swing(buildCharacter(LAB_LOOK, undefined, 'cactus'), g)).toBeLessThanOrEqual(POTTED.stride + 0.01);
     const rig = buildCharacter(LAB_LOOK, undefined, 'cactus');
-    poseChar(rig, { ...g, pose: 'sit', h: 0 }, 0, 1, { style: null });
-    expect(rig.legL.rotation.x).toBeCloseTo(0);
-    expect(rig.legL.rotation.y).toBeCloseTo(0);
+    const pot = rig.props.find((p) => p.parent === rig.body)!;
+    poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 0, 1, { style: null });
+    // the thighs out along the seat rather than down through it in the pot
+    expect(rig.legL.rotation.x).toBeLessThan(-1.2);
+    expect(pot.visible).toBe(false);
   });
 
   it('walks them as anyone does once the pot is gone with the cure', () => {
@@ -1373,5 +1375,26 @@ describe('symptoms where they are: round 11', () => {
     const back = new THREE.Box3().setFromObject(plain.torso.getObjectByName('shirt')!).min.y;
     for (const coil of rig.props.filter((p) => p.parent === rig.torso))
       expect(new THREE.Box3().setFromObject(coil).min.y).toBeGreaterThan(back - 0.05);
+  });
+
+  it('puts the giant phone away while they sit, where it would go into a desk or the next guest', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'neck');
+    const g = demoGuest(LAB_LOOK, 'neck');
+    poseChar(rig, { ...g, pose: 'sit', h: 0.4 }, 1, 1, { style: null });
+    expect(rig.phone!.visible).toBe(false);
+    pose(rig, g, 2);
+    expect(rig.phone!.visible).toBe(true);
+  });
+
+  it('puts a bottle or a tumbler away while they sit, rather than down through the seat', () => {
+    for (const [visual, id] of [
+      ['cork', 'bottled'],
+      ['glass', 'glasshalf'],
+    ] as const) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      poseChar(rig, { ...demoGuest(LAB_LOOK, id), pose: 'sit', h: 0.4 }, 1, 1, { style: null });
+      expect(rig.props[0]!.visible, visual).toBe(false);
+      expect(rig.bubbleSitting, visual).toBeLessThan(rig.bubbleAt);
+    }
   });
 });

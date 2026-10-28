@@ -13,6 +13,7 @@ import { owned } from '../disposal';
 import type { CharRig } from './character';
 import { faceOut, hideUntilCured, named, props, spin, upright } from './character-heads';
 import { cached, capsule, cyl, joined, mat, type Piece, put, rbox, sph, torus, tube } from './parts';
+import { CHOICES } from './symptom-choices';
 
 /**
  * The bottle's green glass, one for every bottled guest. It is see-through, so the crowd cannot draw it in a batch and
@@ -28,6 +29,20 @@ const GLASS = new THREE.MeshStandardMaterial({
 
 /** How far up the body the middle of the bottle is, which it shrinks toward with the cure. */
 const MIDDLE = 1;
+
+/** How far up the body the seat is while they sit, where a bottle, a tumbler or a pot round them is cut short. */
+const SEAT = 0.35;
+
+/**
+ * Put a shell round someone away while they lie down, as it would go into what they lie on, and while they sit, or,
+ * `CHOICES.shells` short, cut it off at the seat, each part of it given a shape of its own that stops there (see
+ * `pose`).
+ */
+function seated(rig: CharRig, shell: THREE.Object3D, cuts: [THREE.Mesh, THREE.BufferGeometry][]) {
+  if (CHOICES.shells === 'hide') shell.userData.standing = true;
+  else shell.userData.cuts = cuts.map(([m, short]) => [m, m.geometry, short]);
+  upright(rig, shell);
+}
 
 /** The bottle's glass, as one shape, from `from` up the body to its lip: its body, shoulder, neck and lip. */
 const bottleGlass = (from: number) =>
@@ -78,20 +93,20 @@ const tumblerWater = (from: number) =>
 
 /**
  * Bottled up: the whole person in a big green bottle, the cork in its neck above their head and a cream label with a
- * red stripe round the middle, their legs out of the bottom to walk on. Put away while they lie down, as it would go
- * into what they lie on. The glass is one shape, as each part of it
+ * red stripe round the middle, their legs out of the bottom to walk on. Put away while they lie down, and while they
+ * sit, or cut short at the seat (see `seated`). The glass is one shape, as each part of it
  * drawn alone is a draw call more for every bottled guest.
  */
 function bottle(rig: CharRig) {
   const bottle = new THREE.Group();
   /** A height up the body, as a height in the bottle, whose middle is at `MIDDLE`. */
   const at = (y: number) => y - MIDDLE;
-  put(bottle, bottleGlass(0.255), GLASS, 0, 0, 0);
+  const glass = put(bottle, bottleGlass(0.255), GLASS, 0, 0, 0);
   put(bottle, cyl(0.115, 0.1, 0.16, 14), mat(0xc9a56a, 0.95), 0, at(1.66), 0);
   put(bottle, cyl(0.315, 0.315, 0.3, 24), mat(0xf2e6c8, 0.8), 0, at(0.62), 0);
   put(bottle, cyl(0.317, 0.317, 0.05, 24), mat(0xd9362f, 0.6), 0, at(0.68), 0);
   bottle.position.y = MIDDLE;
-  upright(rig, bottle);
+  seated(rig, bottle, [[glass, bottleGlass(SEAT)]]);
   props(rig, bottle);
   rig.body.add(bottle);
 }
@@ -99,17 +114,20 @@ function bottle(rig: CharRig) {
 /**
  * Glass half empty: the whole person standing in a tall clear tumbler, the water up to the waist and the top half
  * empty, their own head and face dry in the empty half and their legs out of the bottom. Put away while they lie
- * down, as the bottle is. The glass is one shape, as the bottle's is.
+ * down, and while they sit, or cut short at the seat (see `seated`). The glass is one shape, as the bottle's is.
  */
 function tumbler(rig: CharRig) {
   const glass = new THREE.Group();
   /** A height up the body, as a height in the tumbler, whose middle is at `TUMBLER_MIDDLE`. */
   const at = (y: number) => y - TUMBLER_MIDDLE;
-  put(glass, tumblerGlass(0.27), CLEAR, 0, 0, 0);
-  put(glass, tumblerWater(0.325), WATER, 0, 0, 0);
+  const sides = put(glass, tumblerGlass(0.27), CLEAR, 0, 0, 0);
+  const water = put(glass, tumblerWater(0.325), WATER, 0, 0, 0);
   put(glass, cyl(0.312, 0.312, 0.012, 28), mat(SURFACE, 0.1), 0, at(0.88), 0);
   glass.position.y = TUMBLER_MIDDLE;
-  upright(rig, glass);
+  seated(rig, glass, [
+    [sides, tumblerGlass(SEAT)],
+    [water, tumblerWater(SEAT + 0.06)],
+  ]);
   props(rig, glass);
   rig.body.add(glass);
 }
@@ -121,6 +139,12 @@ const FLOWER = 0xe8679a;
 const POLLEN = 0xf2c14e;
 const POT = 0xb5523e;
 const SOIL = 0x6b4a2a;
+
+/** A pot's sides, as one shape, from its foot at `from` up the body to its rim, at 0.44, 0.2 across the foot at 0.06. */
+const potSides = (from: number) =>
+  joined(`pot sides ${from}`, [
+    [cyl(0.27, 0.2 + (0.07 * (from - 0.06)) / 0.38, 0.44 - from, 28), 0, (from + 0.44) / 2, 0],
+  ]);
 
 /** A ribbed column of cactus, `r` across and `len` long between its rounded ends, with eight ribs. */
 const ribbed = (r: number, len: number) =>
@@ -160,7 +184,8 @@ function spines(r: number, from: number, to: number) {
 /**
  * Spiritually dehydrated: the head a ribbed cactus, prickly, an arm bent up off one side and a pink flower on top, the
  * face on its front; the shirt and sleeves gone cactus green, and a terracotta pot round them from the waist down, the
- * feet out of the bottom to shuffle along on (see `pose`). The pot is put away while they lie down.
+ * feet out of the bottom to shuffle along on (see `pose`). Put away while they lie down, and while they sit, or cut
+ * short at the seat (see `seated`).
  */
 function cactus(rig: CharRig) {
   const { head } = rig;
@@ -194,10 +219,10 @@ function cactus(rig: CharRig) {
   });
   const pot = new THREE.Group();
   const clay = mat(POT, 0.8);
-  put(pot, cyl(0.27, 0.2, 0.38, 28), clay, 0, 0.25, 0);
+  const sides = put(pot, potSides(0.06), clay, 0, 0, 0);
   put(pot, cyl(0.3, 0.3, 0.07, 28), clay, 0, 0.46, 0);
   put(pot, cyl(0.25, 0.25, 0.02, 28), mat(SOIL, 0.9), 0, 0.495, 0);
-  upright(rig, pot);
+  seated(rig, pot, [[sides, potSides(SEAT)]]);
   props(rig, top, pot);
   rig.body.add(pot);
 }
