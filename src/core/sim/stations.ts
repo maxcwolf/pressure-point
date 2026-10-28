@@ -167,10 +167,22 @@ function prestigeBonus(ctx: SimContext, it: Item): number {
   return room ? (prestige(ctx, room) - 1) * 0.02 : 0;
 }
 
-/** A Former Influencer posts about a guest they healed, and the post earns the center a little more reputation. */
+/**
+ * A Former Influencer posts about a guest they healed, and the post earns the center a little more reputation, which
+ * floats up over them and goes on their tally.
+ */
 export function postAboutIt(ctx: SimContext, st: Staff) {
   const posted = traitMost(st.traits, 'rep');
-  if (posted) changeRep(ctx, posted);
+  if (!posted) return;
+  changeRep(ctx, posted);
+  st.posts = (st.posts ?? 0) + 1;
+  emit(ctx, { type: 'float', text: `Posted it: +${posted} reputation`, x: st.x, y: st.y, kind: 'good' });
+}
+
+/** Healing Hands saved a treatment that failed: it floats up over the guest on the table, and goes on their tally. */
+export function savedByHands(ctx: SimContext, st: Staff, g: Guest) {
+  st.rescued = (st.rescued ?? 0) + 1;
+  emit(ctx, { type: 'float', text: 'Healing Hands!', x: g.x, y: g.y, kind: 'good' });
 }
 
 /**
@@ -549,8 +561,12 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (warmer) warmer.water -= STONE_USE;
     }
     g.goal = 'leave';
-    if (random(ctx.s) < chance || worksAnyway(ctx, staff)) {
+    // Healing Hands only roll for a treatment that failed, as before they showed
+    const works = random(ctx.s) < chance;
+    const saved = !works && worksAnyway(ctx, staff);
+    if (works || saved) {
       g.outcome = 'healed';
+      if (saved) savedByHands(ctx, staff, g);
       // feeling better takes the stress out of them too
       g.stressed = false;
       // a ceremony that works is a good trip, which goes in their review

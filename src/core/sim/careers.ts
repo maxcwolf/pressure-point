@@ -252,14 +252,28 @@ export function cheeredUp(s: GameState, st: Staff): boolean {
  * reach, whatever room each is in, since it goes through walls. Two who Hold Space do not add up; the stronger counts.
  */
 export function heldSpace(ctx: SimContext, st: Staff): number {
-  if (st.state !== 'atPost') return 1;
+  const holder = spaceHolder(ctx, st);
+  return holder ? traitProduct(holder.traits, 'hold') : 1;
+}
+
+/** The colleague who Holds Space for someone at their post, as `heldSpace` counts them: the strongest, or the first. */
+export function spaceHolder(ctx: SimContext, st: Staff): Staff | undefined {
+  if (st.state !== 'atPost') return undefined;
   let held = 1;
+  let holder: Staff | undefined;
   for (const o of ctx.s.staff) {
     const hold = traitProduct(o.traits, 'hold');
     if (o === st || hold <= held || o.state !== 'atPost' || !withinReach(o, st)) continue;
     held = hold;
+    holder = o;
   }
-  return held;
+  return holder;
+}
+
+/** The colleagues someone who Holds Space is speeding up now: those `spaceHolder` names them for. */
+export function holdingSpaceFor(ctx: SimContext, st: Staff): Staff[] {
+  if (traitProduct(st.traits, 'hold') <= 1) return [];
+  return ctx.s.staff.filter((o) => spaceHolder(ctx, o) === st);
 }
 
 /** Once a second, the habits that show: litter dropped on the way, plants watered in passing, a cheery or a sour face. */

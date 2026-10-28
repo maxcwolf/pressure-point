@@ -140,7 +140,7 @@ export const TRAITS: readonly TraitDef[] = [
   {
     id: 'survivor',
     name: 'Burnout Survivor',
-    desc: 'Morale never falls below 35. Has a mug about it.',
+    desc: 'Morale never falls below 35, so they never quit and no rival can poach them. Has a mug about it.',
     pay: 1.25,
     floor: 35,
     rare: true,

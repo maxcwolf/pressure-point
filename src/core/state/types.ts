@@ -313,6 +313,10 @@ export interface Staff extends CharBase {
   soulAsked?: boolean;
   /** Seconds a lone guest has waited at another of their stations while they stood at an empty one. */
   lineT?: number;
+  /** Failed treatments their Healing Hands have saved. Missing until the first. */
+  rescued?: number;
+  /** Heals a Former Influencer has posted about, each worth a little reputation. Missing until the first. */
+  posts?: number;
 }
 
 /**

@@ -7,6 +7,8 @@ import {
   CLASHES,
   clashes,
   COMMON_TRAITS,
+  MISERABLE_MORALE,
+  POACH_MORALE,
   QUIRKS_MAX,
   QUIRKS_MIN,
   RARE_CHANCE,
@@ -21,14 +23,15 @@ import {
 } from '../../src/core/data';
 import { tuning } from '../../src/core/difficulty';
 import { fairSalary, makeCandidate, rollQuirks, scalePay } from '../../src/core/people';
-import { heldSpace } from '../../src/core/sim/careers';
+import { heldSpace, holdingSpaceFor, spaceHolder } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
 import { moraleFloor } from '../../src/core/sim/staffing';
 import { postAboutIt, serviceSeconds, worksAnyway } from '../../src/core/sim/stations';
 import type { Candidate, GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { freshSim, hire, openCenter, run } from './helpers';
+import { quirkNotes } from '../../src/ui/lib/quirks';
+import { freshSim, hire, openCenter, run, runUntil } from './helpers';
 
 /** The simulation's own context, which the hooks are given. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
@@ -243,9 +246,25 @@ describe('the rare quirks', () => {
     sim.s.reputation = 40;
     postAboutIt(ctxOf(sim), therapist);
     expect(sim.s.reputation).toBe(40);
+    expect(therapist.posts).toBeUndefined();
     therapist.traits = ['influencer'];
     postAboutIt(ctxOf(sim), therapist);
     expect(sim.s.reputation).toBeGreaterThan(40);
+  });
+
+  it('a Former Influencer shows each post: reputation floats up over them, and they keep count', () => {
+    const { sim, therapist } = openCenter(1);
+    therapist.traits = ['influencer'];
+    sim.drain();
+    postAboutIt(ctxOf(sim), therapist);
+    postAboutIt(ctxOf(sim), therapist);
+    expect(therapist.posts).toBe(2);
+    const floats = sim.drain().filter((e) => e.type === 'float');
+    expect(floats).toEqual([
+      { type: 'float', text: 'Posted it: +1 reputation', x: therapist.x, y: therapist.y, kind: 'good' },
+      { type: 'float', text: 'Posted it: +1 reputation', x: therapist.x, y: therapist.y, kind: 'good' },
+    ]);
+    expect(quirkNotes(therapist, [], undefined)).toEqual(['Posted about 2 heals: +2 reputation']);
   });
 
   it('a Burnout Survivor never falls below 35, however badly paid', () => {
@@ -266,6 +285,16 @@ describe('the rare quirks', () => {
     expect(lowest([])).toBeLessThan(35);
   });
 
+  it('a Burnout Survivor never quits and is never poached, as their description says', () => {
+    const floor = traitMost(['survivor'], 'floor');
+    // quitting starts below miserable, and a rival's offer only goes to someone below the poaching line
+    expect(floor).toBeGreaterThan(MISERABLE_MORALE);
+    expect(floor).toBeGreaterThanOrEqual(POACH_MORALE);
+    expect(traitOf('survivor').desc).toContain(`below ${floor}`);
+    expect(traitOf('survivor').desc).toContain('never quit');
+    expect(traitOf('survivor').desc).toContain('poach');
+  });
+
   it('Healing Hands saves one failed treatment in ten, and nobody else rolls the dice', () => {
     const ctx = { s: { rng: 99 } } as unknown as SimContext;
     const plain = { traits: ['brisk'] } as never;
@@ -274,6 +303,21 @@ describe('the rare quirks', () => {
     const hands = { traits: ['hands'] } as never;
     const saved = Array.from({ length: 20000 }, () => worksAnyway(ctx, hands)).filter(Boolean).length;
     expect(saved / 20000).toBeCloseTo(traitMost(['hands'], 'rescue'), 1.5);
+  });
+
+  it('Healing Hands show each treatment they save: a floater over the table, and a count of them', () => {
+    const { sim, therapist } = openCenter(1);
+    // untrained, so most treatments fail and the hands have plenty to save
+    Object.assign(therapist, { traits: ['hands'], quals: [] });
+    sim.drain();
+    runUntil(sim, () => (therapist.rescued ?? 0) >= 2, 3600);
+    const saved = sim.drain().filter((e) => e.type === 'float' && e.text === 'Healing Hands!');
+    expect(saved).toHaveLength(therapist.rescued!);
+    expect(saved.every((e) => e.type === 'float' && e.kind === 'good')).toBe(true);
+    expect(quirkNotes(therapist, [], undefined)).toEqual([`Healing Hands saved ${therapist.rescued!} treatments`]);
+    expect(quirkNotes({ ...therapist, rescued: 1 }, [], undefined)).toEqual(['Healing Hands saved 1 treatment']);
+    // and nobody without them ever shows it
+    expect(quirkNotes({ ...therapist, rescued: 0 }, [], undefined)).toEqual([]);
   });
 
   it('Holds Space speeds up colleagues at work within reach, through walls, and nobody further off', () => {
@@ -300,5 +344,40 @@ describe('the rare quirks', () => {
     Object.assign(consultant, { x: 30, y: 30 });
     expect(heldSpace(ctx, therapist)).toBe(1);
     expect(serviceSeconds(60, therapist, 1.15)).toBeCloseTo(serviceSeconds(60, therapist) / 1.15);
+  });
+
+  it("Holds Space says whom it speeds up, in the holder's inspector and in each colleague's", () => {
+    const { sim, therapist, consultant, receptionist } = openCenter(1);
+    const ctx = ctxOf(sim);
+    for (const st of [therapist, consultant, receptionist]) st.traits = [];
+    consultant.traits = ['space'];
+    consultant.name = 'Priya Shah';
+    Object.assign(therapist, { state: 'atPost', x: 12.5, y: 6.5 });
+    Object.assign(consultant, { state: 'atPost', x: 10.5, y: 6.5 });
+    Object.assign(receptionist, { state: 'atPost', x: 30, y: 30 });
+    expect(spaceHolder(ctx, therapist)).toBe(consultant);
+    expect(spaceHolder(ctx, receptionist)).toBeUndefined();
+    expect(spaceHolder(ctx, consultant)).toBeUndefined();
+    expect(holdingSpaceFor(ctx, consultant)).toEqual([therapist]);
+    // nobody without the quirk holds space for anyone
+    expect(holdingSpaceFor(ctx, therapist)).toEqual([]);
+    expect(quirkNotes(consultant, holdingSpaceFor(ctx, consultant), spaceHolder(ctx, consultant))).toEqual([
+      'Holding space for 1 colleague',
+    ]);
+    expect(quirkNotes(therapist, holdingSpaceFor(ctx, therapist), spaceHolder(ctx, therapist))).toEqual([
+      'Working 15% faster: Priya holds space',
+    ]);
+    // the receptionist comes within reach too
+    Object.assign(receptionist, { x: 11.5, y: 8.5 });
+    expect(quirkNotes(consultant, holdingSpaceFor(ctx, consultant), undefined)).toEqual([
+      'Holding space for 2 colleagues',
+    ]);
+    // and once the holder leaves their post, nobody is sped up and nothing is said
+    consultant.state = 'toPost';
+    expect(holdingSpaceFor(ctx, consultant)).toEqual([]);
+    expect(spaceHolder(ctx, therapist)).toBeUndefined();
+    expect(sim.heldSpace(therapist)).toBe(1);
+    consultant.state = 'atPost';
+    expect(sim.heldSpace(therapist)).toBeCloseTo(1.15);
   });
 });

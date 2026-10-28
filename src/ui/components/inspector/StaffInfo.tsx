@@ -11,6 +11,7 @@ import { dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterPercent, meterTone } from '../../lib/meters';
+import { quirkNotes } from '../../lib/quirks';
 import { soulNote } from '../../lib/souls';
 import { offerWarning } from '../../lib/standing';
 import { promotionNote, quitWarning, slotNote, staffStatus, statusClass } from '../../lib/status';
@@ -162,6 +163,22 @@ function Soul({ staff: st }: { staff: Staff }) {
   ) : null;
 }
 
+/** What their rare quirk has done, under their quirks: treatments saved, heals posted, space held. */
+function QuirkNotes({ staff: st }: { staff: Staff }) {
+  const { sim } = useGame();
+  const notes = quirkNotes(st, sim.holdingSpaceFor(st), sim.spaceHolder(st));
+  return (
+    <>
+      {/* `quirk-note` is for the tests to find them by */}
+      {notes.map((n) => (
+        <p key={n} class="sub quirk-note">
+          {n}
+        </p>
+      ))}
+    </>
+  );
+}
+
 /** A member of staff's skills, mood and pay, with raises, training and letting them go. */
 export function StaffInfo({ staff: st }: { staff: Staff }) {
   const hud = useHud();
@@ -187,7 +204,8 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       )}{' '}
       <StaffCompare staff={st} />
       <Career staff={st} />
-      <QuirkChips traits={st.traits} spell />{' '}
+      <QuirkChips traits={st.traits} spell />
+      <QuirkNotes staff={st} />{' '}
       {st.training && (
         <label>
           Course progress

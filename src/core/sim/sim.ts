@@ -73,7 +73,18 @@ import {
   toggleWindow,
 } from './building';
 import { acceptCall, type CallCost, callCost, callFee, declineCall, updateCalls, whoCanGo } from './calls';
-import { fullyTrained, promote, promoteAll, reject, setDuty, updateApplicants, updateHabits } from './careers';
+import {
+  fullyTrained,
+  heldSpace,
+  holdingSpaceFor,
+  promote,
+  promoteAll,
+  reject,
+  setDuty,
+  spaceHolder,
+  updateApplicants,
+  updateHabits,
+} from './careers';
 import { announceSweatLodge } from './ceremonies';
 import { challengeObjective, updateChallenge } from './challenges';
 import { charById, guestById, staffById } from './chars';
@@ -732,6 +743,19 @@ export class Sim {
   /** Whether a member of staff is as qualified as they can be for now, as a promotion needs. */
   fullyTrained(st: Staff): boolean {
     return fullyTrained(this.ctx, st);
+  }
+
+  /** How much faster a colleague who Holds Space makes someone work right now. */
+  heldSpace(st: Staff): number {
+    return heldSpace(this.ctx, st);
+  }
+  /** The colleague who Holds Space for someone right now, if anyone does. */
+  spaceHolder(st: Staff): Staff | undefined {
+    return spaceHolder(this.ctx, st);
+  }
+  /** The colleagues someone who Holds Space is speeding up right now. */
+  holdingSpaceFor(st: Staff): Staff[] {
+    return holdingSpaceFor(this.ctx, st);
   }
 
   /** Courses a member of staff could take right now. */

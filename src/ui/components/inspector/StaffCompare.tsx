@@ -18,6 +18,7 @@ import type { CourseId, Staff } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
+import { firstName } from '../../lib/quirks';
 import { Button } from '../common/Button';
 import { Icon, IconText } from '../common/Icon';
 import { Stars } from '../common/Stars';
@@ -98,9 +99,6 @@ const lacks = css({ opacity: 'locked' });
 /** Someone who is on the course now, in small slanted words. */
 const studying = css({ fontSize: '11', fontStyle: 'italic', opacity: 'soft' });
 
-/** Someone's first name, short enough for a column. */
-const firstName = (st: Staff) => st.name.split(' ')[0] ?? st.name;
-
 /** Which side has the better of two numbers, if either, with higher better unless said otherwise. */
 function better(a: number, b: number, higher = true): 'a' | 'b' | null {
   if (Math.round(a) === Math.round(b)) return null;
@@ -151,6 +149,8 @@ function Table({ a, b }: { a: Staff; b: Staff }) {
         st.training?.course === c,
     );
   const courses = [...MODALITY_ORDER.filter(either), ...GENERAL_ORDER.filter(either)];
+  /** How fast someone works for their quirks, and for a colleague who Holds Space for them right now, in percent. */
+  const speed = (st: Staff) => Math.round(traitSpeed(st.traits) * sim.heldSpace(st) * 100);
   /** Someone's quirks, by name. */
   const quirks = (st: Staff) => (st.traits.length ? st.traits.map((t) => traitOf(t).name).join(', ') : '—');
   return (
@@ -202,12 +202,7 @@ function Table({ a, b }: { a: Staff; b: Staff }) {
           }
           ahead={better(a.skill, b.skill)}
         />
-        <Line
-          label="Work speed"
-          a={`${Math.round(traitSpeed(a.traits) * 100)}%`}
-          b={`${Math.round(traitSpeed(b.traits) * 100)}%`}
-          ahead={better(traitSpeed(a.traits) * 100, traitSpeed(b.traits) * 100)}
-        />
+        <Line label="Work speed" a={`${speed(a)}%`} b={`${speed(b)}%`} ahead={better(speed(a), speed(b))} />
         <Line label="Quirks" a={quirks(a)} b={quirks(b)} />
         <Line
           label="Energy"
