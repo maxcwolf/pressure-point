@@ -9,6 +9,7 @@ import {
   WAVE_DAYS,
   WAVE_MOVE_DAYS,
   WAVE_MOVES,
+  WAVE_SOON_DAYS,
   WAVE_WARNING_DAYS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
@@ -223,9 +224,39 @@ describe('the feature switch', () => {
     const { sim, s } = announced();
     sim.setFeature('waves', false);
     expect(s.wave).toBeNull();
-    expect(s.pastWaves).toHaveLength(1);
     expect(techniqueOpen(s, 'moxa')).toBe(true);
     expect(sim.featureOn('waves')).toBe(false);
+  });
+
+  it('brings a wave it ended back round when switched on again, with its week of warning', () => {
+    const { sim, s, ctx } = announced();
+    const warned = s.day;
+    s.day += 10;
+    updateWaves(ctx);
+    sim.setFeature('waves', false);
+    // not one that has been, but one due again
+    expect(s.pastWaves).toEqual([]);
+    expect(s.nextWave?.day).toBe(warned);
+    s.day += 20;
+    sim.setFeature('waves', true);
+    // its day went by while it was off, so it comes in a week rather than the moment the switch is on
+    expect(s.nextWave).toEqual({ day: s.day + WAVE_SOON_DAYS, moves: 0 });
+    updateWaves(ctx);
+    expect(s.wave).toBeNull();
+    s.day += WAVE_SOON_DAYS;
+    updateWaves(ctx);
+    expect(s.wave?.condition).toBe('coldfeet');
+    expect(s.wave?.starts).toBe(s.day + WAVE_WARNING_DAYS);
+    expect(techniqueOpen(s, 'moxa')).toBe(true);
+  });
+
+  it('keeps a wave due within the week on its day when switched on', () => {
+    const { sim, s } = exchange(false);
+    s.stars = 1;
+    s.day = 120;
+    s.nextWave = { day: 123, moves: 1 };
+    sim.setFeature('waves', true);
+    expect(s.nextWave).toEqual({ day: 123, moves: 1 });
   });
 
   it('brings the wave within the week when switched on after the first star', () => {

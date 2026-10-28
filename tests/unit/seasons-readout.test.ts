@@ -7,7 +7,7 @@ import { drainEvents } from '../../src/core/sim/events';
 import { rushOutlook, seasonTurn, updateTwists } from '../../src/core/sim/twists';
 import { emptyTally } from '../../src/core/state/game';
 import { newGame } from '../../src/core/state/game';
-import { calendarTip, fullDate, rushLine, seasonLine, shortDate } from '../../src/ui/lib/seasons';
+import { calendarTip, dateSpan, fullDate, rushLine, seasonLine, shortDate } from '../../src/ui/lib/seasons';
 
 const boardwalk = centerOf(newGame('boardwalk'));
 const exchange = centerOf(newGame('exchange'));
@@ -105,5 +105,16 @@ describe('the season news', () => {
     expect(drainEvents(ctx)).toEqual([
       { type: 'announce', text: expect.stringContaining('Last month 15 came; expect about 29 a month.') },
     ]);
+  });
+});
+
+describe('a span of days, as the wave dialog says when its guests come', () => {
+  it('names the day of the month and the month, as the bottom bar does, not the running day', () => {
+    // The Exchange's wave due 45 days after a first star on day 1, in a game that opened in March
+    expect(dateSpan(46, 76, 2)).toBe('From day 17 of month 4, for 30 days');
+    expect(fullDate(46, 2)).toBe('Day 17 of month 4, year 1');
+    expect(dateSpan(0, 30)).toBe('From day 1 of month 1, for 30 days');
+    // a start part way through a day counts from the next
+    expect(dateSpan(45.4, 75.4, 2)).toBe('From day 17 of month 4, for 30 days');
   });
 });

@@ -58,6 +58,13 @@ export function fullDate(day: number, startMonth = 0): string {
   return `Day ${d.day} of month ${d.month}, year ${d.year}`;
 }
 
+/**
+ * When something runs from a game day, and for how long, in the calendar's terms as the bottom bar's date: "From day 16
+ * of month 5, for 30 days". `starts` and `ends` are the game's day counts, in a game that opened in `startMonth`.
+ */
+export const dateSpan = (starts: number, ends: number, startMonth = 0): string =>
+  `From ${onDay(Math.ceil(starts), startMonth)}, for ${Math.round(ends - starts)} days`;
+
 /** The season, month and year in a few characters, as the bottom bar shows them under the day: "Summer · M7 Y2". */
 export function shortDate(day: number, season: Season, startMonth = 0): string {
   const d = dateOf(day, startMonth);

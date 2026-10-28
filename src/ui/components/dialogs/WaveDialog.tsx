@@ -6,6 +6,7 @@ import { wavePerWeek } from '../../../core/sim/waves';
 import { css } from '../../../styled-system/css';
 import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { dateSpan } from '../../lib/seasons';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { Dialog } from './Dialog';
@@ -45,7 +46,6 @@ export function WaveDialog() {
   const role = ROLES[disc.role].name;
   const kit = m.equipment ? ITEMS[m.equipment].name : '';
   const cause = WAVES[s.center]?.condition === w.condition ? WAVES[s.center]?.cause : '';
-  const nextStar = s.stars + 1;
   // the size of the wave in guests a week, from the usual pace now: something a player can weigh against their staff
   const perWeek = wavePerWeek(sim.arrivalPace().tables);
   // under one a week, as in a center still small, it is said a month, so a quiet wave does not sound like more
@@ -64,11 +64,11 @@ export function WaveDialog() {
         {cause && ` ${cause}`}
       </p>
       <p class={card}>
-        <b>{`From day ${Math.ceil(w.starts)}, for ${Math.round(w.ends - w.starts)} days:`}</b>
+        <b>{`${dateSpan(w.starts, w.ends, s.startMonth)}:`}</b>
         {` guests with ${c.name} come on top of the usual ones, about ${size} at today’s pace, all for ${m.name}.`}
       </p>
       <p class={`${card} opens`}>
-        <b>{w.opened ? `New treatment, ahead of star ${nextStar}:` : 'Treated with:'}</b>
+        <b>{w.opened ? `New treatment, ahead of star ${m.star}:` : 'Treated with:'}</b>
         {` ${m.name}, in the ${ROOMS[disc.room].name}. Train ${an(role)} in a Training Room`}
         {kit ? `; the ${kit} is in the Items menu.` : '.'}
         {m.rest &&

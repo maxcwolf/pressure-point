@@ -240,19 +240,25 @@ export function waveArrival(ctx: SimContext, wave: number, perMonth: number): Co
 }
 
 /**
- * The feature switched on or off part way through a game. Off, a wave on its way or under way ends quietly; what it
- * opened stays open. On, a center whose wave is due after the star it has comes within the week.
+ * The feature switched on or off part way through a game. Off, a wave on its way or under way ends quietly, not as one
+ * that has been but as one due again from the day it was announced; what it opened stays open. On, a center whose
+ * wave is due after the star it has comes within the week: on its day if that is sooner, or in a week if that day has
+ * gone by while it was off, so its warning still comes ahead of its guests rather than the moment the switch is on.
  */
 export function wavesSwitched(ctx: SimContext, on: boolean) {
   const s = ctx.s;
   if (!on) {
-    endWave(ctx, true);
+    const w = s.wave;
+    if (!w) return;
+    s.wave = null;
+    s.nextWave = { day: w.warned, moves: 0 };
     return;
   }
   const def = waveDue(s);
   if (!def || s.wave || s.stars !== def.afterStar) return;
   const soon = s.day + WAVE_SOON_DAYS;
-  if (!s.nextWave || s.nextWave.day > soon) s.nextWave = { day: soon, moves: 0 };
+  const day = s.nextWave?.day;
+  if (day === undefined || day > soon || day <= s.day) s.nextWave = { day: soon, moves: 0 };
 }
 
 /** Announce the wave now, skipping its clock: the cheat console's `wave`. Its ailment, or undefined if none is to come. */
