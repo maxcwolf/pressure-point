@@ -23,7 +23,7 @@ import { prefersReducedMotion } from './camera-math';
 import { animateEmitter, emitter, type EmitterShape } from './gags/particles';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
-import { type CharRig, cureRig, endCure, type Joints, restoreRig } from './models/character';
+import { BOB, bubbleHeight, type CharRig, cureRig, endCure, type Joints, restoreRig } from './models/character';
 import { BACK_Y, type Expression, HIP, KNEE, showExpression, showEyes, SIT_Y } from './models/character-detail';
 import { buildHeld, HELD_SIZE, type HeldKind } from './models/held';
 import { iconTexture } from './models/icons';
@@ -863,7 +863,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.legR.rotation.z += ((onFloor ? SIT.crossed.right.z : 0) - rig.legR.rotation.z) * k;
   }
   if (rig.bob && !rig.cured) {
-    rig.bob.position.y = rig.bobAt + Math.sin(t * 2.2 + c.id) * 0.03;
+    rig.bob.position.y = rig.bobAt + Math.sin(t * 2.2 + c.id) * BOB;
     rig.bob.visible = c.pose !== 'lie';
   }
   if (rig.blink) rig.blink.emissiveIntensity = Math.sin(t * 6 + c.id) > 0 ? 1.5 : 0.05;
@@ -1004,7 +1004,7 @@ function poseBubble(rig: CharRig, c: Char, t: number, mood: Mood) {
   const size = bubbleScale(shown, t, prefersReducedMotion());
   sprite.visible = size > 0;
   sprite.scale.setScalar(BUBBLE_SIZE * size);
-  sprite.position.y = (c.pose === 'lie' ? 0.72 : rig.bubbleAt) + Math.sin(t * 3 + c.id) * 0.04;
+  sprite.position.y = (c.pose === 'lie' ? 0.72 : bubbleHeight(rig, c.pose)) + Math.sin(t * 3 + c.id) * 0.04;
 }
 
 /** How a person's limbs are posed this frame, from which the knees, elbows and waist follow. */

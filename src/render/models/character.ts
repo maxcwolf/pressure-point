@@ -1,10 +1,10 @@
 // The little clay people: guests and staff, and what their symptoms look like.
 import * as THREE from 'three';
 
-import { type Role, ROLES, type Visual } from '../../core/data';
+import { type Pose, type Role, ROLES, type Visual } from '../../core/data';
 import { SHOES } from '../../core/people';
 import type { Look, VisitorKind } from '../../core/state/types';
-import { BUBBLE_SIZE, BUBBLE_STANDING } from '../bubbles';
+import { BUBBLE_CLEAR, BUBBLE_SIZE, BUBBLE_STANDING } from '../bubbles';
 import { owned } from '../disposal';
 import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
@@ -69,8 +69,14 @@ export interface CharRig {
   /** Something that hovers over the head and bobs gently, and how high it hovers. */
   bob?: THREE.Object3D;
   bobAt: number;
-  /** How high a standing person's bubble sits: higher over a symptom that stands up tall out of the head. */
+  /**
+   * How high a standing person's bubble sits: just over the top of whatever they wear, a symptom standing up tall out
+   * of the head among it, and no lower than over an ordinary head. While they sit, what is put away then is left out
+   * (`bubbleSitting`), and once cured, the symptom (`bubbleCured`).
+   */
   bubbleAt: number;
+  bubbleSitting: number;
+  bubbleCured: number;
   /** A material whose glow pulses. */
   blink?: THREE.MeshStandardMaterial;
   /** Everything that only exists to show the symptom, hidden once healed. */
@@ -377,6 +383,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     bubbleKey: '',
     bobAt: 0,
     bubbleAt: BUBBLE_STANDING,
+    bubbleSitting: BUBBLE_STANDING,
+    bubbleCured: BUBBLE_STANDING,
   };
   rig.pick.position.y = 0.7;
   group.add(rig.pick);
@@ -385,6 +393,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   rig.bubble.visible = false;
   rig.bubble.renderOrder = 10;
   group.add(rig.bubble);
+  rig.bubbleCured = bubbleOver(rig, false);
 
   if (visual === 'knot') {
     bodySymptom(rig, visual);
@@ -816,6 +825,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
   if (rig.bob) rig.bobAt = rig.bob.position.y;
+  rig.bubbleAt = bubbleOver(rig, false);
+  rig.bubbleSitting = bubbleOver(rig, true);
   if (role === 'practitioner' || role === 'caretaker') {
     const { bundle, tip } = buildSage();
     bundle.position.set(0, -0.31 + handUp, 0.03);
@@ -835,6 +846,67 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   trimShadows(group, look.scale);
   return rig;
 }
+
+/** How far something hovering over a head bobs up and down, in meters (see `pose`). */
+export const BOB = 0.03;
+
+const box = new THREE.Box3();
+const toRig = new THREE.Matrix4();
+const inRig = new THREE.Matrix4();
+
+/**
+ * The top of someone as they stand now, in meters over their feet in their own terms: every part shown, but not the
+ * puffs and drips that come off them, nor, `sitting`, what is put away while they sit.
+ */
+function topNow(rig: CharRig, sitting: boolean) {
+  rig.group.updateMatrixWorld(true);
+  toRig.copy(rig.group.matrixWorld).invert();
+  let top = -Infinity;
+  /** Take in a part and what it carries, unless it is hidden or left out. */
+  const visit = (o: THREE.Object3D) => {
+    if (!o.visible || o === rig.steam || o === rig.drips || (sitting && o.userData.standing)) return;
+    if (o instanceof THREE.Mesh) {
+      const geo = o.geometry as THREE.BufferGeometry;
+      if (!geo.boundingBox) geo.computeBoundingBox();
+      if (geo.boundingBox)
+        top = Math.max(top, box.copy(geo.boundingBox).applyMatrix4(inRig.multiplyMatrices(toRig, o.matrixWorld)).max.y);
+    }
+    for (const child of o.children) visit(child);
+  };
+  visit(rig.body);
+  return top;
+}
+
+/**
+ * The top of someone as built, standing, in meters over their feet in their own terms: everything they wear, at the
+ * height it floats or bobs up to and rattled over to either side, but not the puffs and drips that come off them, nor,
+ * `sitting`, what is put away while they sit.
+ */
+export function topOf(rig: CharRig, sitting: boolean) {
+  const moving = rig.spin ?? [];
+  const lifts: [THREE.Object3D, number][] = [
+    ...moving.flatMap((o): [THREE.Object3D, number][] => (o.userData.drift ? [[o, o.userData.drift as number]] : [])),
+    ...(rig.bob ? [[rig.bob, BOB] as [THREE.Object3D, number]] : []),
+  ];
+  const rattling = moving.filter((o) => o.userData.rattle);
+  const tilts = rattling.map((o) => o.rotation.z);
+  for (const [o, up] of lifts) o.position.y += up;
+  let top = -Infinity;
+  for (const side of [1, -1]) {
+    rattling.forEach((o, i) => (o.rotation.z = (tilts[i] ?? 0) + side * (o.userData.rattle as number)));
+    top = Math.max(top, topNow(rig, sitting));
+  }
+  rattling.forEach((o, i) => (o.rotation.z = tilts[i] ?? 0));
+  for (const [o, up] of lifts) o.position.y -= up;
+  rig.group.updateMatrixWorld(true);
+  return top;
+}
+
+/** Where someone's bubble sits, standing or sitting: just clear of the top of them, and never lower than usual. */
+const bubbleOver = (rig: CharRig, sitting: boolean) => Math.max(BUBBLE_STANDING, topOf(rig, sitting) + BUBBLE_CLEAR);
+
+/** How high someone's bubble sits as they are posed, other than lying down: lower while they sit if a part is put away. */
+export const bubbleHeight = (rig: CharRig, pose: Pose) => (pose === 'sit' ? rig.bubbleSitting : rig.bubbleAt);
 
 /** Begin a healed guest's cure at a moment: their symptom then shrinks away over the next few frames (see `poseChar`). */
 export function cureRig(rig: CharRig, t: number) {
@@ -861,6 +933,7 @@ export function endCure(rig: CharRig, look: Look) {
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
   if (rig.burst) rig.burst.group.visible = false;
+  rig.bubbleAt = rig.bubbleSitting = rig.bubbleCured;
 }
 
 /** Put back the parts and colors a symptom stood in for, once. */

@@ -361,12 +361,6 @@ function signpost(rig: CharRig) {
   upright(rig, post);
   props(rig, post);
   rig.head.add(post);
-  // their bubble raised clear of the top of the post, which it would hide from afar, and lowered again with the cure
-  rig.group.updateMatrixWorld(true);
-  const top = new THREE.Box3().setFromObject(post).max.y;
-  const was = rig.bubbleAt;
-  rig.bubbleAt = Math.max(was, top + 0.03);
-  (rig.restore ??= []).push(() => (rig.bubbleAt = was));
 }
 
 /**

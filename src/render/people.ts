@@ -14,7 +14,7 @@ import { applyGuestGag } from './gags/apply';
 import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
-import { buildCharacter, type CharRig } from './models/character';
+import { bubbleHeight, buildCharacter, type CharRig } from './models/character';
 import { keepApart, type Placed, showMotion, type Shown } from './motion';
 import { poseChar, type WorkStyle } from './pose';
 
@@ -133,7 +133,13 @@ export class PeopleLayer {
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') this.inMachine(rig, c, t);
       const { x, y, z } = rig.group.position;
-      drawnAt.set(c.id, { x, y, z, lie: seen.c.pose === 'lie', lift: rig.bubbleAt - BUBBLE_STANDING });
+      drawnAt.set(c.id, {
+        x,
+        y,
+        z,
+        lie: seen.c.pose === 'lie',
+        lift: bubbleHeight(rig, seen.c.pose) - BUBBLE_STANDING,
+      });
     }
     for (const [id, rig] of this.chars) {
       if (live.has(id)) continue;

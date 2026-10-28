@@ -11,6 +11,12 @@ export const BUBBLE_SIZE = 0.62;
 /** How high over the floor the tail of a standing person's bubble sits, over the top of the head. */
 export const BUBBLE_STANDING = 1.44;
 
+/**
+ * How far over the top of whatever someone wears their bubble's tail sits, when that is higher than usual: about as far
+ * as over an ordinary head, so it stays clear at the bottom of its bob.
+ */
+export const BUBBLE_CLEAR = 0.065;
+
 /** Where a bubble's tail ends, as a fraction of its sprite's height from the bottom: what sits on the head. */
 export const BUBBLE_TAIL = 0.05;
 

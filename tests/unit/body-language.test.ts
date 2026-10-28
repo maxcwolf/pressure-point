@@ -10,7 +10,7 @@ import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/peopl
 import { type Act, actOf, lyingAt } from '../../src/render/acts';
 import { BUBBLE_STANDING } from '../../src/render/bubbles';
 import { rattle } from '../../src/render/item-cues';
-import { buildCharacter, CAP_TIP, type CharRig, cureRig } from '../../src/render/models/character';
+import { buildCharacter, CAP_TIP, type CharRig, cureRig, topOf } from '../../src/render/models/character';
 import { HELD_SIZE } from '../../src/render/models/held';
 import {
   actMoment,
@@ -563,6 +563,60 @@ describe('symptoms over the head', () => {
       const rig = buildCharacter(LAB_LOOK, undefined, visual);
       if (rig.bob) expect(rig.bobAt, visual).toBeGreaterThanOrEqual(0.3);
     }
+  });
+
+  /**
+   * The top of someone's symptom as they are posed, in meters over their feet: every part of it shown, and every part
+   * of them floating loose, but not the puffs and drips coming off them.
+   */
+  function symptomTop(rig: CharRig) {
+    rig.group.updateMatrixWorld(true);
+    let top = -Infinity;
+    /** Take in a part, if it is drawn, and what it carries. */
+    const visit = (o: THREE.Object3D) => {
+      if (!o.visible || o === rig.steam || o === rig.drips) return;
+      if (o instanceof THREE.Mesh) {
+        const geo = o.geometry as THREE.BufferGeometry;
+        geo.computeBoundingBox();
+        top = Math.max(top, new THREE.Box3().copy(geo.boundingBox!).applyMatrix4(o.matrixWorld).max.y);
+      }
+      o.children.forEach(visit);
+    };
+    /** Whether a part is drawn: shown itself, and every parent of it shown too. */
+    const shown = (o: THREE.Object3D) => {
+      for (let p: THREE.Object3D | null = o; p; p = p.parent) if (!p.visible) return false;
+      return true;
+    };
+    for (const o of [...rig.props, ...(rig.spin ?? []).filter((s) => s.userData.drift)]) if (shown(o)) visit(o);
+    return top;
+  }
+
+  it("keeps every guest's bubble clear of the top of their symptom, as it bobs, rattles and floats", () => {
+    for (const { id, visual } of CONDITIONS) {
+      const rig = buildCharacter(LAB_LOOK, undefined, visual);
+      const g = { ...demoGuest(LAB_LOOK, id), bubble: 'bubble-impatient' as const, bubbleT: 1 };
+      for (let t = 0; t < 4; t += 0.07) {
+        pose(rig, g, t);
+        expect(rig.bubble.position.y, `${id} at ${t.toFixed(2)}`).toBeGreaterThan(symptomTop(rig));
+      }
+    }
+  });
+
+  it('raises the bubble over the tall heads and leaves an ordinary one where it was', () => {
+    for (const visual of ['gears', 'steam', 'shards', 'cork', 'sunburn', 'glass', 'egg', 'snowcap', 'band'] as const)
+      expect(buildCharacter(LAB_LOOK, undefined, visual).bubbleAt, visual).toBeGreaterThan(BUBBLE_STANDING + 0.05);
+    expect(buildCharacter(LAB_LOOK, undefined, 'stiff').bubbleAt).toBe(BUBBLE_STANDING);
+  });
+
+  it('leaves out of the top what is put away while they sit, and the symptom once cured', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'compass');
+    rig.props[0]!.userData.standing = true;
+    expect(topOf(rig, true)).toBeLessThan(topOf(rig, false) - 0.3);
+    expect(rig.bubbleCured).toBe(BUBBLE_STANDING);
+    const kettle = buildCharacter(LAB_LOOK, undefined, 'steam');
+    poseChar(kettle, { ...demoGuest(LAB_LOOK, 'steam'), outcome: 'healed' }, 5, 1, { style: null });
+    expect(kettle.bubbleAt).toBe(BUBBLE_STANDING);
+    expect(kettle.bubbleSitting).toBe(BUBBLE_STANDING);
   });
 });
 
