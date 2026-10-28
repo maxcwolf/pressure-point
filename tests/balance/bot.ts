@@ -48,6 +48,9 @@ import {
   RUNAWAY_SAVE_DAYS,
   RUNAWAY_SECONDS,
   SIDEWALK_Y,
+  type TraitId,
+  traitOf,
+  traitProduct,
   WINDOW_COST,
   WINDOW_MAX_BONUS,
 } from '../../src/core/data';
@@ -195,6 +198,12 @@ export const BOT_FLAGS = [
    * and machine upkeep in the bank, as a good player with money piling up would.
    */
   'endow',
+  /**
+   * Read an applicant's quirks as a player reads the card: of the best rank going, take the one whose quirks are worth
+   * the most against their pay (`applicantValue`), rather than just the cheapest. Off, the bot hires blind to quirks,
+   * as it did before they were measured (balance log 52).
+   */
+  'quirks',
   /**
    * Chase an ailment going around (with `BOT_WAVES=1`, which switches the feature on): treat the technique it opens
    * early as open, train someone in it first and buy its kit. Off, the bot lets every wave pass, as if the technique
@@ -503,6 +512,12 @@ export interface MonthLog {
   incomeBy: IncomeBy;
   /** The month's bad trips, and the really bad ones: how many ran, were calmed, in time, and found the door; not in older logs. */
   runners?: RunnerLog;
+  /**
+   * The payroll at the month's end, and of it what the staff's quirks add to their pay and save from it, a month's
+   * worth each (`quirkPay`); not in older logs.
+   */
+  payroll?: number;
+  quirkPay?: { adds: number; saves: number };
 }
 
 /** A month's guests on a really bad trip, and the bad trips they came of. */
@@ -540,6 +555,29 @@ export interface SwapLog {
   toRank: number;
   fromSalary: number;
   toSalary: number;
+}
+
+/** Someone the bot took on: the day, their role, rank, salary and quirks. */
+export interface HireLog {
+  day: number;
+  role: Role;
+  rank: number;
+  salary: number;
+  quirks: TraitId[];
+}
+
+/**
+ * What the quirks of everyone the bot took on came to over a game: how many it hired, how many of them had a flaw, the
+ * rare quirks among them by id, and, summed over the month ends, the pay their quirks added to the payroll and saved
+ * from it, against the whole payroll.
+ */
+export interface QuirkLog {
+  hired: number;
+  flaws: number;
+  rares: Partial<Record<TraitId, number>>;
+  adds: number;
+  saves: number;
+  payroll: number;
 }
 
 /** A treatment machine the bot built, and how it paid; or one it wanted and found no space for. */
@@ -597,10 +635,112 @@ export interface Playtest {
    * they were.
    */
   swaps?: SwapLog[];
+  /** Everyone the bot took on, in order, with their quirks; not in older logs. */
+  hires?: HireLog[];
+  /** What their quirks came to over the game (`QuirkLog`); not in older logs. */
+  quirks?: QuirkLog;
   /** The ailments that went around, with `BOT_WAVES`; left out without it, so the logs without it are as they were. */
   waves?: Wave[];
   /** How every guest with a wave's ailment ended, during the wave and after it, from the casebook, with `BOT_WAVES`. */
   waveCases?: GameState['casebook'];
+}
+
+/**
+ * What a hire's work is worth a month, in their pay without quirks: at a post (a desk, a consulting room, a table, a
+ * mat, a class) about twice it, since a busy station takes in several times its wages and is not always busy; a
+ * Caretaker's chores about what they are paid, since the upkeep has slack.
+ */
+const WORK_WORTH = { post: 2, caretaker: 1 };
+
+/** What a habit adds to a hire's work or takes from it, as a share of it. */
+const HABIT_WORTH: Record<NonNullable<ReturnType<typeof traitOf>['habit']>, number> = {
+  // a Grump's guests leave with 15% less reputation and less patience: counted for those who treat or teach, below
+  grump: -0.1,
+  // litter in the corridor: a Caretaker's time and a little of the guests' comfort
+  litter: -0.04,
+  // 6 morale to colleagues within reach, about 1% faster each, and further from quitting
+  cheer: 0.03,
+  water: 0.01,
+};
+
+/**
+ * What an applicant's quirks add to their work, or take from it, as a share of it, by what each one does in the sim:
+ *
+ * - speed: at a post, 80% of a day goes on the service a quicker hand shortens (the rest is walking and breaks); a
+ *   Caretaker's chores, half, the rest walking between them;
+ * - stamina: about 15% of a day goes on breaks, which shrink with the drain, and a tired hand is slower and fails more,
+ *   so a fifth of the drain's change;
+ * - walk: at a post only the walk in and to the break room, 5%; for a Caretaker, 40%;
+ * - learning: a course is a week or two of a working life, 3% of the change;
+ * - habits as `HABIT_WORTH`, a Grump's only for those who treat or teach (a little for anyone else);
+ * - Former Influencer: a point of reputation a heal on top of about two is worth 15% to a busy center that needs the
+ *   stars' reputation, and less to one that has it; its 10% slower hands are counted as speed;
+ * - Burnout Survivor: never quitting saves the reputation a quit costs and a week's search, 5%;
+ * - Healing Hands: a third of the 10 to 25% of treatments that fail, each a guest unhealed, the table's time spent and
+ *   a heal's reputation missed: 45% of the rescue;
+ * - Holds Space: 15% faster service for the one or two colleagues usually in reach at their posts, 80% of whose day is
+ *   service.
+ */
+export function quirkWorth(traits: readonly TraitId[], role: Role): number {
+  const care = role === 'caretaker';
+  const treats = !!ROLES[role].discipline || role === 'instructor';
+  let worth = 0;
+  for (const id of traits) {
+    const t = traitOf(id);
+    if (t.speed) worth += (t.speed - 1) * (care ? 0.5 : 0.8);
+    if (t.stamina) worth += (1 - t.stamina) * 0.2;
+    if (t.walk) worth += (t.walk - 1) * (care ? 0.4 : 0.05);
+    if (t.learn) worth += (t.learn - 1) * 0.03;
+    if (t.habit) worth += t.habit === 'grump' && !treats ? -0.02 : HABIT_WORTH[t.habit];
+    if (t.rep) worth += t.rep * 0.15;
+    if (t.floor) worth += 0.05;
+    if (t.rescue) worth += t.rescue * 0.45;
+    if (t.hold) worth += (t.hold - 1) * 0.8 * 1.5;
+  }
+  return worth;
+}
+
+/**
+ * What an applicant comes to a month as a player reading the card weighs them: what their quirks add to their work
+ * (`quirkWorth`, at `WORK_WORTH` of their pay without the quirks), less their salary. With no quirks it is minus the
+ * salary, so the cheaper of two such applicants is still the better.
+ */
+export function applicantValue(c: Candidate): number {
+  const plain = c.salary / traitProduct(c.traits, 'pay');
+  const work = c.role === 'caretaker' ? WORK_WORTH.caretaker : WORK_WORTH.post;
+  return plain * work * quirkWorth(c.traits, c.role) - c.salary;
+}
+
+/**
+ * The applicant a player takes of those for a role: the best rank going, then, reading the card, the best value
+ * (`applicantValue`), or, blind to quirks, the cheaper. A junior Consultant is taken for being cheap whatever the rank:
+ * the best value or the cheapest.
+ */
+export function pickApplicant(cands: readonly Candidate[], quirks: boolean, cheap = false): Candidate | undefined {
+  /** The better of two of the same rank: the more valuable, or the cheaper. */
+  const better = (a: Candidate, b: Candidate) => (quirks ? applicantValue(b) - applicantValue(a) : a.salary - b.salary);
+  return [...cands].sort((a, b) => (cheap ? better(a, b) : b.skill - a.skill || better(a, b)))[0];
+}
+
+/**
+ * A payroll, and what the staff's quirks add to it and save from it: each salary against itself without its quirks'
+ * pay, the rises since hiring scaled the same way. Rounded to the dollar.
+ */
+export function quirkPay(staff: readonly Pick<Staff, 'salary' | 'traits'>[]): {
+  payroll: number;
+  adds: number;
+  saves: number;
+} {
+  let payroll = 0;
+  let adds = 0;
+  let saves = 0;
+  for (const st of staff) {
+    const extra = st.salary - st.salary / traitProduct(st.traits, 'pay');
+    payroll += st.salary;
+    if (extra > 0) adds += extra;
+    else saves -= extra;
+  }
+  return { payroll: Math.round(payroll), adds: Math.round(adds), saves: Math.round(saves) };
 }
 
 const TREAT_ROOM: Record<Discipline, RoomType> = {
@@ -749,6 +889,8 @@ export class Bot {
       ...(flags.endow ? { gifts: [] } : {}),
       machines: [],
       ...(flags.swap ? { swaps: [] } : {}),
+      hires: [],
+      quirks: { hired: 0, flaws: 0, rares: {}, adds: 0, saves: 0, payroll: 0 },
     };
     this.watch = this.freshWatch();
   }
@@ -970,6 +1112,7 @@ export class Bot {
       scans: this.scans,
       guesses: this.guesses,
       runners: this.runnerMonth,
+      ...this.payroll(),
       incomeBy: {
         treatment: Math.round(l.treatment),
         consult: Math.round(l.consult),
@@ -2191,13 +2334,48 @@ export class Bot {
   hire(role: Role): boolean {
     // the advisor's "hire nobody more" with less than a month's wages in hand: only for a role with nobody in it
     if (this.holdHires && this.staffOf(role).length) return false;
-    const cheap = role === 'consultant' && this.flags.junior;
-    const c = this.s.candidates
-      .filter((x) => x.role === role)
-      // a player picks the best rank going, then the cheaper, or (for a junior Consultant) just the cheapest
-      .sort((a, b) => (cheap ? a.salary - b.salary : b.skill - a.skill || a.salary - b.salary))[0];
+    const c = pickApplicant(
+      this.s.candidates.filter((x) => x.role === role),
+      this.flags.quirks,
+      role === 'consultant' && this.flags.junior,
+    );
     if (!c) return false;
-    return !!this.sim.hire(c.id);
+    return !!this.take(c);
+  }
+
+  /** Take an applicant on, and log them and their quirks. */
+  private take(c: Candidate): Staff | null {
+    const st = this.sim.hire(c.id);
+    if (!st) return null;
+    const q = this.log.quirks;
+    this.log.hires?.push({
+      day: Math.floor(this.s.day),
+      role: c.role,
+      rank: c.skill,
+      salary: c.salary,
+      quirks: c.traits,
+    });
+    if (q) {
+      q.hired++;
+      if (c.traits.some((t) => traitOf(t).bad)) q.flaws++;
+      for (const t of c.traits) if (traitOf(t).rare) q.rares[t] = (q.rares[t] ?? 0) + 1;
+    }
+    return st;
+  }
+
+  /**
+   * The payroll at a month's end, and what the staff's quirks add to it and save from it: each salary against what it
+   * would be without the quirks' pay (`quirkPay`). Summed into the game's `QuirkLog` as well.
+   */
+  private payroll(): Pick<MonthLog, 'payroll' | 'quirkPay'> {
+    const pay = quirkPay(this.s.staff.filter((x) => x.state !== 'leaving'));
+    const q = this.log.quirks;
+    if (q) {
+      q.payroll += pay.payroll;
+      q.adds += pay.adds;
+      q.saves += pay.saves;
+    }
+    return { payroll: pay.payroll, quirkPay: { adds: pay.adds, saves: pay.saves } };
   }
 
   /** Staff in a role who are staying. */
@@ -2265,7 +2443,7 @@ export class Bot {
 
   /**
    * With `swap`, in each role with staff and no swap in the last month: the best applicant (the best rank going, then
-   * the cheaper, as `hire` picks), and the weakest member at work who could go without losing what they know (the
+   * the best value or the cheaper, as `hire` picks), and the weakest member at work who could go without losing what they know (the
    * lowest rank, then the dearer, as `trimPayroll` picks). An applicant a rank or more above them is taken on, and then
    * they are let go. A hire that does not go through lets nobody go.
    */
@@ -2276,9 +2454,10 @@ export class Bot {
       if (s.day < (this.swappedOn[role] ?? -Infinity) + DAYS_PER_MONTH) continue;
       const staff = this.staffOf(role);
       if (!staff.length) continue;
-      const best = s.candidates
-        .filter((c) => c.role === role)
-        .sort((a, b) => b.skill - a.skill || a.salary - b.salary)[0];
+      const best = pickApplicant(
+        s.candidates.filter((c) => c.role === role),
+        this.flags.quirks,
+      );
       if (!best) continue;
       const go = staff
         .filter((st) => !st.training && !st.call && st.state !== 'away' && this.nothingLost(st, best))
@@ -2287,7 +2466,7 @@ export class Bot {
       const dearer = best.salary - go.salary;
       // a junior Consultant is kept for being cheap; and a dearer wage only while the month's books stay out of a loss
       if (dearer > 0 && ((role === 'consultant' && this.flags.junior) || projectedCashflow(s) - dearer < 0)) continue;
-      if (!this.sim.hire(best.id)) continue;
+      if (!this.take(best)) continue;
       this.sim.fire(go.id);
       this.swappedOn[role] = s.day;
       const day = Math.floor(s.day);
