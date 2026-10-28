@@ -3,8 +3,8 @@
 
 import { useState } from 'preact/hooks';
 
-import { centerOf, conditionOf, DISCIPLINES, type GoalSpec, ITEMS, MODALITIES, ROLES, ROOMS } from '../../core/data';
-import { an, money } from '../../core/format';
+import { centerOf, conditionOf, type GoalSpec, MODALITIES } from '../../core/data';
+import { money } from '../../core/format';
 import type { Objective } from '../../core/sim/goals';
 import type { TutorialLine } from '../../core/sim/tutorial';
 import { css } from '../../styled-system/css';
@@ -12,6 +12,7 @@ import { panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
+import { readyLines } from '../lib/waves';
 import { Bar } from './common/Bar';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
@@ -199,28 +200,8 @@ function WaveCard() {
   if (!w || !sim.featureOn('waves')) return null;
   const c = conditionOf(w.condition);
   const m = MODALITIES[c.modality];
-  const checks = sim.waveChecks(m.id);
+  const lines = readyLines(s, m.id, sim.waveChecks(m.id));
   const before = s.day < w.starts;
-  const room = ROOMS[DISCIPLINES[m.discipline].room].name;
-  // each part as done, or as the thing still to do
-  const lines: [boolean, string][] = [
-    [checks.room, checks.room ? `${room} open` : `Build ${an(room)}`],
-    [checks.qualified, checks.qualified ? `Someone trained in ${m.name}` : `Train someone in ${m.name}`],
-  ];
-  if (m.equipment) {
-    const kit = ITEMS[m.equipment].name;
-    lines.push([checks.kit, checks.kit ? `${kit} beside a table` : `Put ${an(kit)} beside a table`]);
-  }
-  if (m.rest)
-    lines.push([
-      checks.rest,
-      checks.rest ? 'Recovery Lounge for the rest after' : 'Build a Recovery Lounge for the rest after',
-    ]);
-  // once someone does it, whether the wave's guests share them with the discipline's own line
-  const role = ROLES[DISCIPLINES[m.discipline].role].name;
-  const staff = s.staff.filter((st) => st.role === DISCIPLINES[m.discipline].role && st.state !== 'leaving').length;
-  if (checks.qualified)
-    lines.push([staff > 1, staff > 1 ? `${staff} ${role}s to share the line` : `Only one ${role}: the line will grow`]);
   // the wave's guests in the center now, being seen or waiting
   const here = s.guests.filter((g) => g.wave && g.state !== 'leaving').length;
   return (
@@ -241,7 +222,7 @@ function WaveCard() {
             : `${wholeDaysLeft(w.ends - s.day)} days left · ${here} in now · ${w.healed} healed${w.turned ? ` · ${w.turned} came back later` : ''}`}
         </span>
       </Button>
-      {lines.map(([ok, text]) => (
+      {lines.map(({ ok, text }) => (
         <p key={text} class={cx('ready', ok ? 'ok' : 'warn')}>
           {`${ok ? '✔' : '⚠'} ${text}`}
         </p>

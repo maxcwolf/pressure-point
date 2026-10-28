@@ -34,6 +34,7 @@ import { newGame, openedKit, techniqueOpen } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { treatmentsUnlockedAt } from '../../src/ui/lib/unlocks';
+import { readyLines } from '../../src/ui/lib/waves';
 import { addAcupuncture, addRecovery, hire, openCenter } from './helpers';
 
 /** A game at The Exchange, with ailments going around switched on or off, and a context on it. */
@@ -216,6 +217,33 @@ describe('an ailment going around', () => {
     addRecovery(sim);
     expect(waveReady(ctx, 'moxa')).toBe(true);
     expect(waveTodo(ctx, 'moxa')).toBe('');
+  });
+});
+
+describe('the card under the objectives', () => {
+  /** A center with an Acupuncture Clinic, a Moxa Burner and a Recovery Lounge, open to Moxibustion early. */
+  function moxaReady() {
+    const { sim, s } = openCenter();
+    s.opened = ['moxa'];
+    addAcupuncture(sim);
+    expect(sim.placeItem('moxa_burner', 27, 9, 0)).not.toBeNull();
+    addRecovery(sim);
+    return { sim, s, ctx: createContext(s) };
+  }
+
+  it('counts only those trained in the technique as sharing its line', () => {
+    const { sim, s, ctx } = moxaReady();
+    hire(sim, 'acupuncturist').quals.push('moxa');
+    hire(sim, 'acupuncturist');
+    expect(readyLines(s, 'moxa', waveChecks(ctx, 'moxa')).at(-1)).toEqual({
+      ok: false,
+      text: 'Only one practitioner trained in it: the line will grow',
+    });
+    s.staff.filter((st) => st.role === 'acupuncturist')[1]!.quals.push('moxa');
+    expect(readyLines(s, 'moxa', waveChecks(ctx, 'moxa')).at(-1)).toEqual({
+      ok: true,
+      text: '2 practitioners trained in it share the line',
+    });
   });
 });
 
