@@ -1277,4 +1277,22 @@ describe('symptoms where they are: round 11', () => {
     for (const part of [rig.face.eyes, rig.face.mouth])
       expect(hides(clamp, new THREE.Box3().setFromObject(part).getCenter(new THREE.Vector3()))).toBe(false);
   });
+
+  it("keeps the apple core's pips off the line of the eyes, and its top from hiding the face from above", () => {
+    const rig = built('rotten');
+    const core = rig.props[0]!;
+    const pips = core.children.find(
+      (o) => ((o as THREE.Mesh).material as THREE.MeshStandardMaterial).color.getHex() === 0x3a2414,
+    ) as THREE.Mesh;
+    const eyes = new THREE.Box3().setFromObject(rig.face.eyes);
+    const pos = pips.geometry.getAttribute('position');
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(pips.matrixWorld);
+      // none of them on the face's side at the height of the eyes
+      if (v.y > eyes.min.y - 0.02) expect(v.z).toBeLessThan(0);
+    }
+    // from the game's camera the eyes show under the top of the core
+    expect(hides(core, eyes.getCenter(new THREE.Vector3()))).toBe(false);
+  });
 });

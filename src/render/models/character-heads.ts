@@ -449,15 +449,16 @@ function appleCore(rig: CharRig) {
       0,
     ],
     [
+      // narrower than the bottom and flaring little over the bite, so from above it leaves the face in sight
       lathe('core top', [
-        [0.001, 0.1],
-        [0.15, 0.1],
-        [0.24, 0.12],
-        [0.26, 0.18],
-        [0.22, 0.26],
-        [0.12, 0.3],
-        [0.03, 0.27],
-        [0.001, 0.27],
+        [0.001, 0.11],
+        [0.13, 0.11],
+        [0.18, 0.13],
+        [0.21, 0.18],
+        [0.19, 0.24],
+        [0.11, 0.28],
+        [0.03, 0.26],
+        [0.001, 0.26],
       ]),
       0,
       0,
@@ -479,12 +480,14 @@ function appleCore(rig: CharRig) {
     0,
     0,
   );
+  // the pips round the sides and back, long like seeds, off the line of the eyes so they never read as more of them
+  const pip = cached('core pip', () => new THREE.SphereGeometry(0.02, 8, 6).scale(0.8, 1.5, 0.8));
   put(
     g,
     joined('core pips', [
-      [sph(0.022, 6), -0.09, -0.03, 0.08],
-      [sph(0.022, 6), 0.1, 0.02, 0.07],
-      [sph(0.022, 6), 0.02, -0.05, -0.11],
+      [pip, -0.125, -0.05, -0.03, 0, 0, 0.3],
+      [pip, 0.125, -0.07, -0.05, 0, 0, -0.3],
+      [pip, 0.02, -0.06, -0.13],
     ]),
     mat(0x3a2414, 0.5),
     0,
