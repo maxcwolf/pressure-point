@@ -12,14 +12,16 @@ import {
   type ItemType,
   type Land,
   type Modality,
+  quirkFits,
   renamedItem,
   RIVAL_START_POINTS,
   type Role,
   ROLES,
   ROOMS,
 } from '../data';
+import { tuning } from '../difficulty';
 import { type LandSide, stripsBought } from '../land';
-import { makeCandidate, settleLook, settleSex, settleTop } from '../people';
+import { fairSalary, makeCandidate, scalePay, settleLook, settleSex, settleTop } from '../people';
 import { newSeed } from '../random';
 import { readLayout } from '../templates';
 import {
@@ -350,7 +352,21 @@ export function upgradeSave(save: GameState) {
   // rooms were first pencilled in with version 40, and one of a kind of room from a newer version means nothing here
   save.sketches = save.sketches.filter((sk) => Object.hasOwn(ROOMS, sk.type));
   for (const sk of save.sketches) rememberedRoom(sk);
+  if (s.version < 43) fitQuirks(save);
   s.version = SAVE_VERSION;
+}
+
+/**
+ * Up to version 42, a rare quirk that acts only on a treatment could go to someone who never gives one: it is taken
+ * from them. Staff keep the pay they were hired at; an applicant asks what they are worth without it.
+ */
+function fitQuirks(s: GameState) {
+  for (const st of s.staff) st.traits = st.traits.filter((t) => quirkFits(t, st.role));
+  for (const c of s.candidates) {
+    if (c.traits.every((t) => quirkFits(t, c.role))) continue;
+    c.traits = c.traits.filter((t) => quirkFits(t, c.role));
+    c.salary = scalePay(fairSalary(c.role, c.skill, c.traits, c.quals), tuning(s, 'salaries'));
+  }
 }
 
 /**

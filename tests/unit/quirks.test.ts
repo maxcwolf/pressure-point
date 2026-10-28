@@ -11,24 +11,30 @@ import {
   QUIRKS_MIN,
   RARE_CHANCE,
   RARE_TRAITS,
+  type Role,
+  ROLE_ORDER,
+  ROLES,
   type TraitId,
   traitMost,
   traitOf,
   traitSpeed,
 } from '../../src/core/data';
-import { fairSalary, makeCandidate, rollQuirks } from '../../src/core/people';
+import { tuning } from '../../src/core/difficulty';
+import { fairSalary, makeCandidate, rollQuirks, scalePay } from '../../src/core/people';
 import { heldSpace } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
 import { moraleFloor } from '../../src/core/sim/staffing';
 import { postAboutIt, serviceSeconds, worksAnyway } from '../../src/core/sim/stations';
+import type { Candidate, GameState } from '../../src/core/state/types';
+import { upgradeSave } from '../../src/core/state/upgrade';
 import { freshSim, openCenter, run } from './helpers';
 
 /** The simulation's own context, which the hooks are given. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
 
 describe('the roll', () => {
-  const rolls = Array.from({ length: 7000 }, (_, i) => rollQuirks({ rng: i * 7919 + 1 }));
+  const rolls = Array.from({ length: 7000 }, (_, i) => rollQuirks({ rng: i * 7919 + 1 }, 'therapist'));
 
   it('gives one to three common quirks, none twice', () => {
     for (const r of rolls) {
@@ -62,6 +68,90 @@ describe('the roll', () => {
   it('leaves nobody without a quirk, applicant or Amanda Jablonsky', () => {
     const sim = freshSim(3);
     for (let i = 0; i < 300; i++) expect(makeCandidate(sim.s, 'therapist').traits.length).toBeGreaterThan(0);
+  });
+});
+
+describe('the rare quirks for each role', () => {
+  /** The rare quirks that turn up in many rolls for a role. */
+  const rareFor = (role: Role) =>
+    new Set(
+      Array.from({ length: 4000 }, (_, i) => rollQuirks({ rng: i * 104729 + 3 }, role))
+        .flat()
+        .filter((t) => traitOf(t).rare),
+    );
+
+  it('gives Former Influencer and Healing Hands only to those who treat guests, and the other two to anyone', () => {
+    // the roles whose work goes through a treatment: the Qi Gong Instructor's classes do not, and the Sound Healer's
+    // baths do
+    expect(ROLE_ORDER.filter((r) => ROLES[r].discipline).sort()).toEqual([
+      'acupuncturist',
+      'healer',
+      'practitioner',
+      'shaman',
+      'therapist',
+    ]);
+    for (const role of ROLE_ORDER) {
+      const rare = rareFor(role);
+      const treats = !!ROLES[role].discipline;
+      expect(rare.has('influencer')).toBe(treats);
+      expect(rare.has('hands')).toBe(treats);
+      expect(rare.has('survivor')).toBe(true);
+      expect(rare.has('space')).toBe(true);
+    }
+  });
+
+  it('keeps them from applicants who do not treat guests', () => {
+    const sim = freshSim(7);
+    for (const role of ['receptionist', 'consultant', 'caretaker', 'instructor'] as const)
+      for (let i = 0; i < 200; i++) {
+        const { traits } = makeCandidate(sim.s, role);
+        expect(traits).not.toContain('influencer');
+        expect(traits).not.toContain('hands');
+      }
+  });
+});
+
+describe('a save from before rare quirks fit the role', () => {
+  it('takes them from staff and applicants who do not treat guests, and re-prices only the applicants', () => {
+    const { s, receptionist, consultant, therapist } = openCenter(2);
+    receptionist.traits = ['brisk', 'hands'];
+    consultant.traits = ['bargain', 'influencer'];
+    therapist.traits = ['green', 'influencer'];
+    const pay = s.staff.map((st) => st.salary);
+    /** An applicant in a role given these quirks, asking more than anyone would. */
+    const apply = (role: Role, traits: TraitId[]) =>
+      Object.assign(
+        s.candidates.find((c) => c.role === role)!,
+        { traits, salary: 9999 },
+      );
+    apply('receptionist', ['brisk', 'hands']);
+    apply('caretaker', ['sleepy', 'influencer']);
+    apply('therapist', ['quick', 'hands']);
+    apply('consultant', ['tireless', 'survivor']);
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    old.version = 42;
+    upgradeSave(old);
+    /** A member of staff in the upgraded save. */
+    const staff = (id: number) => old.staff.find((st) => st.id === id)!;
+    /** The applicant for a role given quirks above, in the upgraded save. */
+    const applicant = (role: Role) => old.candidates.find((c) => c.role === role)!;
+    /** What an applicant would ask, with the quirks they have. */
+    const fair = (c: Candidate) => scalePay(fairSalary(c.role, c.skill, c.traits, c.quals), tuning(old, 'salaries'));
+    // staff lose what they could never use, and keep the pay they were hired at
+    expect(staff(receptionist.id).traits).toEqual(['brisk']);
+    expect(staff(consultant.id).traits).toEqual(['bargain']);
+    expect(staff(therapist.id).traits).toEqual(['green', 'influencer']);
+    expect(old.staff.map((st) => st.salary)).toEqual(pay);
+    // applicants lose it too, and ask what they are worth without it
+    expect(applicant('receptionist').traits).toEqual(['brisk']);
+    expect(applicant('receptionist').salary).toBe(fair(applicant('receptionist')));
+    expect(applicant('caretaker').traits).toEqual(['sleepy']);
+    expect(applicant('caretaker').salary).toBe(fair(applicant('caretaker')));
+    // and one whose rare quirk fits keeps it, and their asking pay
+    expect(applicant('therapist').traits).toEqual(['quick', 'hands']);
+    expect(applicant('therapist').salary).toBe(9999);
+    expect(applicant('consultant').traits).toEqual(['tireless', 'survivor']);
+    expect(applicant('consultant').salary).toBe(9999);
   });
 });
 

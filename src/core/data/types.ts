@@ -382,6 +382,8 @@ export interface TraitDef {
   bad?: boolean;
   /** A rare quirk: stronger than the rest, rolled by about one applicant in seven, on top of their common ones. */
   rare?: boolean;
+  /** Only for roles who treat guests, those with a discipline: it acts on a treatment and on nothing else. */
+  treats?: boolean;
   /** Reputation earned on top for each guest they heal. */
   rep?: number;
   /** The lowest their morale can fall. */

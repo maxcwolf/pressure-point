@@ -13,6 +13,7 @@ import {
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
+  quirkFits,
   QUIRKS_MAX,
   QUIRKS_MIN,
   RARE_CHANCE,
@@ -201,7 +202,7 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   // and a center standing higher, better still
   const reach = 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL;
   const skill = clamp(Math.round(rnd(s, 0.6, reach)) + drive, 1, 5);
-  const traits = rollQuirks(s);
+  const traits = rollQuirks(s, role);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more
   const quals: Modality[] = [];
   const discipline = ROLES[role].discipline;
@@ -240,9 +241,9 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
 
 /**
  * An applicant's quirks: one to three common ones, none of them clashing with another and at most one of them a
- * flaw, and now and then a rare one as well, last.
+ * flaw, and now and then a rare one as well, last, of those that fit their role.
  */
-export function rollQuirks(r: Rng): TraitId[] {
+export function rollQuirks(r: Rng, role: Role): TraitId[] {
   const count = QUIRKS_MIN + Math.floor(random(r) * (QUIRKS_MAX - QUIRKS_MIN + 1));
   const quirks: TraitId[] = [];
   while (quirks.length < count) {
@@ -253,7 +254,13 @@ export function rollQuirks(r: Rng): TraitId[] {
     if (!free.length) break;
     quirks.push(pick(r, free).id);
   }
-  if (random(r) < RARE_CHANCE) quirks.push(pick(r, RARE_TRAITS).id);
+  if (random(r) < RARE_CHANCE)
+    quirks.push(
+      pick(
+        r,
+        RARE_TRAITS.filter((t) => quirkFits(t.id, role)),
+      ).id,
+    );
   return quirks;
 }
 

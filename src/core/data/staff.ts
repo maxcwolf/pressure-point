@@ -133,6 +133,7 @@ export const TRAITS: readonly TraitDef[] = [
     pay: 1.25,
     rep: 1,
     rare: true,
+    treats: true,
   },
   {
     id: 'survivor',
@@ -149,6 +150,7 @@ export const TRAITS: readonly TraitDef[] = [
     pay: 1.25,
     rescue: 0.1,
     rare: true,
+    treats: true,
   },
   {
     id: 'space',
@@ -210,6 +212,9 @@ export function traitOf(id: TraitId): TraitDef {
   if (!def) throw new Error(`unknown trait "${id}"`);
   return def;
 }
+
+/** Whether a quirk can be had in a role: one that acts only on a treatment, only by those who treat guests. */
+export const quirkFits = (id: TraitId, role: Role) => !traitOf(id).treats || !!ROLES[role].discipline;
 
 /** The product of one number their quirks each set, such as `stamina`, with 1 for a quirk that leaves it alone. */
 export const traitProduct = (

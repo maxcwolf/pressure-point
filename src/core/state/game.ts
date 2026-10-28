@@ -140,8 +140,9 @@ export const defaultPolicy = (): Policy => ({
  * 40: rooms pencilled in for later.
  * 41: the four rare quirks. Staff and applicants already in a save keep the quirks they have.
  * 42: ailments going around, the techniques they opened early, and the features being tried out.
+ * 43: Former Influencer and Healing Hands only for those who treat guests, taken from anyone else who has one.
  */
-export const SAVE_VERSION = 42;
+export const SAVE_VERSION = 43;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
