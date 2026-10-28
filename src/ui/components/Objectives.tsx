@@ -9,7 +9,7 @@ import type { Objective } from '../../core/sim/goals';
 import type { TutorialLine } from '../../core/sim/tutorial';
 import { css } from '../../styled-system/css';
 import { panelCard } from '../../styled-system/recipes';
-import { useGame } from '../hooks/use-hud';
+import { useGame, useHud } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
 import { wholeDaysLeft } from '../lib/emergency';
 import { Bar } from './common/Bar';
@@ -136,6 +136,9 @@ const waveCard = css(card, {
   '& .ready.warn': { color: 'warn' },
 });
 
+/** The wave card's heading and how it stands, which open its dialog again when clicked. */
+const waveOpener = css(opener, { display: 'flex', flexDirection: 'column', gap: '2' });
+
 /** One objective: its label and progress, and on a click the numbers behind it, a line each. */
 function ObjectiveRow({ objective: o, goal }: { objective: Objective; goal: GoalSpec | undefined }) {
   const { sim } = useGame();
@@ -189,7 +192,8 @@ function ChallengeCard() {
  * its treatment; while they come, the days left and how they have fared.
  */
 function WaveCard() {
-  const { sim } = useGame();
+  const hud = useHud();
+  const { sim } = hud.host;
   const s = sim.s;
   const w = s.wave;
   if (!w || !sim.featureOn('waves')) return null;
@@ -221,14 +225,22 @@ function WaveCard() {
   const here = s.guests.filter((g) => g.wave && g.state !== 'leaving').length;
   return (
     <div class={cx('wave', waveCard)}>
-      <b>
-        <IconText id="bubble-sick">{`Going around: ${c.name}`}</IconText>
-      </b>{' '}
-      <span>
-        {before
-          ? `In ${wholeDaysLeft(w.starts - s.day)} days · for ${Math.round(w.ends - w.starts)} days`
-          : `${wholeDaysLeft(w.ends - s.day)} days left · ${here} in now · ${w.healed} healed${w.turned ? ` · ${w.turned} came back later` : ''}`}
-      </span>
+      <Button
+        class={waveOpener}
+        title="What is going around, and what getting ready takes"
+        onPress={() => {
+          hud.open('wave');
+        }}
+      >
+        <b>
+          <IconText id="bubble-sick">{`Going around: ${c.name}`}</IconText>
+        </b>
+        <span>
+          {before
+            ? `In ${wholeDaysLeft(w.starts - s.day)} days · for ${Math.round(w.ends - w.starts)} days`
+            : `${wholeDaysLeft(w.ends - s.day)} days left · ${here} in now · ${w.healed} healed${w.turned ? ` · ${w.turned} came back later` : ''}`}
+        </span>
+      </Button>
       {lines.map(([ok, text]) => (
         <p key={text} class={cx('ready', ok ? 'ok' : 'warn')}>
           {`${ok ? '✔' : '⚠'} ${text}`}

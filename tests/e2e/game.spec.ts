@@ -3620,3 +3620,36 @@ test.describe('out of doors', () => {
     expect(game.errors).toEqual([]);
   });
 });
+
+test.describe('ailments going around', () => {
+  test('the card under the objectives opens the wave dialog again once it is closed', async ({ game, page }) => {
+    await game.start();
+    await game.eval((pp) => {
+      pp.sim.setFeature('waves', true);
+      const day = pp.state.day;
+      pp.state.wave = {
+        condition: 'coldfeet',
+        warned: day,
+        starts: day + 7,
+        ends: day + 37,
+        opened: true,
+        begun: false,
+        came: 0,
+        healed: 0,
+        turned: 0,
+      };
+    });
+    const card = page.locator('#objectives .wave');
+    await expect(card).toContainText('Going around: Cold Feet');
+    const dialog = page.locator('#modal');
+    await expect(dialog).toBeEmpty();
+    await card.getByRole('button', { name: /Going around: Cold Feet/ }).click();
+    await expect(dialog).toContainText('Going around town');
+    await expect(dialog).toContainText('at today’s pace');
+    await dialog.getByRole('button', { name: 'Got it' }).click();
+    await expect(dialog).toBeEmpty();
+    await card.getByRole('button', { name: /Going around: Cold Feet/ }).click();
+    await expect(dialog).toContainText('Going around town');
+    expect(game.errors).toEqual([]);
+  });
+});
