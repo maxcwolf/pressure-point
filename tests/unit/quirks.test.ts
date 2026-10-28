@@ -295,14 +295,15 @@ describe('the rare quirks', () => {
     expect(traitOf('survivor').desc).toContain('poach');
   });
 
-  it('Healing Hands saves one failed treatment in ten, and nobody else rolls the dice', () => {
+  it('Healing Hands saves one failed treatment in three, and nobody else rolls the dice', () => {
     const ctx = { s: { rng: 99 } } as unknown as SimContext;
     const plain = { traits: ['brisk'] } as never;
     expect(Array.from({ length: 100 }, () => worksAnyway(ctx, plain)).some(Boolean)).toBe(false);
     expect(ctx.s.rng).toBe(99);
     const hands = { traits: ['hands'] } as never;
     const saved = Array.from({ length: 20000 }, () => worksAnyway(ctx, hands)).filter(Boolean).length;
-    expect(saved / 20000).toBeCloseTo(traitMost(['hands'], 'rescue'), 1.5);
+    expect(traitMost(['hands'], 'rescue')).toBeCloseTo(1 / 3);
+    expect(saved / 20000).toBeCloseTo(1 / 3, 1.5);
   });
 
   it('Healing Hands show each treatment they save: a floater over the table, and a count of them', () => {

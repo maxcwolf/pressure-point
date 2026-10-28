@@ -148,9 +148,9 @@ export const TRAITS: readonly TraitDef[] = [
   {
     id: 'hands',
     name: 'Healing Hands',
-    desc: 'One treatment in ten that would have failed works anyway.',
+    desc: 'One treatment in three that would have failed works anyway.',
     pay: 1.25,
-    rescue: 0.1,
+    rescue: 1 / 3,
     rare: true,
     treats: true,
   },
