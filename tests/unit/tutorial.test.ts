@@ -181,7 +181,9 @@ describe('the tutorial', () => {
     sim.noteLooked();
     sim.s.speed = 0;
     sim.placeItem('reception_desk', 14, 13, 0);
-    expect(sim.tutorialStep()?.text).toMatch(/their quirks, green where they help and red where they cost you/);
+    expect(sim.tutorialStep()?.text).toMatch(
+      /their quirks, green where they help, red where they cost you, and gold with a star for a rare one/,
+    );
     expect(sim.tutorialStep()?.text).toMatch(/the lower the rank, the less they ask/);
     hire(sim, 'receptionist');
     addConsult(sim);

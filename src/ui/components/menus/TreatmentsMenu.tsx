@@ -17,6 +17,7 @@ import {
 } from '../../../core/data';
 import { an, money } from '../../../core/format';
 import { roomForModality } from '../../../core/sim/machines';
+import { openedEarly } from '../../../core/sim/waves';
 import { unlockedUpTo } from '../../../core/state/game';
 import { css } from '../../../styled-system/css';
 import { panelCard } from '../../../styled-system/recipes';
@@ -70,7 +71,7 @@ function ModalityCard({ modality }: { modality: Modality }) {
   const rest = restNote(def.rest, sim.hasRoom('recovery'));
   const trip = tripNote(def.trip);
   // opened early by an ailment going around, before its star
-  const early = !locked && s.opened.includes(modality) && unlockedUpTo(s) < def.star;
+  const early = !locked && openedEarly(s, modality);
   return (
     <div class={cx('card', modalityCard, locked && 'locked')}>
       <Icon id={def.icon} size={34} />

@@ -74,9 +74,6 @@ export const cardLook = css.raw({
     mt: '2',
   },
   '& em.none': { opacity: 'quiet' },
-  // an applicant's quirk: green where it helps, red where it costs
-  '& em.good': { bg: 'good.bg', color: 'good' },
-  '& em.bad': { bg: 'bad.bg', color: 'bad' },
   // how much more an item needs before it can be bought
   '& em.short': { bg: 'bad.bg', color: 'bad', fontWeight: 'bold' },
   '& .cost': {
