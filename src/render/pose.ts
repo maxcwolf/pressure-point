@@ -191,6 +191,9 @@ export const PRONE_TURN = 0;
 /** How long a healed guest's symptom takes to shrink away in a puff of sparkles, in seconds. */
 export const CURE = 0.8;
 
+/** How fast the pieces of someone scattered drift round in their circles, in radians a second: once in seven seconds. */
+const SCATTER_TURN = 0.9;
+
 /** How long the hop for joy as it goes lasts, in seconds, and how high it goes, in meters. */
 export const HOP = { lasts: 0.55, high: 0.2 } as const;
 
@@ -897,11 +900,21 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     // put away while they lie down, as what floats over the head is, or, `standing`, while they sit too
     if ((upright || standing) && !rig.cured) o.visible = c.pose !== 'lie' && !(standing && c.pose === 'sit');
     if (drift) {
-      // floating loose of where it belongs, up and down to its own rhythm, but put back together lying down, to lie on
-      // whatever they lie on
-      const { home, apart } = o.userData as { home: THREE.Vector3; apart: THREE.Vector3 };
+      // floating loose of where it belongs, up and down and round to its own rhythm, but put back together lying down,
+      // to lie on whatever they lie on, and eased back together over the puff of the cure
+      const { home, apart, circle, phase } = o.userData as {
+        home: THREE.Vector3;
+        apart: THREE.Vector3;
+        circle: number;
+        phase: number;
+      };
       o.position.copy(home);
-      if (c.pose !== 'lie') o.position.add(apart).y += Math.sin(t * 1.7 + c.id + o.id * 1.3) * drift;
+      if (c.pose === 'lie') continue;
+      const loose = Number.isNaN(curing) ? 1 : 1 - THREE.MathUtils.smoothstep(curing, 0, CURE);
+      const round = t * SCATTER_TURN + c.id + phase;
+      o.position.x += (apart.x + Math.cos(round) * circle) * loose;
+      o.position.y += (apart.y + Math.sin(t * 1.7 + c.id + phase) * drift) * loose;
+      o.position.z += (apart.z + Math.sin(round) * circle) * loose;
       continue;
     }
     o.rotation.y = t * spin;

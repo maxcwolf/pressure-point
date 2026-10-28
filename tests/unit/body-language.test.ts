@@ -1188,3 +1188,71 @@ describe('at work', () => {
     expect(CAP_TIP).toBeLessThan(-0.2);
   });
 });
+
+describe('symptoms where they are: round 11', () => {
+  /** The way to the game's camera, looking down at someone from the front and to one side, as the lab's game angle. */
+  const GAME = new THREE.Vector3(1, 1.2, 1).normalize();
+  /** Across the game's picture, to the right. */
+  const RIGHT = new THREE.Vector3(GAME.z, 0, -GAME.x).normalize();
+  /** Up the game's picture. */
+  const UP = new THREE.Vector3().crossVectors(GAME, RIGHT).normalize();
+  /** Every corner of a mesh as drawn, where it shows in the game's picture: across and up, in meters. */
+  const corners = (m: THREE.Mesh) => {
+    const at = m.geometry.getAttribute('position');
+    const v = new THREE.Vector3();
+    return Array.from({ length: at.count }, (_, i) => {
+      v.fromBufferAttribute(at, i).applyMatrix4(m.matrixWorld);
+      return [v.dot(RIGHT), v.dot(UP)] as const;
+    });
+  };
+  it('floats someone scattered far enough apart that daylight shows between head and body from the game camera', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    const shirt = rig.torso.getObjectByName('shirt') as THREE.Mesh;
+    for (let t = 0; t < 8; t += 0.25) {
+      pose(rig, g, t);
+      const head = corners(rig.headMesh);
+      const middle = head.reduce((sum, [x]) => sum + x, 0) / head.length;
+      // straight down the picture from the middle of the head: the bottom of the head, and the top of the shoulders
+      const chin = Math.min(...head.map(([, y]) => y));
+      const shoulders = Math.max(...corners(shirt).flatMap(([x, y]) => (Math.abs(x - middle) < 0.05 ? [y] : [])));
+      expect(chin - shoulders, `at ${t}`).toBeGreaterThan(0.02);
+    }
+  });
+
+  it('drifts the pieces of someone scattered round in slow circles, the head one way as the body goes the other', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    const at = [0, 1.75, 3.5].map((t) => {
+      pose(rig, g, t);
+      return [rig.head.position.clone(), rig.torso.position.clone()] as const;
+    });
+    expect(new Set(at.map(([h]) => h.x.toFixed(3))).size).toBe(3);
+    expect(new Set(at.map(([h]) => h.z.toFixed(3))).size).toBe(3);
+    const [[h0, b0], [h1, b1]] = at as [[THREE.Vector3, THREE.Vector3], [THREE.Vector3, THREE.Vector3]];
+    expect(Math.sign(h1.x - h0.x)).toBe(-Math.sign(b1.x - b0.x));
+  });
+
+  it('eases someone scattered back together over the puff of the cure, rather than in one frame', () => {
+    const whole = buildCharacter(LAB_LOOK);
+    const rig = buildCharacter(LAB_LOOK, undefined, 'shards');
+    const g = demoGuest(LAB_LOOK, 'scattered');
+    pose(rig, g, 0);
+    const apart = rig.head.position.y - whole.head.position.y;
+    cureRig(rig, 1);
+    const healed = { ...g, outcome: 'healed' as const };
+    const lifts = [0.25, 0.5, 0.75].map((u) => {
+      pose(rig, healed, 1 + CURE * u);
+      return rig.head.position.y - whole.head.position.y;
+    });
+    // coming down all the way through, not still apart at the half and then home at once
+    for (const lift of lifts) {
+      expect(lift).toBeGreaterThan(0.001);
+      expect(lift).toBeLessThan(apart);
+    }
+    expect(lifts[0]).toBeGreaterThan(lifts[1]!);
+    expect(lifts[1]).toBeGreaterThan(lifts[2]!);
+    pose(rig, healed, 1 + CURE * 1.5);
+    expect(rig.head.position.toArray()).toEqual(whole.head.position.toArray());
+  });
+});

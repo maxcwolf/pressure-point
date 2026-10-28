@@ -256,33 +256,36 @@ function storm(rig: CharRig) {
 }
 
 /**
- * Float a part of someone `up` meters up from where it belongs and `aside` meters to one side, and set it drifting up
- * and down `drift` meters (see `pose`), to be put back with the cure and left to the rest of the pose from then on.
+ * Float a part of someone loose of where it belongs, by `apart` meters to the side, up and forward, and set it drifting
+ * up and down `drift` meters and round in a slow circle `circle` meters across, from `phase` round it (see `pose`). The
+ * cure eases it back over the puff, and it is left to the rest of the pose from then on (see `endCure`).
  */
-function floatApart(rig: CharRig, part: THREE.Object3D, up: number, aside: number, drift: number) {
-  const home = part.position.clone();
-  part.userData.home = home;
-  part.userData.apart = new THREE.Vector3(aside, up, 0);
+function floatApart(
+  rig: CharRig,
+  part: THREE.Object3D,
+  apart: readonly [aside: number, up: number, forward: number],
+  drift: number,
+  circle: number,
+  phase: number,
+) {
+  part.userData.home = part.position.clone();
+  part.userData.apart = new THREE.Vector3(...apart);
   part.userData.drift = drift;
+  part.userData.circle = circle;
+  part.userData.phase = phase;
   part.position.add(part.userData.apart as THREE.Vector3);
-  const spins = (rig.spin ??= []);
-  spins.push(part);
-  (rig.restore ??= []).push(() => {
-    const at = spins.indexOf(part);
-    if (at >= 0) spins.splice(at, 1);
-    part.userData.drift = 0;
-    part.position.copy(home);
-  });
+  (rig.spin ??= []).push(part);
 }
 
 /**
- * Scattered: in pieces, the head floating a hand's width over the shoulders and the body over the legs, each a little
- * askew and drifting up and down on its own, the shards of them still drifting round. Lying down they come together,
- * as the shards are put away then.
+ * Scattered: in pieces, the head floating well over the shoulders and the body over the legs, each pushed off to one
+ * side and forward, drifting up and down and round in slow circles of their own, the head one way as the body goes the
+ * other, so daylight shows between them from above; the shards of them still drifting round. Lying down they come
+ * together, as the shards are put away then.
  */
 function inPieces(rig: CharRig) {
-  floatApart(rig, rig.head, 0.2, 0.05, 0.03);
-  floatApart(rig, rig.torso, 0.22, -0.04, 0.025);
+  floatApart(rig, rig.head, [0.07, 0.4, 0.04], 0.03, 0.08, 0);
+  floatApart(rig, rig.torso, [-0.05, 0.26, 0.02], 0.025, 0.05, Math.PI);
 }
 
 const ROPE = 0xc8a46a;

@@ -921,6 +921,11 @@ export function cureRig(rig: CharRig, t: number) {
  */
 export function endCure(rig: CharRig, look: Look) {
   rig.cured = true;
+  // the pieces of someone scattered, home and left to the rest of the pose
+  if (rig.spin) {
+    for (const o of rig.spin) if (o.userData.drift) o.position.copy(o.userData.home as THREE.Vector3);
+    rig.spin = rig.spin.filter((o) => !o.userData.drift);
+  }
   rig.props.forEach((o, i) => {
     o.visible = false;
     const rest = rig.rest?.[i];
