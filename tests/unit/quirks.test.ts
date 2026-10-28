@@ -28,7 +28,7 @@ import { moraleFloor } from '../../src/core/sim/staffing';
 import { postAboutIt, serviceSeconds, worksAnyway } from '../../src/core/sim/stations';
 import type { Candidate, GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
-import { freshSim, openCenter, run } from './helpers';
+import { freshSim, hire, openCenter, run } from './helpers';
 
 /** The simulation's own context, which the hooks are given. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
@@ -91,7 +91,7 @@ describe('the rare quirks for each role', () => {
         .filter((t) => traitOf(t).rare),
     );
 
-  it('gives Former Influencer and Healing Hands only to those who treat guests, and the other two to anyone', () => {
+  it('gives Former Influencer and Healing Hands only to those who treat guests, Holds Space to anyone who takes a post, and Burnout Survivor to anyone', () => {
     // the roles whose work goes through a treatment: the Qi Gong Instructor's classes do not, and the Sound Healer's
     // baths do
     expect(ROLE_ORDER.filter((r) => ROLES[r].discipline).sort()).toEqual([
@@ -107,8 +107,14 @@ describe('the rare quirks for each role', () => {
       expect(rare.has('influencer')).toBe(treats);
       expect(rare.has('hands')).toBe(treats);
       expect(rare.has('survivor')).toBe(true);
-      expect(rare.has('space')).toBe(true);
+      expect(rare.has('space')).toBe(role !== 'caretaker');
     }
+  });
+
+  it('never gives a Caretaker, who never takes a post, Holds Space', () => {
+    for (let i = 0; i < 20000; i++) expect(rollQuirks({ rng: i * 7907 + 11 }, 'caretaker')).not.toContain('space');
+    const sim = freshSim(9);
+    for (let i = 0; i < 300; i++) expect(makeCandidate(sim.s, 'caretaker').traits).not.toContain('space');
   });
 
   it('keeps them from applicants who do not treat guests', () => {
@@ -163,6 +169,29 @@ describe('a save from before rare quirks fit the role', () => {
     expect(applicant('therapist').salary).toBe(9999);
     expect(applicant('consultant').traits).toEqual(['tireless', 'survivor']);
     expect(applicant('consultant').salary).toBe(9999);
+  });
+});
+
+describe('a save from before Holds Space was kept from Caretakers', () => {
+  it('takes it from Caretakers, staff and applicants, and leaves it with a Receptionist', () => {
+    const { sim, s, receptionist } = openCenter(4);
+    const caretaker = hire(sim, 'caretaker');
+    caretaker.traits = ['tireless', 'space'];
+    receptionist.traits = ['green', 'space'];
+    const pay = caretaker.salary;
+    const applicant = Object.assign(makeCandidate(s, 'caretaker'), { traits: ['quick', 'space'], salary: 9999 });
+    s.candidates.push(applicant);
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    old.version = 43;
+    upgradeSave(old);
+    expect(old.staff.find((st) => st.id === caretaker.id)!.traits).toEqual(['tireless']);
+    expect(old.staff.find((st) => st.id === caretaker.id)!.salary).toBe(pay);
+    expect(old.staff.find((st) => st.id === receptionist.id)!.traits).toEqual(['green', 'space']);
+    const after = old.candidates.find((c) => c.id === applicant.id)!;
+    expect(after.traits).toEqual(['quick']);
+    expect(after.salary).toBe(
+      scalePay(fairSalary('caretaker', after.skill, ['quick'], after.quals), tuning(old, 'salaries')),
+    );
   });
 });
 

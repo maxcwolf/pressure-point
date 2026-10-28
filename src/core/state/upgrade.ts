@@ -352,13 +352,14 @@ export function upgradeSave(save: GameState) {
   // rooms were first pencilled in with version 40, and one of a kind of room from a newer version means nothing here
   save.sketches = save.sketches.filter((sk) => Object.hasOwn(ROOMS, sk.type));
   for (const sk of save.sketches) rememberedRoom(sk);
-  if (s.version < 43) fitQuirks(save);
+  if (s.version < 44) fitQuirks(save);
   s.version = SAVE_VERSION;
 }
 
 /**
- * Up to version 42, a rare quirk that acts only on a treatment could go to someone who never gives one: it is taken
- * from them. Staff keep the pay they were hired at; an applicant asks what they are worth without it.
+ * Up to version 42, a rare quirk that acts only on a treatment could go to someone who never gives one, and up to 43,
+ * Holds Space, which acts only from a post, to a Caretaker, who never takes one: each is taken from them. Staff keep
+ * the pay they were hired at; an applicant asks what they are worth without it.
  */
 function fitQuirks(s: GameState) {
   for (const st of s.staff) st.traits = st.traits.filter((t) => quirkFits(t, st.role));

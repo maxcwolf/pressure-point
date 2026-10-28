@@ -161,6 +161,7 @@ export const TRAITS: readonly TraitDef[] = [
     pay: 1.25,
     hold: 1.15,
     rare: true,
+    posted: true,
   },
 ];
 
@@ -215,8 +216,14 @@ export function traitOf(id: TraitId): TraitDef {
   return def;
 }
 
-/** Whether a quirk can be had in a role: one that acts only on a treatment, only by those who treat guests. */
-export const quirkFits = (id: TraitId, role: Role) => !traitOf(id).treats || !!ROLES[role].discipline;
+/**
+ * Whether a quirk can be had in a role: one that acts only on a treatment, only by those who treat guests, and one that
+ * acts only from a post, by anyone but a Caretaker, who goes from job to job and never takes one.
+ */
+export const quirkFits = (id: TraitId, role: Role) => {
+  const def = traitOf(id);
+  return (!def.treats || !!ROLES[role].discipline) && (!def.posted || role !== 'caretaker');
+};
 
 /** The product of one number their quirks each set, such as `stamina`, with 1 for a quirk that leaves it alone. */
 export const traitProduct = (

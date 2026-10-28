@@ -387,6 +387,8 @@ export interface TraitDef {
   rare?: boolean;
   /** Only for roles who treat guests, those with a discipline: it acts on a treatment and on nothing else. */
   treats?: boolean;
+  /** Only for roles who work at a post, which a Caretaker never does: it acts only while they are at one. */
+  posted?: boolean;
   /** Reputation earned on top for each guest they heal. */
   rep?: number;
   /** The lowest their morale can fall. */
