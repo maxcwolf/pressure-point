@@ -113,7 +113,7 @@ export const TRAITS: readonly TraitDef[] = [
     name: 'Chatterbox',
     desc: 'Works 15% slower. Has opinions about crystals.',
     speed: 0.85,
-    pay: 0.92,
+    pay: 0.85,
     bad: true,
   },
   { id: 'sleepy', name: 'Sleepyhead', desc: 'Tires 35% faster.', stamina: 1.35, pay: 0.9, bad: true },
