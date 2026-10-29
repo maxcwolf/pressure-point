@@ -26,6 +26,7 @@ Everything about the game beyond the [README](../README.md), by what it is for. 
 - [planning/known-issues.md](planning/known-issues.md): bugs and risks found and left open, with a way to fix each.
 - [planning/roadmap.md](planning/roadmap.md): the order the Two Point gaps were built in, release by release.
 - [planning/ideas.md](planning/ideas.md), [planning/item-ideas.md](planning/item-ideas.md) and [planning/machine-ideas.md](planning/machine-ideas.md): ideas nobody has decided on yet.
+- [planning/fun/](planning/fun/README.md): ideas for making the game more fun and more its own, ranked against where the fun sags today and re-ranked after Max's notes on two reviews, with design docs for the top nine, two new centers and the three parked ideas, and a review of the ideas for their mechanics (27 October 2026).
 
 ## Plans
 
@@ -49,6 +50,7 @@ Reviews of the game at a point in time. The findings describe the game as it was
 - [audits/gameplay-audit.md](audits/gameplay-audit.md): bugs and gameplay problems (19 October 2026).
 - [audits/deep-dive-audit.md](audits/deep-dive-audit.md): a second pass by subsystem (20 October 2026).
 - [audits/visual-audit.md](audits/visual-audit.md) and [audits/visual-audit-2.md](audits/visual-audit-2.md): how the game looks and reads (21 and 22 October 2026).
+- [audits/two-point-fun-gaps.md](audits/two-point-fun-gaps.md): a fresh look at what makes Two Point fun that the game lacks, made without reading the earlier audits or plans (27 October 2026).
 
 ## Research
 
