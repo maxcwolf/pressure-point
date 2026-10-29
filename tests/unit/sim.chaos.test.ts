@@ -226,63 +226,68 @@ const MOVES: Record<string, (sim: Sim) => void> = {
 const WEIGHTS: Record<string, number> = { build: 3, place: 4, move: 2, hire: 3, fire: 2, train: 2 };
 
 describe('a restless player', () => {
-  it.each([1, 2, 3, 4])('never leaves the books unbalanced (seed %i)', (seed) => {
-    const { sim, s } = openCenter(seed);
-    s.stars = 3;
-    // challenges, the year-end awards, new applicants, the rival and mishaps come and go while all this goes on
-    s.challengesOn = true;
-    s.rivalOn = true;
-    s.mishapsOn = true;
-    s.blazesOn = true;
-    s.nextApplicant = 0;
-    // building comes up more often than tearing down, so there is a busy center to disrupt
-    const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));
-    const log: string[] = [];
-    // every dollar in or out goes through the books, bar the loan: what they cannot account for never changes
-    let ledger = s.ledger;
-    let closed = 0;
-    /** Money on hand less the loan, less the net of every month on the books since the start. */
-    const unaccounted = () => s.money - s.loan - closed - netOf(s.ledger);
-    let expected = unaccounted();
-    /** Check the bank against the books, carrying over a month closed since last time. */
-    const balanced = (when: string) => {
-      if (s.ledger !== ledger) {
-        expect(s.lastLedger, `one month at most closed ${when}`).toBe(ledger);
-        closed += netOf(ledger);
-        ledger = s.ledger;
+  it.each([1, 2, 3, 4])(
+    'never leaves the books unbalanced (seed %i)',
+    (seed) => {
+      const { sim, s } = openCenter(seed);
+      s.stars = 3;
+      // challenges, the year-end awards, new applicants, the rival and mishaps come and go while all this goes on
+      s.challengesOn = true;
+      s.rivalOn = true;
+      s.mishapsOn = true;
+      s.blazesOn = true;
+      s.nextApplicant = 0;
+      // building comes up more often than tearing down, so there is a busy center to disrupt
+      const names = Object.entries(MOVES).flatMap(([name]) => Array<string>(WEIGHTS[name] ?? 1).fill(name));
+      const log: string[] = [];
+      // every dollar in or out goes through the books, bar the loan: what they cannot account for never changes
+      let ledger = s.ledger;
+      let closed = 0;
+      /** Money on hand less the loan, less the net of every month on the books since the start. */
+      const unaccounted = () => s.money - s.loan - closed - netOf(s.ledger);
+      let expected = unaccounted();
+      /** Check the bank against the books, carrying over a month closed since last time. */
+      const balanced = (when: string) => {
+        if (s.ledger !== ledger) {
+          expect(s.lastLedger, `one month at most closed ${when}`).toBe(ledger);
+          closed += netOf(ledger);
+          ledger = s.ledger;
+        }
+        expect(unaccounted(), `money off the books ${when}`).toBeCloseTo(expected, 2);
+      };
+      for (let step = 0; step < 300; step++) {
+        const name = pick(sim.s, names);
+        MOVES[name]!(sim);
+        log.push(name);
+        // the last few moves are what led here, should anything be wrong: checked straight after the move,
+        // and again after some play, since a later move can tidy up the evidence
+        expect(inconsistencies(sim), `straight after ${log.slice(-5).join(', ')}`).toEqual([]);
+        balanced(`straight after ${log.slice(-5).join(', ')}`);
+        run(sim, 2 + random(sim.s) * 20);
+        expect(inconsistencies(sim), `playing on after ${log.slice(-5).join(', ')}`).toEqual([]);
+        balanced(`playing on after ${log.slice(-5).join(', ')}`);
+        expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
+        for (const c of [...s.guests, ...s.staff, ...s.visitors]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
+        if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
+        for (const st of s.staff)
+          if (st.state === 'away' || st.state === 'toCall') expect(st.call, st.name).not.toBeNull();
+        for (const g of s.guests) expect(g.health >= 0 && g.health <= 100, g.name).toBe(true);
+        if (s.outbreak) expect(s.outbreak.calms >= 0 && s.outbreak.lost >= 0).toBe(true);
+        for (const st of s.staff) expect(st.thirst >= 0 && st.thirst <= 100 && st.hunger <= 100, st.name).toBe(true);
+        for (const it of s.items)
+          if (it.type === 'linen_hamper') expect(it.water >= 0 && it.water <= HAMPER_SIZE).toBe(true);
+        for (const st of s.staff) {
+          expect(st.skill >= 1 && st.skill <= 5, st.name).toBe(true);
+          expect(st.off.length < (DUTIES[st.role]?.length ?? 1), `${st.name} has a duty left`).toBe(true);
+        }
+        // a lot of money keeps the moves coming: being broke is not what this is testing
+        const topUp = Math.max(0, 50_000 - s.money);
+        s.money += topUp;
+        expected += topUp;
+        sim.drain();
       }
-      expect(unaccounted(), `money off the books ${when}`).toBeCloseTo(expected, 2);
-    };
-    for (let step = 0; step < 300; step++) {
-      const name = pick(sim.s, names);
-      MOVES[name]!(sim);
-      log.push(name);
-      // the last few moves are what led here, should anything be wrong: checked straight after the move,
-      // and again after some play, since a later move can tidy up the evidence
-      expect(inconsistencies(sim), `straight after ${log.slice(-5).join(', ')}`).toEqual([]);
-      balanced(`straight after ${log.slice(-5).join(', ')}`);
-      run(sim, 2 + random(sim.s) * 20);
-      expect(inconsistencies(sim), `playing on after ${log.slice(-5).join(', ')}`).toEqual([]);
-      balanced(`playing on after ${log.slice(-5).join(', ')}`);
-      expect(Number.isFinite(s.money) && Number.isFinite(s.reputation)).toBe(true);
-      for (const c of [...s.guests, ...s.staff, ...s.visitors]) expect(Number.isFinite(c.x + c.y), c.name).toBe(true);
-      if (s.challenge) expect(Number.isFinite(sim.challengeObjective()!.progress)).toBe(true);
-      for (const st of s.staff)
-        if (st.state === 'away' || st.state === 'toCall') expect(st.call, st.name).not.toBeNull();
-      for (const g of s.guests) expect(g.health >= 0 && g.health <= 100, g.name).toBe(true);
-      if (s.outbreak) expect(s.outbreak.calms >= 0 && s.outbreak.lost >= 0).toBe(true);
-      for (const st of s.staff) expect(st.thirst >= 0 && st.thirst <= 100 && st.hunger <= 100, st.name).toBe(true);
-      for (const it of s.items)
-        if (it.type === 'linen_hamper') expect(it.water >= 0 && it.water <= HAMPER_SIZE).toBe(true);
-      for (const st of s.staff) {
-        expect(st.skill >= 1 && st.skill <= 5, st.name).toBe(true);
-        expect(st.off.length < (DUTIES[st.role]?.length ?? 1), `${st.name} has a duty left`).toBe(true);
-      }
-      // a lot of money keeps the moves coming: being broke is not what this is testing
-      const topUp = Math.max(0, 50_000 - s.money);
-      s.money += topUp;
-      expected += topUp;
-      sim.drain();
-    }
-  });
+      // a few seconds alone, but seed 2 once took 40 in a loaded full run, past the suite's 30
+    },
+    60_000,
+  );
 });
