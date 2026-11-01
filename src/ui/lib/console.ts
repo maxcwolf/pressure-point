@@ -20,3 +20,19 @@ export function recallStep(count: number, back: number | null, step: number): nu
   const at = back + step;
   return at >= count ? null : Math.max(0, at);
 }
+
+/**
+ * Tab in the console: the command being typed, finished as far as the commands it could be agree, with a space after
+ * once only one is left, and the commands it could still be. Once a space is typed it is left alone.
+ */
+export function completeCommand(line: string, names: readonly string[]): { line: string; options: string[] } {
+  const typed = line.trimStart().toLowerCase();
+  if (/\s/.test(typed)) return { line, options: [] };
+  const options = names.filter((n) => n.startsWith(typed));
+  const [first] = options;
+  if (first === undefined) return { line, options };
+  if (options.length === 1) return { line: `${first} `, options };
+  let common = first;
+  for (const n of options) while (!n.startsWith(common)) common = common.slice(0, -1);
+  return { line: common, options };
+}

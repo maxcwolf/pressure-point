@@ -3,10 +3,12 @@
 // follow Theme Hospital's cheats (money, win the level, an emergency, an epidemic) and what Two Point's trainers offer
 // (kudosh, maxed-out staff, no needs).
 
-import { conditionHere, type ConditionId, conditionOf, CONDITIONS, RUNAWAY_SECONDS } from '../data';
+import { AMANDA, conditionHere, type ConditionId, conditionOf, CONDITIONS, ROLES, RUNAWAY_SECONDS } from '../data';
 import { money } from '../format';
+import { makeAmanda } from '../people';
 import { featureOn } from '../state/game';
 import { clamp } from '../util';
+import { applicantCap } from './careers';
 import type { SimContext } from './context';
 import { adjustMoney } from './economy';
 import { offerEmergency } from './emergencies';
@@ -26,6 +28,7 @@ export type CheatName =
   | 'star'
   | 'win'
   | 'staff'
+  | 'amanda'
   | 'happy'
   | 'guests'
   | 'emergency'
@@ -49,6 +52,7 @@ export const CHEATS: Readonly<Record<CheatName, CheatDef>> = {
   star: { usage: 'star', desc: 'Earn the next star, prize and all.' },
   win: { usage: 'win', desc: 'Earn every star left in this center.' },
   staff: { usage: 'staff', desc: 'Give every member of staff full energy and morale, fed and watered.' },
+  amanda: { usage: 'amanda', desc: `Have ${AMANDA.name} apply now, as the newest massage therapist applicant.` },
   happy: { usage: 'happy', desc: 'Give every guest full patience, with no thirst, hunger or need for the restroom.' },
   guests: { usage: 'guests [count] [condition]', desc: 'Send in guests, 5 unless you say, with any condition.' },
   emergency: { usage: 'emergency', desc: 'Offer an emergency now.' },
@@ -163,6 +167,8 @@ function run(ctx: SimContext, name: CheatName, args: string[], fastForward: (day
       }
       return done(`${staff.length} on the payroll at full energy and morale.`);
     }
+    case 'amanda':
+      return bringAmanda(ctx);
     case 'happy':
       if (!s.guests.length) return refused('There are no guests here.');
       for (const g of s.guests) {
@@ -205,6 +211,25 @@ function run(ctx: SimContext, name: CheatName, args: string[], fastForward: (day
       return done(`Skipped ahead ${days} ${days === 1 ? 'day' : 'days'}.`);
     }
   }
+}
+
+/**
+ * Have Amanda Jablonsky apply, whether or not she has before, as the newest applicant, so she waits the longest before
+ * someone new takes her place. Like anyone arriving, she takes the place of whoever has waited longest if the list is
+ * full.
+ */
+function bringAmanda(ctx: SimContext): CheatResult {
+  const s = ctx.s;
+  const role = ROLES.therapist.name;
+  const st = s.staff.find((x) => x.name === AMANDA.name);
+  if (st?.state === 'leaving') return refused(`${AMANDA.name} is on her way out. Try again once she has gone.`);
+  if (st) return refused(`${AMANDA.name} already works here.`);
+  if (s.candidates.some((c) => c.name === AMANDA.name))
+    return refused(`${AMANDA.name} is already applying: she is under ${role} in the Hire menu.`);
+  const theirs = s.candidates.filter((c) => c.role === 'therapist');
+  if (theirs.length >= applicantCap(s)) s.candidates = s.candidates.filter((c) => c !== theirs[0]);
+  s.candidates.push(makeAmanda(s));
+  return done(`${AMANDA.name} has applied: she is under ${role} in the Hire menu.`);
 }
 
 /** The conditions guests can turn up with in this game's center. */

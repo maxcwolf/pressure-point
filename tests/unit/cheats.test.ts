@@ -2,9 +2,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { freshCampaign, karmaEarned } from '../../src/core/campaign';
-import { CENTERS } from '../../src/core/data';
+import { AMANDA, CENTERS } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { checkAchievements } from '../../src/core/sim/achievements';
+import { applicantCap } from '../../src/core/sim/careers';
 import { CHEAT_ORDER, CHEATS, MAX_SKIP_DAYS, parseAmount } from '../../src/core/sim/cheats';
 import { createContext } from '../../src/core/sim/context';
 import { Sim } from '../../src/core/sim/sim';
@@ -12,7 +13,7 @@ import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { giveKarma, loadCampaign, recordGame } from '../../src/storage/campaign';
-import { consoleNote, recallStep } from '../../src/ui/lib/console';
+import { completeCommand, consoleNote, recallStep } from '../../src/ui/lib/console';
 import { freshSim, openCenter } from './helpers';
 
 describe('the cheat console', () => {
@@ -129,6 +130,51 @@ describe('the cheat console', () => {
     expect(s.guests.every((g) => g.patience === 100 && g.bladder === 0)).toBe(true);
   });
 
+  it('has Amanda Jablonsky apply as the newest therapist, at the cap, in her own quirks', () => {
+    const sim = freshSim();
+    const s = sim.s;
+    expect(
+      s.candidates.some((c) => c.name === AMANDA.name),
+      'seed 1 does not bring her',
+    ).toBe(false);
+    const ids = s.candidates.filter((c) => c.role === 'therapist').map((c) => c.id);
+    const r = sim.cheat('amanda');
+    expect(r).toMatchObject({ ok: true, text: expect.stringContaining('Hire menu') as string });
+    expect(s.cheated).toBe(true);
+    const therapists = s.candidates.filter((c) => c.role === 'therapist');
+    expect(therapists).toHaveLength(applicantCap(s));
+    // whoever had waited longest made way for her, and she waits the longest before anyone takes her place
+    expect(therapists.map((c) => c.id)).toEqual([...ids.slice(1), therapists.at(-1)?.id]);
+    expect(therapists.at(-1)).toMatchObject({
+      name: AMANDA.name,
+      traits: [...AMANDA.traits],
+      quals: [...AMANDA.quals],
+      look: { sex: 'female', hairStyle: AMANDA.hairStyle, hair: AMANDA.hair },
+    });
+    expect(therapists.at(-1)?.skill).toBeGreaterThanOrEqual(AMANDA.minSkill);
+  });
+
+  it('says so when Amanda Jablonsky is already applying or on the payroll, and brings her back once she has gone', () => {
+    const { sim, s } = openCenter();
+    expect(sim.cheat('amanda').ok).toBe(true);
+    expect(sim.cheat('amanda')).toMatchObject({
+      ok: false,
+      text: expect.stringContaining('already applying') as string,
+    });
+    const amanda = s.candidates.find((c) => c.name === AMANDA.name);
+    const hired = amanda && sim.hire(amanda.id);
+    expect(hired).toBeTruthy();
+    expect(sim.cheat('amanda')).toMatchObject({
+      ok: false,
+      text: expect.stringContaining('already works here') as string,
+    });
+    if (hired) hired.state = 'leaving';
+    expect(sim.cheat('amanda')).toMatchObject({ ok: false, text: expect.stringContaining('on her way out') as string });
+    s.staff = s.staff.filter((st) => st !== hired);
+    expect(sim.cheat('amanda').ok, 'having applied, and worked here, before').toBe(true);
+    expect(s.candidates.filter((c) => c.name === AMANDA.name)).toHaveLength(1);
+  });
+
   it('unlocks everything, once', () => {
     const sim = freshSim();
     expect(sim.cheat('unlock').ok).toBe(true);
@@ -234,5 +280,15 @@ describe('what the console shows', () => {
     expect(recallStep(3, 1, 1)).toBe(2);
     expect(recallStep(3, 2, 1), 'past the newest is a new line').toBeNull();
     expect(recallStep(3, null, 1)).toBeNull();
+  });
+
+  it('finishes a command on Tab, amanda among them', () => {
+    expect(completeCommand('am', CHEAT_ORDER)).toEqual({ line: 'amanda ', options: ['amanda'] });
+    expect(completeCommand('AMA', CHEAT_ORDER).line, 'whatever the case').toBe('amanda ');
+    expect(completeCommand('s', CHEAT_ORDER)).toEqual({ line: 's', options: ['star', 'staff', 'skip'] });
+    expect(completeCommand('st', CHEAT_ORDER)).toEqual({ line: 'sta', options: ['star', 'staff'] });
+    expect(completeCommand('zzz', CHEAT_ORDER)).toEqual({ line: 'zzz', options: [] });
+    expect(completeCommand('money 5', CHEAT_ORDER), 'past the command').toEqual({ line: 'money 5', options: [] });
+    expect(completeCommand('', CHEAT_ORDER).options).toEqual(CHEAT_ORDER);
   });
 });

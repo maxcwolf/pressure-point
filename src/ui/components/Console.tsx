@@ -2,11 +2,12 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
+import { CHEAT_ORDER } from '../../core/sim/cheats';
 import { CONSOLE_KEY } from '../../storage/controls';
 import { css } from '../../styled-system/css';
 import { panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
-import { consoleNote, recallStep } from '../lib/console';
+import { completeCommand, consoleNote, recallStep } from '../lib/console';
 import { cx } from '../lib/cx';
 
 /** The console: a panel at the top middle, dropping into place as it opens. */
@@ -76,6 +77,8 @@ export function Console() {
   const [text, setText] = useState('');
   /** How far back through the commands typed the up arrow has gone, or null while typing a new one. */
   const [back, setBack] = useState<number | null>(null);
+  /** The commands a Tab could not choose between, shown under the line until the next key. */
+  const [options, setOptions] = useState<string[]>([]);
   const open = hud.consoleOpen;
 
   // typing goes straight into the console as it opens
@@ -97,9 +100,15 @@ export function Console() {
     setText(at === null ? '' : (hud.consoleHistory[at] ?? ''));
   };
 
-  /** Keys the console keeps to itself: Enter runs, the arrows recall, and Esc or ~ close it. */
+  /** Keys the console keeps to itself: Enter runs, the arrows recall, Tab finishes a command, and Esc or ~ close it. */
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' || e.code === CONSOLE_KEY) {
+    setOptions([]);
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const done = completeCommand(text, CHEAT_ORDER);
+      setText(done.line);
+      if (done.options.length > 1) setOptions(done.options);
+    } else if (e.key === 'Escape' || e.code === CONSOLE_KEY) {
       e.preventDefault();
       e.stopPropagation();
       input.current?.blur();
@@ -145,6 +154,7 @@ export function Console() {
           onKeyDown={onKey}
         />
       </label>
+      {options.length > 0 && <p class="sub">{options.join('   ')}</p>}
       {note && <p class="sub">{note}</p>}
     </div>
   );
