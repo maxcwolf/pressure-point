@@ -5,6 +5,7 @@ Each release's notes are taken from its section here. Keep them short.
 ## Unreleased
 
 - **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
+- **The clock waits while you build.** Placing a room or an item now pauses the game until the room is built or the item put down or put away, then carries on at the speed it had. A game you had paused stays paused, and **Pause while placing** in Settings turns it off.
 
 ## v0.35.0
 

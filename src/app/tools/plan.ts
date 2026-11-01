@@ -27,6 +27,29 @@ export function heldItem(tool: Tool): HeldItem | null {
   return null;
 }
 
+/**
+ * Whether the tool in hand is placing a room or an item, which the clock stops for: a room from its floor to its
+ * Build, one pencilled in, from a template or picked up, and an item bought or moved.
+ */
+export function placing(tool: Tool): boolean {
+  switch (tool.kind) {
+    case 'item':
+    case 'move':
+    case 'room':
+    case 'sketch':
+    case 'template':
+    case 'moveRoom':
+      return true;
+    case 'none':
+    case 'window':
+    case 'door':
+    case 'resize':
+    case 'assign':
+    case 'expand':
+      return false;
+  }
+}
+
 /** A quarter turn on from a rotation, wrapping after four. */
 export function quarterTurn(rot: number): number {
   return (rot + 1) & 3;

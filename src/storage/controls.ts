@@ -1,5 +1,5 @@
 // The player's controls, kept for every game on this computer: which key does what, edge scrolling, how often the
-// game autosaves, and whether ~ opens the cheat console. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan on
+// game autosaves, whether the clock stops while something is placed, and whether ~ opens the cheat console. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan on
 // any layout.
 import { isRecord } from './json';
 
@@ -61,6 +61,8 @@ export interface ControlPrefs {
   edgeScroll: boolean;
   /** Seconds of play between autosaves, or 0 for only on leaving. */
   autosave: number;
+  /** Whether the clock stops while a room or an item is being placed, and starts again once it is down. */
+  pauseToPlace: boolean;
   /** Whether ~ opens the cheat console. Off until switched on at the bottom of the settings. */
   console: boolean;
 }
@@ -71,6 +73,7 @@ export const defaultControls = (): ControlPrefs => ({
   edgeScroll: false,
   // every five minutes: a save is tens of kilobytes, and the game is saved anyway as it is left or hidden
   autosave: 300,
+  pauseToPlace: true,
   console: false,
 });
 
@@ -123,6 +126,7 @@ export function readControls(raw: unknown): ControlPrefs {
   }
   if (typeof raw.edgeScroll === 'boolean') out.edgeScroll = raw.edgeScroll;
   if (typeof raw.autosave === 'number' && AUTOSAVE_CHOICES.includes(raw.autosave)) out.autosave = raw.autosave;
+  if (typeof raw.pauseToPlace === 'boolean') out.pauseToPlace = raw.pauseToPlace;
   if (typeof raw.console === 'boolean') out.console = raw.console;
   return out;
 }

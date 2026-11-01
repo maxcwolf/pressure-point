@@ -144,6 +144,7 @@ import { hasSupplier, setMushrooms } from './mushrooms';
 import { itemNoise, noiseAt } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { updateOutdoors } from './outdoors';
+import { pausedToPlace, type PlacingNow, watchPlacing } from './placing';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import { type PlacePreview, previewItem } from './preview';
 import { type PrimerLine, primerLines } from './primer';
@@ -224,6 +225,19 @@ export class Sim {
   /** Whether the game stands still: a payday the bank cannot cover waits on the player, or the center is bankrupt. */
   private stopped(): boolean {
     return !!this.s.payrollDue || this.s.bankrupt;
+  }
+
+  /**
+   * Stop the clock while a room or an item is being placed, if the switch is on, and start it again once it is down.
+   * Called every frame, before the game advances.
+   */
+  watchPlacing(now: PlacingNow) {
+    watchPlacing(this.ctx, now);
+  }
+
+  /** Whether the clock is stopped only for something being placed, and starts again by itself once it is down. */
+  pausedToPlace(): boolean {
+    return pausedToPlace(this.ctx);
   }
 
   /** Advance the game by a frame's worth of real time, at the game's current speed. */

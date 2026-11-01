@@ -51,7 +51,7 @@ import {
   WINDOW_HINT,
 } from './hints';
 import { assignTiles, dragTiles, itemTiles, layoutTiles, rectTiles } from './overlay';
-import { heldItem, nextRequired, planStatus, quarterTurn } from './plan';
+import { heldItem, nextRequired, placing, planStatus, quarterTurn } from './plan';
 import type { Edge } from './resize';
 import { dragEdge, edgeNear, edgeTiles } from './resize';
 import type { HeldItem, PlanStatus, Point, Tool } from './types';
@@ -650,6 +650,11 @@ export class Tools {
     }
     this.refresh();
     return toBuy;
+  }
+
+  /** Whether the tool in hand is placing a room or an item, which the clock stops for while the switch is on. */
+  get placing(): boolean {
+    return placing(this.tool);
   }
 
   /**

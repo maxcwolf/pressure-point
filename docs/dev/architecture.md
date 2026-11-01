@@ -23,7 +23,7 @@ Dependencies point toward `core`. A lint rule and a separate TypeScript project 
 `src/app/loop.ts` runs this once per frame:
 
 1. Move the camera for any keys held down, or the mouse at the edge of the window if edge scrolling is on.
-2. `sim.tick(dt)` advances the game.
+2. Unless a dialog is open, which has the clock to itself, the clock is stopped as a room or an item is taken up to place, and started again at its old speed once it is down (`sim.watchPlacing`, `core/sim/placing.ts`): the speed to go back to is kept on the `SimContext`, not saved, so the tutorial can tell a pause the game made from the player's. Then `sim.tick(dt)` advances the game.
 3. The floor overlay is redrawn if it is due, or the item in hand has a new preview, or another overlay has been chosen (which fades in), and `view.render(dt)` draws it all.
 4. `sim.drain()` hands over what happened (sounds, toasts, floating text) and the interface shows it.
 5. The interface redraws if something changed, or five times a second regardless.
