@@ -4,6 +4,8 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **A warning before the first inspection fine.** The first failed inspection of a game is now only a warning, with no fine and no hit to reputation. Its report says so plainly, lists each thing wrong in the room it was found, with what to do to pass and a Show me, and says what the next failure will cost. The room's inspector keeps the finding until it is put right. Later failures are fined as before, with the same list.
+- **Cheaper ways to make an inspection go away.** In place of one bribe at twice the fine, a failed inspection offers three: a fifth, two fifths or three fifths of the fine, taken 35%, 60% or 85% of the time, the odds on each button. An offer turned down is kept, but the fine goes up by a quarter, word gets out (6% more reputation lost) and the inspector is back within 30 days. A bribe that is taken no longer leaks.
 - **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
 
 ## v0.35.0

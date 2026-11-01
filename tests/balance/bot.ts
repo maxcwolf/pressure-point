@@ -210,6 +210,11 @@ export const BOT_FLAGS = [
    * were still waiting on its star. An extra, so the rerun can compare waves chased, passed and off.
    */
   'chase',
+  /**
+   * Make the biggest offer to make a failed inspection go away, when it leaves a month's wages in the bank, rather than
+   * pay the fine. An extra, so a rerun can measure what the offers save.
+   */
+  'bribe',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -227,6 +232,7 @@ const BOT_EXTRAS: readonly BotFlag[] = [
   'opening',
   'modest',
   'chase',
+  'bribe',
 ];
 
 /**
@@ -1004,7 +1010,7 @@ export class Bot {
               ? 'stress outbreak'
               : s.mishap?.started
                 ? `mishap (${s.mishap.kind})`
-                : s.visitReport?.bribe !== undefined
+                : s.visitReport?.bribes !== undefined
                   ? 'failed inspection'
                   : s.rival.opened !== null
                     ? 'rival opened'
@@ -1035,9 +1041,14 @@ export class Bot {
       seen.mishap = s.mishap;
       this.log.adverse.push({ what: `mishap (${s.mishap.kind})`, day });
     }
-    if (s.visitReport?.bribe !== undefined && s.visitReport !== seen.report) {
+    if (s.visitReport?.bribes !== undefined && s.visitReport !== seen.report) {
       seen.report = s.visitReport;
       this.log.adverse.push({ what: 'failed inspection', day });
+    }
+    // the first failed inspection is only a warning, which costs nothing
+    if (s.visitReport?.outcome === 'warned' && s.visitReport !== seen.report) {
+      seen.report = s.visitReport;
+      this.log.adverse.push({ what: 'inspection warning', day });
     }
     if (s.rival.opened !== null && !this.log.adverse.some((a) => a.what === 'rival opened'))
       this.log.adverse.push({ what: 'rival opened', day });
@@ -1607,7 +1618,7 @@ export class Bot {
     if (s.offer) this.sim.acceptEmergency();
     if (s.outbreakOffer) this.sim.declineOutbreak();
     if (s.callOffer) this.sim.declineCall();
-    if (s.visitReport?.bribe !== undefined) this.sim.settleInspection(false);
+    if (s.visitReport?.bribes !== undefined) this.sim.settleInspection();
     if (!s.open) {
       this.buildOpening();
       return;
@@ -1968,7 +1979,17 @@ export class Bot {
     const ward = this.flags.trouble && (!!s.mishap?.ward || this.sim.canWard());
     if (ward && s.mishap && !s.mishap.ward) this.sim.askWard();
     else if (!ward && s.mishap && !s.mishap.started && !s.mishap.prepared) this.sim.prepareMishap();
-    if (s.visitReport?.bribe !== undefined) this.sim.settleInspection(false);
+    this.settleInspection();
+  }
+
+  /** Pay a failed inspection's fine, or with `bribe` make the biggest offer, if it leaves a month's wages in the bank. */
+  private settleInspection() {
+    const offers = this.s.visitReport?.bribes;
+    if (!offers) return;
+    const top = offers.length - 1;
+    const price = offers[top] ?? Infinity;
+    if (this.flags.bribe && this.s.money - price >= wagesDue(this.s)) this.sim.settleInspection(top);
+    else this.sim.settleInspection();
   }
 
   /** Borrow when nearly broke, no further than the style asks the bank for, and pay the loan back when flush. */

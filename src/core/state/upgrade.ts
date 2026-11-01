@@ -5,6 +5,7 @@ import {
   AMANDA,
   type AwardId,
   AWARDS,
+  bribeOffers,
   DAYS_PER_MONTH,
   type Discipline,
   DISCIPLINES,
@@ -52,6 +53,7 @@ import type {
   Staff,
   Stats,
   Tally,
+  VisitReport,
 } from './types';
 
 /** What everyone in a role is qualified in to begin with: their discipline's basic modality. */
@@ -355,7 +357,19 @@ export function upgradeSave(save: GameState) {
   for (const sk of save.sketches) rememberedRoom(sk);
   if (s.version < 44) fitQuirks(save);
   if (s.version < 45) fixAmanda(save);
+  if (s.version < 46) offerBribes(save);
   s.version = SAVE_VERSION;
+}
+
+/**
+ * Up to version 45, a failed inspection had one price to make it go away, twice its fine: one still unsettled is
+ * offered the few that came after it instead. The game it was saved in has still to be warned, as a new one has.
+ */
+function offerBribes(s: GameState) {
+  const r: (VisitReport & { bribe?: number }) | null = s.visitReport;
+  if (r?.bribe === undefined) return;
+  delete r.bribe;
+  r.bribes = bribeOffers(-r.money);
 }
 
 /**

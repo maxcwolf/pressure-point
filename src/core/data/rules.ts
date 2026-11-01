@@ -208,11 +208,23 @@ export const MUSHROOM_SALE = 180;
 /** What the health inspector finding the mushrooms adds to the fine, and takes off the center's reputation. */
 export const MUSHROOM_FINE = 6000;
 export const MUSHROOM_REP = 5;
-/** What making a failed inspection go away costs: so many times the fine, and never less than a floor. */
-export const BRIBE_TIMES = 2;
-export const BRIBE_MIN = 10000;
-/** The chance word of a bribe gets out, what that costs in reputation, and how soon the inspector is back then. */
-export const BRIBE_LEAK = 0.1;
+/**
+ * The offers that may make a failed inspection go away: each a share of the fine it would save, and the chance the
+ * inspector takes it. Every one is below the fine, and a bigger one is likelier to be taken.
+ */
+export const BRIBE_OFFERS: readonly { share: number; odds: number }[] = [
+  { share: 0.2, odds: 0.35 },
+  { share: 0.4, odds: 0.6 },
+  { share: 0.6, odds: 0.85 },
+];
+/** What each offer comes to for a fine: its share, rounded to $100, and never less than that. */
+export const bribeOffers = (fine: number) =>
+  BRIBE_OFFERS.map((o) => Math.max(100, Math.round((fine * o.share) / 100) * 100));
+/**
+ * An offer turned down: the offer is kept, but the fine goes up by this share of it, word gets out, which costs this
+ * much reputation on top of the fine's, and the inspector is back within so many days.
+ */
+export const BRIBE_REFUSED_FINE = 0.25;
 export const BRIBE_REP = 6;
 export const BRIBE_RECHECK_DAYS = 30;
 /** The chance a Shaman's ward against a mishap holds, and how long performing it takes them. */

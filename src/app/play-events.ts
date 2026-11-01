@@ -105,7 +105,7 @@ export function markOf(s: GameState): PlayMark {
     outbreak: s.outbreak,
     wave: s.wave,
     report: s.visitReport,
-    unsettled: s.visitReport?.bribe !== undefined,
+    unsettled: s.visitReport?.bribes !== undefined,
     fire: s.fire ?? null,
   };
 }
@@ -237,10 +237,14 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
     });
   // a failed inspection is settled by paying it off, or by its fine: the next visit's report settles it first
   const was = mark.report;
-  if (was && mark.unsettled && (s.visitReport !== was || was.bribe === undefined))
+  if (was && mark.unsettled && (s.visitReport !== was || was.bribes === undefined))
     out.push({
       name: 'inspection_settled',
-      props: { ...game, how: was.outcome === 'paid off' ? 'paid_off' : 'fined', money: was.money },
+      props: {
+        ...game,
+        how: was.outcome === 'paid off' ? 'paid_off' : was.refused !== undefined ? 'refused' : 'fined',
+        money: was.money,
+      },
     });
   const r = s.visitReport;
   if (r && r !== was)

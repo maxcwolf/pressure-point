@@ -3,10 +3,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  BRIBE_LEAK,
-  BRIBE_MIN,
+  BRIBE_OFFERS,
   BRIBE_RECHECK_DAYS,
   BRIBE_REP,
+  bribeOffers,
   INSPECTION_FINE,
   INSPECTION_REP,
   MUSHROOM_FINE,
@@ -26,7 +26,7 @@ import {
   sellMushrooms,
 } from '../../src/core/sim/mushrooms';
 import type { Sim } from '../../src/core/sim/sim';
-import { bribeFor, finishVisit, lapseInspection, verdict } from '../../src/core/sim/visits';
+import { finishVisit, lapseInspection, refusedFine, verdict } from '../../src/core/sim/visits';
 import { mushroomNote, mushroomSwitch } from '../../src/ui/lib/ceremonies';
 import { readiness } from '../../src/ui/lib/mishaps';
 import { reportSummary } from '../../src/ui/lib/visits';
@@ -127,6 +127,7 @@ describe('the inspector and the mushrooms', () => {
     /** An inspection that saw these rooms, with the mushrooms out or put away. */
     const inspect = (seed: number, out: boolean, rooms: ReturnType<typeof seen>[]) => {
       const { sim, s } = withCounter(seed);
+      s.inspectionWarned = true;
       sim.setPolicy({ stashMushrooms: false });
       sim.setMushrooms(out);
       s.visitNotice = { visit: 'inspector', name: 'Pat', title: 'the health inspector', arrives: s.day };
@@ -143,9 +144,14 @@ describe('the inspector and the mushrooms', () => {
 });
 
 describe('paying off the inspector', () => {
-  it('costs twice the fine, rounded to $500, and never less than the floor', () => {
-    expect(bribeFor(1600)).toBe(BRIBE_MIN);
-    expect(bribeFor(8400)).toBe(17000);
+  it('offers a few prices, every one below the fine, the bigger likelier to be taken', () => {
+    expect(bribeOffers(1600)).toEqual([300, 600, 1000]);
+    expect(bribeOffers(8400)).toEqual([1700, 3400, 5000]);
+    for (const fine of [1600, 2400, 4800, 8400, 14400])
+      for (const price of bribeOffers(fine)) expect(price).toBeLessThan(fine);
+    const odds = BRIBE_OFFERS.map((o) => o.odds);
+    expect(odds).toEqual([...odds].sort((a, b) => a - b));
+    expect(new Set(odds).size).toBe(odds.length);
   });
 
   /** A center with a failed inspection waiting to be settled. */
@@ -162,7 +168,7 @@ describe('paying off the inspector', () => {
       outcome: 'failed',
       money: -8400,
       rep: -8,
-      bribe: 17000,
+      bribes: bribeOffers(8400),
     };
     s.nextInspection = s.day + 150;
     return c;
@@ -172,50 +178,72 @@ describe('paying off the inspector', () => {
     const { sim, s } = failed(5);
     const money = s.money;
     const rep = s.reputation;
-    expect(sim.settleInspection(false)).toBe(true);
+    expect(sim.settleInspection()).toBe(true);
     expect(s.money).toBe(money - 8400);
     expect(s.reputation).toBeLessThan(rep);
-    expect(sim.settleInspection(false), 'nothing left to settle').toBe(false);
+    expect(sim.settleInspection(), 'nothing left to settle').toBe(false);
   });
 
-  it('makes it go away for the bribe, counted as passed with no fine, unless word gets out', () => {
-    let leaked = 0;
-    let kept = 0;
-    for (let seed = 1; seed <= 40; seed++) {
+  it('takes an offer about as often as its odds say, and makes it go away for the price', () => {
+    for (const [i, { odds }] of BRIBE_OFFERS.entries()) {
+      let taken = 0;
+      const tries = 200;
+      for (let seed = 1; seed <= tries; seed++) {
+        const { sim, s } = failed(seed);
+        setSeed(seed * 7919 + i, s);
+        const money = s.money;
+        const price = bribeOffers(8400)[i]!;
+        expect(sim.settleInspection(i)).toBe(true);
+        const r = s.visitReport!;
+        expect(r.bribes).toBeUndefined();
+        if (r.outcome === 'paid off') {
+          taken++;
+          expect(r).toMatchObject({ money: -price, rep: 0 });
+          expect(s.money).toBe(money - price);
+          expect(s.nextInspection, 'no sooner for a bribe taken').toBe(s.day + 150);
+          expect(reportSummary(r)).toBe(`Failed, but it went away for $${price.toLocaleString('en-US')}.`);
+        }
+      }
+      expect(taken / tries).toBeGreaterThan(odds - 0.1);
+      expect(taken / tries).toBeLessThan(odds + 0.1);
+    }
+  });
+
+  it('keeps an offer turned down, but puts the fine up, lets word out and brings the inspector back soon', () => {
+    let refused = 0;
+    for (let seed = 1; seed <= 20; seed++) {
       const { sim, s } = failed(seed);
       setSeed(seed, s);
       const money = s.money;
       const rep = s.reputation;
-      expect(sim.settleInspection(true)).toBe(true);
+      expect(sim.settleInspection(0)).toBe(true);
       const r = s.visitReport!;
-      expect(r).toMatchObject({ outcome: 'paid off', money: -17000 });
-      expect(s.money).toBe(money - 17000);
-      if (r.rep < 0) {
-        leaked++;
-        expect(r.rep).toBe(-BRIBE_REP);
-        expect(s.nextInspection).toBeLessThanOrEqual(s.day + BRIBE_RECHECK_DAYS);
-        expect(reportSummary(r)).toMatch(/Word got out/);
-      } else {
-        kept++;
-        expect(s.reputation).toBeGreaterThanOrEqual(rep);
-        expect(reportSummary(r)).toBe('Failed, but it went away for $17,000.');
-      }
+      if (r.outcome !== 'failed') continue;
+      refused++;
+      expect(r).toMatchObject({ refused: 1700, money: -refusedFine(8400), rep: -8 - BRIBE_REP });
+      expect(refusedFine(8400)).toBe(10500);
+      expect(s.money, 'the offer kept, the bigger fine paid').toBe(money - 10500);
+      expect(s.reputation).toBeLessThan(rep);
+      expect(s.ledger.fines).toBe(10500);
+      expect(s.nextInspection).toBeLessThanOrEqual(s.day + BRIBE_RECHECK_DAYS);
+      expect(reportSummary(r)).toBe(
+        `Failed, with 2 things wrong, and the $1,700 offered was turned down: a $10,500 fine. -${8 + BRIBE_REP}% reputation.`,
+      );
     }
-    expect(leaked).toBeGreaterThan(0);
-    expect(kept).toBeGreaterThan(leaked);
-    expect(BRIBE_LEAK).toBeLessThan(0.5);
+    expect(refused).toBeGreaterThan(5);
   });
 
-  it('cannot be paid without the money, and leaves the fine to settle the day after if nobody chooses', () => {
+  it('cannot make an offer without the money, and leaves the fine to settle the day after if nobody chooses', () => {
     const { sim, s } = failed(6);
     s.money = 1000;
-    expect(sim.settleInspection(true)).toBe(false);
-    expect(s.visitReport?.bribe).toBe(17000);
+    expect(sim.settleInspection(0)).toBe(false);
+    expect(sim.settleInspection(7), 'no such offer').toBe(false);
+    expect(s.visitReport?.bribes).toEqual(bribeOffers(8400));
     lapseInspection(ctxOf(sim));
-    expect(s.visitReport?.bribe, 'not a day yet').toBe(17000);
+    expect(s.visitReport?.bribes, 'not a day yet').toEqual(bribeOffers(8400));
     s.day += 1;
     lapseInspection(ctxOf(sim));
-    expect(s.visitReport?.bribe).toBeUndefined();
+    expect(s.visitReport?.bribes).toBeUndefined();
     expect(s.ledger.fines).toBe(8400);
   });
 });

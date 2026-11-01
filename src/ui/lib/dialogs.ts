@@ -36,13 +36,13 @@ export function raise(
 export function pendingDialog(s: GameState): DialogId | null {
   if (s.bankrupt) return 'bankrupt';
   if (s.payrollDue) return 'payroll';
-  if (s.visitReport?.bribe !== undefined) return 'visit';
+  if (s.visitReport?.bribes !== undefined) return 'visit';
   return null;
 }
 
 /** Whether a dialog has to be answered from its own buttons, so Esc does not close it. */
 export function mustAnswer(id: DialogId, s: GameState): boolean {
-  return FIRST.has(id) || (id === 'visit' && s.visitReport?.bribe !== undefined);
+  return FIRST.has(id) || (id === 'visit' && s.visitReport?.bribes !== undefined);
 }
 
 /** Whether a dialog waiting in line still has something to show when its turn comes. */

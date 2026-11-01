@@ -494,15 +494,20 @@ export interface VisitReport {
   rooms: RoomVerdict[];
   /** A VIP's verdict from 0 to 100, or the number of problems the inspector found. */
   score: number;
-  outcome: 'delighted' | 'satisfied' | 'disappointed' | 'passed' | 'failed' | 'paid off';
+  /** `warned` is the first failed inspection of a game, let go with a warning: no fine, and no hit to reputation. */
+  outcome: 'delighted' | 'satisfied' | 'disappointed' | 'passed' | 'failed' | 'warned' | 'paid off';
   /** What it brought in, or (below zero) what it cost, in money and reputation. */
   money: number;
   rep: number;
   /**
-   * For a failed inspection still to be settled: what it would take to make it go away. Paying the fine or the bribe
-   * settles it, and its report stays until one is chosen.
+   * For a failed inspection still to be settled: the offers that may make it go away, one for each of `BRIBE_OFFERS`.
+   * Paying the fine or making an offer settles it, and its report stays until one is chosen.
    */
-  bribe?: number;
+  bribes?: number[];
+  /** The offer the inspector turned down, which put the fine up. */
+  refused?: number;
+  /** For a warning: the fine let go. */
+  waived?: number;
 }
 
 export type Char = Staff | Guest | Visitor;
@@ -924,6 +929,8 @@ export interface GameState {
   visitors: Visitor[];
   visitNotice: VisitNotice | null;
   visitReport: VisitReport | null;
+  /** Whether the first failed inspection has been let go with a warning: every one after it is fined. */
+  inspectionWarned: boolean;
   nextVip: number;
   nextInspection: number;
   visitsOn: boolean;

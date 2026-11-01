@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  BRIBE_MIN,
+  bribeOffers,
   CENTERS,
   DIRT_FILTHY,
   EXTINGUISHER_REACH,
@@ -219,7 +219,8 @@ describe('visits', () => {
     s.nextInspection = 1e9;
     s.nextVip = 1e9;
     s.visitNotice = { visit: 'inspector', name: 'Pat', title: 'the health inspector', arrives: s.day };
-    // two rooms with no Fire Extinguisher near either: a failed inspection
+    // two rooms with no Fire Extinguisher near either: a failed inspection, and not the first
+    s.inspectionWarned = true;
     const money = s.money;
     runUntil(sim, () => s.visitors.length > 0, 10);
     const visitor = s.visitors[0]!;
@@ -229,11 +230,11 @@ describe('visits', () => {
     const report = s.visitReport!;
     expect(report.rooms.map((r) => r.name).sort()).toEqual(['Consultation Room', 'Massage Suite']);
     expect(report).toMatchObject({ outcome: 'failed', score: 2, money: -2 * INSPECTION_FINE });
-    // the fine waits on a choice: pay it, or make it go away
-    expect(report.bribe).toBe(BRIBE_MIN);
+    // the fine waits on a choice: pay it, or make an offer to make it go away
+    expect(report.bribes).toEqual(bribeOffers(2 * INSPECTION_FINE));
     expect(s.ledger.fines).toBe(0);
-    expect(sim.settleInspection(false)).toBe(true);
-    expect(report.bribe).toBeUndefined();
+    expect(sim.settleInspection()).toBe(true);
+    expect(report.bribes).toBeUndefined();
     expect(s.ledger.fines).toBe(2 * INSPECTION_FINE);
     expect(s.money).toBeLessThan(money);
     expect(s.nextInspection).toBeGreaterThan(s.day);

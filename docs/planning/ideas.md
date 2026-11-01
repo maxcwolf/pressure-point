@@ -5,3 +5,7 @@ Ideas worth keeping that nobody has decided on yet. Nothing here is planned: an 
 ## Rooms and treatments
 
 - **A signature room at each center,** like Two Point Hospital's single-illness clinics: a room that cures one or two of the center's own conditions, with an animation of its own. For example a Float Tank at The Boardwalk, a Sauna at High Pines, or a cider-press bath at The Orchard Estate. It would give each center more character and add the room-fitting puzzle that much of Two Point's fun comes from. Raised 15 October 2026 when comparing our treatments with Two Point's. Worked up on 21 October 2026 as a machine for each center, in [planning/machine-ideas.md](machine-ideas.md), with a plan for building them in [plans/machines.md](../plans/machines.md). Built in 0.31.0, as a machine room at each campaign center.
+
+## Visitors
+
+- **Inspectors with traits,** some more corrupt than others: one who takes almost any offer, one who takes none and fines you more for trying, and most in between, named on the notice when they write ahead so the player can weigh it before they call. It would make the offers to make a failed inspection go away a read of the inspector rather than fixed odds. Raised 1 November 2026 by Max while the three offers were built for 0.36.0, and left out of that release.
