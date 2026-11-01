@@ -215,6 +215,11 @@ export const BOT_FLAGS = [
    * pay the fine. An extra, so a rerun can measure what the offers save.
    */
   'bribe',
+  /**
+   * Leave out the Fire Extinguisher the bot puts by each new room's door, so the health inspector finds rooms without
+   * one, as a careless player's would be. An extra, so a rerun can measure what failed inspections cost.
+   */
+  'sloppy',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -233,6 +238,7 @@ const BOT_EXTRAS: readonly BotFlag[] = [
   'modest',
   'chase',
   'bribe',
+  'sloppy',
 ];
 
 /**
@@ -643,6 +649,8 @@ export interface Playtest {
   swaps?: SwapLog[];
   /** Everyone the bot took on, in order, with their quirks; not in older logs. */
   hires?: HireLog[];
+  /** Every inspection: the day, how it ended once settled, and what it cost; not in older logs. */
+  inspections?: { day: number; outcome: string; money: number }[];
   /** What their quirks came to over the game (`QuirkLog`); not in older logs. */
   quirks?: QuirkLog;
   /** The ailments that went around, with `BOT_WAVES`; left out without it, so the logs without it are as they were. */
@@ -896,6 +904,7 @@ export class Bot {
       machines: [],
       ...(flags.swap ? { swaps: [] } : {}),
       hires: [],
+      inspections: [],
       quirks: { hired: 0, flaws: 0, rares: {}, adds: 0, saves: 0, payroll: 0 },
     };
     this.watch = this.freshWatch();
@@ -925,6 +934,7 @@ export class Bot {
         this.sim.tick(0.1);
         const events = this.sim.drain();
         this.noteWarnings(events);
+        this.noteInspection(events);
         this.hear(events);
         // a payday the bank cannot cover is borrowed for, as the player would, and past the loan paid into the red
         if (this.s.payrollDue) {
@@ -1669,6 +1679,13 @@ export class Bot {
   /** The day the advised bot last acted on stations the consultations cannot keep in guests. */
   private unfedDay = -Infinity;
 
+  /** Log an inspection as its report comes in. */
+  private noteInspection(events: SimEvent[]) {
+    const r = this.s.visitReport;
+    if (r?.visit === 'inspector' && events.some((e) => e.type === 'visit'))
+      this.log.inspections?.push({ day: Math.floor(this.s.day), outcome: r.outcome, money: r.money });
+  }
+
   /** Keep the toasts the advised bot reads; the other personas read none. */
   private hear(events: SimEvent[]) {
     if (this.mode !== 'advised') return;
@@ -1990,6 +2007,10 @@ export class Bot {
     const price = offers[top] ?? Infinity;
     if (this.flags.bribe && this.s.money - price >= wagesDue(this.s)) this.sim.settleInspection(top);
     else this.sim.settleInspection();
+    // how it ended, and what it cost in the end
+    const r = this.s.visitReport;
+    const last = this.log.inspections?.at(-1);
+    if (r && last) Object.assign(last, { outcome: r.refused === undefined ? r.outcome : 'refused', money: r.money });
   }
 
   /** Borrow when nearly broke, no further than the style asks the bank for, and pay the loan back when flush. */
@@ -2204,7 +2225,8 @@ export class Bot {
       const room = this.sim.createRoom(type, r, door);
       if (this.furnish(room, [...def.required, ...extras]) && kept.every((k) => this.keeps(k))) {
         this.sim.finishRoom(room);
-        this.placeNear('fire_extinguisher', room.door.x + room.door.dx, room.door.y + room.door.dy, 'corridor');
+        if (!this.flags.sloppy)
+          this.placeNear('fire_extinguisher', room.door.x + room.door.dx, room.door.y + room.door.dy, 'corridor');
         return room;
       }
       this.sim.removeRoom(room.id, 1);
