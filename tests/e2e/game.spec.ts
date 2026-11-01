@@ -76,6 +76,30 @@ test.describe('starting out', () => {
     expect(game.errors).toEqual([]);
   });
 
+  test('dev mode is unlocked by typing its code on the title screen, and opens the console for amanda', async ({
+    game,
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('#title .dev-badge')).toHaveCount(0);
+    await page.keyboard.type('pressurepoint');
+    await expect(page.locator('#title .dev-badge')).toHaveText('Dev mode');
+    // kept for the next visit, and ~ opens the console with its switch in the settings still off
+    await game.start();
+    await page.keyboard.press('Backquote');
+    const box = page.getByRole('textbox', { name: 'Cheat command' });
+    await expect(box).toBeFocused();
+    await box.fill('ama');
+    await page.keyboard.press('Tab');
+    await expect(box).toHaveValue('amanda ');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#console')).toContainText('Amanda Jablonsky has applied');
+    await page.keyboard.press('Escape');
+    await game.menu('Hire');
+    await page.getByRole('button', { name: 'Massage Therapist' }).click();
+    await expect(page.getByText('Amanda Jablonsky')).toBeVisible();
+  });
+
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
     const music = page.locator('#title').locator('[data-tip="Music"]');
