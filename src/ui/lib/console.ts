@@ -1,4 +1,4 @@
-// What the cheat console says about itself, and stepping through the commands typed before.
+// What the cheat console says about itself, stepping through the commands typed before, and dev mode's code.
 
 import type { GameState } from '../../core/state/types';
 
@@ -35,4 +35,16 @@ export function completeCommand(line: string, names: readonly string[]): { line:
   let common = first;
   for (const n of options) while (!n.startsWith(common)) common = common.slice(0, -1);
   return { line: common, options };
+}
+
+/** What is typed on the title screen, with no box to type it in, to unlock dev mode on this computer. */
+export const DEV_CODE = 'pressurepoint';
+
+/**
+ * The letters typed lately on the title screen, with one more key: letters alone count, whatever their case, and only
+ * as many as the dev mode code, so it is unlocked the moment the last are the code.
+ */
+export function typedLately(lately: string, key: string): string {
+  if (!/^[a-z]$/i.test(key)) return lately;
+  return (lately + key.toLowerCase()).slice(-DEV_CODE.length);
 }

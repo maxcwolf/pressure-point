@@ -13,7 +13,7 @@ import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { giveKarma, loadCampaign, recordGame } from '../../src/storage/campaign';
-import { completeCommand, consoleNote, recallStep } from '../../src/ui/lib/console';
+import { completeCommand, consoleNote, DEV_CODE, recallStep, typedLately } from '../../src/ui/lib/console';
 import { freshSim, openCenter } from './helpers';
 
 describe('the cheat console', () => {
@@ -290,5 +290,17 @@ describe('what the console shows', () => {
     expect(completeCommand('zzz', CHEAT_ORDER)).toEqual({ line: 'zzz', options: [] });
     expect(completeCommand('money 5', CHEAT_ORDER), 'past the command').toEqual({ line: 'money 5', options: [] });
     expect(completeCommand('', CHEAT_ORDER).options).toEqual(CHEAT_ORDER);
+  });
+
+  it('unlocks dev mode once the letters typed lately are its code, whatever else was typed first', () => {
+    /** Each letter of some plain letters, as keys. */
+    const keys = (letters: string) => letters.split(/(?=.)/);
+    /** The letters kept after typing these keys one by one. */
+    const type = (typed: string[]) => typed.reduce(typedLately, '');
+    expect(type(keys(`xyz${DEV_CODE}`))).toBe(DEV_CODE);
+    expect(type(keys(DEV_CODE.toUpperCase())), 'whatever the case').toBe(DEV_CODE);
+    const between = [...keys(DEV_CODE.slice(0, 4)), 'Shift', 'Enter', '5', ...keys(DEV_CODE.slice(4))];
+    expect(type(between), 'other keys skipped').toBe(DEV_CODE);
+    expect(type(keys(`${DEV_CODE.slice(0, -1)}q`))).not.toBe(DEV_CODE);
   });
 });

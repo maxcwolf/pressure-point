@@ -1,5 +1,5 @@
 // The player's controls, kept for every game on this computer: which key does what, edge scrolling, how often the
-// game autosaves, and whether ~ opens the cheat console. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan on
+// game autosaves, whether ~ opens the cheat console, and whether dev mode is unlocked. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan on
 // any layout.
 import { isRecord } from './json';
 
@@ -63,6 +63,11 @@ export interface ControlPrefs {
   autosave: number;
   /** Whether ~ opens the cheat console. Off until switched on at the bottom of the settings. */
   console: boolean;
+  /**
+   * Whether dev mode is unlocked on this computer, by typing its code on the title screen: ~ opens the cheat console
+   * whatever `console` says. Off again from the settings.
+   */
+  dev: boolean;
 }
 
 /** The controls a new player starts with. */
@@ -72,7 +77,11 @@ export const defaultControls = (): ControlPrefs => ({
   // every five minutes: a save is tens of kilobytes, and the game is saved anyway as it is left or hidden
   autosave: 300,
   console: false,
+  dev: false,
 });
+
+/** Whether ~ opens the cheat console: switched on in the settings, or dev mode unlocked. */
+export const consoleOn = (prefs: ControlPrefs): boolean => prefs.console || prefs.dev;
 
 /** The key that opens the cheat console, once it is switched on: the one with ` and ~ on it. */
 export const CONSOLE_KEY = 'Backquote';
@@ -124,6 +133,7 @@ export function readControls(raw: unknown): ControlPrefs {
   if (typeof raw.edgeScroll === 'boolean') out.edgeScroll = raw.edgeScroll;
   if (typeof raw.autosave === 'number' && AUTOSAVE_CHOICES.includes(raw.autosave)) out.autosave = raw.autosave;
   if (typeof raw.console === 'boolean') out.console = raw.console;
+  if (typeof raw.dev === 'boolean') out.dev = raw.dev;
   return out;
 }
 

@@ -1,6 +1,6 @@
 // The settings switches, shared by the title screen and the pause menu.
 
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 
 import { setSharing, sharing, track } from '../../app/analytics';
 import type { Audio } from '../../audio/audio';
@@ -51,6 +51,10 @@ export interface SettingsPanelProps {
  * or why it cannot be changed; the keys in two columns. The rows are drawn by SettingRow.tsx, ControlSettings.tsx and
  * the panel itself, and the sandbox's settings (SandboxPanel.tsx) are laid out the same.
  */
+/** What dev mode's switch says. */
+const DEV_MODE_NOTE =
+  'Unlocked on this computer from the title screen: ~ opens the cheat console in every game, whatever the switch above says. Switch it off to lock it again.';
+
 export const settingsLook = css({
   textAlign: 'left',
   m: '0',
@@ -88,10 +92,12 @@ export const settingsLook = css({
 
 /**
  * Switches for the tutorial, which treatments are offered, how items show their stats, the controls, how long messages stay, full
- * screen in the desktop app, sound and music, the cheat console and sharing play statistics.
+ * screen in the desktop app, sound and music, the cheat console, dev mode once unlocked, and sharing play statistics.
  */
 export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPanelProps) {
   const redraw = useRedraw();
+  /** Whether dev mode was unlocked as the settings opened, so its switch shows. */
+  const [devShown] = useState(() => loadControls().dev);
   // the window can leave full screen by its own button or keys while the settings are open
   useEffect(() => fullScreen?.subscribe(redraw), [fullScreen, redraw]);
   /** Whether a discipline is switched on, in this game or for new ones. */
@@ -333,6 +339,20 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
             return !prefs.console;
           })}
         />
+        {/* only once unlocked, and kept in view while the settings are open so it can be switched back on */}
+        {devShown && (
+          <SettingRow
+            icon="ui-unlock"
+            name="Dev mode"
+            desc={DEV_MODE_NOTE}
+            on={loadControls().dev}
+            onToggle={flip('dev', () => {
+              const prefs = loadControls();
+              saveControls({ ...prefs, dev: !prefs.dev });
+              return !prefs.dev;
+            })}
+          />
+        )}
       </ul>
       <h4>Privacy</h4>
       <ul>

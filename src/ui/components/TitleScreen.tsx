@@ -1,9 +1,10 @@
 // The title screen: the logo, the latest save, and the ways into the game, over a blurred view of it.
 
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 
 import type { Audio } from '../../audio/audio';
 import { CENTERS, GAME_TITLE } from '../../core/data';
+import { loadControls, saveControls } from '../../storage/controls';
 import { latestSave, timeAgo } from '../../storage/saves';
 import { loadDisciplinePrefs } from '../../storage/settings';
 import { readThumb } from '../../storage/thumbnails';
@@ -12,6 +13,7 @@ import { css } from '../../styled-system/css';
 import { buttonRow, goButton, roundButton } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch, UpdateOffer } from '../host';
+import { DEV_CODE, typedLately } from '../lib/console';
 import { cx } from '../lib/cx';
 import { saveFacts, titleBadges, updateNote } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
@@ -304,6 +306,21 @@ const alpha = css({
   textShadow: 'none',
 });
 
+/** Dev mode, unlocked on this computer, beside the version. */
+const devBadge = css({
+  display: 'inline-block',
+  ml: '4',
+  py: '1',
+  px: '6',
+  borderRadius: '6',
+  bg: 'accent',
+  color: 'fg.inverse',
+  fontWeight: 'heavy',
+  letterSpacing: 'wide',
+  textTransform: 'uppercase',
+  textShadow: 'none',
+});
+
 /** The changelog, from the corner across from the version, with a downloaded update offered above it. */
 const corner = css({
   position: 'fixed',
@@ -406,6 +423,26 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
       window.removeEventListener('keydown', onKey);
     };
   }, []);
+  /** The letters typed lately outside any box, which unlock dev mode once they are its code. */
+  const lately = useRef('');
+  useEffect(() => {
+    /** Note a letter typed, and unlock dev mode on its code. */
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (e.ctrlKey || e.metaKey || e.altKey || target?.closest('input, textarea, [contenteditable]')) return;
+      lately.current = typedLately(lately.current, e.key);
+      const prefs = loadControls();
+      if (lately.current !== DEV_CODE || prefs.dev) return;
+      saveControls({ ...prefs, dev: true });
+      audio.unlock();
+      audio.play('fanfare');
+      redraw();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [audio, redraw]);
   /** Flip a sound switch. A click is what browsers need before any sound, so music can start right here. */
   const flip = (change: () => void) => () => {
     audio.unlock();
@@ -575,6 +612,7 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
         </div>
         <p class={cx('title-version', version)}>
           <span class={alpha}>Alpha</span> {`v${__APP_VERSION__}`}
+          {loadControls().dev && <span class={cx('dev-badge', devBadge)}>Dev mode</span>}
         </p>
         <div class={corner}>
           {update && updateVersion && (

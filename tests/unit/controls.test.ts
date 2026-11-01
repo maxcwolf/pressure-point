@@ -5,6 +5,7 @@ import {
   actionFor,
   AUTOSAVE_CHOICES,
   canBind,
+  consoleOn,
   DEFAULT_KEYS,
   defaultControls,
   forgetControls,
@@ -60,19 +61,45 @@ describe('key bindings', () => {
 });
 
 describe('the controls kept', () => {
-  it('start with the default keys, no edge scrolling, an autosave every 5 minutes and no cheat console', () => {
-    expect(loadControls()).toEqual({ keys: DEFAULT_KEYS, edgeScroll: false, autosave: 300, console: false });
+  it('start with the default keys, no edge scrolling, an autosave every 5 minutes, no cheat console or dev mode', () => {
+    expect(loadControls()).toEqual({
+      keys: DEFAULT_KEYS,
+      edgeScroll: false,
+      autosave: 300,
+      console: false,
+      dev: false,
+    });
   });
 
   it('are kept for next time', () => {
-    saveControls({ keys: rebind(DEFAULT_KEYS, 'pause', 'KeyP'), edgeScroll: true, autosave: 60, console: true });
+    saveControls({
+      keys: rebind(DEFAULT_KEYS, 'pause', 'KeyP'),
+      edgeScroll: true,
+      autosave: 60,
+      console: true,
+      dev: false,
+    });
     forgetControls();
     expect(loadControls()).toEqual({
       keys: { ...DEFAULT_KEYS, pause: 'KeyP' },
       edgeScroll: true,
       autosave: 60,
       console: true,
+      dev: false,
     });
+  });
+
+  it('keep dev mode unlocked for every game on this computer until it is switched off, opening the console', () => {
+    expect(consoleOn(loadControls())).toBe(false);
+    saveControls({ ...loadControls(), dev: true });
+    forgetControls();
+    expect(loadControls().dev, 'after the page is opened again').toBe(true);
+    expect(consoleOn(loadControls()), 'with the console switch off').toBe(true);
+    saveControls({ ...loadControls(), dev: false });
+    forgetControls();
+    expect(loadControls().dev).toBe(false);
+    expect(consoleOn(loadControls())).toBe(false);
+    expect(readControls({ dev: 'yes' }).dev, 'anything but true or false is left off').toBe(false);
   });
 
   it('leave anything unusable at its default when read back', () => {
