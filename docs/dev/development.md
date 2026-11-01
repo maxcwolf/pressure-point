@@ -36,7 +36,7 @@ yarn bench          # the simulation's time per frame as the crowd grows, report
 yarn balance        # the playtest bot plays every campaign center and logs the pace: slow, and not pass/fail
 ```
 
-Dev mode is for testing the game by hand: hold Cmd+Shift+D (Ctrl+Shift+D on Windows) and click the version in the title screen's corner, and the same again locks it, as does its switch at the bottom of Settings. It is kept for every game on that computer (`dev` in `storage/controls.ts`): ~ opens the cheat console whatever its own switch says, and commands typed in it leave a game earning achievements and stars. It is left out of the changelog and the guide on purpose.
+Dev mode is for testing the game by hand. It is unlocked from the title screen in a way kept out of the docs (`clickVersion` in `TitleScreen.tsx`), and locked again the same way or from its switch at the bottom of Settings. It is kept for every game on that computer (`dev` in `storage/controls.ts`): ~ opens the cheat console whatever its own switch says, and commands typed in it leave a game earning achievements and stars. It is left out of the changelog and the guide on purpose.
 
 `yarn test:watch` reruns the unit tests as you edit. The first end-to-end run needs a browser: `yarn playwright install chromium`. How to run `yarn balance` and read its report (`yarn balance:report`) is in [balance/harness.md](../balance/harness.md).
 
