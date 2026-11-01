@@ -12,6 +12,7 @@ import { lessonCard, type LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
 import { giveKarma, recordLesson } from '../storage/campaign';
+import { loadControls } from '../storage/controls';
 import { loadDisplay } from '../storage/display';
 import { noteTutorialDone, saveTutorialPref } from '../storage/settings';
 import { loadTemplates } from '../storage/templates';
@@ -254,7 +255,8 @@ export class HudState {
   runCommand(line: string) {
     const typed = line.trim();
     if (!typed) return;
-    const result = this.host.sim.cheat(typed);
+    // in dev mode, unlocked on this computer, the game goes on counting for the campaign
+    const result = this.host.sim.cheat(typed, loadControls().dev);
     // karma belongs to the campaign, kept outside the game
     if (result.karma) giveKarma(result.karma);
     this.consoleHistory = [...this.consoleHistory.filter((h) => h !== typed), typed];

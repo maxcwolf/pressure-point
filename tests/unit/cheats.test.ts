@@ -13,7 +13,14 @@ import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { giveKarma, loadCampaign, recordGame } from '../../src/storage/campaign';
-import { completeCommand, consoleNote, DEV_CODE, recallStep, typedLately } from '../../src/ui/lib/console';
+import {
+  completeCommand,
+  consoleNote,
+  DEV_CHORD_MS,
+  devChordLive,
+  isDevChord,
+  recallStep,
+} from '../../src/ui/lib/console';
 import { freshSim, openCenter } from './helpers';
 
 describe('the cheat console', () => {
@@ -243,6 +250,40 @@ describe('a game the console has been used in', () => {
   });
 });
 
+describe('a game the console is used in, in dev mode', () => {
+  const store = new Map<string, string>();
+  beforeEach(() => {
+    store.clear();
+    globalThis.localStorage = {
+      /** Read a stored value, or null if there is none. */
+      getItem: (k: string) => store.get(k) ?? null,
+      /** Store a value. */
+      setItem: (k: string, v: string) => void store.set(k, v),
+    } as Storage;
+  });
+
+  it('goes on earning achievements and stars, recorded for the campaign', () => {
+    setSeed(1);
+    const sim = new Sim(newGame('willow'));
+    expect(sim.cheat('money 100000', true).ok).toBe(true);
+    expect(sim.cheat('win', true).ok).toBe(true);
+    expect(sim.cheat('amanda', true).ok).toBe(true);
+    expect(sim.s.cheated).toBe(false);
+    checkAchievements(createContext(sim.s));
+    expect(sim.s.achieved).toContain('nest-egg');
+    recordGame(sim.s);
+    expect(loadCampaign().stars).toEqual({ willow: CENTERS.willow.goals.length });
+    expect(loadCampaign().achieved).toContain('nest-egg');
+  });
+
+  it('keeps a game cheated before dev mode cheated', () => {
+    const sim = new Sim(newGame('willow'));
+    sim.cheat('money');
+    sim.cheat('money', true);
+    expect(sim.s.cheated).toBe(true);
+  });
+});
+
 describe('karma from the console', () => {
   const store = new Map<string, string>();
   beforeEach(() => {
@@ -270,6 +311,8 @@ describe('what the console shows', () => {
     expect(consoleNote({ center: 'sandbox', cheated: true })).toBe('');
     expect(consoleNote({ center: 'willow', cheated: false })).toMatch(/stops/);
     expect(consoleNote({ center: 'willow', cheated: true })).toMatch(/Cheats used/);
+    expect(consoleNote({ center: 'willow', cheated: false }, true)).toMatch(/Dev mode/);
+    expect(consoleNote({ center: 'willow', cheated: true }, true), 'cheated before dev mode').toMatch(/Cheats used/);
   });
 
   it('steps back and forth through the commands typed', () => {
@@ -292,15 +335,15 @@ describe('what the console shows', () => {
     expect(completeCommand('', CHEAT_ORDER).options).toEqual(CHEAT_ORDER);
   });
 
-  it('unlocks dev mode once the letters typed lately are its code, whatever else was typed first', () => {
-    /** Each letter of some plain letters, as keys. */
-    const keys = (letters: string) => letters.split(/(?=.)/);
-    /** The letters kept after typing these keys one by one. */
-    const type = (typed: string[]) => typed.reduce(typedLately, '');
-    expect(type(keys(`xyz${DEV_CODE}`))).toBe(DEV_CODE);
-    expect(type(keys(DEV_CODE.toUpperCase())), 'whatever the case').toBe(DEV_CODE);
-    const between = [...keys(DEV_CODE.slice(0, 4)), 'Shift', 'Enter', '5', ...keys(DEV_CODE.slice(4))];
-    expect(type(between), 'other keys skipped').toBe(DEV_CODE);
-    expect(type(keys(`${DEV_CODE.slice(0, -1)}q`))).not.toBe(DEV_CODE);
+  it('flips dev mode on a click of the version just after Cmd+Shift+D, or Ctrl+Shift+D on Windows', () => {
+    const chord = { code: 'KeyD', shiftKey: true, metaKey: false, ctrlKey: false };
+    expect(isDevChord({ ...chord, metaKey: true })).toBe(true);
+    expect(isDevChord({ ...chord, ctrlKey: true })).toBe(true);
+    expect(isDevChord(chord), 'with neither Cmd nor Ctrl').toBe(false);
+    expect(isDevChord({ ...chord, metaKey: true, shiftKey: false })).toBe(false);
+    expect(isDevChord({ ...chord, metaKey: true, code: 'KeyF' })).toBe(false);
+    expect(devChordLive(null, 1000), 'never pressed').toBe(false);
+    expect(devChordLive(1000, 1000 + DEV_CHORD_MS)).toBe(true);
+    expect(devChordLive(1000, 1001 + DEV_CHORD_MS), 'too long ago').toBe(false);
   });
 });

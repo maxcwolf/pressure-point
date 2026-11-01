@@ -1228,11 +1228,16 @@ export class Sim {
 
   // ---- Cheats ----------------------------------------------------------------
 
-  /** Run a line typed into the cheat console. */
-  cheat(line: string): CheatResult {
-    return runCheat(this.ctx, line, (days) => {
-      this.fastForward(days);
-    });
+  /** Run a line typed into the cheat console: in dev mode, without the game counting as cheated. */
+  cheat(line: string, dev = false): CheatResult {
+    return runCheat(
+      this.ctx,
+      line,
+      (days) => {
+        this.fastForward(days);
+      },
+      dev,
+    );
   }
 
   /**

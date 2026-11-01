@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 import { CHEAT_ORDER } from '../../core/sim/cheats';
-import { CONSOLE_KEY } from '../../storage/controls';
+import { CONSOLE_KEY, loadControls } from '../../storage/controls';
 import { css } from '../../styled-system/css';
 import { panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
@@ -124,7 +124,7 @@ export function Console() {
     }
   };
 
-  const note = consoleNote(sim.s);
+  const note = consoleNote(sim.s, loadControls().dev);
   return (
     <div id="console" class={cx(panelCard(), consoleLook)}>
       <ol ref={log} class={logLook} aria-live="polite">

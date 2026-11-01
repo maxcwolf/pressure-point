@@ -1,12 +1,16 @@
-// What the cheat console says about itself, stepping through the commands typed before, and dev mode's code.
+// What the cheat console says about itself, stepping through the commands typed before, and dev mode's unlock.
 
 import type { GameState } from '../../core/state/types';
 
-/** The warning under the console in a campaign game: before a command is used, and after. Nothing in the sandbox. */
-export function consoleNote(s: Pick<GameState, 'center' | 'cheated'>): string {
+/**
+ * The warning under the console in a campaign game: before a command is used, and after, or in dev mode that commands
+ * leave it counting. Nothing in the sandbox.
+ */
+export function consoleNote(s: Pick<GameState, 'center' | 'cheated'>, dev = false): string {
   if (s.center === 'sandbox') return '';
-  return s.cheated
-    ? 'Cheats used: this game earns no more achievements or stars.'
+  if (s.cheated) return 'Cheats used: this game earns no more achievements or stars.';
+  return dev
+    ? 'Dev mode: commands leave this game earning achievements and stars.'
     : 'Using a command stops this game earning achievements and stars.';
 }
 
@@ -37,14 +41,13 @@ export function completeCommand(line: string, names: readonly string[]): { line:
   return { line: common, options };
 }
 
-/** What is typed on the title screen, with no box to type it in, to unlock dev mode on this computer. */
-export const DEV_CODE = 'pressurepoint';
+/** How long after Cmd+Shift+D (Ctrl+Shift+D on Windows) a click on the title screen's version flips dev mode. */
+export const DEV_CHORD_MS = 5000;
 
-/**
- * The letters typed lately on the title screen, with one more key: letters alone count, whatever their case, and only
- * as many as the dev mode code, so it is unlocked the moment the last are the code.
- */
-export function typedLately(lately: string, key: string): string {
-  if (!/^[a-z]$/i.test(key)) return lately;
-  return (lately + key.toLowerCase()).slice(-DEV_CODE.length);
-}
+/** Whether a key pressed is dev mode's chord: D with Shift and Cmd, or Ctrl on Windows. A held chord repeats it. */
+export const isDevChord = (e: Pick<KeyboardEvent, 'code' | 'shiftKey' | 'metaKey' | 'ctrlKey'>): boolean =>
+  e.code === 'KeyD' && e.shiftKey && (e.metaKey || e.ctrlKey);
+
+/** Whether a click on the version at `now` flips dev mode, the chord last pressed at `chordAt` (null if never). */
+export const devChordLive = (chordAt: number | null, now: number): boolean =>
+  chordAt !== null && now - chordAt >= 0 && now - chordAt <= DEV_CHORD_MS;

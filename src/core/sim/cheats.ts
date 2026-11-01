@@ -1,5 +1,6 @@
 // The cheat console: commands typed in to change the game outright, for testing and for fun. A game they are used in
-// earns no achievements or campaign stars from then on. Two Point's games have no console of their own, so the commands
+// earns no achievements or campaign stars from then on, unless they are typed in dev mode, unlocked on a computer for
+// testing the game, which leaves the game counting. Two Point's games have no console of their own, so the commands
 // follow Theme Hospital's cheats (money, win the level, an emergency, an epidemic) and what Two Point's trainers offer
 // (kudosh, maxed-out staff, no needs).
 
@@ -97,13 +98,16 @@ function amountOr(arg: string | undefined, fallback: number): number {
   return arg === undefined ? fallback : parseAmount(arg);
 }
 
-/** Run a line typed into the console. `fastForward` plays the game on for some days, which only the `Sim` can do. */
-export function runCheat(ctx: SimContext, line: string, fastForward: (days: number) => void): CheatResult {
+/**
+ * Run a line typed into the console. `fastForward` plays the game on for some days, which only the `Sim` can do. A
+ * command typed in dev mode (`dev`) does not mark the game as cheated, so it goes on earning achievements and stars.
+ */
+export function runCheat(ctx: SimContext, line: string, fastForward: (days: number) => void, dev = false): CheatResult {
   const [word = '', ...args] = line.trim().toLowerCase().split(/\s+/);
   if (!word) return refused('Type a command, or help for the list.');
   if (!Object.hasOwn(CHEATS, word)) return refused(`Unknown command "${word}". Type help for the list.`);
   const result = run(ctx, word as CheatName, args, fastForward);
-  if (result.ok && word !== 'help') ctx.s.cheated = true;
+  if (result.ok && word !== 'help' && !dev) ctx.s.cheated = true;
   return result;
 }
 

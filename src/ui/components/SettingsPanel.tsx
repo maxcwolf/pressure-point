@@ -53,7 +53,7 @@ export interface SettingsPanelProps {
  */
 /** What dev mode's switch says. */
 const DEV_MODE_NOTE =
-  'Unlocked on this computer from the title screen: ~ opens the cheat console in every game, whatever the switch above says. Switch it off to lock it again.';
+  'Unlocked on this computer: ~ opens the cheat console in every game, whatever the switch above says, and commands typed in it leave a game earning achievements and stars. Switch it off to lock it again.';
 
 export const settingsLook = css({
   textAlign: 'left',

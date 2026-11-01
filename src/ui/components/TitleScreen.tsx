@@ -13,7 +13,7 @@ import { css } from '../../styled-system/css';
 import { buttonRow, goButton, roundButton } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch, UpdateOffer } from '../host';
-import { DEV_CODE, typedLately } from '../lib/console';
+import { devChordLive, isDevChord } from '../lib/console';
 import { cx } from '../lib/cx';
 import { saveFacts, titleBadges, updateNote } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
@@ -288,7 +288,8 @@ const version = css({
   color: 'fg.inverse',
   opacity: 'muted',
   textShadow: 'text.title-strong',
-  pointerEvents: 'none',
+  // clickable for dev mode's unlock, and nothing else, so nothing gives it away
+  userSelect: 'none',
 });
 
 /** The game is unfinished, and says so beside its version. */
@@ -423,26 +424,30 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
       window.removeEventListener('keydown', onKey);
     };
   }, []);
-  /** The letters typed lately outside any box, which unlock dev mode once they are its code. */
-  const lately = useRef('');
+  /** When Cmd+Shift+D (Ctrl+Shift+D on Windows) was last pressed, after which a click on the version flips dev mode. */
+  const chordAt = useRef<number | null>(null);
   useEffect(() => {
-    /** Note a letter typed, and unlock dev mode on its code. */
+    /** Note the dev mode chord, kept from the browser's own use of it. */
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (e.ctrlKey || e.metaKey || e.altKey || target?.closest('input, textarea, [contenteditable]')) return;
-      lately.current = typedLately(lately.current, e.key);
-      const prefs = loadControls();
-      if (lately.current !== DEV_CODE || prefs.dev) return;
-      saveControls({ ...prefs, dev: true });
-      audio.unlock();
-      audio.play('fanfare');
-      redraw();
+      if (!isDevChord(e)) return;
+      e.preventDefault();
+      chordAt.current = performance.now();
     };
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
     };
-  }, [audio, redraw]);
+  }, []);
+  /** Switch dev mode on, or off again, if the chord was just pressed. */
+  const clickVersion = () => {
+    if (!devChordLive(chordAt.current, performance.now())) return;
+    chordAt.current = null;
+    const prefs = loadControls();
+    saveControls({ ...prefs, dev: !prefs.dev });
+    audio.unlock();
+    audio.play(prefs.dev ? 'blip' : 'fanfare');
+    redraw();
+  };
   /** Flip a sound switch. A click is what browsers need before any sound, so music can start right here. */
   const flip = (change: () => void) => () => {
     audio.unlock();
@@ -610,7 +615,8 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
             <ScrollTab />
           </div>
         </div>
-        <p class={cx('title-version', version)}>
+        {/* Cmd+Shift+D (Ctrl+Shift+D on Windows), then a click here, switches dev mode on or off */}
+        <p class={cx('title-version', version)} onClick={clickVersion}>
           <span class={alpha}>Alpha</span> {`v${__APP_VERSION__}`}
           {loadControls().dev && <span class={cx('dev-badge', devBadge)}>Dev mode</span>}
         </p>
