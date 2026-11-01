@@ -88,6 +88,8 @@ describe('a staff challenge', () => {
     const { ctx, s, sim } = withChallenges();
     s.stars = 1;
     addAcupuncture(sim);
+    // an acupuncturist to give it, or nobody comes for it
+    hire(sim, 'acupuncturist');
     s.tally.healed = 10 * Math.max(1, s.day % DAYS_PER_MONTH);
     const goals = challengeGoals(ctx, 90);
     const all = goals.find((g) => g.kind === 'healed' && !g.discipline);

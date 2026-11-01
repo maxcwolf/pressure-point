@@ -1,10 +1,18 @@
 // Shared setup for the simulation tests: seeded games and a standard little center.
-import { isGeneral, ITEMS, type ItemType, type Role, type RoomType } from '../../src/core/data';
+import {
+  isGeneral,
+  ITEMS,
+  type ItemType,
+  MODALITIES,
+  type Modality,
+  type Role,
+  type RoomType,
+} from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import type { SimEvent } from '../../src/core/sim/events';
 import { Sim } from '../../src/core/sim/sim';
 import { newGame } from '../../src/core/state/game';
-import type { Room, Staff } from '../../src/core/state/types';
+import type { GameState, Room, Staff } from '../../src/core/state/types';
 import type { Rect } from '../../src/core/world';
 
 /**
@@ -227,3 +235,12 @@ export function inconsistencies(sim: Sim): string[] {
 /** The treatment courses among some courses, leaving out the general ones every role can take. */
 export const treatmentCourses = (courses: readonly { id: string }[]) =>
   courses.map((c) => c.id).filter((id) => !isGeneral(id));
+
+/**
+ * Someone on the payroll of a bare game state trained in every technique, so guests may come with any condition the
+ * rooms and stars allow: nobody comes for one nobody is trained to treat.
+ */
+export function trainedInAll(s: GameState) {
+  const quals = Object.keys(MODALITIES) as Modality[];
+  s.staff.push({ id: s.nextId++, role: 'therapist', state: 'atPost', quals } as unknown as Staff);
+}

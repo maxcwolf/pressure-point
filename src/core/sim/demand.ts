@@ -1,6 +1,7 @@
 // Which discipline a guest comes for. Each discipline the center offers pulls by how popular it is, the following it
 // has built up, the finest room it has and how much of it the staff can do; the guest picks one by that pull, and then
-// a condition within it, the center's local favourites more often.
+// a condition within it, the center's local favourites more often. Nobody comes for a condition nobody on the payroll
+// is trained to treat.
 
 import {
   CAPACITY_ARRIVALS,
@@ -37,9 +38,6 @@ import type { VisitEnd } from './records';
 import { isGroupStation, matsPlayed } from './sessions';
 import { offered, unlocked } from './treatments';
 import { openedEarly, waveReady } from './waves';
-
-/** How often guests turn up with a condition nobody on the payroll is trained in, against one they are. */
-export const UNTRAINED_PULL = 0.4;
 
 /** A discipline's following, 0 to 100: a little to begin with, from the word that the center now offers it. */
 export const followingOf = (s: Pick<GameState, 'following'>, d: Discipline) => s.following[d] ?? FOLLOWING.start;
@@ -103,10 +101,13 @@ export interface DisciplineDemand {
   followed: number;
   /** The finest room's pull, and the room. */
   room: { room?: Room; pull: number };
-  /** The conditions guests can come with, and how many of them someone on the payroll is trained for. */
+  /** The conditions guests could come with, and how many of them someone on the payroll is trained for. */
   conditions: number;
   trained: number;
-  /** How its training holds it back, as a multiplier, and the techniques guests want that nobody is trained in. */
+  /**
+   * How its training holds it back, as a multiplier: the share of those conditions someone is trained for, since nobody
+   * comes for the rest. And the techniques guests would come for if someone were trained in them.
+   */
   training: number;
   untrained: Modality[];
   /** How the center's local favourites and any campaign lift it, as a multiplier. */
@@ -158,11 +159,16 @@ function lineFor(ctx: SimContext, d: Discipline, cap: Capacity): Line {
   return { waiting, places, factor: lineFactor(waiting, places) };
 }
 
-/** A condition guests can come with now, and how often against the rest of its discipline. */
+/**
+ * A condition guests could come with now: how much the center's local favourites and any campaign draw them to it,
+ * whether someone on the payroll is trained to treat it, and so how often they come with it against the rest of its
+ * discipline: not at all while nobody is.
+ */
 export interface Weighted {
   condition: ConditionDef;
-  weight: number;
+  appeal: number;
   trained: boolean;
+  weight: number;
 }
 
 /**
@@ -184,9 +190,24 @@ function weighed(ctx: SimContext, conditions: readonly ConditionDef[]): Weighted
     .filter((c) => conditionHere(c, ctx.s.center) && sentFor(ctx, c.modality))
     .map((c) => {
       const trained = staff.some((t) => t.quals.includes(c.modality));
-      const weight = (trained ? 1 : UNTRAINED_PULL) * (local[c.id] ?? 1) * campaignBoost(ctx.s, c.id, CONDITION_BOOST);
-      return { condition: c, weight, trained };
+      const appeal = (local[c.id] ?? 1) * campaignBoost(ctx.s, c.id, CONDITION_BOOST);
+      return { condition: c, appeal, trained, weight: trained ? appeal : 0 };
     });
+}
+
+/**
+ * How training holds some conditions back, and how the local favourites and any campaign lift them, as multipliers whose
+ * product is their mean weight: the share someone is trained for, and the mean appeal of those, or of all while none is.
+ */
+function trainedFor(conditions: readonly Weighted[]): { trained: number; training: number; flavour: number } {
+  /** The mean appeal of some conditions. */
+  const mean = (list: readonly Weighted[]) => list.reduce((sum, w) => sum + w.appeal, 0) / Math.max(1, list.length);
+  const ready = conditions.filter((w) => w.trained);
+  return {
+    trained: ready.length,
+    training: ready.length / Math.max(1, conditions.length),
+    flavour: ready.length ? mean(ready) : mean(conditions),
+  };
 }
 
 /**
@@ -210,8 +231,7 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
     const following = followingOf(ctx.s, d);
     const followed = followingPull(following);
     const room = bestRoom(ctx, d);
-    const weight = mine.reduce((sum, w) => sum + w.weight, 0) / mine.length;
-    const training = mine.reduce((sum, w) => sum + (w.trained ? 1 : UNTRAINED_PULL), 0) / mine.length;
+    const { trained, training, flavour } = trainedFor(mine);
     const untrained = [...new Set(mine.filter((w) => !w.trained).map((w) => w.condition.modality))];
     const line = lineFor(ctx, d, cap);
     return [
@@ -222,12 +242,12 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
         followed,
         room,
         conditions: mine.length,
-        trained: mine.filter((w) => w.trained).length,
+        trained,
         training,
         untrained,
-        flavour: weight / training,
+        flavour,
         line,
-        pull: popularity * followed * room.pull * weight * line.factor,
+        pull: popularity * followed * room.pull * training * flavour * line.factor,
         share: 0,
       },
     ];
@@ -365,10 +385,13 @@ export interface MachineDemand {
   fed: number;
   /** Its finest room's pull, and the room. */
   room: { room?: Room; pull: number };
-  /** Its ailments guests can come with now, each with its weight, and how many someone on the payroll is trained for. */
+  /** Its ailments guests could come with now, each with its weight, and how many someone on the payroll is trained for. */
   conditions: Weighted[];
   trained: number;
-  /** How its training holds it back, and how the center's local favourites and any campaign lift it, as multipliers. */
+  /**
+   * How its training holds it back, as the share of its ailments someone is trained for (nobody comes for the rest),
+   * and how the center's local favourites and any campaign lift it, as multipliers.
+   */
   training: number;
   flavour: number;
   /** Its own line, and how it puts new guests off. */
@@ -380,9 +403,9 @@ export interface MachineDemand {
 /**
  * The guests each signature machine draws for its own ailments, on top of those the tables draw: `MACHINE_DRAW` of
  * the center's pace for each one standing with a practitioner of its own at work to run it, times its finest room's
- * pull, held back while nobody is trained to run it and by a line of its own, which puts guests off sooner than a
- * discipline's. A machine that is down, or has
- * nobody of its own to run it, draws nobody.
+ * pull, held back by the share of its ailments nobody is trained for and by a line of its own, which puts guests off
+ * sooner than a discipline's. A machine that is down, has nobody of its own to run it, or nobody trained in what it
+ * does, draws nobody.
  */
 export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): MachineDemand[] {
   return cap.machines.flatMap((m): MachineDemand[] => {
@@ -393,8 +416,7 @@ export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): M
     );
     if (!conditions.length) return [];
     const room = finest(ctx, machineRoom(m.machine) ?? DISCIPLINES.massage.room);
-    const weight = conditions.reduce((sum, w) => sum + w.weight, 0) / conditions.length;
-    const training = conditions.reduce((sum, w) => sum + (w.trained ? 1 : UNTRAINED_PULL), 0) / conditions.length;
+    const { trained, training, flavour } = trainedFor(conditions);
     const waiting = waitingFor(ctx, (x) => x.machine === m.machine);
     const line = { waiting, places: m.staffed, factor: lineFactor(waiting, m.staffed, MACHINE_LINE) };
     return [
@@ -405,11 +427,11 @@ export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): M
         fed: m.fed,
         room,
         conditions,
-        trained: conditions.filter((w) => w.trained).length,
+        trained,
         training,
-        flavour: weight / training,
+        flavour,
         line,
-        pull: MACHINE_DRAW * m.fed * room.pull * weight * line.factor,
+        pull: MACHINE_DRAW * m.fed * room.pull * training * flavour * line.factor,
       },
     ];
   });
@@ -441,19 +463,21 @@ export function lineArrivals(rows: readonly DisciplineDemand[]): number {
   return unput > 0 ? rows.reduce((sum, r) => sum + r.pull, 0) / unput : 1;
 }
 
-/** Pick one of some weighted things, given a roll from 0 to 1. */
+/** Pick one of some weighted things, given a roll from 0 to 1, never one weighing nothing. Undefined if all do. */
 function pickWeighted<T>(list: readonly T[], weight: (t: T) => number, roll: number): T | undefined {
-  let left = roll * list.reduce((sum, t) => sum + weight(t), 0);
-  for (const t of list) {
+  const some = list.filter((t) => weight(t) > 0);
+  let left = roll * some.reduce((sum, t) => sum + weight(t), 0);
+  for (const t of some) {
     left -= weight(t);
     if (left <= 0) return t;
   }
-  return list.at(-1);
+  return some.at(-1);
 }
 
 /**
  * The condition a new guest comes with: a discipline by its pull, then a condition within it by its weight. Two rolls
- * from 0 to 1 make the choice, so it can be tested. Nothing on offer, and it is the first massage condition here.
+ * from 0 to 1 make the choice, so it can be tested. Nothing on offer that anyone is trained in, and it is the plainest
+ * massage.
  */
 export function chooseCondition(ctx: SimContext, rollDiscipline: number, rollCondition: number): ConditionId {
   const rows = demand(ctx);

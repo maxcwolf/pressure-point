@@ -24,7 +24,7 @@ import { discomfort, stoneCooling, updateWarmth, warmthAt } from '../../src/core
 import { disciplineOn, newGame } from '../../src/core/state/game';
 import { dropLine } from '../../src/render/rain';
 import { flakeHeight, flakeSpot, indoorsOf } from '../../src/render/snowfall';
-import { buildRoom, freshSim, runUntil } from './helpers';
+import { buildRoom, freshSim, runUntil, trainedInAll } from './helpers';
 
 const SNOW: Snowfall = CENTERS.highpines.snow ?? { chance: 0, days: 1 };
 
@@ -129,6 +129,7 @@ describe('High Pines', () => {
       setSeed(5);
       const ctx = createContext(newGame(id));
       ctx.s.stars = 2;
+      trainedInAll(ctx.s);
       for (const type of ['massage', 'reiki'] as const)
         ctx.s.rooms.push({
           id: ctx.s.nextId++,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { type ConditionId, conditionOf, DAY_SECONDS, MODALITIES, STONE_USE } from '../../src/core/data';
+import { fairSalary } from '../../src/core/people';
 import { createContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
 import { graduate } from '../../src/core/sim/training';
@@ -24,7 +25,7 @@ function playWithCondition(sim: Sim, condition: ConditionId, seconds: number) {
 
 describe('unlocking modalities', () => {
   it('only sends guests whose condition can be treated at the current star level', () => {
-    const { sim, s } = openCenter(1);
+    const { sim, s, therapist } = openCenter(1);
     const seen = new Set<string>();
     /** Play for a while, noting the modality each guest needs. */
     const watch = (seconds: number) => {
@@ -38,6 +39,9 @@ describe('unlocking modalities', () => {
     watch(400);
     expect([...seen]).toEqual(['swedish']);
     s.stars = 1;
+    // trained in every massage technique, and paid for it, so only the stars stand between guests and what they need
+    therapist.quals = ['swedish', 'deep', 'sports', 'stone', 'cranio'];
+    therapist.salary = fairSalary('therapist', therapist.skill, therapist.traits, therapist.quals);
     watch(900);
     expect(seen.has('deep') || seen.has('sports')).toBe(true);
     expect(seen.has('stone')).toBe(false);

@@ -28,7 +28,7 @@ import { loadCampaign, recordGame, recordLesson } from '../../src/storage/campai
 import { campaignCards } from '../../src/ui/lib/campaign';
 import { hireableRoles } from '../../src/ui/lib/catalog';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
-import { openCenter, runUntil } from './helpers';
+import { openCenter, runUntil, trainedInAll } from './helpers';
 
 describe('the campaign trail', () => {
   it('opens each center once the one before it has a star', () => {
@@ -200,6 +200,7 @@ describe('what each center offers', () => {
       setSeed(9);
       const ctx = createContext(newGame(id));
       ctx.s.stars = 2;
+      trainedInAll(ctx.s);
       // guests only come for treatments the center has a room for
       ctx.s.rooms.push({
         id: 999,
@@ -408,6 +409,7 @@ describe('The Boardwalk', () => {
       setSeed(3);
       const ctx = createContext(newGame(id));
       ctx.s.stars = 2;
+      trainedInAll(ctx.s);
       for (const type of ['massage', 'acupuncture', 'reiki'] as const)
         ctx.s.rooms.push({
           id: ctx.s.nextId++,

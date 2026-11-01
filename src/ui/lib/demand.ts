@@ -86,16 +86,19 @@ export function lineWord(row: DisciplineDemand): string {
 }
 
 /**
- * The one thing that would draw the most more guests to a discipline, as advice: a shorter line, training, word of
- * mouth or the room. Nothing when it is doing well on all four.
+ * The one thing that would draw the most more guests to a discipline, as advice: a shorter line, someone to treat
+ * them, training, word of mouth or the room. Nothing when it is doing well on all of them.
  */
 export function demandAdvice(row: DisciplineDemand): string | null {
   const name = DISCIPLINES[row.discipline].name;
   if (row.line.factor < 0.99)
     return `The line for ${name.toLowerCase()} is putting new guests off: ${lineWord(row)}. Nobody minds until more than three wait for each, and those put off do not come at all. Another room and practitioner, or quicker treatment, would bring them back.`;
+  if (!row.trained)
+    return `Guests come for ${name.toLowerCase()} only once someone here can give it. ${an(ROLES[DISCIPLINES[row.discipline].role].name, true)} would bring them.`;
   if (row.untrained.length) {
     const list = row.untrained.slice(0, 3).map(modalityLabel).join(', ');
-    return `Guests needing ${list} mostly stay away while nobody is trained in it. Courses in a Training Room bring them back.`;
+    const them = row.untrained.length === 1 ? 'it' : 'them';
+    return `Guests needing ${list} stay away while nobody is trained in ${them}. Courses in a Training Room bring them in.`;
   }
   if (row.following < 30)
     return `Few have heard of ${name.toLowerCase()} here yet. Every guest healed spreads the word, and every failure sets it back.`;
@@ -143,10 +146,19 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
   const away = Math.round((1 - p.lines) * 100);
   if (away >= 1) parts.push(`less ${away}% kept away by long lines`);
   const drawing = p.machines.filter((m) => m.perMonth > 0);
-  if (!drawing.length) return `About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`;
+  const unready = p.machines
+    .filter((m) => m.demand.fed && !m.demand.trained)
+    .map((m) => untrainedMachineNote(m.demand));
+  if (!drawing.length)
+    return [`About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`, ...unready].join(' ');
   const tables = `${Math.round(p.tables)} come for the treatment stations: ${parts.join(', ')}.`;
   const machines = drawing.map((m) => machineNote(m.demand, m.perMonth));
-  return [`About ${Math.round(p.perMonth)} new guests a month.`, tables, ...machines].join(' ');
+  return [`About ${Math.round(p.perMonth)} new guests a month.`, tables, ...machines, ...unready].join(' ');
+}
+
+/** Why a signature machine with someone to run it draws nobody: nobody on the payroll is trained in what it does. */
+export function untrainedMachineNote(m: MachineDemand): string {
+  return `The ${ITEMS[m.machine].name} draws nobody for its own ailments while nobody is trained to run it: a course in a Training Room would bring them.`;
 }
 
 /** Who runs a machine, as a phrase: "a Massage Therapist". */
@@ -169,7 +181,7 @@ export function machineNote(m: MachineDemand, perMonth: number): string {
     if (Math.abs(f - 1) > 0.005) parts.push(`${times(f)} ${why}`);
   };
   by(m.room.pull, m.room.room ? `for the ${ROOMS[m.room.room.type].name}` : 'for its room');
-  by(m.training, 'while nobody is trained to run it');
+  by(m.training, 'for the ailments nobody is trained in');
   by(m.flavour, 'for the local favourites');
   const away = Math.round((1 - m.line.factor) * 100);
   if (away >= 1) parts.push(`less ${away}% kept away by its line`);
@@ -256,4 +268,4 @@ export function limitNote(l: Limit, c: Capacity): string {
 
 /** How the shares are made, for the top of the panel. */
 export const DEMAND_INTRO =
-  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room, how much of it your staff are trained for, and how long its line is. A following grows with every guest healed, shrinks with every one let down, and fades slowly while nobody is treated. A discipline new to the center starts with a little; one that heals more guests than it fails grows.';
+  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room, how much of it your staff are trained for, and how long its line is: guests come only for conditions someone here is trained to treat. A following grows with every guest healed, shrinks with every one let down, and fades slowly while nobody is treated. A discipline new to the center starts with a little; one that heals more guests than it fails grows.';

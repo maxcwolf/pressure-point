@@ -16,7 +16,8 @@ import {
   MODALITIES,
 } from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
-import { unfedAdvice } from '../../src/core/sim/advisor';
+import { unfedAdvice, untrainedAdvice } from '../../src/core/sim/advisor';
+import { makeCall } from '../../src/core/sim/calls';
 import type { SimContext } from '../../src/core/sim/context';
 import {
   capacity,
@@ -29,7 +30,6 @@ import {
   lineArrivals,
   lineFactor,
   unfedStations,
-  UNTRAINED_PULL,
 } from '../../src/core/sim/demand';
 import { admitGuests, type ArrivalPace, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
 import { newGame } from '../../src/core/state/game';
@@ -117,14 +117,16 @@ describe('which discipline guests come for', () => {
     expect(row(c.sim.demand(), 'sound')?.followed).toBe(followingPull(80));
   });
 
-  it('comes less while nobody is trained in what guests want, and says what that is', () => {
+  it('comes only for what someone is trained in, and says what nobody is', () => {
     const c = twoRooms();
     const trained = row(c.sim.demand(), 'sound');
     c.healer.quals = ['sound'];
     const untrained = row(c.sim.demand(), 'sound');
     expect(trained?.training).toBe(1);
+    // nobody comes for the conditions nobody is trained in, so the discipline draws as many fewer
+    expect(untrained?.training).toBeCloseTo((untrained?.trained ?? 0) / (untrained?.conditions ?? 1), 5);
+    expect(untrained?.training).toBeGreaterThan(0);
     expect(untrained?.training).toBeLessThan(1);
-    expect(untrained?.training).toBeGreaterThanOrEqual(UNTRAINED_PULL);
     expect(untrained?.untrained).toEqual(['forks']);
     expect(untrained?.share ?? 1).toBeLessThan(trained?.share ?? 0);
   });
@@ -140,10 +142,99 @@ describe('which discipline guests come for', () => {
     expect(disciplineOf(last)).toBe('sound');
   });
 
+  it('never sends a guest for a condition nobody on the payroll is trained to treat', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    c.healer.quals = [DISCIPLINES.sound.base];
+    const missing = row(c.sim.demand(), 'massage')?.untrained ?? [];
+    expect(missing.length).toBeGreaterThan(0);
+    /** The techniques of the conditions chosen over a grid of rolls. */
+    const chosen = () => {
+      const seen = new Set<Modality>();
+      for (let i = 0; i <= 40; i++)
+        for (let j = 0; j <= 40; j++) seen.add(conditionOf(chooseCondition(c.ctx, i / 40, j / 40)).modality);
+      return seen;
+    };
+    expect([...chosen()].sort()).toEqual([DISCIPLINES.massage.base, DISCIPLINES.sound.base].sort());
+    // once someone is trained in one, its guests come
+    const [learnt] = missing;
+    if (!learnt) return;
+    c.therapist.quals.push(learnt);
+    expect(chosen()).toContain(learnt);
+    expect(row(c.sim.demand(), 'massage')?.untrained).not.toContain(learnt);
+  });
+
+  it('lets nobody in for a technique nobody here is trained in, as the days go by', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    c.healer.quals = [DISCIPLINES.sound.base];
+    const seen = new Set<Modality>();
+    for (let i = 0; i < 60; i++) {
+      run(c.sim, 10);
+      for (const g of c.s.guests) if (!g.wave && !g.classDay) seen.add(conditionOf(g.condition).modality);
+    }
+    expect(c.s.stats.arrived).toBeGreaterThan(5);
+    expect([...seen].every((m) => m === DISCIPLINES.massage.base || m === DISCIPLINES.sound.base)).toBe(true);
+  });
+
+  it('draws nobody to a discipline with nobody to give it, and says who would bring them', () => {
+    const c = twoRooms();
+    c.healer.state = 'leaving';
+    const sound = row(c.sim.demand(), 'sound');
+    expect(sound).toMatchObject({ trained: 0, training: 0, pull: 0, share: 0 });
+    expect(Number.isFinite(sound?.flavour)).toBe(true);
+    expect(row(c.sim.demand(), 'massage')?.share).toBe(1);
+    if (sound)
+      expect(demandAdvice(sound)).toBe(
+        'Guests come for sound healing only once someone here can give it. A Sound Healer would bring them.',
+      );
+  });
+
   it('falls back to the plainest massage when nothing is on offer', () => {
     const c = openCenter(1);
     c.s.rooms = [];
     expect(conditionOf(chooseCondition(ctxOf(c), 0.5, 0.5)).modality).toBe(DISCIPLINES.massage.base);
+  });
+
+  it('falls back to the plainest massage when nobody on the payroll can treat anything', () => {
+    const c = twoRooms();
+    for (const st of c.s.staff) st.quals = [];
+    for (const roll of [0, 0.5, 0.9999])
+      expect(conditionOf(chooseCondition(c.ctx, roll, roll)).modality).toBe(DISCIPLINES.massage.base);
+  });
+});
+
+describe('what nobody here is trained in', () => {
+  it('has the advisor say which guests stay away, and how to bring them in', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    expect(untrainedAdvice(c.ctx)).toMatch(
+      /^Guests needing .+ stay away while nobody here is trained in (it|them)\. Build a Training Room and send a Massage Therapist on the course to bring them in\.$/,
+    );
+    // nothing to say once everyone is trained, or the training is under way
+    c.therapist.quals = modsOf('massage');
+    expect(untrainedAdvice(c.ctx)).toBe('');
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    const [learning] = row(c.sim.demand(), 'massage')?.untrained ?? [];
+    if (!learning) throw new Error('nothing to learn');
+    c.therapist.quals = modsOf('massage').filter((m) => m !== learning);
+    expect(untrainedAdvice(c.ctx)).not.toBe('');
+    c.therapist.training = { course: learning, progress: 0, seconds: 600, cost: 0 };
+    expect(untrainedAdvice(c.ctx)).toBe('');
+  });
+
+  it('never has a house call ask for a technique nobody here is trained in', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    c.healer.quals = [DISCIPLINES.sound.base];
+    const asked = new Set<Modality | undefined>();
+    for (let i = 0; i < 200; i++) asked.add(makeCall(c.ctx)?.modality);
+    expect([...asked]).toEqual([undefined]);
+    const [second] = row(c.sim.demand(), 'massage')?.untrained ?? [];
+    if (!second) return;
+    c.therapist.quals.push(second);
+    for (let i = 0; i < 200; i++) asked.add(makeCall(c.ctx)?.modality);
+    expect([...asked].sort()).toEqual([DISCIPLINES.massage.base, second, undefined].sort());
   });
 });
 
@@ -551,7 +642,10 @@ describe('the Guests panel', () => {
 
   it('advises training first, then word of mouth, then the room, and nothing when all is well', () => {
     expect(demandAdvice({ ...base, untrained: ['forks'], trained: 2 })).toMatch(
-      /^Guests needing Tuning Forks mostly stay away/,
+      /^Guests needing Tuning Forks stay away while nobody is trained in it\./,
+    );
+    expect(demandAdvice({ ...base, untrained: ['sound', 'forks'], trained: 0, training: 0 })).toBe(
+      'Guests come for sound healing only once someone here can give it. A Sound Healer would bring them.',
     );
     expect(demandAdvice({ ...base, following: 10 })).toMatch(/^Few have heard of sound healing here yet/);
     expect(demandAdvice({ ...base, room: { pull: 1.1 } })).toMatch(

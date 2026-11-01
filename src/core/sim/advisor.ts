@@ -30,7 +30,7 @@ import type { Item } from '../state/types';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
 import type { SimContext } from './context';
-import { capacity, unfedStations } from './demand';
+import { capacity, demand, machineDemand, unfedStations } from './demand';
 import {
   cashflow,
   countdownLever,
@@ -250,6 +250,8 @@ function nudge(ctx: SimContext): string | Advice {
   if (risk) return risk;
   const unfed = unfedAdvice(ctx);
   if (unfed) return unfed;
+  const wanted = untrainedAdvice(ctx);
+  if (wanted) return wanted;
   if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
@@ -529,6 +531,35 @@ export function comfortAdvice(ctx: SimContext): string | Advice {
       text: `${parched.name} has nothing to drink or eat and is fed up. Staff use the Water Coolers, Tea Stations and Snack Machines too.`,
       about: { kind: 'staff', id: parched.id },
     };
+  return '';
+}
+
+/**
+ * Nudge about techniques guests would come for if anyone here were trained in them, and nobody is learning yet: they
+ * stay away until someone is. A discipline with nobody in its role at all is for the guests panel to say.
+ */
+export function untrainedAdvice(ctx: SimContext): string {
+  const s = ctx.s;
+  /** Whether someone is on the course for a technique already. */
+  const learning = (m: string) => s.staff.some((st) => st.training?.course === m);
+  /** The words for sending someone on a course, with a Training Room first if there is none. */
+  const course = (role: string) =>
+    hasRoom(ctx, 'training')
+      ? `Send ${an(role)} on the course`
+      : `Build a Training Room and send ${an(role)} on the course`;
+  for (const row of demand(ctx)) {
+    const wanted = row.untrained.filter((m) => !learning(m));
+    if (!row.trained || !wanted.length) continue;
+    const list = wanted.slice(0, 2).map(modalityLabel).join(' and ');
+    const role = ROLES[DISCIPLINES[row.discipline].role].name;
+    return `Guests needing ${list} stay away while nobody here is trained in ${wanted.length === 1 ? 'it' : 'them'}. ${course(role)} to bring them in.`;
+  }
+  for (const m of machineDemand(ctx)) {
+    const performs = m.conditions.map((w) => w.condition.modality).filter((x) => !learning(x));
+    if (!m.fed || m.trained || !performs.length) continue;
+    const role = ROLES[DISCIPLINES[ITEMS[m.machine].station?.discipline ?? 'massage'].role].name;
+    return `The ${ITEMS[m.machine].name} draws no guests while nobody here is trained to run it. ${course(role)} to bring them in.`;
+  }
   return '';
 }
 
