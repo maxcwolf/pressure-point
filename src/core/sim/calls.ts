@@ -22,12 +22,13 @@ import { money } from '../format';
 import { irnd, pick, random } from '../random';
 import type { GameState, HouseCall, Staff } from '../state/types';
 import { gainXp } from './careers';
-import { lobbyTile, say, staffById, streetTile } from './chars';
+import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
+import { isClassLead } from './classes';
 import type { SimContext } from './context';
 import { earn, priceFor } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { canWalkTo, goTo, halt } from './movement';
-import { stationStaff } from './sessions';
+import { isLeadStation, sessionState, stationStaff } from './sessions';
 import { staffIdle } from './staffing';
 import { offered, unlocked } from './treatments';
 import { conditionDays, worsening } from './worsening';
@@ -53,6 +54,8 @@ const callPrices = (s: GameState, by: Modality | 'level') => (by === 'level' ? s
 export function canGo(st: Staff, call: HouseCall): boolean {
   if (ROLES[st.role].discipline !== call.discipline) return false;
   if (call.modality && !st.quals.includes(call.modality)) return false;
+  // someone who has taken one and is finishing a treatment before they go has no more to give
+  if (st.call) return false;
   return !['leaving', 'arriving', 'training', 'toTrain', 'toCall', 'away'].includes(st.state);
 }
 
@@ -109,7 +112,26 @@ export function callWants(call: HouseCall): string {
   return call.modality ? `${role} trained in ${MODALITIES[call.modality].name}` : role;
 }
 
-/** Send someone on the house call on offer. False if they cannot go. */
+/** What a member of staff at their post would finish before setting off on a house call. */
+export type CallWait = 'treatment' | 'class' | 'session';
+
+/**
+ * What this member of staff is in the middle of, to finish before they set off on a house call: a guest on their table,
+ * a class under way, or a sound bath playing. Null if they are free to go now, a guest only called over included.
+ */
+export function callWait(ctx: SimContext, st: Staff): CallWait | null {
+  if (st.state !== 'atPost') return null;
+  const it = ctx.world.item(st.post);
+  if (it?.staffId !== st.id || !ctx.world.usable(it)) return null;
+  if (isClassLead(it)) return it.progress > 0 ? 'class' : null;
+  if (isLeadStation(it)) return sessionState(ctx, it).playing ? 'session' : null;
+  return guestById(ctx, it.serving)?.state === 'served' ? 'treatment' : null;
+}
+
+/**
+ * Send someone on the house call on offer. False if they cannot go. Someone in the middle of a treatment finishes it,
+ * calls nobody more, and sets off once it is done (`setOff`).
+ */
 export function acceptCall(ctx: SimContext, staffId: number): boolean {
   const s = ctx.s;
   const call = s.callOffer;
@@ -124,8 +146,7 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
-  staffIdle(ctx, st);
-  goTo(ctx, st, x, y);
+  const wait = callWait(ctx, st);
   // priced on the way back, so a price raised for the days away and dropped again is not paid for
   st.call = {
     client: call.client,
@@ -133,15 +154,42 @@ export function acceptCall(ctx: SimContext, staffId: number): boolean {
     back: s.day + call.days,
     fee: callBase(call, st),
     pricedBy: call.modality ?? 'level',
+    ...(wait && { due: call }),
   };
-  st.state = 'toCall';
   say(st, 'bubble-house-call', 3);
   s.callOffer = null;
-  toast(ctx, `${st.name} is off to ${call.client} for ${call.days} day${call.days === 1 ? '' : 's'}.`, 'info', {
-    kind: 'staff',
-    id: st.id,
-  });
+  const days = `${call.days} day${call.days === 1 ? '' : 's'}`;
+  const about = { kind: 'staff', id: st.id } as const;
+  if (wait) {
+    toast(ctx, `${st.name} will set off for ${call.client} once this ${wait} is done, for ${days}.`, 'info', about);
+    return true;
+  }
+  setOff(ctx, st);
+  toast(ctx, `${st.name} is off to ${call.client} for ${days}.`, 'info', about);
   return true;
+}
+
+/**
+ * Set off on the house call taken: stood down from whatever they were at, and on their way to the street. If the way
+ * out has been lost since it was taken, they are simply gone, as they are simply back if the way in is lost.
+ */
+export function setOff(ctx: SimContext, st: Staff) {
+  if (st.call) delete st.call.due;
+  staffIdle(ctx, st);
+  st.state = 'toCall';
+  const [x, y] = streetTile(ctx.s, ctx.world.building, ctx.world.w);
+  if (!goTo(ctx, st, x, y)) leaveForCall(ctx, st);
+}
+
+/**
+ * Take back the house call someone has not yet set off on, as they leave for good: it goes back on offer, with at least
+ * a day left to find someone else, unless another has come up meanwhile.
+ */
+export function withdrawCall(ctx: SimContext, st: Staff) {
+  const due = st.call?.due;
+  if (!due) return;
+  st.call = null;
+  ctx.s.callOffer ??= { ...due, deadline: Math.max(due.deadline, ctx.s.day + 1) };
 }
 
 /** Turn the house call on offer down. */

@@ -46,7 +46,7 @@ import { prestige } from './ambience';
 import { worksAt } from './assignments';
 import { blazeAt, douse, douseSeconds, standByFire } from './blazes';
 import { sameRoomCount } from './building';
-import { leaveForCall, returnFromCall } from './calls';
+import { callWait, leaveForCall, returnFromCall, setOff, withdrawCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
 import { bless, clearingSeconds } from './ceremonies';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
@@ -139,6 +139,8 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
 export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poached' = 'fired') {
   const st = staffById(ctx, id);
   if (!st || st.state === 'leaving') return;
+  // a house call they had not yet set off on is not lost with them
+  withdrawCall(ctx, st);
   staffIdle(ctx, st);
   // they are paid for the days they worked, and no more
   payOff(ctx, st);
@@ -304,7 +306,8 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
     toast(ctx, `${st.name} will quit within two days. Give them a raise or a break, now.`, 'bad', about, 'ui-warning');
     emit(ctx, { type: 'sfx', name: 'error' });
   }
-  if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training) fire(ctx, st.id, 'quit');
+  // and not with a house call taken: they go on it first, between the treatment they finish and the next
+  if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training && !st.call) fire(ctx, st.id, 'quit');
 }
 
 /**
@@ -339,12 +342,13 @@ function waitingAt(ctx: SimContext, it: Item): number {
  * or outside their rooms, a priority room short of someone, bad vibes to clear, a soul to retrieve or a mishap to ward
  * off, or a drink or a snack to be had. With guests waiting in their line, they see to them first: bad vibes can wait
  * unless they are in this room, and a drink or a snack until they are close to fed up. Being sent elsewhere by the
- * player, and emergencies, cannot wait.
+ * player, on a house call among it, and emergencies, cannot wait.
  */
 function wantedElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
   const line = lineWaiting(ctx, it);
   const cloudy = roomToSmudge(ctx, st);
   return (
+    !!st.call?.due ||
     !onDuty(st, stationDuty(it)) ||
     !worksAt(ctx, st, it.x, it.y) ||
     (!inPriorityRoom(ctx, it.x, it.y) && !!openPriorityPost(ctx, st)) ||
@@ -707,6 +711,9 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
     st.energy = Math.max(0, st.energy - rate * stamina * tuning(ctx.s, 'tiredness') * dt);
   }
+
+  // a house call taken in the middle of a treatment is set off on as soon as it is done, or no longer under way
+  if (st.call?.due && !callWait(ctx, st)) setOff(ctx, st);
 
   switch (st.state) {
     case 'arriving':

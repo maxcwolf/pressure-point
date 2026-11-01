@@ -9,7 +9,7 @@ import { rankName } from '../../core/sim/careers';
 import { css } from '../../styled-system/css';
 import { buttonRow, dangerButton, goButton, panelCard } from '../../styled-system/recipes';
 import { useGame, useHud } from '../hooks/use-hud';
-import { callCostNote } from '../lib/calls';
+import { callCostNote, callWaitNote } from '../lib/calls';
 import { cx } from '../lib/cx';
 import { offerTimeLeft, timeLeftLabel } from '../lib/emergency';
 import { Bar } from './common/Bar';
@@ -84,22 +84,26 @@ export function HouseCallOffer() {
       </p>
       {who.length ? (
         <div class={whoList}>
-          {who.slice(0, 4).map((st) => (
-            <Button
-              key={st.id}
-              class={cx(goButton(), send)}
-              onPress={() => {
-                const offer = sim.s.callOffer;
-                sim.acceptCall(st.id);
-                answerOffer(sim.s, offer, 'house_call', 'accepted');
-              }}
-            >
-              <span>{`Send ${st.name} (${rankName(st.skill)}) · ${money(sim.callFee(st))}`}</span>
-              <small class={sendCost}>
-                <Line line={callCostNote(sim.callCost(st), call.days)} />
-              </small>
-            </Button>
-          ))}
+          {who.slice(0, 4).map((st) => {
+            const wait = callWaitNote(sim.callWait(st));
+            return (
+              <Button
+                key={st.id}
+                class={cx(goButton(), send)}
+                onPress={() => {
+                  const offer = sim.s.callOffer;
+                  sim.acceptCall(st.id);
+                  answerOffer(sim.s, offer, 'house_call', 'accepted');
+                }}
+              >
+                <span>{`Send ${st.name} (${rankName(st.skill)}) · ${money(sim.callFee(st))}`}</span>
+                <small class={sendCost}>
+                  <Line line={callCostNote(sim.callCost(st), call.days)} />
+                </small>
+                {wait && <small class={sendCost}>{wait}</small>}
+              </Button>
+            );
+          })}
         </div>
       ) : (
         <p class={cx('sub', nobody)}>{`Nobody here can go: it needs ${an(callWants(call))} who is free.`}</p>

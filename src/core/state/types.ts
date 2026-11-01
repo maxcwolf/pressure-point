@@ -262,6 +262,11 @@ export interface Call {
    */
   fee: number;
   pricedBy?: Modality | 'level';
+  /**
+   * The offer as it was taken, while they finish the treatment, class or session in hand before setting off: until
+   * then `back` is only a guide, and is counted again as they leave. Missing once they are on their way.
+   */
+  due?: HouseCall;
 }
 
 export interface Staff extends CharBase {

@@ -253,14 +253,15 @@ export function admitClassgoers(ctx: SimContext) {
 /**
  * Run an Instructor's Mat for a step. On a class day, once the Instructor is at the mat and someone is on a spot, a
  * class starts, keeping the Instructor busy, and runs its length, anyone reaching a spot meanwhile joining in. It ends
- * for everyone on a spot together. Its progress is how far through the class it is, and 0 between classes.
+ * for everyone on a spot together. Its progress is how far through the class it is, and 0 between classes. An
+ * Instructor `going` (on a house call) starts none.
  */
-export function updateClass(ctx: SimContext, lead: Item, staff: Staff | undefined, dt: number) {
+export function updateClass(ctx: SimContext, lead: Item, staff: Staff | undefined, dt: number, going = false) {
   const room = ctx.world.roomOfItem(lead);
   const today = Math.floor(ctx.s.day);
   const standing = matsOf(ctx, lead).some((m) => guestById(ctx, m.serving)?.state === 'served');
   if (!room || !staff) return;
-  if (!lead.progress && standing && classOn(room, today) && room.lastClass !== today) {
+  if (!lead.progress && !going && standing && classOn(room, today) && room.lastClass !== today) {
     lead.progress = 1e-6;
     room.lastClass = today;
   }
