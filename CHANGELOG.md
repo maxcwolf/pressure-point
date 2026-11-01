@@ -6,6 +6,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 - **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
 - **House calls wait for the treatment in hand.** Someone sent on a house call in the middle of a treatment now finishes it first, and the guest pays as usual, then sets off without calling anyone new. The offer card says who would finish first, their inspector says they are finishing up, and the days away count from when they leave.
+- **Therapists sharing a suite no longer hold up its line.** When a therapist at a table passed over guests who were waiting for a colleague trained in their treatment, and that colleague had nowhere to work, the line could stand still until the first one took a break. They now hand the table over.
 
 ## v0.35.0
 

@@ -556,6 +556,52 @@ export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
   return ctx.s.items.find((it) => canStaff(ctx, st, it) && inPriorityRoom(ctx, it.x, it.y));
 }
 
+/** Set off to work a station, which is theirs from now. False if its staff spot cannot be reached. */
+function takePost(ctx: SimContext, st: Staff, it: Item): boolean {
+  const ai = accessIndex(it, 'staff');
+  const [x, y] = accessTile(it, ai);
+  if (!goTo(ctx, st, x, y, accessPose(it, ai))) return false;
+  it.staffId = st.id;
+  st.post = it.id;
+  st.state = 'toPost';
+  return true;
+}
+
+/**
+ * A colleague to hand a table over to: someone with nothing to do who is trained in what a guest waiting in its line
+ * needs, where the one posted there is not and leaves them for someone who is. Without it, the one posted keeps the
+ * table and passes over the guest, the one trained cannot get to it, and the line waits for good.
+ */
+function handOverTo(ctx: SimContext, st: Staff, it: Item): Staff | undefined {
+  if (ITEMS[it.type].station?.goal !== 'treat') return undefined;
+  const left = it.queue.flatMap((id) => {
+    const g = guestById(ctx, id);
+    return g && (g.state === 'waiting' || g.state === 'toWait') && leftForSpecialist(ctx, st, g)
+      ? [modalityOf(g).id]
+      : [];
+  });
+  if (!left.length) return undefined;
+  return ctx.s.staff.find(
+    (t) =>
+      t !== st &&
+      t.role === st.role &&
+      (t.state === 'idle' || t.state === 'wander') &&
+      left.some((m) => t.quals.includes(m)) &&
+      onDuty(t, stationDuty(it)) &&
+      worksAt(ctx, t, it.x, it.y),
+  );
+}
+
+/** Hand a table over to a free colleague trained in what its line needs, if there is one. Whether it was. */
+function handOver(ctx: SimContext, st: Staff, it: Item): boolean {
+  const t = handOverTo(ctx, st, it);
+  if (!t) return false;
+  staffIdle(ctx, st);
+  // and if they cannot get to it after all, the table is free for whoever can
+  takePost(ctx, t, it);
+  return true;
+}
+
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
 function findWork(ctx: SimContext, st: Staff) {
   if (restDue(ctx, st) && tryBreak(ctx, st)) return;
@@ -632,15 +678,7 @@ function findWork(ctx: SimContext, st: Staff) {
     for (const it of s.items) if (canStaff(ctx, st, it)) posts.push({ it, score: postScore(ctx, st, it) });
     // the best post first, and one that cannot be reached is passed over for the next, as a job is
     posts.sort((a, b) => b.score - a.score);
-    for (const { it } of posts.slice(0, 4)) {
-      const ai = accessIndex(it, 'staff');
-      const [x, y] = accessTile(it, ai);
-      if (!goTo(ctx, st, x, y, accessPose(it, ai))) continue;
-      it.staffId = st.id;
-      st.post = it.id;
-      st.state = 'toPost';
-      return;
-    }
+    for (const { it } of posts.slice(0, 4)) if (takePost(ctx, st, it)) return;
   }
   // nothing to do: amble about, inside their own rooms if they have been assigned some
   if (st.state === 'idle' && random(s) < 0.25) {
@@ -745,6 +783,8 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       else if (!inHand(ctx, it) && wantedElsewhere(ctx, st, it)) staffIdle(ctx, st);
       // nobody to see here, and a line at another of their stations with nobody to see it: off to work that instead
       else if (waitingElsewhere(ctx, st, it, dt)) staffIdle(ctx, st);
+      // a line left for a colleague trained in what it needs, and one free: the table is theirs
+      else if (!inHand(ctx, it) && handOver(ctx, st, it)) break;
       else if (restDue(ctx, st) && !inHand(ctx, it)) {
         st.timer -= dt;
         if (st.timer <= 0) {
