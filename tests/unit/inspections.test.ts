@@ -194,13 +194,9 @@ describe('what the report says about a failed inspection', () => {
 
   it('offers the bribes with their odds, and says what one turned down costs', () => {
     const r = report({ outcome: 'failed', money: -2400, rep: -3, bribes: bribeOffers(2400) });
-    expect(r.bribes!.map(offerLabel)).toEqual([
-      'Offer $500 (35% chance)',
-      'Offer $1,000 (60% chance)',
-      'Offer $1,400 (85% chance)',
-    ]);
+    expect(r.bribes!.map(offerLabel)).toEqual(['$500 · 35% chance', '$1,000 · 60% chance', '$1,400 · 85% chance']);
     expect(refusalNote(r)).toBe(
-      'An offer turned down costs you nothing itself, but the fine goes up to $3,000, word gets out (another 6% reputation), and the inspector is back within 30 days.',
+      'Or offer the inspector something to make it go away: the more you offer, the likelier it is taken. One turned down costs nothing itself, but the fine goes up to $3,000, word gets out (another 6% reputation), and the inspector is back within 30 days.',
     );
     expect(reportSummary(r)).toBe(
       'Failed, with 2 things wrong: a $2,400 fine and -3% reputation, unless it goes away.',

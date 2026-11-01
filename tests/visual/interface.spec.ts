@@ -641,10 +641,22 @@ test.describe('in a game', () => {
         outcome: 'failed',
         money: -2400,
         rep: -3,
+        bribes: [500, 1000, 1400],
       };
       pp.sim.emit({ type: 'visit' });
     });
     await screens.shot('visit-report');
+    // the first failed inspection: only a warning, with where each thing was and what to do about it
+    await game.eval((pp) => {
+      const r = pp.state.visitReport!;
+      delete r.bribes;
+      // the rooms the save really has, so each has its Show me
+      const rooms = pp.state.rooms.filter((x) => x.done);
+      r.rooms.forEach((v, i) => (v.room = rooms[i]?.id ?? v.room));
+      // the dialog still showing draws it again from the report
+      Object.assign(r, { outcome: 'warned', money: 0, rep: 0, waived: 2400 });
+    });
+    await screens.shot('visit-warning');
   });
 });
 

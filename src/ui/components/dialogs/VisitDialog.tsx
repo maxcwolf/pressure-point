@@ -64,6 +64,12 @@ const warning = css({
   textAlign: 'left',
 });
 
+/** The offers to make a failed inspection go away: a little smaller than the row's usual buttons, to sit side by side. */
+const offers = css({ '& button': { fontSize: '15', px: '14' } });
+
+/** The words between paying the fine and the offers, close to both. */
+const between = css({ mt: '10', mb: '0' });
+
 /**
  * How the last visit went: the verdict, and each room the visitor saw with what they made of it. A failed inspection
  * lists what was wrong where, and what to do about it; one still to be settled offers the fine or a few offers to make
@@ -121,7 +127,6 @@ export function VisitDialog() {
       </ul>
       {bribes ? (
         <>
-          <p class="sub">{refusalNote(report)}</p>
           <div class={buttonRow()}>
             <Button
               class={goButton()}
@@ -133,7 +138,8 @@ export function VisitDialog() {
               {`Pay the fine (${money(-report.money)})`}
             </Button>
           </div>
-          <div class={buttonRow()}>
+          <p class={cx('sub', between)}>{refusalNote(report)}</p>
+          <div class={cx(buttonRow(), offers)}>
             {bribes.map((price, i) => (
               <Button
                 key={price}

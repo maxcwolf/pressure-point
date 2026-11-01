@@ -73,12 +73,12 @@ export function warningNote(r: VisitReport): string {
 
 /** What an offer to make a failed inspection go away reads as on its button: how much, and the chance it is taken. */
 export function offerLabel(price: number, i: number): string {
-  return `Offer ${money(price)} (${Math.round((BRIBE_OFFERS[i]?.odds ?? 0) * 100)}% chance)`;
+  return `${money(price)} · ${Math.round((BRIBE_OFFERS[i]?.odds ?? 0) * 100)}% chance`;
 }
 
-/** What an offer turned down costs, for a failed inspection still to be settled. */
+/** The offers to make a failed inspection still to be settled go away, and what one turned down costs. */
 export function refusalNote(r: VisitReport): string {
-  return `An offer turned down costs you nothing itself, but the fine goes up to ${money(refusedFine(-r.money))}, word gets out (another ${BRIBE_REP}% reputation), and the inspector is back within ${BRIBE_RECHECK_DAYS} days.`;
+  return `Or offer the inspector something to make it go away: the more you offer, the likelier it is taken. One turned down costs nothing itself, but the fine goes up to ${money(refusedFine(-r.money))}, word gets out (another ${BRIBE_REP}% reputation), and the inspector is back within ${BRIBE_RECHECK_DAYS} days.`;
 }
 
 /** What each thing the inspector can find wrong reads as, and what to do about it before they call again. */
