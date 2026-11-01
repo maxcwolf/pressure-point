@@ -1618,7 +1618,7 @@ export class Bot {
     if (s.offer) this.sim.acceptEmergency();
     if (s.outbreakOffer) this.sim.declineOutbreak();
     if (s.callOffer) this.sim.declineCall();
-    if (s.visitReport?.bribes !== undefined) this.sim.settleInspection();
+    this.settleInspection();
     if (!s.open) {
       this.buildOpening();
       return;
