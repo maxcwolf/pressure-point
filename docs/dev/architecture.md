@@ -29,7 +29,7 @@ Dependencies point toward `core`. A lint rule and a separate TypeScript project 
 5. The interface redraws if something changed, or five times a second regardless.
 6. Autosave, every five minutes unless the player has chosen otherwise (`storage/controls.ts`). The game is also saved as it is left or hidden, whatever the choice.
 
-Input goes the other way. Pointer and keyboard handlers in `src/app/` call the build tools or the simulation, and the next frame shows the result. The build tools (`app/tools/tools.ts`) hold one `Tool` at a time. The sketch tool is the room tool's first two steps, its drag and its door, ending in a sketch rather than a blueprint; either can be handed floor to start from (`held`), which a click keeps as it is and a drag replaces, as Build here and Move do for a sketch. A refusal whose `Check` names a sketch selects it.
+Input goes the other way. Pointer and keyboard handlers in `src/app/` call the build tools or the simulation, and the next frame shows the result. The build tools (`app/tools/tools.ts`) hold one `Tool` at a time. The sketch tool is the room tool's first two steps, its drag and its door, ending in a sketch rather than a blueprint; either can be handed floor to start from (`held`), which a click keeps as it is and a drag replaces, as Build here and Move do for a sketch. A refusal whose `Check` names a sketch selects it. In an open blueprint, a piece of its furniture clicked with nothing in hand is picked up to move (the `move` kind of `PlanSub`), kept in its room and moved for nothing, as a built item is.
 
 ## The simulation (`src/core/`)
 

@@ -25,10 +25,11 @@ export interface HeldItem {
   turned?: boolean;
 }
 
-/** What is in hand while a blueprint is open. */
+/** What is in hand while a blueprint is open: a new item, a piece of its furniture picked up to move, windows or the door. */
 export type PlanSub =
   | null
   | { kind: 'item'; type: ItemType; rot: number; turned?: boolean; required: boolean }
+  | { kind: 'move'; id: number; type: ItemType; rot: number; turned?: boolean }
   | { kind: 'window' }
   | { kind: 'door' };
 
@@ -83,7 +84,7 @@ export type Tool =
 export interface PlanStatus {
   room: Room;
   missing: ItemType[];
-  /** What is in hand: 'door', 'window', an item type, or '' for nothing. */
+  /** What is in hand: 'door', 'window', a new item's type, or '' for nothing new (a piece being moved is not). */
   holding: string;
   ready: boolean;
 }

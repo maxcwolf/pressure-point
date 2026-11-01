@@ -2,7 +2,7 @@
 // select.
 
 import type { Audio } from '../audio/audio';
-import { nextPick } from '../render/picking';
+import { nextPick, type Selection } from '../render/picking';
 import type { View } from '../render/view';
 import type { HudState } from '../ui/hud';
 import { isClick, isDragging } from './click';
@@ -31,15 +31,22 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
   let frame = 0;
   let recheck = 0;
 
+  /** What a click at a point would select, or with a tool in hand, the piece of a blueprint's furniture it would pick up. */
+  const clickable = (x: number, y: number): Selection | null => {
+    if (!tools.active) return nextPick(view.pickAll(x, y), tools.selected);
+    const piece = tools.pieceAt(x, y);
+    return piece ? { kind: 'item', id: piece.id } : null;
+  };
   /**
    * Show what a click would select under the pointer, and a hand for the pointer if anything: nothing while a button is
-   * held, while a tool in hand draws its own preview, or once the pointer has left the canvas.
+   * held or once the pointer has left the canvas, and with a tool in hand, which draws its own preview, only a piece of
+   * an open blueprint's furniture that a click would pick up to move.
    */
   const hover = () => {
     frame = 0;
     clearTimeout(recheck);
-    const at = over && !down && !tools.active ? over : null;
-    const sel = at ? nextPick(view.pickAll(at.x, at.y), tools.selected) : null;
+    const at = over && !down ? over : null;
+    const sel = at ? clickable(at.x, at.y) : null;
     view.overlays.hovered = sel;
     canvas.style.cursor = sel ? 'pointer' : '';
     if (over) recheck = window.setTimeout(hoverSoon, HOVER_RECHECK_MS);

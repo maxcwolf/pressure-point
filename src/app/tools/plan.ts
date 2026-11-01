@@ -15,7 +15,7 @@ export function planStatus(room: Room, missing: ItemType[], sub: PlanSub): PlanS
   return {
     room,
     missing,
-    holding: !sub ? '' : sub.kind === 'item' ? sub.type : sub.kind,
+    holding: !sub || sub.kind === 'move' ? '' : sub.kind === 'item' ? sub.type : sub.kind,
     ready: missing.length === 0,
   };
 }
@@ -23,8 +23,8 @@ export function planStatus(room: Room, missing: ItemType[], sub: PlanSub): PlanS
 /** The item in hand that R would turn, if there is one. */
 export function heldItem(tool: Tool): HeldItem | null {
   if (tool.kind === 'item' || tool.kind === 'move') return tool;
-  if (tool.kind === 'room' && tool.phase === 'plan' && tool.sub?.kind === 'item') return tool.sub;
-  return null;
+  const sub = tool.kind === 'room' && tool.phase === 'plan' ? tool.sub : null;
+  return sub?.kind === 'item' || sub?.kind === 'move' ? sub : null;
 }
 
 /**

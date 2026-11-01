@@ -2,8 +2,9 @@
 //
 // Building a room goes: drag out the floor, click a wall for the door, then a
 // blueprint step. In the blueprint the required furniture goes in, windows and
-// extras can be added, the door can be moved, and nothing is charged for the room
-// until it is confirmed. A built room can have its windows changed, its door moved
+// extras can be added, the door can be moved, a piece of furniture can be picked up
+// and put down elsewhere in the room, and nothing is charged for the room until it
+// is confirmed. A built room can have its windows changed, its door moved
 // and its walls dragged in or out.
 //
 // This class holds the tool in hand and talks to the game and the scene. The working
@@ -643,13 +644,42 @@ export class Tools {
           }
           this.land(clientX, clientY);
         } else if (spot) this.refuse('place_item', this.placeProblem(sub.type, sub.required));
+      } else if (sub?.kind === 'move') {
+        const spot = this.spotFor(sub);
+        // moved for nothing, and kept in the room; then on to any furniture still needed, as after placing a piece
+        if (spot && sim.moveItem(sub.id, spot.x, spot.y, spot.rot)) {
+          t.sub = nextRequired(sim.missingItems(t.room));
+          this.land(clientX, clientY);
+        } else if (spot) this.refuse('move_item');
       } else if (sub?.kind === 'window') this.clickWindow(t.room.id);
       else if (sub?.kind === 'door') {
         if (this.clickDoor(t.room.id)) t.sub = null;
+      } else {
+        // with nothing in hand, a piece of the room's furniture clicked is picked up to move, as a built item is
+        const piece = this.pieceAt(clientX, clientY);
+        if (piece) {
+          t.sub = { kind: 'move', id: piece.id, type: piece.type, rot: piece.rot };
+          this.sfx('blip');
+        }
       }
     }
     this.refresh();
     return toBuy;
+  }
+
+  /**
+   * The piece of furniture in the open blueprint under the pointer, which a click with nothing in hand picks up to move
+   * before the room is built, and which glows under the pointer meanwhile.
+   */
+  pieceAt(clientX: number, clientY: number): Item | undefined {
+    const t = this.tool;
+    if (t.kind !== 'room' || t.phase !== 'plan' || t.sub) return undefined;
+    const world = this.sim.world;
+    for (const hit of this.view.pickAll(clientX, clientY)) {
+      const it = hit.kind === 'item' ? world.item(hit.id) : undefined;
+      if (it && world.roomOfItem(it)?.id === t.room.id) return it;
+    }
+    return undefined;
   }
 
   /** Whether the tool in hand is placing a room or an item, which the clock stops for while the switch is on. */
@@ -1059,9 +1089,12 @@ export class Tools {
       }
     } else {
       const sub = t.sub;
-      this.hint = planHint(sub, this.sim.missingItems(t.room).length);
+      const placed = !sub && this.sim.s.items.some((it) => world.roomOfItem(it)?.id === t.room.id);
+      this.hint = planHint(sub, this.sim.missingItems(t.room).length, placed);
       if (!sub) view.setGhost(null);
       else if (sub.kind === 'item') this.drawItem(sub, sub.required ? t.room.id : undefined, drawing);
+      // a piece being moved is shown as a built item being moved is, with the squares it would cover and be used from
+      else if (sub.kind === 'move') this.drawItem(sub, undefined, drawing, sub.id);
       else if (sub.kind === 'window') this.drawWindow(t.room);
       else this.drawDoor(t.room);
     }

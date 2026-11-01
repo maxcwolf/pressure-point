@@ -176,6 +176,18 @@ function installFinders() {
           world.canPlaceItem(sub.type, x, y, r, sub.required ? t.room.id : undefined),
       };
     }
+    if (t.kind === 'room' && t.phase === 'plan' && t.sub?.kind === 'move') {
+      const sub = t.sub;
+      const it = world.item(sub.id)!;
+      return {
+        type: sub.type as string,
+        rot: sub.rot as number,
+        room: t.room as Room,
+        /** Whether the piece may move here, somewhere other than where it already is. */
+        ok: (x: number, y: number, r: number): Check =>
+          x === it.x && y === it.y ? { ok: false, reason: '' } : pp().sim.canMoveItem(it, x, y, r),
+      };
+    }
     return fail('nothing is in hand to place');
   };
 

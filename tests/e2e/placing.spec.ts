@@ -1,4 +1,5 @@
-// The clock stops while a room or an item is being placed and starts again once it is down.
+// The clock stops while a room or an item is being placed and starts again once it is down, and a piece of furniture
+// put in a room not yet built can be picked up and put down elsewhere in it.
 import type { Page } from '@playwright/test';
 
 import { expect, type Game, test } from './fixtures';
@@ -96,5 +97,49 @@ test.describe('pausing to place', () => {
     await game.card('Bench').click();
     await game.settle();
     expect(await speedOf(game)).toBe(2);
+  });
+});
+
+test.describe('moving furniture before the room is built', () => {
+  test('a piece in a blueprint is picked up with a click and put down elsewhere in the room, for nothing', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await startSuite(game);
+    await game.placeHeld();
+    await game.placeHeld();
+    await expect(page.locator('#hint')).toContainText('click a piece in the room to move it');
+    const money = await game.eval((pp) => pp.state.money);
+    const before = await game.eval((pp) => pp.state.items.find((i) => i.type === 'massage_table')!);
+    // it glows under the pointer, as something a click would pick up
+    const at = await game.itemPoint('massage_table');
+    await page.mouse.move(at.x, at.y, { steps: 4 });
+    await expect.poll(() => game.eval((pp) => pp.view.overlays.hovered)).toEqual({ kind: 'item', id: before.id });
+    await game.clickItem('massage_table');
+    expect(await game.eval((pp) => pp.tools.tool.sub)).toMatchObject({ kind: 'move', id: before.id });
+    await expect(page.locator('#hint')).toContainText('Moving the Massage Table');
+    const spot = await game.placeHeld({ inRoom: true });
+    const after = await game.eval((pp, id) => pp.state.items.find((i) => i.id === id)!, before.id);
+    expect([after.x, after.y]).toEqual([spot.x, spot.y]);
+    expect([after.x, after.y]).not.toEqual([before.x, before.y]);
+    expect(await game.eval((pp) => [pp.state.money, pp.state.rooms[0]!.done])).toEqual([money, false]);
+    expect(await game.eval((pp) => pp.tools.tool.sub)).toBeNull();
+
+    // picked up and called off, it stays where it was
+    const trolley = await game.eval((pp) => pp.state.items.find((i) => i.type === 'oil_trolley')!);
+    await game.clickItem('oil_trolley');
+    await game.hoverHeld({ inRoom: true });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#plan')).toContainText('Massage Suite blueprint');
+    expect(await game.eval((pp, id) => pp.state.items.find((i) => i.id === id), trolley.id)).toMatchObject({
+      x: trolley.x,
+      y: trolley.y,
+      rot: trolley.rot,
+    });
+
+    await page.locator('#plan').getByRole('button', { name: 'Build room' }).click();
+    await expect(page.locator('#toasts')).toContainText('Massage Suite built!');
+    expect(await game.eval((pp) => pp.state.money)).toBe(money - 7000);
   });
 });
