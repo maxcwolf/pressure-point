@@ -6,6 +6,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 - **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
 - **Guests come only for what you can give.** Nobody arrives needing a technique nobody on your staff is trained in, such as Deep Tissue or Sports Massage before anyone has taken the course, and a house call never asks for one. The Guests panel and the advisor say which guests stay away and what training would bring them in. A signature machine draws its guests only once someone is trained to run it.
+- **Emergencies first, from the start.** New games call emergency guests ahead of everyone else in line. Turn it off in the Policy menu. Saved games keep their own setting.
 
 ## v0.35.0
 

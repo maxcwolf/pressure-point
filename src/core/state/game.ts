@@ -107,7 +107,7 @@ export const FIRST_CHALLENGE_DAY = 30;
 /** The policy a new game starts with. */
 export const defaultPolicy = (): Policy => ({
   diagnosis: DIAGNOSIS_TARGET,
-  emergenciesFirst: false,
+  emergenciesFirst: true,
   breakAt: BREAK_AT,
   breakLimit: {},
   stashMushrooms: true,
