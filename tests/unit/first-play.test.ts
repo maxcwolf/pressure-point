@@ -3,13 +3,29 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SimContext } from '../../src/core/sim/context';
-import { failureCause, failureCosts, HARM_EXPLAIN, noteFailure, noteHarm } from '../../src/core/sim/harms';
+import { failureCause, failureReasons, recordFailure } from '../../src/core/sim/failures';
+import { HARM_EXPLAIN, noteFailure, noteHarm } from '../../src/core/sim/harms';
 import { PRIMER_TIRING } from '../../src/core/sim/primer';
 import type { Sim } from '../../src/core/sim/sim';
+import { successChance } from '../../src/core/sim/stations';
+import type { Guest, Item, Staff } from '../../src/core/state/types';
 import { addStaffRoom, addTraining, hire, openCenter, run, runUntil, toasts } from './helpers';
 
 /** The simulation's own context, for the functions that take it. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
+
+/** What took off a treatment's chance, as the roll would have it now, and the reason it would be counted under. */
+function whyFailed(ctx: SimContext, table: Item, staff: Staff, g: Guest) {
+  const odds = successChance(ctx, table, staff, g);
+  const reasons = failureReasons(ctx, table, staff, g, odds);
+  return { reasons, cause: failureCause(odds.problem, reasons) };
+}
+
+/** Fail a treatment at a table the given number of times, counting each. */
+function failTimes(ctx: SimContext, table: Item, staff: Staff, g: Guest, n: number) {
+  for (let i = 0; i < n; i++)
+    noteFailure(ctx, table, staff, g, recordFailure(ctx, table, staff, g, successChance(ctx, table, staff, g), false));
+}
 
 /** A center open and staffed, on a first go at the campaign. */
 function firstGame() {
@@ -158,8 +174,8 @@ describe('harm that keeps coming to guests', () => {
     g.health = 100;
     g.diagnosis = 1;
     const ctx = ctxOf(sim);
-    expect(failureCause('', failureCosts(ctx, table, therapist, g))).toBe('vibes');
-    for (let i = 0; i < HARM_EXPLAIN; i++) noteFailure(ctx, table, therapist, g, '');
+    expect(whyFailed(ctx, table, therapist, g).cause).toBe('vibes');
+    failTimes(ctx, table, therapist, g, HARM_EXPLAIN);
     const [note] = s.harmNotes;
     expect(note).toMatchObject({
       key: 'failed:vibes',
@@ -177,7 +193,10 @@ describe('harm that keeps coming to guests', () => {
     const g = s.guests[0]!;
     const table = s.items.find((i) => i.type === 'massage_table')!;
     massage.vibes = 100;
-    expect(failureCause('unqualified', failureCosts(ctxOf(sim), table, therapist, g))).toBe('unqualified');
+    therapist.quals = [];
+    const { reasons, cause } = whyFailed(ctxOf(sim), table, therapist, g);
+    expect(cause).toBe('unqualified');
+    expect(reasons[0]?.cause).toBe('unqualified');
   });
 
   it('calls a failure with nothing much wrong just the odds', () => {
@@ -189,10 +208,13 @@ describe('harm that keeps coming to guests', () => {
     therapist.skill = 1;
     g.health = 100;
     g.diagnosis = 0.6;
-    // a Trainee's hands and an unsure diagnosis are listed, but every treatment has some of that
-    const costs = failureCosts(ctxOf(sim), table, therapist, g);
-    expect(costs.map((c) => c.cause)).toEqual(['skill', 'diagnosis']);
-    expect(failureCause('', costs)).toBe('odds');
+    // a Trainee's hands, an unsure diagnosis and a plain room are listed, but every treatment has some of that
+    const { reasons, cause } = whyFailed(ctxOf(sim), table, therapist, g);
+    expect(reasons.map((r) => r.cause)).toEqual(expect.arrayContaining(['skill', 'diagnosis']));
+    expect(reasons.every((r) => ['skill', 'diagnosis', 'prestige', 'upgrade', 'difficulty'].includes(r.cause))).toBe(
+      true,
+    );
+    expect(cause).toBe('odds');
   });
 
   it('names a best guess at a structural condition, and points to a Posture Lab', () => {
@@ -203,8 +225,8 @@ describe('harm that keeps coming to guests', () => {
     Object.assign(therapist, { energy: 100, skill: 5 });
     Object.assign(g, { health: 100, diagnosis: 1, guessed: true });
     const ctx = ctxOf(sim);
-    expect(failureCause('', failureCosts(ctx, table, therapist, g))).toBe('guess');
-    for (let i = 0; i < HARM_EXPLAIN; i++) noteFailure(ctx, table, therapist, g, '');
+    expect(whyFailed(ctx, table, therapist, g).cause).toBe('guess');
+    failTimes(ctx, table, therapist, g, HARM_EXPLAIN);
     const note = s.harmNotes.find((n) => n.key === 'failed:guess');
     expect(note?.title).toBe(`${HARM_EXPLAIN} treatments have failed with a best guess at the diagnosis`);
     expect(note?.help).toMatch(/Posture Lab/);

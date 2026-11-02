@@ -1030,6 +1030,8 @@ export interface GameState {
   /** How often guests have come to harm, by what and why ("failed:vibes"), and the explanations waiting to be read. */
   harms: Record<string, number>;
   harmNotes: HarmNote[];
+  /** The latest treatments that failed, oldest first, and why each did. Older saves have none. */
+  failures?: FailedTreatment[];
   /** Magic mushrooms are on sale under the Shop Counter, while there is a Shaman to supply them. */
   mushrooms: boolean;
   /** They were put away when the health inspector wrote ahead, to come back out once the inspection is over. */
@@ -1069,6 +1071,32 @@ export interface HarmNote {
   about?: { kind: 'guest' | 'staff' | 'item' | 'room'; id: number };
   /** Where the fix is: hiring someone, or a menu with it in. */
   fix?: { hire: Role } | { menu: 'rooms' | 'items' | 'prices' };
+}
+
+/** Something that took off a failed treatment's chance of working: why, in a word and in words, and how much, 0 to 1. */
+export interface FailureReason {
+  cause: string;
+  text: string;
+  amount: number;
+}
+
+/** A treatment that failed: which, where, by whom, its chance, and what took off that chance, biggest first. */
+export interface FailedTreatment {
+  day: number;
+  guestId: number;
+  guest: string;
+  condition: ConditionId;
+  modality: Modality;
+  staffId: number;
+  staff: string;
+  /** The room it was given in, or the item if it stood in none. */
+  place: string;
+  chance: number;
+  /** The reason it is counted under: what stopped it being delivered, the biggest thing wrong, or just the odds. */
+  cause: string;
+  reasons: FailureReason[];
+  /** Healing Hands rolled to save it, and missed. */
+  hands?: boolean;
 }
 
 /** A grid of figures, one for each tile, row by row, as the bytes of 32-bit floats in base64. */

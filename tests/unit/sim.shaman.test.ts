@@ -18,7 +18,7 @@ import {
   blessBonus,
   blessed,
   clearingSeconds,
-  settingPenalty,
+  settingWeight,
   SWEAT_LODGE_OPEN,
 } from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
@@ -64,9 +64,6 @@ function playWith(sim: Sim, condition: ConditionId, seconds: number) {
     run(sim, 1);
   }
 }
-
-/** A room as a treatment feels it, with nothing wrong with it at all. */
-const PERFECT = { vibes: 0, noise: 0, linens: 0, prestige: 0, discomfort: 0 };
 
 describe('offering the Shaman', () => {
   it('opens at the second star, in the sandbox and The Orchard Estate only, with ayahuasca and vision quests at the third', () => {
@@ -138,16 +135,15 @@ describe('treating guests in the lodge', () => {
 });
 
 describe('set and setting', () => {
-  it('counts for nothing more in most treatments', () => {
-    expect(settingPenalty(MODALITIES.reading, { ...PERFECT, vibes: 0.2, noise: 0.1 })).toBe(0);
-    expect(settingPenalty(MODALITIES.extraction, { ...PERFECT, discomfort: 1 })).toBe(0);
+  it('counts once in most treatments', () => {
+    expect(settingWeight(MODALITIES.reading, false)).toBe(1);
+    expect(settingWeight(MODALITIES.extraction, false)).toBe(1);
   });
 
-  it('counts twice in a psychedelic ceremony: the vibes, noise and linens, less the prestige, and the temperature on top', () => {
-    expect(settingPenalty(MODALITIES.mushroom, PERFECT)).toBe(0);
-    expect(settingPenalty(MODALITIES.mushroom, { ...PERFECT, vibes: 0.2, noise: 0.1, linens: 0.05 })).toBeCloseTo(0.35);
-    expect(settingPenalty(MODALITIES.ayahuasca, { ...PERFECT, prestige: 0.06 })).toBeCloseTo(-0.06);
-    expect(settingPenalty(MODALITIES.ayahuasca, { ...PERFECT, discomfort: 1 })).toBeCloseTo(0.15);
+  it('counts twice in a psychedelic ceremony, unless a machine makes the setting perfect', () => {
+    expect(settingWeight(MODALITIES.mushroom, false)).toBe(2);
+    expect(settingWeight(MODALITIES.ayahuasca, false)).toBe(2);
+    expect(settingWeight(MODALITIES.ayahuasca, true)).toBe(1);
   });
 
   it('makes a ceremony in a lodge with bad vibes far less likely to work than a reading there', () => {

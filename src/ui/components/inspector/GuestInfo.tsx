@@ -11,6 +11,7 @@ import {
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { weekday } from '../../../core/sim/classes';
+import { failureOf } from '../../../core/sim/failures';
 import { regularOf } from '../../../core/sim/regulars';
 import { guestFee } from '../../../core/sim/stations';
 import { upgradeSuccess } from '../../../core/sim/upgrades';
@@ -21,6 +22,7 @@ import { useGame } from '../../hooks/use-hud';
 import { calmingNote, NOBODY_FREE, sendLabel, sendTitle } from '../../lib/calming';
 import { chanceText, percent, poorChance } from '../../lib/chance';
 import { cx } from '../../lib/cx';
+import { failureHead, failureLines } from '../../lib/failures';
 import { meterTone } from '../../lib/meters';
 import { regularTag } from '../../lib/regulars';
 import { conditionNote, guestStatus, statusClass } from '../../lib/status';
@@ -65,6 +67,39 @@ function ChanceLine({ guest: g }: { guest: Guest }) {
     <p class={cx('sub', chanceStyle, poorChance(chance) && poor)}>
       {`Chance of success: ${chanceText(chance, def, staff.name)}`}
     </p>
+  );
+}
+
+/**
+ * Why a guest's treatment failed, while they are still about: which technique, where, by whom and at what chance, then
+ * what took off that chance, the reason it is counted under in red. `failed-why` is for the end-to-end tests.
+ */
+const failedWhy = css({
+  mb: '6',
+  '& ul': { m: '0', mt: '2', pl: '16', fontSize: '12' },
+  '& li': { display: 'flex', justifyContent: 'space-between', gap: '8' },
+  '& li.main': { color: 'bad', fontWeight: 'bold' },
+});
+
+/** Why a guest's treatment failed, from what the roll was made of. */
+function FailedWhy({ guest: g }: { guest: Guest }) {
+  const { sim } = useGame();
+  const f = g.outcome === 'failed' ? failureOf(sim.s.failures, g.id) : undefined;
+  if (!f) return null;
+  return (
+    <div class={cx('failed-why', failedWhy)}>
+      <h4>Why the treatment failed</h4>
+      <p class="sub">{failureHead(f)}</p>
+      <ul>
+        {failureLines(f).map((l) => (
+          <li key={l.text} class={cx(l.main && 'main')}>
+            <span>{l.text}</span>
+            <span>{l.amount}</span>
+          </li>
+        ))}
+      </ul>
+      {f.hands && <p class="sub">{`${f.staff}’s Healing Hands could not save it.`}</p>}
+    </div>
   );
 }
 
@@ -212,7 +247,7 @@ export function GuestInfo({ guest: g }: { guest: Guest }) {
           <QualChips quals={[c.modality]} />
         </>
       )}{' '}
-      {g.state !== 'leaving' && <ChanceLine guest={g} />}{' '}
+      {g.state !== 'leaving' && <ChanceLine guest={g} />} <FailedWhy guest={g} />
       {g.scanned && (
         <p class="sub scanned">
           <IconText id="item-posture-scanner">{`Scanned: ${percent(SCAN_SUCCESS + upgradeSuccess(g.scanLevel ?? 0))} more chance of success`}</IconText>
