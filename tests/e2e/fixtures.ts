@@ -79,6 +79,8 @@ interface Handle {
     dismissAllToasts(): void;
   };
   loop: { saveSoon(): void };
+  /** What the floor is colored by: an overlay, the land, or nothing. */
+  floorShown: string | null;
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {
     itemDims(type: string, rot: number): [number, number];

@@ -156,7 +156,7 @@ import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, 
 import { updateOutdoors } from './outdoors';
 import { pausedToPlace, type PlacingNow, setSpeed, watchPlacing } from './placing';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
-import { type PlacePreview, previewItem } from './preview';
+import { type PlacePreview, previewItem, previewMove } from './preview';
 import { type PrimerLine, primerLines } from './primer';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
@@ -522,6 +522,11 @@ export class Sim {
   previewItem(placed: Placed): PlacePreview {
     this.refreshAmbience();
     return previewItem(this.ctx, placed);
+  }
+  /** What moving an item to a spot would change, with the surroundings worked out afresh first. */
+  previewMove(it: Item, placed: Placed): PlacePreview {
+    this.refreshAmbience();
+    return previewMove(this.ctx, it, placed);
   }
   /** How noisy it is at an item, such as a treatment table. */
   itemNoise(it: Item): number {

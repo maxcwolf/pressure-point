@@ -156,10 +156,13 @@ export const pleasantness = (drain: number) => unit(0.5 + (1.12 - drain) * 2);
 
 /**
  * The overlay to show while an item is in hand: the one showing, if it is one an item changes, or else the one for
- * what this item changes most, or none if it changes none of them.
+ * what this item changes most, or none if it changes none of them. Something made to warm or cool a room shows the
+ * temperature, whatever else it does, even resting while the weather is nice: an Air Conditioner hums, but is not
+ * bought for its noise.
  */
 export function previewMode(p: PlacePreview, showing: OverlayMode | null): OverlayMode | null {
   if (showing === 'decor' || showing === 'calm' || showing === 'temperature') return showing;
+  if (ITEMS[p.placed.type].thermostat && (p.heat || p.resting)) return 'temperature';
   if (p.decor) return 'decor';
   // a treatment table minds the noise where it goes, though it makes none
   if (p.noise || ITEMS[p.placed.type].station?.goal === 'treat') return 'calm';

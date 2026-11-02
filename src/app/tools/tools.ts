@@ -874,10 +874,16 @@ export class Tools {
     // where it fits but the bank cannot pay for it, it shows red before the click, not only after
     this.problem = check.reason || (affordable ? '' : "Can't afford it");
     this.inTheWay = check.sketch;
-    // what a new item would change, worked out once for each spot it is held over, and again once another is down
-    if (!moving && ok && loadDisplay().placePreview) {
-      const key = `${type}:${x},${y}:${rot}:${this.sim.s.items.length}`;
-      if (this.lastPreview?.key !== key) this.lastPreview = { key, preview: this.sim.previewItem(placed) };
+    // what it would change, new or moved from where it stands, worked out once for each spot it is held over, and
+    // again once anything is built, moved or taken away
+    if (ok && loadDisplay().placePreview) {
+      const from = moving ? `${moving.id}@${moving.x},${moving.y}:${moving.rot}` : 'new';
+      const key = `${from}:${type}:${x},${y}:${rot}:${this.sim.world.version}`;
+      if (this.lastPreview?.key !== key)
+        this.lastPreview = {
+          key,
+          preview: moving ? this.sim.previewMove(moving, placed) : this.sim.previewItem(placed),
+        };
       this.preview = this.lastPreview.preview;
     }
     // a rug being moved keeps its own pattern; a new one has the pattern picked for it

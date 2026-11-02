@@ -120,12 +120,93 @@ describe('an item in hand', () => {
     expect(then.every(([, , v], i) => v >= (now[i]?.[2] ?? 0))).toBe(true);
   });
 
+  it('shows the temperature for a heater or cooler, though it hums, and even resting while the weather is nice', () => {
+    const { sim } = openCenter(1);
+    sim.s.weatherOn = true;
+    sim.s.day = midMonth(6);
+    const summer = sim.previewItem({ type: 'air_conditioner', x: 13, y: 10, rot: 0 });
+    expect(summer.heat).not.toBeNull();
+    expect(summer.noise).not.toBeNull();
+    expect(previewMode(summer, null)).toBe('temperature');
+    // an overlay chosen by hand is still the one shown
+    expect(previewMode(summer, 'calm')).toBe('calm');
+    sim.s.day = midMonth(0);
+    const winter = sim.previewItem({ type: 'air_conditioner', x: 13, y: 10, rot: 0 });
+    expect(winter.resting).toBe(true);
+    expect(previewMode(winter, null)).toBe('temperature');
+    // with the weather off it warms and cools nothing, and its hum is what it changes
+    sim.s.weatherOn = false;
+    expect(previewMode(sim.previewItem({ type: 'air_conditioner', x: 13, y: 10, rot: 0 }), null)).toBe('calm');
+  });
+
   it('lists nothing for an item that changes none of it', () => {
     const { sim } = openCenter(1);
     const p = sim.previewItem({ type: 'bin', x: 13, y: 10, rot: 0 });
     expect(ITEMS.bin.decor).toBeUndefined();
     expect(previewMode(p, null)).toBeNull();
     expect(placeEffects(sim, p)).toEqual([]);
+  });
+});
+
+describe('an item picked up to move', () => {
+  it('previews exactly the noise it takes away and brings, and the overlay it shows when bought', () => {
+    const { sim } = openCenter(1);
+    const arcade = sim.placeItem('arcade_machine', 4, 10, 0);
+    if (!arcade) throw new Error('no arcade');
+    sim.refreshAmbience();
+    const tiles = [3, 4, 5, 11, 12, 13, 14].map((x) => [x, 9] as const);
+    const before = tiles.map(([x, y]) => sim.noiseAt(x, y));
+    const p = sim.previewMove(arcade, { type: 'arcade_machine', x: 13, y: 10, rot: 0 });
+    expect(previewMode(p, null)).toBe('calm');
+    // the table next to its new spot gets noisier
+    expect(p.noisier).toBe(1);
+    const expected = tiles.map(([x, y], i) => Math.max(0, (before[i] ?? 0) + (p.noise?.[sim.world.idx(x, y)] ?? 0)));
+    expect(sim.moveItem(arcade.id, 13, 10, 0)).toBe(true);
+    sim.refreshAmbience();
+    tiles.forEach(([x, y], i) => {
+      expect(sim.noiseAt(x, y)).toBeCloseTo(expected[i] ?? 0, 4);
+    });
+  });
+
+  it('changes nothing held where it stands, but still shows its overlay', () => {
+    const { sim } = openCenter(1);
+    const plant = sim.placeItem('plant', 4, 10, 0);
+    if (!plant) throw new Error('no plant');
+    const p = sim.previewMove(plant, { type: 'plant', x: 4, y: 10, rot: 0 });
+    expect(p.decor?.every((v) => v === 0)).toBe(true);
+    expect(p.room).toBeNull();
+    expect(previewMode(p, null)).toBe('decor');
+    expect(placeEffects(sim, p).map((e) => e.tone)).toEqual(['plain']);
+  });
+
+  it('takes its prestige from the room it leaves for the corridor, and gives it to the room it goes into', () => {
+    const { sim, massage } = openCenter(1);
+    const statue = sim.placeItem('statue', 11, 5, 0);
+    if (!statue) throw new Error('no statue');
+    const out = sim.previewMove(statue, { type: 'statue', x: 4, y: 10, rot: 0 });
+    expect(out.room).toEqual({ id: massage.id, before: sim.prestige(massage), after: sim.prestige(massage, -4) });
+    // within the room it was in, its prestige stays
+    expect(sim.previewMove(statue, { type: 'statue', x: 12, y: 5, rot: 0 }).room).toBeNull();
+  });
+
+  it('carries the warmth it gives by its own thermostat, and nothing switched off', () => {
+    const { sim } = openCenter(1);
+    sim.s.weatherOn = true;
+    sim.s.day = midMonth(0);
+    const radiator = sim.placeItem('radiator', 4, 10, 0);
+    if (!radiator) throw new Error('no radiator');
+    const to = { type: 'radiator' as const, x: 13, y: 11, rot: 0 };
+    const moved = sim.previewMove(radiator, to);
+    expect(previewMode(moved, null)).toBe('temperature');
+    const there = moved.heat?.[sim.world.idx(13, 11)] ?? 0;
+    expect(there).toBeCloseTo(sim.previewItem(to).heat?.[sim.world.idx(13, 11)] ?? 0, 4);
+    expect(moved.heat?.[sim.world.idx(4, 10)]).toBeLessThan(0);
+    // switched off by hand, it warms nowhere, and is not resting for the weather
+    radiator.thermostat = 'off';
+    const off = sim.previewMove(radiator, to);
+    expect(off.heat).toBeNull();
+    expect(off.resting).toBe(false);
+    expect(placeEffects(sim, off)).toEqual([]);
   });
 });
 

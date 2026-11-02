@@ -15,6 +15,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **The clock waits while you build.** Placing a room or an item now pauses the game until the room is built or the item put down or put away, then carries on at the speed it had. A game you had paused stays paused, and **Pause while placing** in Settings turns it off.
 - **Move furniture before you build.** In a room's blueprint, click a piece of furniture you have put in to pick it up and put it down elsewhere in the room, for nothing. Esc leaves it where it was.
 - **The tutorial stops asking to start the clock** once you have started it, so pausing to put the Benches down no longer brings the step back, nor does the game pausing itself while you place something.
+- **Overlays while you move things.** Picking up a placed item to move it, or a piece of a blueprint, now shows the same overlay as buying one does (Surroundings, Calm or Temperature), with what the move would change, and puts it away once the item is down.
+- **Heaters and coolers show the temperature.** An Air Conditioner or Fireplace in hand now shows the Temperature overlay rather than the Calm one for its hum, including the one the weather lesson's button puts in hand.
 - **Amanda on demand.** A new console command, amanda, has Amanda Jablonsky apply straight away, as the newest Massage Therapist applicant, unless she already works for you or is applying. Tab now finishes a command as you type it in the console.
 
 ## v0.35.0
