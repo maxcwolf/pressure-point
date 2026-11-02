@@ -1,7 +1,16 @@
 // Staff challenges and the year-end awards: goals along the way.
 import { describe, expect, it } from 'vitest';
 
-import { AWARD_MORALE, AWARD_ORDER, AWARDS, CHALLENGE_MORALE, DAYS_PER_MONTH } from '../../src/core/data';
+import {
+  AWARD_MORALE,
+  AWARD_ORDER,
+  AWARDS,
+  type CenterId,
+  CENTERS,
+  CHALLENGE_MORALE,
+  DAYS_PER_MONTH,
+  type GoalSpec,
+} from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { placeLayout } from '../../src/core/room-layout';
 import { prestige } from '../../src/core/sim/ambience';
@@ -10,6 +19,8 @@ import {
   challengeGoals,
   challengeObjective,
   challengeTask,
+  clashes,
+  freshGoals,
   proposeChallenge,
   updateChallenge,
 } from '../../src/core/sim/challenges';
@@ -18,7 +29,7 @@ import { demand } from '../../src/core/sim/demand';
 import { drainEvents } from '../../src/core/sim/events';
 import { emptyLedger, emptyTally } from '../../src/core/state/game';
 import type { Challenge, MonthRecord } from '../../src/core/state/types';
-import { addAcupuncture, freshSim, hire, openCenter, run, runUntil } from './helpers';
+import { addAcupuncture, addReiki, addSound, freshSim, hire, openCenter, run, runUntil } from './helpers';
 
 /** A center open for business with staff challenges on. */
 function withChallenges(seed = 1) {
@@ -165,6 +176,133 @@ describe('a staff challenge', () => {
     const { sim, s } = withChallenges();
     runUntil(sim, () => !!s.challenge, 600);
     expect(sim.challengeObjective()?.label).toBeTruthy();
+  });
+});
+
+/** The goal a star asks, with a different target, as a challenge might set it. */
+function retargeted(goal: GoalSpec): GoalSpec {
+  switch (goal.kind) {
+    case 'healed':
+      return { ...goal, count: goal.count + 7 };
+    case 'prestige':
+      return { ...goal, level: goal.level === 5 ? 4 : goal.level + 1 };
+    case 'noQuits':
+      return { ...goal, days: goal.days + 15 };
+    case 'cureRate':
+    case 'reputation':
+      return { ...goal, percent: goal.percent + 5 };
+    case 'balance':
+    case 'mushroomSales':
+      return { ...goal, amount: goal.amount + 5000 };
+    default:
+      return goal;
+  }
+}
+
+/** Every center, and each star's index in it, with the star's goals. */
+const everyStar = (Object.keys(CENTERS) as CenterId[]).flatMap((center) =>
+  CENTERS[center].goals.map((goals, star) => ({ center, star, goals })),
+);
+
+describe('a staff challenge and the star objectives', () => {
+  it('clashes with a star goal of the same kind, whatever its target', () => {
+    for (const { center, star, goals } of everyStar)
+      for (const goal of goals) {
+        expect(clashes(goal, goal), `${center} star ${star + 1}: ${goal.kind}`).toBe(true);
+        expect(clashes(retargeted(goal), goal), `${center} star ${star + 1}: ${goal.kind}, retargeted`).toBe(true);
+      }
+  });
+
+  it('clashes over heals unless both name different disciplines', () => {
+    expect(clashes({ kind: 'healed', count: 20 }, { kind: 'healed', count: 80 })).toBe(true);
+    // every acupuncture heal counts toward the whole center's, and the other way round
+    expect(clashes({ kind: 'healed', count: 5, discipline: 'acupuncture' }, { kind: 'healed', count: 80 })).toBe(true);
+    expect(clashes({ kind: 'healed', count: 80 }, { kind: 'healed', count: 10, discipline: 'acupuncture' })).toBe(true);
+    expect(
+      clashes(
+        { kind: 'healed', count: 5, discipline: 'acupuncture' },
+        { kind: 'healed', count: 10, discipline: 'acupuncture' },
+      ),
+    ).toBe(true);
+    expect(
+      clashes(
+        { kind: 'healed', count: 5, discipline: 'reiki' },
+        { kind: 'healed', count: 10, discipline: 'acupuncture' },
+      ),
+    ).toBe(false);
+  });
+
+  it('clashes over prestige only for the same kind of room, and never across kinds', () => {
+    expect(
+      clashes({ kind: 'prestige', room: 'massage', level: 3 }, { kind: 'prestige', room: 'massage', level: 2 }),
+    ).toBe(true);
+    expect(
+      clashes({ kind: 'prestige', room: 'consult', level: 2 }, { kind: 'prestige', room: 'massage', level: 2 }),
+    ).toBe(false);
+    expect(clashes({ kind: 'noQuits', days: 30 }, { kind: 'balance', amount: 30 })).toBe(false);
+    expect(clashes({ kind: 'emergencies', count: 1 }, { kind: 'healed', count: 1 })).toBe(false);
+  });
+
+  it('never sets a goal one of the next star’s objectives already asks, in any center at any star', () => {
+    const { sim, s } = withChallenges();
+    addAcupuncture(sim);
+    addReiki(sim);
+    addSound(sim);
+    const ctx = createContext(s);
+    const kinds = new Set<string>();
+    for (const { center, star, goals } of everyStar) {
+      s.center = center;
+      s.stars = star;
+      for (let seed = 1; seed <= 40; seed++) {
+        setSeed(seed, s);
+        const days = 60 + seed;
+        for (const goal of freshGoals(ctx, days))
+          expect(
+            goals.filter((g) => clashes(goal, g)),
+            `${center} star ${star + 1}: ${JSON.stringify(goal)}`,
+          ).toEqual([]);
+        const ch = proposeChallenge(ctx);
+        if (!ch) continue;
+        kinds.add(ch.goal.kind);
+        expect(
+          goals.filter((g) => clashes(ch.goal, g)),
+          `${center} star ${star + 1}: ${JSON.stringify(ch.goal)}`,
+        ).toEqual([]);
+      }
+    }
+    // still a mix of challenges to come
+    expect(kinds.size).toBeGreaterThanOrEqual(4);
+  });
+
+  it('sets a heal challenge again once every star is earned', () => {
+    const { s } = withChallenges();
+    s.center = 'willow';
+    s.stars = CENTERS.willow.goals.length;
+    const ctx = createContext(s);
+    expect(freshGoals(ctx, 90)).toContainEqual(expect.objectContaining({ kind: 'healed' }));
+  });
+
+  it('sets nothing that time when every goal it could ask clashes, and waits a while to ask again', () => {
+    const { ctx, s } = withChallenges();
+    s.center = 'willow';
+    s.stars = 0;
+    const candidates = challengeGoals(ctx, 90);
+    expect(candidates.length).toBeGreaterThan(0);
+    // a star asking every kind a challenge could set, and prestige in every room, as the room is picked at random
+    const rooms: GoalSpec[] = s.rooms.map((r) => ({ kind: 'prestige', room: r.type, level: 5 }));
+    const willow = CENTERS.willow;
+    const before = willow.goals;
+    Object.assign(willow, { goals: [[...candidates.map(retargeted), ...rooms]] });
+    try {
+      expect(freshGoals(ctx, 90)).toEqual([]);
+      expect(proposeChallenge(ctx)).toBeNull();
+      s.nextChallenge = 0;
+      updateChallenge(ctx);
+      expect(s.challenge).toBeNull();
+      expect(s.nextChallenge).toBeGreaterThan(s.day);
+    } finally {
+      Object.assign(willow, { goals: before });
+    }
   });
 });
 

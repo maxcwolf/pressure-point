@@ -2,6 +2,7 @@
 // meeting it.
 
 import {
+  centerOf,
   CHALLENGE_DAYS_MAX,
   CHALLENGE_DAYS_MIN,
   CHALLENGE_GAP_MAX,
@@ -73,14 +74,43 @@ export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
   return goals;
 }
 
-/** A new challenge from a member of staff, or null if there is nobody to set one. */
+/**
+ * Whether a challenge's goal would ask what a star already asks: the same kind of goal, whatever its target. Heals
+ * clash unless both name a discipline and the disciplines differ, since every heal counts toward the whole center's,
+ * and prestige clashes only for the same kind of room.
+ */
+export function clashes(goal: GoalSpec, star: GoalSpec): boolean {
+  if (goal.kind !== star.kind) return false;
+  if (goal.kind === 'healed' && star.kind === 'healed')
+    return !goal.discipline || !star.discipline || goal.discipline === star.discipline;
+  if (goal.kind === 'prestige' && star.kind === 'prestige') return goal.room === star.room;
+  return true;
+}
+
+/** The goals a challenge could set now that none of the next star's objectives already asks. */
+export function freshGoals(ctx: SimContext, days: number): GoalSpec[] {
+  const star = centerOf(ctx.s).goals[ctx.s.stars] ?? [];
+  return challengeGoals(ctx, days).filter((goal) => !star.some((g) => clashes(goal, g)));
+}
+
+/** The staff who could set a challenge: everyone on the payroll and at work, not coming or going. */
+const setters = (s: GameState) => s.staff.filter((st) => st.state !== 'leaving' && st.state !== 'arriving');
+
+/** Whether the center is ready for a challenge: open, with a few staff. */
+const ready = (s: GameState) => s.open && setters(s).length >= 2;
+
+/**
+ * A new challenge from a member of staff, or null if there is nobody to set one, or nothing to ask that the star
+ * does not ask already.
+ */
 export function proposeChallenge(ctx: SimContext): Challenge | null {
   const s = ctx.s;
-  const staff = s.staff.filter((st) => st.state !== 'leaving' && st.state !== 'arriving');
-  if (!s.open || staff.length < 2) return null;
-  const setter = pick(s, staff);
+  if (!ready(s)) return null;
+  const setter = pick(s, setters(s));
   const days = irnd(s, CHALLENGE_DAYS_MIN, CHALLENGE_DAYS_MAX);
-  const goal = pick(s, challengeGoals(ctx, days));
+  const goals = freshGoals(ctx, days);
+  if (!goals.length) return null;
+  const goal = pick(s, goals);
   return {
     staffId: setter.id,
     staffName: setter.name,
@@ -124,6 +154,11 @@ export function challengeTask(ctx: SimContext, ch: Challenge): string {
   return challengeObjective(ctx, ch).label.replace(/ \(\d+\/\d+\)$/, '');
 }
 
+/** Put the next challenge a gap of a month or two away. */
+function waitForNext(s: GameState) {
+  s.nextChallenge = s.day + irnd(s, CHALLENGE_GAP_MIN, CHALLENGE_GAP_MAX) * tuning(s, 'chances');
+}
+
 /** Set a new challenge when one is due, pay out one that is met, and let go of one whose time is up. */
 export function updateChallenge(ctx: SimContext) {
   const s = ctx.s;
@@ -131,7 +166,11 @@ export function updateChallenge(ctx: SimContext) {
   if (!ch) {
     if (!s.challengesOn || s.day < s.nextChallenge) return;
     const next = proposeChallenge(ctx);
-    if (!next) return;
+    if (!next) {
+      // with nothing left to ask, wait for another gap rather than asking again every moment
+      if (ready(s)) waitForNext(s);
+      return;
+    }
     s.challenge = next;
     const about = { kind: 'staff', id: next.staffId } as const;
     toast(
@@ -174,5 +213,5 @@ export function updateChallenge(ctx: SimContext) {
     );
   } else return;
   s.challenge = null;
-  s.nextChallenge = s.day + irnd(s, CHALLENGE_GAP_MIN, CHALLENGE_GAP_MAX) * tuning(s, 'chances');
+  waitForNext(s);
 }
