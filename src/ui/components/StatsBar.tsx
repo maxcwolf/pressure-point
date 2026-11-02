@@ -206,7 +206,8 @@ export function StatsBar() {
             class={cx('speed', speed, s.speed === sp.speed && 'on', guide === `speed:${sp.speed}` && guideRing())}
             title={sp.title}
             onPress={() => {
-              s.speed = sp.speed;
+              // by hand: pausing while the game has paused for placing keeps it paused once placing ends
+              sim.setSpeed(sp.speed);
             }}
           >
             <Icon id={sp.icon} size={20} label={sp.title} />

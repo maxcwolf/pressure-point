@@ -9,6 +9,7 @@ import type { GameState } from '../core/state/types';
 import { accessTile, itemDims, wallSpotsOf } from '../core/world';
 import { View } from '../render/view';
 import { loadCampaign, recordGame } from '../storage/campaign';
+import { loadControls } from '../storage/controls';
 import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
@@ -148,6 +149,10 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
   bindPointer(canvas, { audio, tools, view, ui });
   const held = bindKeyboard({
     state,
+    /** Set the speed by hand. */
+    setSpeed: (speed) => {
+      sim.setSpeed(speed);
+    },
     tools,
     ui,
     /** Turn the camera round the building. */
@@ -222,6 +227,14 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     /** Note a star or an achievement for the campaign as soon as it is earned. */
     record: () => {
       recordGame(state);
+    },
+    /** Stop the clock while something is placed, if the switch in Settings is on, and start it again once it is down. */
+    placing: () => {
+      sim.watchPlacing({
+        placing: tools.placing,
+        choosing: ui.menu === 'rooms' || ui.menu === 'items',
+        auto: loadControls().pauseToPlace,
+      });
     },
     /** Redraw the floor overlay when it is due, or at once for a new preview of the item in hand or a new overlay. */
     overlay: (due) => {

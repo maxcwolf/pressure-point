@@ -149,6 +149,57 @@ describe('the tutorial', () => {
     expect(stepOf(sim)).toBe('benches');
   });
 
+  it('counts only a pause the player made as pausing the clock, not one the game made while something is placed', () => {
+    const sim = tutorialGame();
+    sim.noteLooked();
+    expect(stepOf(sim)).toBe('pause');
+    // a Consultation Room taken up to place, before the desk, stops the clock by itself
+    sim.watchPlacing({ placing: true, choosing: false, auto: true });
+    expect(sim.s.speed).toBe(0);
+    expect(stepOf(sim)).toBe('pause');
+    // the pause button pressed over it is the player's own
+    sim.setSpeed(0);
+    expect(stepOf(sim)).toBe('desk');
+  });
+
+  it('does not ask to start the clock again once it has run, for a pause to put the Benches down', () => {
+    const sim = tutorialGame();
+    walkOpening(sim);
+    expect(stepOf(sim)).toBe('benches');
+    // stopped by hand, as a player might to place them
+    sim.s.speed = 0;
+    expect(stepOf(sim)).toBe('benches');
+    // or by the game, as the first Bench is taken up to place
+    sim.s.speed = 2;
+    sim.watchPlacing({ placing: true, choosing: false, auto: true });
+    expect(sim.s.speed).toBe(0);
+    expect(stepOf(sim)).toBe('benches');
+    expect(sim.tutorialLines().find((l) => l.id === 'play')?.done).toBe(true);
+  });
+
+  it('does not ask to start a clock the game stopped itself for something being placed', () => {
+    const sim = tutorialGame();
+    sim.noteLooked();
+    // never stopped by hand, the desk left till last
+    hire(sim, 'receptionist');
+    addConsult(sim);
+    hire(sim, 'consultant');
+    addMassage(sim);
+    hire(sim, 'therapist');
+    expect(stepOf(sim)).toBe('pause');
+    // the desk taken up to place stops the clock, and stays in hand for another once it is down
+    sim.watchPlacing({ placing: true, choosing: false, auto: true });
+    expect(sim.s.speed).toBe(0);
+    sim.placeItem('reception_desk', 14, 13, 0);
+    expect(stepOf(sim)).toBeNull();
+    // put down, the clock starts again by itself and the center opens
+    sim.watchPlacing({ placing: false, choosing: false, auto: true });
+    expect(sim.s.speed).toBe(1);
+    run(sim, 1);
+    expect(sim.s.open).toBe(true);
+    expect(stepOf(sim)).toBe('benches');
+  });
+
   it('says with the first thing bought that everything comes out of the bank, leaving the loan to its lesson', () => {
     const sim = tutorialGame();
     sim.noteLooked();

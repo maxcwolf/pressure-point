@@ -126,14 +126,19 @@ export const sketchDoorHint = (type: RoomType) =>
 /** The hint for choosing where a new room's door goes. */
 export const DOOR_HINT = 'Now click a wall to place the door · Esc cancels';
 
-/** The hint while a blueprint is open, for whatever is in hand. */
-export function planHint(sub: PlanSub, missing: number): string {
+/**
+ * The hint while a blueprint is open, for whatever is in hand. With nothing in hand and furniture in the room (`placed`),
+ * it says a piece can be clicked to move it.
+ */
+export function planHint(sub: PlanSub, missing: number, placed = false): string {
+  const move = placed ? ' · click a piece in the room to move it' : '';
   if (!sub)
     return missing
-      ? 'Pick the missing furniture from the blueprint panel'
-      : 'Everything needed is in. Add windows or extras, or press Build room (Enter)';
+      ? `Pick the missing furniture from the blueprint panel${move}`
+      : `Everything needed is in. Add windows or extras, or press Build room (Enter)${move}`;
   if (sub.kind === 'window') return WINDOW_HINT;
   if (sub.kind === 'door') return MOVE_DOOR_HINT;
+  if (sub.kind === 'move') return moveHint(sub.type);
   const def = ITEMS[sub.type];
   return sub.required
     ? `Place the ${def.name} inside the room · ${turnHint(sub.type)}${legend(sub.type)}`
@@ -196,7 +201,11 @@ export function toolIcon(tool: Tool): IconId | null {
     case 'room': {
       if (tool.phase !== 'plan' || !tool.sub) return ROOMS[tool.type].icon;
       const sub = tool.sub;
-      return sub.kind === 'item' ? ITEMS[sub.type].icon : sub.kind === 'window' ? 'ui-window' : 'ui-door';
+      return sub.kind === 'item' || sub.kind === 'move'
+        ? ITEMS[sub.type].icon
+        : sub.kind === 'window'
+          ? 'ui-window'
+          : 'ui-door';
     }
   }
 }

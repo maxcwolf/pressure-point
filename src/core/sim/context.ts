@@ -18,6 +18,13 @@ export interface SimContext {
   /** How noisy each tile is, from nearby items and crowds, and how warm, in degrees Fahrenheit. */
   readonly noise: Float32Array;
   readonly warmth: Float32Array;
+  /**
+   * While the game has stopped the clock itself for a room or an item being placed, the speed it goes back to once that
+   * is down (`placing.ts`). Not saved: a game loaded has nothing in hand.
+   */
+  resumeSpeed?: number;
+  /** Whether a room or an item was being placed at the last look, so the clock stops only as placing starts. */
+  placing?: boolean;
   /*
    * The rest is kept only while the game is running, since none of it changes what happens: it is all about what the
    * speakers say, which nothing else hangs on, and how many random numbers are drawn does not depend on it.

@@ -143,8 +143,12 @@ export function watchGame(sim: Sim) {
   let feel = freshFeel();
   const startDay = s.day;
   const startedAt = performance.now();
-  /** Seconds of play seen at each speed, 0 being paused. A hidden page is not playing, so it is not counted. */
+  /**
+   * Seconds of play seen at each speed, 0 being paused by the player. A hidden page is not playing, so it is not
+   * counted. The seconds the game had paused itself while something was placed are counted apart, in `placing`.
+   */
   const atSpeed: Partial<Record<string, number>> = {};
+  let placing = 0;
   const frames = watchFrames();
   let peakGuests = s.guests.length;
   let sinceSummary = 0;
@@ -157,6 +161,7 @@ export function watchGame(sim: Sim) {
     days_played: Math.floor(s.day - startDay),
     money: s.money,
     seconds_at_speed: atSpeed,
+    seconds_placing: placing,
     ...frames.props(),
     ...device(),
     ...centerSize(s),
@@ -176,7 +181,8 @@ export function watchGame(sim: Sim) {
     if (document.visibilityState !== 'visible') return;
     frames.second();
     peakGuests = Math.max(peakGuests, s.guests.length);
-    atSpeed[s.speed] = (atSpeed[s.speed] ?? 0) + LOOK_EVERY;
+    if (sim.pausedToPlace()) placing += LOOK_EVERY;
+    else atSpeed[s.speed] = (atSpeed[s.speed] ?? 0) + LOOK_EVERY;
     if (s.speed > 0 && s.open) noteFeel(feel, s, sim.bottleneck()?.key, sim.advice());
     sinceSummary += LOOK_EVERY;
     if (sinceSummary >= SUMMARY_EVERY) {

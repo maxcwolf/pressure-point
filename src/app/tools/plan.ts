@@ -15,7 +15,7 @@ export function planStatus(room: Room, missing: ItemType[], sub: PlanSub): PlanS
   return {
     room,
     missing,
-    holding: !sub ? '' : sub.kind === 'item' ? sub.type : sub.kind,
+    holding: !sub || sub.kind === 'move' ? '' : sub.kind === 'item' ? sub.type : sub.kind,
     ready: missing.length === 0,
   };
 }
@@ -23,8 +23,31 @@ export function planStatus(room: Room, missing: ItemType[], sub: PlanSub): PlanS
 /** The item in hand that R would turn, if there is one. */
 export function heldItem(tool: Tool): HeldItem | null {
   if (tool.kind === 'item' || tool.kind === 'move') return tool;
-  if (tool.kind === 'room' && tool.phase === 'plan' && tool.sub?.kind === 'item') return tool.sub;
-  return null;
+  const sub = tool.kind === 'room' && tool.phase === 'plan' ? tool.sub : null;
+  return sub?.kind === 'item' || sub?.kind === 'move' ? sub : null;
+}
+
+/**
+ * Whether the tool in hand is placing a room or an item, which the clock stops for: a room from its floor to its
+ * Build, one pencilled in, from a template or picked up, and an item bought or moved.
+ */
+export function placing(tool: Tool): boolean {
+  switch (tool.kind) {
+    case 'item':
+    case 'move':
+    case 'room':
+    case 'sketch':
+    case 'template':
+    case 'moveRoom':
+      return true;
+    case 'none':
+    case 'window':
+    case 'door':
+    case 'resize':
+    case 'assign':
+    case 'expand':
+      return false;
+  }
 }
 
 /** A quarter turn on from a rotation, wrapping after four. */

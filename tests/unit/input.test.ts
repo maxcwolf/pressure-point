@@ -80,7 +80,9 @@ describe('keyboard shortcuts', () => {
     const turns: number[] = [];
     /** Note a turn of the camera. */
     const turnCamera = (quarters: number) => void turns.push(quarters);
-    const held = bindKeyboard({ state, tools: tools as never, ui: ui as never, turnCamera, onChange });
+    /** Set the speed. */
+    const setSpeed = (speed: number) => void (state.speed = speed);
+    const held = bindKeyboard({ state, setSpeed, tools: tools as never, ui: ui as never, turnCamera, onChange });
     /** Press (or keep holding) a key, with any modifiers. */
     const press = (key: string, extra: Partial<KeyboardEvent> = {}) =>
       win.dispatchEvent(Object.assign(new Event('keydown'), { key, repeat: false, ...extra }));

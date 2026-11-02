@@ -60,24 +60,44 @@ describe('key bindings', () => {
 });
 
 describe('the controls kept', () => {
-  it('start with the default keys, no edge scrolling, an autosave every 5 minutes and no cheat console', () => {
-    expect(loadControls()).toEqual({ keys: DEFAULT_KEYS, edgeScroll: false, autosave: 300, console: false });
+  it('start with the default keys, no edge scrolling, an autosave every 5 minutes, pausing to place and no console', () => {
+    expect(loadControls()).toEqual({
+      keys: DEFAULT_KEYS,
+      edgeScroll: false,
+      autosave: 300,
+      pauseToPlace: true,
+      console: false,
+    });
   });
 
   it('are kept for next time', () => {
-    saveControls({ keys: rebind(DEFAULT_KEYS, 'pause', 'KeyP'), edgeScroll: true, autosave: 60, console: true });
+    saveControls({
+      keys: rebind(DEFAULT_KEYS, 'pause', 'KeyP'),
+      edgeScroll: true,
+      autosave: 60,
+      pauseToPlace: false,
+      console: true,
+    });
     forgetControls();
     expect(loadControls()).toEqual({
       keys: { ...DEFAULT_KEYS, pause: 'KeyP' },
       edgeScroll: true,
       autosave: 60,
+      pauseToPlace: false,
       console: true,
     });
   });
 
   it('leave anything unusable at its default when read back', () => {
     expect(readControls('nonsense')).toEqual(defaultControls());
-    expect(readControls({ keys: { up: 'Escape', down: 7, rotate: 'KeyF' }, edgeScroll: 'yes', autosave: 45 })).toEqual({
+    expect(
+      readControls({
+        keys: { up: 'Escape', down: 7, rotate: 'KeyF' },
+        edgeScroll: 'yes',
+        autosave: 45,
+        pauseToPlace: 0,
+      }),
+    ).toEqual({
       ...defaultControls(),
       keys: { ...DEFAULT_KEYS, rotate: 'KeyF' },
     });
