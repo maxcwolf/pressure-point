@@ -30,7 +30,7 @@ import { pick, random, rnd } from '../random';
 import type { GameState, Guest, Item, Need, Regular } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, Z_CORRIDOR } from '../world';
-import { accidentDue, haveAccident, messNear } from './accidents';
+import { accidentDue, haveAccident, holdOn, messNear } from './accidents';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
 import { lobbyTile, say, streetTile, streetTileNear } from './chars';
@@ -581,8 +581,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   const waiting =
     (g.state === 'toWait' && !walkingToClass) || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
   // bursting in a line, not on the way to a toilet: how long they have held on, which they cannot do for ever
-  if (waiting && g.bladder >= 100 && g.state !== 'toNeed' && g.state !== 'need') g.held = (g.held ?? 0) + dt;
-  else delete g.held;
+  holdOn(ctx, g, dt, waiting && g.state !== 'toNeed' && g.state !== 'need');
   if (waiting) {
     let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
     // the one they are waiting for has a good bedside manner: at a mat, the Sound Healer at the bowls

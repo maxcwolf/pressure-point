@@ -91,8 +91,8 @@ export const issueAt = (s: Pick<GameState, 'day'>) => Math.floor(Math.floor(s.da
 /** Whether two pieces of news are the same story told again: the later takes the earlier's place. */
 function sameStory(a: NewsItem, b: NewsItem): boolean {
   if (a.kind !== b.kind) return false;
-  // there is one longest wait a quarter
-  if (a.kind === 'wait') return true;
+  // there is one longest wait a quarter, and one accident on the floor, however many there were
+  if (a.kind === 'wait' || a.kind === 'accident') return true;
   // a failed inspection settled later, by an offer taken or turned down, is still the one inspection
   if (a.kind === 'inspection') return a.day === b.day;
   // a storm that floods a restroom as it starts is one storm
@@ -163,6 +163,8 @@ export function scoreOf(n: NewsItem): number {
     case 'expert':
     case 'sale':
       return 25;
+    case 'accident':
+      return 30;
     case 'wait':
       return Math.min(WAIT_MOST, 10 + 3 * Math.max(0, (n.n ?? 0) - WAIT_NEWS_DAYS));
   }
@@ -223,6 +225,7 @@ export function casesOf(n: NewsItem, center: GameState['center']): HeadlineCase[
     case 'overload':
     case 'sale':
     case 'expert':
+    case 'accident':
     case 'amanda':
     case 'overtook':
     case 'grade':

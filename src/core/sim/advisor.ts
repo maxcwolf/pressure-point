@@ -27,7 +27,7 @@ import { an, article, listed, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { featureOn, offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
-import { toiletTrouble } from './accidents';
+import { holdingOn, toiletsOut, toiletTrouble } from './accidents';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
 import { roomFor } from './careers';
@@ -112,6 +112,35 @@ const alarm = marked('alarm');
 /** A nudge about the next thing to set up, which goes as soon as it is done. */
 const setup = marked('step');
 
+/**
+ * The alarm while guests hold on, bursting, long enough to warn of: who will have an accident on the floor soonest, in
+ * about how many seconds, why they cannot go, and what to do.
+ */
+function burstingAlarm(ctx: SimContext): Advice | null {
+  const trouble = toiletTrouble(ctx);
+  const [first, ...others] = holdingOn(ctx, trouble);
+  if (!first) return null;
+  const { guest, left } = first;
+  // never "1 second", which would read as another note than "2 seconds" and change places with it
+  const secs = Math.max(2, Math.ceil(left));
+  const out = trouble === 'out' ? toiletsOut(ctx) : undefined;
+  const why =
+    trouble === 'none'
+      ? `${guest.name} is bursting with no Restroom to use`
+      : out
+        ? `${guest.name} is bursting, and ${out.why}`
+        : `${guest.name} is bursting, and every toilet is taken`;
+  const more = others.length ? `, and ${others.length} more ${others.length === 1 ? 'is' : 'are'} bursting` : '';
+  const fix =
+    trouble === 'none'
+      ? 'Build a Restroom, with a toilet and a sink.'
+      : (out?.fix ?? 'Build another Restroom, or put more toilets in the one you have.');
+  return {
+    text: `${why}: an accident on the floor in about ${secs} seconds${more}. ${fix}`,
+    about: { kind: 'guest', id: guest.id },
+  };
+}
+
 /** The advisor's current nudge, as text. */
 export function advice(ctx: SimContext): string {
   return advise(ctx).text;
@@ -165,18 +194,16 @@ function nudge(ctx: SimContext): string | Advice {
       about: { kind: 'guest', id: worst.id },
     });
   }
+  // someone holding on, bursting, with nowhere to go, and an accident on the floor coming
+  const bursting = burstingAlarm(ctx);
+  if (bursting) return alarm(bursting);
   const tired = s.staff.some((x) => x.energy < 20);
   if (tired && !hasRoom(ctx, 'staffroom'))
     return 'Your staff members are worn out and working slowly. Build a Staff Room so they can take breaks.';
   if (s.guests.some((g) => g.bladder > 85) && !hasRoom(ctx, 'restroom'))
-    return 'Guests are crossing their legs. Build a Restroom before someone has an accident.';
-  // a Restroom too small for the crowd: someone holding on, bursting, with every toilet taken
-  const holding = s.guests.find((g) => (g.held ?? 0) > 0 && !g.classDay);
-  if (holding && s.accidentsOn && toiletTrouble(ctx) === 'taken')
-    return {
-      text: `${holding.name} is bursting, and every toilet is taken. Build another Restroom, or put more toilets in the one you have, before someone has an accident.`,
-      about: { kind: 'guest', id: holding.id },
-    };
+    return s.accidentsOn
+      ? 'Guests are crossing their legs. Build a Restroom before someone has an accident.'
+      : 'Guests are crossing their legs. A Restroom would be a kindness.';
   if (s.litter.some((l) => l.accident) && !hasStaff(ctx, 'caretaker'))
     return 'Someone has had an accident on the floor, and there is nobody to clean it up. Hire a Caretaker.';
   if (s.litter.length >= 3 && !hasStaff(ctx, 'caretaker'))

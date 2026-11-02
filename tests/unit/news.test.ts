@@ -143,6 +143,7 @@ const SAMPLES: Record<Exclude<HeadlineCase, 'quiet'>, NewsItem> = {
   'awards-center': item({ kind: 'awards', how: 'center', what: 'center-of-the-year', n: 1, of: 3 }),
   'awards-other': item({ kind: 'awards', what: 'busiest', n: 2, of: 1 }),
   wait: item({ kind: 'wait', who: 'Ada Twinge', n: 11 }),
+  accident: item({ kind: 'accident' }),
 };
 
 /** The center each sample is printed in: the sandbox opens with its own headline. */

@@ -9,6 +9,7 @@ import {
   FLIES_AFTER,
   HOLD_NO_RESTROOM,
   HOLD_TOILETS_TAKEN,
+  HOLD_WARN_TAKEN,
   MESS_PRESTIGE,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
@@ -18,10 +19,12 @@ import {
   accidentsAllowed,
   fliesOn,
   haveAccident,
+  holdOn,
   toiletTrouble,
   wentHomeMortified,
 } from '../../src/core/sim/accidents';
 import { prestigeTerms } from '../../src/core/sim/ambience';
+import { setDuty } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
 import { spawnGuest } from '../../src/core/sim/guests';
 import { HARM_EXPLAIN } from '../../src/core/sim/harms';
@@ -32,7 +35,7 @@ import { SAVE_VERSION } from '../../src/core/state/game';
 import type { GameState, Guest, Litter } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { must } from '../../src/core/util';
-import { guestStatus, staffStatus } from '../../src/ui/lib/status';
+import { burstingNote, guestStatus, staffStatus } from '../../src/ui/lib/status';
 import { addRestroom, freshSim, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
 
 beforeEach(() => setSeed(3));
@@ -54,13 +57,16 @@ function burstingInLine(sim: Sim): Guest {
 /** The accidents on the floor. */
 const accidents = (sim: Sim) => sim.s.litter.filter((l) => l.accident);
 
-/** The one Toilet Stall, taken by someone else. */
-function takeToilet(sim: Sim, by: Guest) {
-  const toilet = must(
+/** The one Toilet Stall. */
+const toiletOf = (sim: Sim) =>
+  must(
     sim.s.items.find((i) => i.type === 'toilet'),
     'a toilet',
   );
-  toilet.users[0] = by.id;
+
+/** The one Toilet Stall, taken by someone else. */
+function takeToilet(sim: Sim, by: Guest) {
+  toiletOf(sim).users[0] = by.id;
 }
 
 describe('a guest bursting with no restroom to use', () => {
@@ -128,16 +134,22 @@ describe('a guest bursting with no restroom to use', () => {
     );
   });
 
-  it('never has one with accidents switched off, nor as a class-goer', () => {
+  it('never holds on, or has one, with accidents switched off, nor as a class-goer', () => {
     const sim = freshSim();
+    const ctx = ctxOf(sim);
     const g = burstingInLine(sim);
-    g.held = HOLD_TOILETS_TAKEN;
     sim.s.accidentsOn = false;
-    expect(accidentDue(ctxOf(sim), g)).toBe(false);
+    run(sim, HOLD_TOILETS_TAKEN);
+    expect(g.held).toBeUndefined();
+    expect(accidents(sim)).toEqual([]);
+    expect(sim.holdingOn()).toEqual([]);
     sim.s.accidentsOn = true;
-    expect(accidentDue(ctxOf(sim), g)).toBe(true);
     g.classDay = 1;
-    expect(accidentDue(ctxOf(sim), g)).toBe(false);
+    holdOn(ctx, g, HOLD_TOILETS_TAKEN, true);
+    expect(g.held).toBeUndefined();
+    g.classDay = 0;
+    holdOn(ctx, g, HOLD_TOILETS_TAKEN, true);
+    expect(accidentDue(ctx, g)).toBe(true);
   });
 
   it('never has one on a first go at the campaign before its heads-up has asked for a Restroom', () => {
@@ -147,14 +159,118 @@ describe('a guest bursting with no restroom to use', () => {
     const g = burstingInLine(sim);
     run(sim, HOLD_TOILETS_TAKEN);
     expect(accidents(sim)).toEqual([]);
+    // nor are they holding on all that while, to have one the moment they can
+    expect(g.held).toBeUndefined();
     // the heads-up comes once the center is open and a guest starts to need the toilet, and accidents can happen after
     sim.s.open = true;
     g.patience = 100;
     run(sim, 2);
     expect(sim.s.seenTips).toContain(primerTip('restroom'));
     expect(accidentsAllowed(ctxOf(sim))).toBe(true);
+    expect(accidents(sim)).toEqual([]);
     run(sim, HOLD_NO_RESTROOM);
     expect(accidents(sim)).toHaveLength(1);
+  });
+
+  it('can have one on a first go at the campaign once a Restroom is built, though its heads-up never came', () => {
+    const sim = freshSim();
+    sim.s.primer = true;
+    sim.s.money = 100_000;
+    addRestroom(sim);
+    takeToilet(sim, must(spawnGuest(ctxOf(sim)), 'a guest'));
+    const g = burstingInLine(sim);
+    expect(sim.s.seenTips).not.toContain(primerTip('restroom'));
+    expect(accidentsAllowed(ctxOf(sim))).toBe(true);
+    run(sim, HOLD_TOILETS_TAKEN + 1);
+    expect(g.feelings).toContain('accident');
+  });
+
+  it('is warned of by the advisor at once, by name, with the seconds left', () => {
+    const { sim } = openCenter();
+    const g = burstingInLine(sim);
+    g.held = 5;
+    expect(sim.adviceNote()).toMatchObject({
+      level: 'alarm',
+      text: `${g.name} is bursting with no Restroom to use: an accident on the floor in about ${HOLD_NO_RESTROOM - 5} seconds. Build a Restroom, with a toilet and a sink.`,
+      about: { kind: 'guest', id: g.id },
+    });
+  });
+
+  it('is never warned of as an accident to come with accidents switched off', () => {
+    const { sim } = openCenter();
+    const g = burstingInLine(sim);
+    g.bladder = 90;
+    expect(sim.adviceNote().text).toBe(
+      'Guests are crossing their legs. Build a Restroom before someone has an accident.',
+    );
+    sim.s.accidentsOn = false;
+    expect(sim.adviceNote().text).toBe('Guests are crossing their legs. A Restroom would be a kindness.');
+  });
+
+  it('lands on open floor beside them, never through a wall into a room', () => {
+    const { sim } = openCenter();
+    const ctx = ctxOf(sim);
+    const g = must(spawnGuest(ctx), 'a guest');
+    // in the corridor along the Massage Suite's west wall, with litter where they stand
+    Object.assign(g, { tx: 10, ty: 6 });
+    sim.s.litter.push({ id: sim.s.nextId++, x: 10, y: 6, claimedBy: 0 });
+    expect(sim.world.roomAt(11, 6)?.type).toBe('massage');
+    haveAccident(ctx, g);
+    expect(accidents(sim)).toEqual([expect.objectContaining({ x: 9, y: 6 })]);
+  });
+});
+
+describe('a guest bursting with the only toilet out of action', () => {
+  it(`holds on for ${HOLD_NO_RESTROOM} seconds, and everything that warns of it says what is wrong`, () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    addRestroom(sim);
+    toiletOf(sim).wear = 100;
+    const g = burstingInLine(sim);
+    expect(toiletTrouble(ctxOf(sim))).toBe('out');
+    run(sim, 3);
+    expect(guestStatus(g, sim)).toBe('In line at Reception, bursting: the toilet is broken');
+    expect(sim.holdingOn().map((h) => h.guest)).toEqual([g]);
+    expect(burstingNote(sim, 1)).toBe('The toilet is broken, and 1 guest is bursting. Hire a Caretaker to repair it.');
+    sim.drain();
+    run(sim, HOLD_NO_RESTROOM);
+    expect(accidents(sim)).toHaveLength(1);
+    expect(toasts(sim.drain())).toContainEqual(
+      expect.stringMatching(
+        /as the toilet is broken, and had an accident on the floor. Hire a Caretaker to repair it./,
+      ),
+    );
+  });
+
+  it('is warned of by the advisor by name, with what puts it right', () => {
+    const { sim } = openCenter();
+    addRestroom(sim);
+    toiletOf(sim).wear = 100;
+    const g = burstingInLine(sim);
+    g.held = 5;
+    expect(sim.adviceNote()).toMatchObject({
+      level: 'alarm',
+      text: `${g.name} is bursting, and the toilet is broken: an accident on the floor in about ${HOLD_NO_RESTROOM - 5} seconds. Hire a Caretaker to repair it.`,
+    });
+  });
+
+  it('is explained by what had the toilets out of action, flooded or broken, and who puts it right', () => {
+    const sim = freshSim();
+    const ctx = ctxOf(sim);
+    sim.s.money = 100_000;
+    const room = addRestroom(sim);
+    sim.s.litter.push({ id: sim.s.nextId++, x: room.x, y: room.y, claimedBy: 0, flood: room.id });
+    expect(sim.toiletsOut().why).toBe('the Restroom is flooded');
+    for (let i = 0; i < HARM_EXPLAIN; i++) haveAccident(ctx, must(spawnGuest(ctx), 'a guest'));
+    expect(sim.s.harmNotes).toContainEqual(
+      expect.objectContaining({
+        key: 'accident:out',
+        title: `${HARM_EXPLAIN} guests had accidents with no toilet working`,
+        causes: expect.arrayContaining([{ label: 'The Restroom is flooded' }]),
+        help: expect.stringMatching(/^Hire a Caretaker to mop it out./),
+        fix: { hire: 'caretaker' },
+      }),
+    );
   });
 });
 
@@ -173,18 +289,24 @@ describe('a guest bursting with every toilet taken', () => {
     expect(guestStatus(g, sim)).toBe('In line at Reception, bursting: every toilet is taken');
   });
 
-  it('is named by the advisor, who says to build another Restroom', () => {
+  it(`is warned of by the advisor and the Restroom once they have held on ${HOLD_WARN_TAKEN} seconds`, () => {
     const { sim } = openCenter();
     addRestroom(sim);
     const g = burstingInLine(sim);
     takeToilet(sim, must(spawnGuest(ctxOf(sim)), 'a guest'));
-    g.held = 5;
+    // a toilet often comes free before then
+    g.held = HOLD_WARN_TAKEN - 1;
+    expect(sim.adviceNote().about).not.toEqual({ kind: 'guest', id: g.id });
+    expect(sim.holdingOn()).toEqual([]);
+    g.held = HOLD_WARN_TAKEN + 1;
     expect(sim.adviceNote()).toMatchObject({
-      text: expect.stringMatching(
-        new RegExp(`^${g.name} is bursting, and every toilet is taken. Build another Restroom`),
-      ),
+      level: 'alarm',
+      text: `${g.name} is bursting, and every toilet is taken: an accident on the floor in about ${HOLD_TOILETS_TAKEN - HOLD_WARN_TAKEN - 1} seconds. Build another Restroom, or put more toilets in the one you have.`,
       about: { kind: 'guest', id: g.id },
     });
+    expect(burstingNote(sim, sim.holdingOn().length)).toBe(
+      'Every toilet is taken, and 1 guest is bursting. Build another Restroom, or put more toilets in this one, before someone has an accident.',
+    );
   });
 
   it('goes to a free toilet instead, and has no accident', () => {
@@ -224,6 +346,15 @@ describe('an accident on the floor', () => {
     expect(caretaker.job).toEqual({ kind: 'litter', id: poop.id });
     expect(staffStatus(caretaker, sim)).toMatch(/Cleaning up after an accident/);
     runUntil(sim, () => !sim.s.litter.includes(poop), 120);
+  });
+
+  it('says in its message when no Caretaker clears litter where it is', () => {
+    const { sim } = openCenter();
+    const caretaker = hire(sim, 'caretaker');
+    setDuty(ctxOf(sim), caretaker.id, 'litter', false);
+    sim.drain();
+    haveAccident(ctxOf(sim), burstingInLine(sim));
+    expect(toasts(sim.drain())).toContainEqual(expect.stringMatching(/None of your Caretakers clears litter there/));
   });
 
   it('slows walkers when it is a puddle, and puts off waiting guests who can see it, more than litter', () => {

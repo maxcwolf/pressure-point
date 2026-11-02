@@ -1154,7 +1154,8 @@ export type NewsKind =
   | 'grade'
   | 'star'
   | 'awards'
-  | 'wait';
+  | 'wait'
+  | 'accident';
 
 /**
  * How a story ended, in its kind's own terms: how a fire was put out; whether a runner found the door or was calmed,

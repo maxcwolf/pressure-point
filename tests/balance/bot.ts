@@ -501,6 +501,8 @@ export interface MonthLog {
   stormed: number;
   worse: number;
   priced: number;
+  /** Accidents on the floor, by guests who could not get to a toilet in time. Older logs have none. */
+  accidents?: number;
   income: number;
   spending: number;
   /** Given to the Foundation, in a month with a gift. */
@@ -832,7 +834,7 @@ export class Bot {
   readonly log: Playtest;
   /** How it plays where a player has a choice of temper, as its flags have it (`flagStyle`). */
   readonly style: Style;
-  private monthStart = { arrived: 0, healed: 0, failed: 0, stormed: 0, worse: 0, priced: 0 };
+  private monthStart = { arrived: 0, healed: 0, failed: 0, stormed: 0, worse: 0, priced: 0, accidents: 0 };
 
   /** Treatment rooms per type the bot has let the practitioner go from, which it leaves empty until they are needed. */
   private benched: Partial<Record<RoomType, number>> = {};
@@ -1113,6 +1115,7 @@ export class Bot {
       stormed: st.stormed - this.monthStart.stormed,
       worse: st.worse - this.monthStart.worse,
       priced: st.priced - this.monthStart.priced,
+      accidents: st.accidents - this.monthStart.accidents,
       income: Math.round(income),
       spending: Math.round(spending),
       ...(l.gifts > 0 ? { gifts: l.gifts } : {}),
@@ -1156,6 +1159,7 @@ export class Bot {
       stormed: st.stormed,
       worse: st.worse,
       priced: st.priced,
+      accidents: st.accidents,
     };
     this.seen = this.sumUp();
     this.watch = this.freshWatch();

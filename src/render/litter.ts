@@ -12,7 +12,7 @@ import { disposeOwned } from './disposal';
 import { ACCIDENT_ACROSS, animateAccident, buildPee, buildPoop, showFlies } from './models/accident';
 import { mat, put, rbox, trimShadows } from './models/parts';
 import { buildPuddle, buildSoot, rippleFlood } from './models/puddle';
-import { floorScale } from './readable';
+import { floorScale, pixelsPerMeter } from './readable';
 import { hash } from './shared';
 
 /**
@@ -30,23 +30,23 @@ export class LitterLayer {
 
   /**
    * Add a pile for each new piece of litter, or a puddle, and remove the ones that have been swept or mopped up. Flood
-   * water moves, and so do the flies and sparkles of an accident, which is grown to stay readable at `perMeter`, the
-   * pixels a meter covers on screen where the camera looks.
+   * water moves, and so do the flies and sparkles of an accident, which is grown to stay readable from `camera` in a
+   * picture `height` pixels tall, each by its own distance from it, as a speech bubble is.
    */
-  update(t: number, perMeter = Infinity) {
+  update(t: number, camera?: THREE.PerspectiveCamera, height = 0) {
     const liveLitter = new Set<number>();
     for (const l of this.sim.s.litter) {
       liveLitter.add(l.id);
       const had = this.litter.get(l.id);
       if (had) {
         if (l.flood) rippleFlood(had, t, l.id);
-        if (l.accident) this.tend(had, l, t, perMeter);
+        if (l.accident) this.tend(had, l, t, camera, height);
         continue;
       }
       const g = this.build(l);
       trimShadows(g);
       g.position.set(l.x + 0.5, 0, l.y + 0.5);
-      if (l.accident) this.tend(g, l, t, perMeter);
+      if (l.accident) this.tend(g, l, t, camera, height);
       this.scene.add(g);
       this.litter.set(l.id, g);
     }
@@ -80,10 +80,11 @@ export class LitterLayer {
   }
 
   /** Bring flies to a poop left long enough, move its flies or a puddle's sparkles, and size it for the camera. */
-  private tend(g: THREE.Group, l: Litter, t: number, perMeter: number) {
+  private tend(g: THREE.Group, l: Litter, t: number, camera: THREE.PerspectiveCamera | undefined, height: number) {
     const kind = l.accident ?? 'pee';
     if (kind === 'poop') showFlies(g, fliesOn(this.sim.s, l));
     animateAccident(g, t, l.id);
+    const perMeter = camera ? pixelsPerMeter(camera.fov, camera.position.distanceTo(g.position), height) : Infinity;
     g.scale.setScalar(floorScale(ACCIDENT_ACROSS[kind], perMeter, ACCIDENT_PX[kind]));
   }
 }

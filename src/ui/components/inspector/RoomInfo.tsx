@@ -176,14 +176,17 @@ function Flooded({ room }: { room: Room }) {
   ) : null;
 }
 
-/** A Restroom too small for the crowd: guests in a line holding on, bursting, with every toilet taken. */
+/**
+ * A Restroom too small for the crowd, or with nothing in it working: guests in a line holding on, bursting, long enough
+ * to warn of, while accidents can happen.
+ */
 function Bursting({ room }: { room: Room }) {
   const { sim } = useGame();
-  if (room.type !== 'restroom' || !room.done || sim.toiletTrouble() !== 'taken') return null;
-  const holding = sim.s.guests.filter((g) => (g.held ?? 0) > 0 && !g.classDay).length;
+  if (room.type !== 'restroom' || sim.toiletTrouble() === 'none') return null;
+  const holding = sim.holdingOn().length;
   return holding ? (
     <p class={statusClass('bursting', 'bursting')}>
-      <IconText id="bubble-restroom">{burstingNote(holding)}</IconText>
+      <IconText id="bubble-restroom">{burstingNote(sim, holding)}</IconText>
     </p>
   ) : null;
 }

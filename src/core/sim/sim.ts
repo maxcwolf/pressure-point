@@ -42,7 +42,7 @@ import type {
 } from '../state/types';
 import { layoutProblem } from '../templates';
 import type { Check, Placed, Rect, World } from '../world';
-import { type ToiletTrouble, toiletTrouble } from './accidents';
+import { type Holding, holdingOn, toiletsOut, type ToiletTrouble, toiletTrouble } from './accidents';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce, warnPrimer, warnUnfed } from './advisor';
 import { drainFactor, prestige } from './ambience';
@@ -1176,9 +1176,19 @@ export class Sim {
     return sprinklerBlocker(this.ctx, room);
   }
 
-  /** Why a guest bursting for the toilet cannot go now: no restroom they can use, or every toilet taken. */
+  /** Why a guest bursting for the toilet cannot go now: no Restroom, none working, or every toilet taken. */
   toiletTrouble(): ToiletTrouble {
     return toiletTrouble(this.ctx);
+  }
+
+  /** What has the toilets out of action, in a few words, and what puts it right. */
+  toiletsOut(): { why: string; fix: string } {
+    return toiletsOut(this.ctx);
+  }
+
+  /** The guests holding on, bursting, long enough to warn of, the soonest to have an accident first. */
+  holdingOn(): Holding[] {
+    return holdingOn(this.ctx);
   }
 
   /** Whether a room is ready for a fire: sprinklers, or a Fire Extinguisher that works near its door. */

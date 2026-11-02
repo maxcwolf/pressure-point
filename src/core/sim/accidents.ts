@@ -1,7 +1,8 @@
 // Accidents: a waiting guest bursting for the toilet, with no restroom they can use or every toilet taken, holds on for
 // a while and then can hold on no longer. They leave a poop or a puddle of pee where they stand, are mortified, and
 // often go home; waiting guests who see it think less of the place, more than they do of litter; and it stays until a
-// Caretaker cleans it up, ahead of litter. None on a first go at the campaign before its heads-up on a Restroom.
+// Caretaker cleans it up, ahead of litter. None on a first go at the campaign before its heads-up on a Restroom, unless
+// one is built already.
 
 import {
   ACCIDENT_LEAVE,
@@ -11,12 +12,15 @@ import {
   FLIES_AFTER,
   HOLD_NO_RESTROOM,
   HOLD_TOILETS_TAKEN,
+  HOLD_WARN_TAKEN,
   ITEMS,
   MESS_SIGHT,
   POOP_SHARE,
 } from '../data';
 import { random } from '../random';
 import type { GameState, Guest, Litter } from '../state/types';
+import { worksAt } from './assignments';
+import { onDuty } from './careers';
 import { say } from './chars';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
@@ -24,49 +28,119 @@ import { announceOnce, emit, tipOnce } from './events';
 import { feel } from './feelings';
 import { leave } from './guests';
 import { noteAccident } from './harms';
+import { mishapStopping } from './mishaps';
+import { logNews } from './news';
 import { primerTip } from './primer';
-import { hasStaff } from './progress';
+import { hasRoom, hasStaff } from './progress';
 import { countVisit } from './records';
 
-/** Why a bursting guest cannot go: no restroom they can use at all, or every toilet taken. */
-export type ToiletTrouble = 'none' | 'taken';
+/**
+ * Why a bursting guest cannot go: no Restroom at all, one with nothing in it working (or none they can get to), or
+ * every toilet taken.
+ */
+export type ToiletTrouble = 'none' | 'out' | 'taken';
 
 /** What the speakers say the first time a guest has an accident. */
 export const ACCIDENT_NEWS = 'A reminder that the floor is not a restroom, however grounding it may feel.';
 
-/** Whether accidents can happen in this game: switched on, and on a first go at the campaign, once warned of. */
+/**
+ * Whether accidents can happen in this game: switched on, and on a first go at the campaign, once warned of or once a
+ * Restroom is built, as the heads-up is never said for one already there.
+ */
 export function accidentsAllowed(ctx: SimContext): boolean {
   const s = ctx.s;
-  return s.accidentsOn && (!s.primer || s.seenTips.includes(primerTip('restroom')));
+  return s.accidentsOn && (!s.primer || s.seenTips.includes(primerTip('restroom')) || hasRoom(ctx, 'restroom'));
 }
 
 /**
- * Why a guest bursting for the toilet could not go: every toilet in a usable restroom taken, or none they could use at
- * all, a free one they could not reach counting as none.
+ * Why a guest bursting for the toilet could not go: every toilet in a usable restroom taken; a Restroom, but none of its
+ * toilets working, or a free one they could not reach; or no Restroom at all.
  */
 export function toiletTrouble(ctx: SimContext): ToiletTrouble {
   let taken = false;
+  let any = false;
   for (const it of ctx.s.items) {
     for (const [i, spot] of ITEMS[it.type].access.entries()) {
-      if (spot.role !== 'toilet' || !ctx.world.usable(it)) continue;
-      if (!it.users[i]) return 'none';
+      if (spot.role !== 'toilet') continue;
+      any = true;
+      if (!ctx.world.usable(it)) continue;
+      if (!it.users[i]) return 'out';
       taken = true;
     }
   }
-  return taken ? 'taken' : 'none';
+  if (taken) return 'taken';
+  return any || ctx.s.rooms.some((r) => r.type === 'restroom') ? 'out' : 'none';
+}
+
+/** What has the toilets out of action, in a few words, and what puts it right, for the trouble `'out'`. */
+export function toiletsOut(ctx: SimContext): { why: string; fix: string } {
+  const { s, world } = ctx;
+  const restrooms = s.rooms.filter((r) => r.type === 'restroom');
+  const toilets = s.items.filter((it) => ITEMS[it.type].access.some((a) => a.role === 'toilet'));
+  const caretaker = hasStaff(ctx, 'caretaker');
+  if (restrooms.some((r) => world.flooded(r)))
+    return {
+      why: 'the Restroom is flooded',
+      fix: caretaker ? 'It is out of action until a Caretaker mops it out.' : 'Hire a Caretaker to mop it out.',
+    };
+  if (restrooms.some((r) => world.burning(r)))
+    return { why: 'the Restroom is on fire', fix: 'It is out of action until the fire is out.' };
+  const mishap = mishapStopping(s);
+  if (mishap && toilets.some((it) => world.stoppedByMishap(it)))
+    return {
+      why: `the ${mishap.name.toLowerCase()} has the toilets out of action`,
+      fix: `They work again once the ${mishap.name.toLowerCase()} is over.`,
+    };
+  const broken = toilets.filter((it) => it.wear >= 100).length;
+  if (broken)
+    return {
+      why: broken === 1 ? 'the toilet is broken' : 'the toilets are broken',
+      fix: caretaker
+        ? `${broken === 1 ? 'It is' : 'They are'} out of action until a Caretaker repairs ${broken === 1 ? 'it' : 'them'}.`
+        : `Hire a Caretaker to repair ${broken === 1 ? 'it' : 'them'}.`,
+    };
+  if (restrooms.length && restrooms.every((r) => !r.done))
+    return { why: 'the Restroom is not finished', fix: 'Finish building it.' };
+  if (!toilets.length) return { why: 'the Restroom has no toilet', fix: 'Put a Toilet Stall in it.' };
+  return { why: 'they cannot get to a toilet', fix: 'Make sure there is a way through to the Restroom.' };
 }
 
 /** How long a bursting guest holds on before an accident, in seconds, by why they cannot go. */
-export const holdFor = (trouble: ToiletTrouble) => (trouble === 'none' ? HOLD_NO_RESTROOM : HOLD_TOILETS_TAKEN);
+export const holdFor = (trouble: ToiletTrouble) => (trouble === 'taken' ? HOLD_TOILETS_TAKEN : HOLD_NO_RESTROOM);
 
 /**
- * Whether a waiting guest who has just failed to find a toilet can hold on no longer. A class-goer is never long
- * enough.
+ * Count how long a guest in a line has held on, bursting, while an accident can happen. Anyone else holds nothing: a
+ * class-goer is never kept long enough, and before accidents can happen nobody is on their way to one.
  */
+export function holdOn(ctx: SimContext, g: Guest, dt: number, inLine: boolean) {
+  if (inLine && g.bladder >= 100 && !g.classDay && accidentsAllowed(ctx)) g.held = (g.held ?? 0) + dt;
+  else delete g.held;
+}
+
+/** Whether a waiting guest who has just failed to find a toilet can hold on no longer. */
 export function accidentDue(ctx: SimContext, g: Guest): boolean {
   const held = g.held ?? 0;
-  if (g.classDay || held < HOLD_NO_RESTROOM || !accidentsAllowed(ctx)) return false;
+  if (held < HOLD_NO_RESTROOM || !accidentsAllowed(ctx)) return false;
   return held >= holdFor(toiletTrouble(ctx));
+}
+
+/** A guest holding on, bursting, and how many seconds they have left before an accident. */
+export interface Holding {
+  guest: Guest;
+  left: number;
+}
+
+/**
+ * The guests holding on, bursting, long enough to warn of, the soonest to have an accident first: at once with no
+ * toilet working, and from `HOLD_WARN_TAKEN` seconds with every toilet taken, as one often comes free before then.
+ */
+export function holdingOn(ctx: SimContext, trouble = toiletTrouble(ctx)): Holding[] {
+  if (!accidentsAllowed(ctx)) return [];
+  const from = trouble === 'taken' ? HOLD_WARN_TAKEN : 0;
+  return ctx.s.guests
+    .filter((g) => (g.held ?? 0) > from)
+    .map((guest) => ({ guest, left: Math.max(0, holdFor(trouble) - (guest.held ?? 0)) }))
+    .sort((a, b) => a.left - b.left);
 }
 
 /**
@@ -80,7 +154,41 @@ function landing(ctx: SimContext, g: Guest): [number, number] | null {
     [g.tx, g.ty + 1],
     [g.tx, g.ty - 1],
   ];
-  return spots.find(([x, y]) => ctx.world.walkable(x, y) && !ctx.s.litter.some((l) => l.x === x && l.y === y)) ?? null;
+  // never through a wall or a doorway, into a room the guest was not in
+  const zone = ctx.world.zoneAt(g.tx, g.ty);
+  return (
+    spots.find(
+      ([x, y]) =>
+        ctx.world.walkable(x, y) &&
+        ctx.world.zoneAt(x, y) === zone &&
+        !ctx.s.litter.some((l) => l.x === x && l.y === y),
+    ) ?? null
+  );
+}
+
+/** Whether a Caretaker on the payroll would clean up a mess on this tile: one on litter duty who works there. */
+export function cleanerFor(ctx: SimContext, x: number, y: number): boolean {
+  return ctx.s.staff.some(
+    (st) => st.role === 'caretaker' && st.state !== 'leaving' && onDuty(st, 'litter') && worksAt(ctx, st, x, y),
+  );
+}
+
+/** What the first accident's message says of why it happened and what to do about it. */
+function accidentCause(ctx: SimContext, trouble: ToiletTrouble): string {
+  if (trouble === 'none')
+    return 'A guest with no restroom to use couldn’t hold on any longer and had an accident on the floor. Build a Restroom: guests start to need one once they have waited a while.';
+  if (trouble === 'taken')
+    return 'A guest waiting for a free toilet couldn’t hold on any longer and had an accident on the floor. Build another Restroom, or put more toilets in the one you have.';
+  const { why, fix } = toiletsOut(ctx);
+  return `A guest bursting for the toilet couldn’t hold on any longer, as ${why}, and had an accident on the floor. ${fix}`;
+}
+
+/** What the first accident's message says of who will clean it up. */
+function accidentCleaner(ctx: SimContext, x: number, y: number): string {
+  if (cleanerFor(ctx, x, y)) return ' A Caretaker will clean it up.';
+  if (hasStaff(ctx, 'caretaker'))
+    return ' None of your Caretakers clears litter there, so it stays: check their Duties and where they work.';
+  return ' Hire a Caretaker to clean it up: until then it stays there, and puts off everyone who sees it.';
 }
 
 /**
@@ -106,14 +214,12 @@ export function haveAccident(ctx: SimContext, g: Guest) {
   s.tally.accidents++;
   noteAccident(ctx, g, trouble);
   announceOnce(ctx, 'accident-news', ACCIDENT_NEWS);
-  const cause =
-    trouble === 'none'
-      ? 'A guest with no restroom to use couldn’t hold on any longer and had an accident on the floor. Build a Restroom: guests start to need one once they have waited a while.'
-      : 'A guest waiting for a free toilet couldn’t hold on any longer and had an accident on the floor. Build another Restroom, or put more toilets in the one you have.';
-  const clean = hasStaff(ctx, 'caretaker')
-    ? ' A Caretaker will clean it up.'
-    : ' Hire a Caretaker to clean it up: until then it stays there, and puts off everyone who sees it.';
-  tipOnce(ctx, 'accident', cause + clean, 'bad', { kind: 'guest', id: g.id });
+  logNews(ctx, { kind: 'accident' });
+  const [x, y] = spot ?? [g.tx, g.ty];
+  tipOnce(ctx, 'accident', accidentCause(ctx, trouble) + accidentCleaner(ctx, x, y), 'bad', {
+    kind: 'guest',
+    id: g.id,
+  });
   if (g.patience <= 0 || random(s) < ACCIDENT_LEAVE) goHomeMortified(ctx, g);
 }
 

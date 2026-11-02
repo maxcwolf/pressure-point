@@ -11,8 +11,6 @@ import {
   DAY_SECONDS,
   DISCIPLINES,
   DISCOMFORT_DRAIN,
-  HOLD_NO_RESTROOM,
-  HOLD_TOILETS_TAKEN,
   IDEAL_TEMP,
   ITEMS,
   MODALITIES,
@@ -26,7 +24,7 @@ import {
 } from '../data';
 import { an } from '../format';
 import type { FailedTreatment, Guest, HarmNote, Item, Staff } from '../state/types';
-import type { ToiletTrouble } from './accidents';
+import { holdFor, toiletsOut, type ToiletTrouble } from './accidents';
 import { stationPlace } from './advisor';
 import { drainFactor } from './ambience';
 import type { SimContext } from './context';
@@ -360,41 +358,40 @@ export function notePriced(ctx: SimContext, g: Guest) {
   });
 }
 
-/** Why there was no restroom a guest could use, in a few words. */
-function noRestroom(ctx: SimContext): string {
-  const restrooms = ctx.s.rooms.filter((r) => r.type === 'restroom');
-  if (!restrooms.length) return 'No Restroom built';
-  if (restrooms.every((r) => !r.done)) return 'The Restroom is not finished';
-  if (restrooms.some((r) => ctx.world.flooded(r))) return 'The Restroom is flooded';
-  return 'No toilet they could get to';
-}
-
-/** Count a guest who had an accident, by whether there was no restroom or every toilet was taken, and explain it. */
+/** Count a guest who had an accident, by why they could not go, and explain it. */
 export function noteAccident(ctx: SimContext, g: Guest, trouble: ToiletTrouble) {
   noteHarm(ctx, `accident:${trouble}`, () => {
     const toilets = ctx.s.items.filter((it) => it.type === 'toilet' && ctx.world.usable(it)).length;
+    const out = trouble === 'out' ? toiletsOut(ctx) : undefined;
+    const held = { label: `Held on, bursting, for ${holdFor(trouble)} seconds` };
     const causes =
       trouble === 'none'
-        ? [{ label: noRestroom(ctx) }, { label: `Held on, bursting, for ${HOLD_NO_RESTROOM} seconds` }]
-        : [
-            { label: `Every toilet taken: ${toilets} in all` },
-            { label: `Held on, bursting, for ${HOLD_TOILETS_TAKEN} seconds` },
-          ];
+        ? [{ label: 'No Restroom built' }, held]
+        : out
+          ? [{ label: out.why.charAt(0).toUpperCase() + out.why.slice(1) }, held]
+          : [{ label: `Every toilet taken: ${toilets} in all` }, held];
     const fix =
       trouble === 'none'
         ? 'Build a Restroom with a toilet and a sink. Guests need one once they have waited a while, and sooner after a drink.'
-        : 'Build another Restroom, or put more toilets in the one there is, so a bursting guest finds one free. Shorter lines mean less waiting to need one.';
+        : out
+          ? `${out.fix} A second toilet means one out of action still leaves somewhere to go.`
+          : 'Build another Restroom, or put more toilets in the one there is, so a bursting guest finds one free. Shorter lines mean less waiting to need one.';
     const clean = hasStaff(ctx, 'caretaker') ? '' : ' Hire a Caretaker to clean up each one.';
     return {
       title:
         trouble === 'none'
           ? `${HARM_EXPLAIN} guests had accidents with no Restroom to use`
-          : `${HARM_EXPLAIN} guests had accidents waiting for a free toilet`,
+          : out
+            ? `${HARM_EXPLAIN} guests had accidents with no toilet working`
+            : `${HARM_EXPLAIN} guests had accidents waiting for a free toilet`,
       cost: `−${ACCIDENT_PATIENCE} patience each; ${pct(ACCIDENT_LEAVE)} go home, for −${ACCIDENT_REP} reputation; and the mess puts off everyone near it until it is cleaned up`,
       causes,
       help: fix + clean,
       about: { kind: 'guest' as const, id: g.id },
-      fix: { menu: 'rooms' as const },
+      // a Restroom out of action wants a Caretaker to put it right, if there is none, more than another room
+      ...(!out
+        ? { fix: { menu: 'rooms' as const } }
+        : !hasStaff(ctx, 'caretaker') && { fix: { hire: 'caretaker' as const } }),
     };
   });
 }

@@ -267,10 +267,15 @@ export const FIZZ_CHANCE = 0.3;
 export const PUDDLE_SLOW = 0.55;
 /**
  * How long a waiting guest holds on, bursting, before they have an accident, in seconds: with no restroom they can use
- * at all, and with one but every toilet taken, against 3.5 seconds for a visit to one.
+ * at all (none built, or none working), and with one but every toilet taken, against 3.5 seconds for a visit to one.
  */
 export const HOLD_NO_RESTROOM = 15;
 export const HOLD_TOILETS_TAKEN = 40;
+/**
+ * How long a guest holds on with every toilet taken before the advisor and the Restroom's inspector warn of them, in
+ * seconds: a toilet often comes free well before then. With no toilet working at all, they warn at once.
+ */
+export const HOLD_WARN_TAKEN = 10;
 /** The share of accidents that are a poop rather than a puddle of pee. */
 export const POOP_SHARE = 0.35;
 /** How much patience an accident costs the guest who had it, and the chance they go home there and then. */

@@ -1,7 +1,7 @@
 // Describing what people are up to, in a few words.
 
 import { ITEMS, POOR_CONDITION, ROLES, ROOMS } from '../../core/data';
-import { type ToiletTrouble, wentHomeMortified } from '../../core/sim/accidents';
+import { wentHomeMortified } from '../../core/sim/accidents';
 import { expert, slots, trained, xpToNext } from '../../core/sim/careers';
 import { missNote } from '../../core/sim/classes';
 import { roomForModality } from '../../core/sim/machines';
@@ -50,7 +50,7 @@ export function guestStatus(g: Guest, sim: Sim): string {
       return 'Arriving';
     case 'toWait':
     case 'waiting':
-      return g.held ? `${waitingStatus(g, sim)}, bursting: ${HOLDING[sim.toiletTrouble()]}` : waitingStatus(g, sim);
+      return g.held ? `${waitingStatus(g, sim)}, bursting: ${holdingWhy(sim)}` : waitingStatus(g, sim);
     case 'called':
       return `Heading to the ${where}`;
     case 'served':
@@ -95,15 +95,24 @@ export function guestStatus(g: Guest, sim: Sim): string {
   }
 }
 
-/** What a Restroom too small for the crowd says, with so many guests holding on, bursting, for a free toilet. */
-export const burstingNote = (n: number) =>
-  `Every toilet is taken, and ${n} ${n === 1 ? 'guest is' : 'guests are'} bursting. Build another Restroom, or put more toilets in this one, before someone has an accident.`;
+/**
+ * What a Restroom says while guests in a line hold on, bursting, long enough to warn of: every toilet taken, or none
+ * working, and what to do before someone has an accident.
+ */
+export function burstingNote(sim: Sim, n: number): string {
+  const who = `${n} ${n === 1 ? 'guest is' : 'guests are'} bursting`;
+  if (sim.toiletTrouble() === 'taken')
+    return `Every toilet is taken, and ${who}. Build another Restroom, or put more toilets in this one, before someone has an accident.`;
+  const { why, fix } = sim.toiletsOut();
+  return `${why.charAt(0).toUpperCase()}${why.slice(1)}, and ${who}. ${fix}`;
+}
 
 /** Why a guest bursting in a line cannot go, as their status says it. */
-const HOLDING: Readonly<Record<ToiletTrouble, string>> = {
-  none: 'there is no Restroom to use',
-  taken: 'every toilet is taken',
-};
+function holdingWhy(sim: Sim): string {
+  const trouble = sim.toiletTrouble();
+  if (trouble === 'none') return 'there is no Restroom to use';
+  return trouble === 'taken' ? 'every toilet is taken' : sim.toiletsOut().why;
+}
 
 /** What a guest in a line, or on the way to one, is waiting for. */
 function waitingStatus(g: Guest, sim: Sim): string {

@@ -169,25 +169,30 @@ export function buildPee(id: number): THREE.Group {
 
 /** Send the flies round a poop a moment in, each its own way round and bobbing as it goes, once they have come. */
 function buzz(g: THREE.Group, t: number, id: number) {
-  accidentParts(g).flies?.forEach((fly, i) => {
-    if (!fly.visible && t) return;
+  const flies = accidentParts(g).flies ?? [];
+  for (let i = 0; i < flies.length; i++) {
+    const fly = flies[i];
+    if (!fly || (!fly.visible && t)) continue;
     const a = ((t / FLY_LAP) * (i % 2 ? -1 : 1) + i / FLIES + hash(id, i)) * Math.PI * 2;
     const reach = FLY_REACH * (0.8 + 0.2 * Math.sin(t * 2.1 + i));
     fly.position.set(Math.cos(a) * reach, FLY_Y + 0.05 * Math.sin(t * 5 + i * 2), Math.sin(a) * reach);
     // facing the way it flies
     fly.rotation.y = -a + (i % 2 ? Math.PI : 0);
-  });
+  }
 }
 
 /** Glint the sparkles over a puddle a moment in: each swells and fades in turn. */
 function glint(g: THREE.Group, t: number, id: number) {
-  accidentParts(g).sparkles?.forEach((s, i) => {
+  const sparkles = accidentParts(g).sparkles ?? [];
+  for (let i = 0; i < sparkles.length; i++) {
+    const s = sparkles[i];
+    if (!s) continue;
     const f = ((((t + hash(id, i) * SPARKLE_EVERY + (i * SPARKLE_EVERY) / SPARKLES) / SPARKLE_EVERY) % 1) + 1) % 1;
     // up quickly and down slowly, held still at its fullest when the scene stands still
     const size = t === 0 && i === 0 ? 1 : Math.sin(Math.min(1, f * 1.6) * Math.PI) ** 0.7;
     s.scale.setScalar(Math.max(0.001, size));
     s.rotation.y = t * 0.8 + i;
-  });
+  }
 }
 
 /** Move what moves in an accident a moment in: the flies round a poop, the sparkles over a puddle. */
