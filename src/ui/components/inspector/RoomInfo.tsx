@@ -3,6 +3,7 @@
 import {
   DISCIPLINE_ORDER,
   DISCIPLINES,
+  EXTINGUISHER_REACH,
   ITEMS,
   machineRoom,
   MODALITIES,
@@ -16,6 +17,7 @@ import {
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
+import { NO_EXTINGUISHER_FOUND } from '../../../core/sim/fire-cover';
 import { signatureMachine, treatsHere } from '../../../core/sim/machines';
 import { tempFeel } from '../../../core/sim/warmth';
 import { unlockedUpTo } from '../../../core/state/game';
@@ -27,6 +29,7 @@ import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
 import { machinePullNote, pullNote } from '../../lib/demand';
+import { NO_EXTINGUISHER } from '../../lib/fire';
 import { FLOODED_LABEL } from '../../lib/mishaps';
 import { statusClass } from '../../lib/status';
 import { problemNote, stillWrong } from '../../lib/visits';
@@ -190,6 +193,40 @@ function Inspection({ room }: { room: Room }) {
   );
 }
 
+/**
+ * A finished room with no Fire Extinguisher near its door, nor sprinklers, found before the inspector finds it, unless
+ * the last inspection's line already says so.
+ */
+function FireCover({ room }: { room: Room }) {
+  const { sim } = useGame();
+  if (!room.done || sim.extinguisherNear(room)) return null;
+  if (stillWrong(sim.s.visitReport, room.id, sim.inspectionProblems(room)).includes(NO_EXTINGUISHER_FOUND)) return null;
+  return (
+    <p class={cx('status', 'warn', 'fire-cover')}>
+      <IconText id="item-fire-extinguisher">{NO_EXTINGUISHER}</IconText>
+    </p>
+  );
+}
+
+/** A button to take a Fire Extinguisher in hand, beside the one for sprinklers, for a room with neither. */
+function PlaceExtinguisher({ room }: { room: Room }) {
+  const hud = useHud();
+  const { sim, tools } = useGame();
+  if (!room.done || sim.extinguisherNear(room)) return null;
+  return (
+    <Button
+      class={roomButton}
+      title={`The health inspector wants one within ${EXTINGUISHER_REACH} tiles of the door. The floor shows which rooms each would cover.`}
+      onPress={() => {
+        hud.menu = null;
+        tools.startItem('fire_extinguisher');
+      }}
+    >
+      <IconText id="item-fire-extinguisher">{`Place a Fire Extinguisher (${money(ITEMS.fire_extinguisher.cost)})`}</IconText>
+    </Button>
+  );
+}
+
 /** How warm and how calm it is in the middle of a room. */
 function Comfort({ room }: { room: Room }) {
   const { sim } = useGame();
@@ -257,7 +294,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <h3>
         <IconText id={def.icon}>{roomLabels(sim.s.rooms).get(room.id) ?? def.name}</IconText>
       </h3>
-      <Flooded room={room} /> <Inspection room={room} />{' '}
+      <Flooded room={room} /> <Inspection room={room} /> <FireCover room={room} />{' '}
       {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
       {room.done && room.type === 'qigong' && <Timetable room={room} />} <BadVibes room={room} />{' '}
@@ -318,7 +355,7 @@ export function RoomInfo({ room }: { room: Room }) {
       >
         <IconText id="ui-window">Windows</IconText>
       </Button>{' '}
-      <Sprinklers room={room} />{' '}
+      <PlaceExtinguisher room={room} /> <Sprinklers room={room} />{' '}
       <Button
         class={roomButton}
         title="Build copies of this room, furniture, windows and all, wherever you click. R turns them."

@@ -11,7 +11,15 @@
 // out (geometry, hints, which tiles to color) lives in the small modules beside it.
 
 import { certificatesLeft } from '../../core/certificates';
-import { centerOf, ITEMS, type ItemType, ROOMS, type RoomType, type RugPatternId } from '../../core/data';
+import {
+  centerOf,
+  EXTINGUISHER_REACH,
+  ITEMS,
+  type ItemType,
+  ROOMS,
+  type RoomType,
+  type RugPatternId,
+} from '../../core/data';
 import { money } from '../../core/format';
 import { plotAt, plotOffers } from '../../core/land';
 import { resizeCost, roomCost, sameRect } from '../../core/resize';
@@ -19,11 +27,12 @@ import { copyCost, cornerFor, type Layout, type PlacedLayout, placeLayout, turnL
 import { canWorkIn } from '../../core/sim/assignments';
 import { finishCost } from '../../core/sim/building';
 import type { SfxName } from '../../core/sim/events';
+import { canCatchFire, type FireNote, heldCover } from '../../core/sim/fire-cover';
 import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
 import { sameSpot } from '../../core/state/game';
 import type { Item, Room, Sketch, WallSpot } from '../../core/state/types';
-import { itemCenter, onWall, type Rect, Z_CORRIDOR } from '../../core/world';
+import { itemCenter, onWall, type Placed, type Rect, Z_CORRIDOR } from '../../core/world';
 import { type Marker, OV_BAD, OV_BLUE, OV_GOOD, type OverlayTile } from '../../render/overlay-codes';
 import { nextPick, type Selection } from '../../render/picking';
 import type { View } from '../../render/view';
@@ -51,7 +60,7 @@ import {
   templateSketchHint,
   WINDOW_HINT,
 } from './hints';
-import { assignTiles, dragTiles, itemTiles, layoutTiles, rectTiles } from './overlay';
+import { assignTiles, dragTiles, fireMarks, itemTiles, layoutTiles, reachEdge, rectTiles } from './overlay';
 import { heldItem, nextRequired, placing, planStatus, quarterTurn } from './plan';
 import type { Edge } from './resize';
 import { dragEdge, edgeNear, edgeTiles } from './resize';
@@ -82,6 +91,11 @@ export class Tools {
   private noFitSaid = false;
   /** What the new item in hand would change where it is about to go, while the preview is on and it fits there. */
   preview: PlacePreview | null = null;
+  /**
+   * What the hint says of fire cover for what is in hand: what an extinguisher would cover, or whether the room being
+   * placed, or the one a machine that can catch fire is going into, has an extinguisher near its door.
+   */
+  fire: FireNote | null = null;
   /** The last preview worked out, and where for, so moving within a tile does not work it out again. */
   private lastPreview: { key: string; preview: PlacePreview } | null = null;
   /** The pattern the next rug put down will have, kept from one rug to the next. */
@@ -886,9 +900,45 @@ export class Tools {
         };
       this.preview = this.lastPreview.preview;
     }
+    if (ok) this.drawFire(placed, moving, drawing);
     // a rug being moved keeps its own pattern; a new one has the pattern picked for it
     const pattern = type === 'rug' ? (moving ? moving.pattern : this.rugPattern) : undefined;
     this.view.setGhost({ ...placed, ok, pattern });
+  }
+
+  /**
+   * Fire cover for an item about to go down. An extinguisher outlines its reach and marks every finished room's door,
+   * and every machine that can catch fire, green or red by whether the room would have one near its door with it down
+   * there, and the hint says what it would cover; a machine that can catch fire says whether its room has one.
+   */
+  private drawFire(placed: Placed, moving: Item | undefined, drawing: Drawing) {
+    const { sim } = this;
+    const world = sim.world;
+    if (placed.type === 'fire_extinguisher') {
+      const cover = sim.fireCover({ x: placed.x, y: placed.y, ...(moving && { moving: moving.id }) });
+      this.fire = { kind: 'extinguisher', ...heldCover(cover) };
+      const covered = new Map(cover.map((c) => [c.room.id, c.then]));
+      const edge = reachEdge(placed.x, placed.y, EXTINGUISHER_REACH).filter(([x, y]) => world.onMap(x, y));
+      const doors = cover.map((c) => ({ ...c.room.door, covered: c.then }));
+      const machines = sim.s.items.flatMap((it) => {
+        const home = canCatchFire(it.type) ? covered.get(world.roomOfItem(it)?.id ?? -1) : undefined;
+        return home === undefined ? [] : [{ ...it, covered: home }];
+      });
+      drawing.tiles.push(...fireMarks(edge, doors, machines));
+      return;
+    }
+    const room = canCatchFire(placed.type) ? world.roomAt(placed.x, placed.y) : undefined;
+    if (room) this.fire = { kind: 'door', covered: this.roomCovered(room), machine: true };
+  }
+
+  /** Whether a room, built or a blueprint, has sprinklers or an extinguisher near its door, or will once built. */
+  private roomCovered(room: Room, door = room.door): boolean {
+    const world = this.sim.world;
+    // one put in a blueprint works once the room is built
+    const bringing = room.done
+      ? []
+      : this.sim.s.items.filter((it) => it.type === 'fire_extinguisher' && world.roomOfItem(it)?.id === room.id);
+    return this.sim.doorCovered(door, { sprinklers: !!room.sprinklers, bringing });
   }
 
   /** Marker for the window tool on one room. */
@@ -976,6 +1026,12 @@ export class Tools {
     this.inTheWay = check.sketch;
     drawing.tiles.push(...layoutTiles(placed, check.ok));
     this.view.setDoor({ door: placed.door, tone: check.ok ? 'ok' : 'bad' });
+    // a room moved keeps its sprinklers and takes its extinguishers along; a copy brings extinguishers of its own
+    if (!pencil) {
+      const bringing = placed.items.filter((it) => it.type === 'fire_extinguisher');
+      const opts = { sprinklers: !!moving?.sprinklers, bringing, ...(moving && { leaving: moving.id }) };
+      this.fire = { kind: 'door', covered: this.sim.doorCovered(placed.door, opts), machine: false };
+    }
     return check.ok && !pencil ? world.windowsOnto(placed, moving).length : 0;
   }
 
@@ -1016,6 +1072,7 @@ export class Tools {
     this.problem = '';
     this.hint = '';
     this.preview = null;
+    this.fire = null;
     this.inTheWay = undefined;
     view.setDoor(null);
     if (t.kind === 'none') {
@@ -1092,11 +1149,16 @@ export class Tools {
         const check = world.doorValid(t.type, t.rect, door);
         this.problem = check.reason;
         view.setDoor({ door, tone: check.ok ? 'ok' : 'bad' });
+        this.fire = { kind: 'door', covered: this.sim.doorCovered(door), machine: false };
       }
     } else {
       const sub = t.sub;
       const placed = !sub && this.sim.s.items.some((it) => world.roomOfItem(it)?.id === t.room.id);
       this.hint = planHint(sub, this.sim.missingItems(t.room).length, placed);
+      // with empty hands, whether the room's door has an extinguisher near; moving the door, the spot under the cursor
+      const spot = sub?.kind === 'door' ? this.wallSpot(t.room) : null;
+      if (!sub || spot)
+        this.fire = { kind: 'door', covered: this.roomCovered(t.room, spot ?? t.room.door), machine: false };
       if (!sub) view.setGhost(null);
       else if (sub.kind === 'item') this.drawItem(sub, sub.required ? t.room.id : undefined, drawing);
       // a piece being moved is shown as a built item being moved is, with the squares it would cover and be used from
@@ -1108,6 +1170,7 @@ export class Tools {
       // something has just gone down under the pointer: the next keeps out of the way rather than sit red on top of it
       this.problem = '';
       this.preview = null;
+      this.fire = null;
       view.setGhost(null);
       view.setDoor(null);
       drawing.tiles = [];

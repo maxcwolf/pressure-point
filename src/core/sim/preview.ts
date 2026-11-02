@@ -17,6 +17,8 @@ const CALM_CHANGE = 0.02;
 export interface PlacePreview {
   /** Where it would go. */
   placed: Placed;
+  /** The item being moved, if it is one already down rather than a new one. */
+  moving?: number;
   /** The tile in the middle of it, where "here" is. */
   x: number;
   y: number;
@@ -157,5 +159,5 @@ export function previewMove(ctx: SimContext, it: Item, placed: Placed): PlacePre
           ? { id: from.id, before: prestige(ctx, from), after: prestige(ctx, from, -gives.decor) }
           : null;
 
-  return { placed, ...middle(placed), ...spread, room, resting, ...tablesHeard(ctx, spread.noise) };
+  return { placed, moving: it.id, ...middle(placed), ...spread, room, resting, ...tablesHeard(ctx, spread.noise) };
 }

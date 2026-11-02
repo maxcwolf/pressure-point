@@ -132,6 +132,14 @@ import {
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
+import {
+  doorCovered,
+  type DoorCoverOptions,
+  extinguisherSpots,
+  fireCover,
+  type HeldExtinguisher,
+  type RoomCover,
+} from './fire-cover';
 import { flurrying } from './flurries';
 import { endow, foundationOpen, giftBlocker, nextGift } from './foundation';
 import { objectiveDetail } from './goals';
@@ -527,6 +535,18 @@ export class Sim {
   previewMove(it: Item, placed: Placed): PlacePreview {
     this.refreshAmbience();
     return previewMove(this.ctx, it, placed);
+  }
+  /** Every finished room's fire cover, now and with an extinguisher in hand put down where it is held, if one is. */
+  fireCover(held?: HeldExtinguisher): RoomCover[] {
+    return fireCover(this.ctx, held);
+  }
+  /** Where every working Fire Extinguisher stands, with one in hand counted where it is held, if one is. */
+  extinguisherSpots(held?: HeldExtinguisher): { x: number; y: number }[] {
+    return extinguisherSpots(this.ctx, held);
+  }
+  /** Whether a door being placed would have sprinklers or a Fire Extinguisher near it. */
+  doorCovered(door: { x: number; y: number }, opts?: DoorCoverOptions): boolean {
+    return doorCovered(this.ctx, door, opts);
   }
   /** How noisy it is at an item, such as a treatment table. */
   itemNoise(it: Item): number {

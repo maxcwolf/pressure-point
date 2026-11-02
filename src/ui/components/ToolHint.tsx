@@ -6,6 +6,7 @@ import type { IconId } from '../../core/data';
 import { css } from '../../styled-system/css';
 import { useGame } from '../hooks/use-hud';
 import { cx } from '../lib/cx';
+import { fireEffects } from '../lib/fire';
 import { type HintChip, hintChips } from '../lib/hint-chips';
 import { placeEffects } from '../lib/item-stats';
 import { IconText } from './common/Icon';
@@ -166,7 +167,8 @@ function Chip({ chip, icon }: { chip: HintChip; icon: IconId | null }) {
 /** The hint for the tool in hand, what an item in hand would change, and a new rug's patterns to choose from. */
 export function ToolHint() {
   const { sim, tools } = useGame();
-  const effects = tools.preview ? placeEffects(sim, tools.preview) : [];
+  // what an item in hand would change, then what it or a room being placed means for fire cover
+  const effects = [...(tools.preview ? placeEffects(sim, tools.preview) : []), ...fireEffects(sim.s.rooms, tools.fire)];
   const icon = toolIcon(tools.tool);
   return (
     <div id="hint" class={column}>

@@ -62,6 +62,7 @@ interface Handle {
         | { kind: 'plot'; id: string }
         | null,
     ): void;
+    startItem(type: string): void;
     startResize(roomId: number): void;
     startExpand(pointed?: string | null): void;
     pointerDown(clientX: number, clientY: number): void;

@@ -18,6 +18,7 @@ import {
 } from '../../core/data';
 import { money } from '../../core/format';
 import type { Subject } from '../../core/sim/events';
+import { NO_EXTINGUISHER_FOUND } from '../../core/sim/fire-cover';
 import { MUSHROOMS_FOUND } from '../../core/sim/mushrooms';
 import { refusedFine } from '../../core/sim/visits';
 import type { GameState, RoomVerdict, Visitor, VisitReport } from '../../core/state/types';
@@ -92,7 +93,7 @@ const PROBLEMS: Readonly<Record<string, { what: string; fix: string }>> = {
     what: 'Broken equipment',
     fix: 'Caretakers repair equipment as it wears: hire another, so nothing is left to break.',
   },
-  'no Fire Extinguisher nearby': {
+  [NO_EXTINGUISHER_FOUND]: {
     what: 'No Fire Extinguisher near the door',
     fix: `Place a Fire Extinguisher within ${EXTINGUISHER_REACH} tiles of the door, or fit the room with sprinklers.`,
   },

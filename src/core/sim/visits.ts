@@ -13,7 +13,6 @@ import {
   bribeOffers,
   centerOf,
   DIRT_FILTHY,
-  EXTINGUISHER_REACH,
   IDEAL_TEMP,
   INSPECTION_ALLOWED,
   INSPECTION_CLEAN_REP,
@@ -46,7 +45,6 @@ import { randomLook, randomName, rollSex, sexOfName } from '../people';
 import { irnd, pick, random } from '../random';
 import type {
   GameState,
-  Item,
   JudgeKind,
   Room,
   RoomVerdict,
@@ -63,6 +61,7 @@ import { newChar, say, streetTile } from './chars';
 import type { SimContext } from './context';
 import { changeRep, earn, spend } from './economy';
 import { emit, tipOnce, toast } from './events';
+import { extinguisherReaches, NO_EXTINGUISHER_FOUND } from './fire-cover';
 import { goTo, moveAlong } from './movement';
 import { counterVerdict, inspectorComing, inspectorGone, MUSHROOMS_FOUND } from './mushrooms';
 import { noiseAt } from './noise';
@@ -163,14 +162,7 @@ export function vipNote(scores: AspectScores, cares: Aspect, vibes: number, temp
  * the inspector, and for a Caretaker to put a fire out there quickly.
  */
 export function extinguisherNear(ctx: SimContext, room: Room): boolean {
-  if (room.sprinklers) return true;
-  const { x, y } = room.door;
-  return ctx.s.items.some(
-    (it: Item) =>
-      it.type === 'fire_extinguisher' &&
-      ctx.world.usable(it, true) &&
-      Math.max(Math.abs(it.x - x), Math.abs(it.y - y)) <= EXTINGUISHER_REACH,
-  );
+  return !!room.sprinklers || extinguisherReaches(ctx, room.door);
 }
 
 /** What the inspector finds wrong in a room. */
@@ -179,7 +171,7 @@ export function inspectionProblems(ctx: SimContext, room: Room): string[] {
   const problems: string[] = [];
   if (items.some((it) => it.dirt >= DIRT_FILTHY) || litterIn(ctx, room) > 0) problems.push('dirty');
   if (items.some((it) => it.wear >= 100)) problems.push('broken equipment');
-  if (!extinguisherNear(ctx, room)) problems.push('no Fire Extinguisher nearby');
+  if (!extinguisherNear(ctx, room)) problems.push(NO_EXTINGUISHER_FOUND);
   return problems;
 }
 

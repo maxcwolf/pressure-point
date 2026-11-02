@@ -224,6 +224,7 @@ export const ICON_IDS = [
   'overlay-condition',
   'overlay-decor',
   'overlay-energy',
+  'overlay-fire',
   'overlay-needs',
   'overlay-patience',
   'overlay-plans',

@@ -1,9 +1,19 @@
 // What the floor shows while something is in hand: the overlay an item's purchase shows comes up again while it is
-// moved, and an item put in hand by a lesson's button shows its overlay from the start.
+// moved, and an item put in hand by a lesson's button shows its overlay from the start. And fire cover: which rooms a
+// Fire Extinguisher in hand would cover, which have none, and whether a door or a machine that can catch fire has one.
+import type { Page } from '@playwright/test';
+
 import { expect, type Game, test } from './fixtures';
 
 /** What the floor is colored by: an overlay, the land, or nothing. */
 const floorShown = (game: Game) => game.eval((pp) => pp.floorShown);
+
+/** Hold the mouse over the middle of a tile. */
+async function hoverTile(game: Game, page: Page, x: number, y: number) {
+  const p = await game.eval((pp, [x, y]) => pp.view.project(x + 0.5, y + 0.5, 0), [x, y] as const);
+  await page.mouse.move(p.x, p.y, { steps: 4 });
+  return p;
+}
 
 test.describe('the overlay of an item in hand', () => {
   test('shows while a built item is moved, as when it was bought, and goes once it is down or put away', async ({
@@ -79,5 +89,82 @@ test.describe('the overlay of an item in hand', () => {
     await game.hoverHeld();
     await expect.poll(() => floorShown(game)).toBe('temperature');
     await expect(page.locator('#hint')).toContainText('°F here');
+  });
+});
+
+test.describe('fire cover', () => {
+  test('a room with no Fire Extinguisher near its door says so, and one in hand says which rooms it would cover', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    const inspector = page.locator('#inspector');
+    await game.clickRoom('massage');
+    await expect(inspector.locator('.fire-cover')).toContainText('No Fire Extinguisher within 10 tiles of the door');
+    await inspector.getByRole('button', { name: /Place a Fire Extinguisher/ }).click();
+    const hint = page.locator('#hint');
+    // in the corridor below the Massage Suite, it reaches every door
+    await hoverTile(game, page, 13, 10);
+    await expect.poll(() => floorShown(game)).toBe('fire');
+    await expect(hint).toContainText('Covers the Consultation Room, the Massage Suite and the Training Room');
+    await expect(hint).toContainText('Every room has one near its door');
+    // further along, only the Massage Suite's
+    const far = await hoverTile(game, page, 22, 10);
+    await expect(hint).toContainText('Covers the Massage Suite');
+    await expect(hint).toContainText('2 rooms still with none');
+    await page.mouse.click(far.x, far.y);
+    await page.keyboard.press('Escape');
+    await expect.poll(() => floorShown(game)).toBeNull();
+    await game.clickRoom('massage');
+    await expect(inspector.locator('.fire-cover')).toHaveCount(0);
+    await expect(inspector.getByRole('button', { name: /Place a Fire Extinguisher/ })).toHaveCount(0);
+    await game.clickRoom('consult');
+    await expect(inspector.locator('.fire-cover')).toContainText('No Fire Extinguisher within 10 tiles of the door');
+
+    // the overlay shows the same with nothing in hand
+    await page.keyboard.press('Escape');
+    await page.locator('#sys').locator('[data-tip^="Overlays"]').click();
+    await page
+      .locator('#overlay-picker')
+      .getByRole('button', { name: /Fire safety/ })
+      .click();
+    await expect(page.locator('#overlay-key')).toContainText('Needs one');
+    await expect(page.locator('#overlay-key')).toContainText('Covered');
+    await expect.poll(() => floorShown(game)).toBe('fire');
+    expect(game.errors).toEqual([]);
+  });
+
+  test('a door being placed, or a machine that can catch fire, says whether an extinguisher is near', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    const hint = page.locator('#hint');
+    await game.menu('Rooms');
+    await game.card('Massage Suite').click();
+    await game.dragOutRoom(4, 4);
+    const door = await game.hoverWall('south');
+    await expect(hint).toContainText('No Fire Extinguisher near the door: the health inspector fines that');
+    await game.clickWall('south');
+    // a Hot Stone Kiln in the blueprint, whose door has none near it
+    await game.eval((pp) => pp.tools.startItem('stone_kiln'));
+    await game.hoverHeld({ inRoom: true });
+    await expect(hint).toContainText('No Fire Extinguisher near the door: a fire here would spread');
+    // one put down just outside the door
+    await game.eval(
+      (pp, d) => {
+        for (let i = 2; i < 8; i++)
+          if (pp.sim.placeItem('fire_extinguisher', d.x + d.dx * i, d.y + d.dy * i, 0)) return;
+        throw new Error('nowhere for the extinguisher');
+      },
+      { x: door.x, y: door.y, dx: door.dx, dy: door.dy },
+    );
+    await page.mouse.move(5, 5);
+    await game.hoverHeld({ inRoom: true });
+    await expect(hint).toContainText('Fire Extinguisher near the door');
+    await expect(hint).not.toContainText('No Fire Extinguisher');
+    expect(game.errors).toEqual([]);
   });
 });
