@@ -2,7 +2,14 @@
 // what to do about it and what the next will cost. And what the interface says about it.
 import { describe, expect, it } from 'vitest';
 
-import { bribeOffers, EXTINGUISHER_REACH, INSPECTION_FINE, MUSHROOM_FINE } from '../../src/core/data';
+import {
+  BRIBE_RECHECK_DAYS,
+  bribeOffers,
+  EXTINGUISHER_REACH,
+  INSPECTION_FINE,
+  MUSHROOM_FINE,
+} from '../../src/core/data';
+import { setSeed } from '../../src/core/random';
 import { createContext } from '../../src/core/sim/context';
 import { MUSHROOMS_FOUND } from '../../src/core/sim/mushrooms';
 import { finishVisit, inspectionProblems } from '../../src/core/sim/visits';
@@ -63,6 +70,10 @@ describe('the first failed inspection', () => {
     expect(r.bribes, 'nothing to settle').toBeUndefined();
     expect(s.inspectionWarned).toBe(true);
     expect(s.ledger.fines).toBe(0);
+    // the warning opens again after a reload until the player has closed it
+    expect(r.unread).toBe(true);
+    expect(pendingDialog(s)).toBe('visit');
+    sim.readVisitReport();
     expect(pendingDialog(s)).toBeNull();
     const events = sim.drain();
     expect(
@@ -102,6 +113,32 @@ describe('the first failed inspection', () => {
     const c = inspectorDue(4);
     expect(inspect(c, [seen(c.massage.id, 'dirty')]).outcome).toBe('passed');
     expect(c.s.inspectionWarned).toBe(false);
+  });
+});
+
+describe('an offer turned down', () => {
+  it('brings the inspector back within the days promised, a VIP due meanwhile or not', () => {
+    for (const vip of [false, true]) {
+      let walked = false;
+      for (let seed = 1; seed <= 12 && !walked; seed++) {
+        const c = inspectorDue(seed);
+        const { s, sim } = c;
+        s.inspectionWarned = true;
+        const r = inspect(c, [seen(c.massage.id, 'dirty', 'broken equipment')]);
+        setSeed(seed, s);
+        expect(sim.settleInspection(0)).toBe(true);
+        if (r.refused === undefined) continue;
+        walked = true;
+        const day = s.day;
+        if (vip) {
+          s.stars = 1;
+          s.nextVip = day + 22;
+        }
+        runUntil(sim, () => s.visitNotice?.visit === 'inspector', 40 * 6);
+        expect(s.visitNotice!.arrives).toBeLessThanOrEqual(day + BRIBE_RECHECK_DAYS);
+      }
+      expect(walked, 'an offer turned down among the seeds').toBe(true);
+    }
   });
 });
 
@@ -153,10 +190,12 @@ describe('what the report says about a failed inspection', () => {
       'Failed, with 2 things wrong. This time it is only a warning: no fine, and no hit to reputation.',
     );
     expect(warningNote(r)).toBe(
-      'Put right what is listed before the inspector calls again. The next inspection failed will be fined $800 for each thing wrong and cost 3% reputation: this one would have been $1,600.',
+      'Put right what is listed before the inspector calls again. The next inspection failed will be fined $800 for each thing wrong and cost 3% reputation: this one would have cost $1,600 and 3%.',
     );
     const busted = report({ rooms: [seen(0, MUSHROOMS_FOUND)], waived: 6800 });
-    expect(warningNote(busted)).toMatch(/\$800 for each thing wrong, \$6,000 more for magic mushrooms, and cost/);
+    expect(warningNote(busted)).toMatch(
+      /\$800 for each thing wrong, \$6,000 more for magic mushrooms, and cost 8% reputation: this one would have cost \$6,800 and 8%\.$/,
+    );
     expect(inspectionRule()).toBe(
       'The inspector checks up to 6 rooms, chosen at random, and lets one thing go: any more fails the inspection.',
     );
@@ -187,6 +226,9 @@ describe('what the report says about a failed inspection', () => {
     const r = report({ rooms: [seen(c.massage.id, 'dirty', 'no Fire Extinguisher nearby')] });
     expect(stillWrong(r, c.massage.id, ['no Fire Extinguisher nearby'])).toEqual(['no Fire Extinguisher nearby']);
     expect(stillWrong(r, c.massage.id, []), 'all put right').toEqual([]);
+    for (const outcome of ['failed', 'paid off'] as const)
+      expect(stillWrong({ ...r, outcome }, c.massage.id, ['dirty'])).toEqual(['dirty']);
+    expect(stillWrong({ ...r, outcome: 'passed' }, c.massage.id, ['dirty']), 'one thing let go').toEqual([]);
     expect(stillWrong(r, c.consult.id, ['dirty']), 'not a room it failed').toEqual([]);
     expect(stillWrong({ ...r, visit: 'vip' }, c.massage.id, ['dirty'])).toEqual([]);
     expect(stillWrong(null, c.massage.id, ['dirty'])).toEqual([]);

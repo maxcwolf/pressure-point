@@ -508,6 +508,8 @@ export interface VisitReport {
   refused?: number;
   /** For a warning: the fine let go. */
   waived?: number;
+  /** For a warning: there until the player has closed its report, so it opens again after a reload until then. */
+  unread?: true;
 }
 
 export type Char = Staff | Guest | Visitor;

@@ -3045,6 +3045,8 @@ test.describe('the first failed inspection', () => {
     expect(await game.eval((pp) => [pp.state.ledger.fines, pp.state.inspectionWarned])).toEqual([0, true]);
     await modal.getByRole('button', { name: 'Show me' }).first().click();
     await expect(modal.locator('h2')).toHaveCount(0);
+    // closed, so it no longer opens again after a reload
+    expect(await game.eval((pp) => pp.state.visitReport?.unread)).toBeUndefined();
     await expect(page.locator('#inspector')).toContainText('Failed inspection: No Fire Extinguisher near the door.');
     expect(game.errors).toEqual([]);
   });

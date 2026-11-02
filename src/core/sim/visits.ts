@@ -347,7 +347,9 @@ export function updateVisits(ctx: SimContext) {
     return;
   }
   if (s.day >= s.nextInspection) writeAhead(ctx, 'inspector');
-  else if (s.stars >= 1 && s.day >= s.nextVip) writeAhead(ctx, 'vip');
+  // a VIP waits for an inspector about to write, rather than hold them up
+  else if (s.stars >= 1 && s.day >= s.nextVip && s.nextInspection > s.day + VISIT_NOTICE_DAYS + 1)
+    writeAhead(ctx, 'vip');
 }
 
 /** Send a visitor to the next room on their tour that they can reach, or out if there is none. False if stuck. */
@@ -448,7 +450,7 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
   s.visitReport = { visit: v.visit, name: v.name, title: v.title, day: s.day, rooms: v.seen, ...result };
   if (warned) {
     s.inspectionWarned = true;
-    Object.assign(s.visitReport, { outcome: 'warned', money: 0, rep: 0, waived: -result.money });
+    Object.assign(s.visitReport, { outcome: 'warned', money: 0, rep: 0, waived: -result.money, unread: true });
   } else if (failed) s.visitReport.bribes = bribeOffers(-result.money);
   // caught with the mushrooms out, whether or not it is made to go away
   if (failed && v.seen.some((r) => r.problems.includes(MUSHROOMS_FOUND))) s.stats.busted++;
@@ -504,7 +506,8 @@ export function settleInspection(ctx: SimContext, offer?: number): boolean {
   r.rep -= BRIBE_REP;
   spend(ctx, -r.money, 'fines');
   changeRep(ctx, r.rep);
-  s.nextInspection = Math.min(s.nextInspection, s.day + BRIBE_RECHECK_DAYS);
+  // they write ahead in time to arrive within the days promised, with a day to spare for the hour they write at
+  s.nextInspection = Math.min(s.nextInspection, s.day + BRIBE_RECHECK_DAYS - VISIT_NOTICE_DAYS - 1);
   emit(ctx, { type: 'sfx', name: 'fail' });
   toast(
     ctx,

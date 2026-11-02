@@ -1100,6 +1100,11 @@ export class Sim {
     return extinguisherNear(this.ctx, room);
   }
 
+  /** The player has closed the last visit's report: a warning no longer opens again after a reload. */
+  readVisitReport() {
+    if (this.s.visitReport) delete this.s.visitReport.unread;
+  }
+
   /** What the health inspector would find wrong in a room now. */
   inspectionProblems(room: Room): string[] {
     return inspectionProblems(this.ctx, room);

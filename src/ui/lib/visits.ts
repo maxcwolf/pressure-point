@@ -12,6 +12,7 @@ import {
   INSPECTION_REP,
   INSPECTOR_ROOMS,
   MUSHROOM_FINE,
+  MUSHROOM_REP,
   VIP_DELIGHTED,
   VIP_DISAPPOINTED,
 } from '../../core/data';
@@ -65,10 +66,10 @@ export const inspectionRule = () =>
  * would have.
  */
 export function warningNote(r: VisitReport): string {
-  const mushrooms = r.rooms.some((v) => v.problems.includes(MUSHROOMS_FOUND))
-    ? `, ${money(MUSHROOM_FINE)} more for magic mushrooms,`
-    : '';
-  return `Put right what is listed before the inspector calls again. The next inspection failed will be fined ${money(INSPECTION_FINE)} for each thing wrong${mushrooms} and cost ${INSPECTION_REP}% reputation: this one would have been ${money(r.waived ?? 0)}.`;
+  const found = r.rooms.some((v) => v.problems.includes(MUSHROOMS_FOUND));
+  const mushrooms = found ? `, ${money(MUSHROOM_FINE)} more for magic mushrooms,` : '';
+  const rep = INSPECTION_REP + (found ? MUSHROOM_REP : 0);
+  return `Put right what is listed before the inspector calls again. The next inspection failed will be fined ${money(INSPECTION_FINE)} for each thing wrong${mushrooms} and cost ${rep}% reputation: this one would have cost ${money(r.waived ?? 0)} and ${rep}%.`;
 }
 
 /** What an offer to make a failed inspection go away reads as on its button: how much, and the chance it is taken. */
@@ -116,9 +117,15 @@ export function problemSpot(s: GameState, v: RoomVerdict): Subject | null {
   return s.rooms.some((r) => r.id === v.room) ? { kind: 'room', id: v.room } : null;
 }
 
-/** What the last inspection found wrong in a room that still is, of what the inspector would find there now. */
+/** The outcomes of an inspection that failed, however it was settled. */
+const FAILED: ReadonlySet<VisitReport['outcome']> = new Set(['failed', 'warned', 'paid off']);
+
+/**
+ * What the last inspection found wrong in a room that still is, of what the inspector would find there now: only if it
+ * failed, as one passed with a thing or two to put right is no failure.
+ */
 export function stillWrong(r: VisitReport | null, room: number, now: readonly string[]): string[] {
-  if (r?.visit !== 'inspector') return [];
+  if (r?.visit !== 'inspector' || !FAILED.has(r.outcome)) return [];
   return r.rooms.find((v) => v.room === room)?.problems.filter((p) => now.includes(p)) ?? [];
 }
 

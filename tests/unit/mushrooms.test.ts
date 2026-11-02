@@ -11,6 +11,7 @@ import {
   INSPECTION_REP,
   MUSHROOM_FINE,
   MUSHROOM_REP,
+  VISIT_NOTICE_DAYS,
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import type { SimContext } from '../../src/core/sim/context';
@@ -225,7 +226,8 @@ describe('paying off the inspector', () => {
       expect(s.money, 'the offer kept, the bigger fine paid').toBe(money - 10500);
       expect(s.reputation).toBeLessThan(rep);
       expect(s.ledger.fines).toBe(10500);
-      expect(s.nextInspection).toBeLessThanOrEqual(s.day + BRIBE_RECHECK_DAYS);
+      // they write ahead in time to arrive within the days promised (inspections.test.ts walks it)
+      expect(s.nextInspection + VISIT_NOTICE_DAYS).toBeLessThanOrEqual(s.day + BRIBE_RECHECK_DAYS);
       expect(reportSummary(r)).toBe(
         `Failed, with 2 things wrong, and the $1,700 offered was turned down: a $10,500 fine. -${8 + BRIBE_REP}% reputation.`,
       );
