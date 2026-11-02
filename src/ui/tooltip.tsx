@@ -6,8 +6,11 @@ import { loadDisplay } from '../storage/display';
 import { css } from '../styled-system/css';
 import { Icon } from './components/common/Icon';
 
-/** The tooltip: a navy bubble with a point toward what it explains, a gold heading and keys drawn as keys. */
-const bubble = css({
+/**
+ * The tooltip: a navy bubble with a point toward what it explains, a gold heading and keys drawn as keys. The line
+ * shown over a room (`RoomTip.tsx`) builds on it too.
+ */
+export const bubbleLook = css.raw({
   position: 'fixed',
   left: '0',
   top: '0',
@@ -72,6 +75,7 @@ const bubble = css({
   // an icon in the navy bubble sits on a cream chip, or its navy outline would vanish
   '& .icon': { bg: 'bg.panel', borderRadius: '6', p: '1' },
 });
+const bubble = css(bubbleLook);
 
 /** How long the pointer rests on something before its tooltip shows. */
 const DELAY = 380;
@@ -105,6 +109,33 @@ export function parseTip(text: string): { heading: string; body: string; keys: s
     body = words.charAt(0).toUpperCase() + words.slice(1);
   }
   return { heading, body, keys };
+}
+
+/** Where on screen a tooltip points: the box round what it explains, in the window's pixels. */
+export interface TipAnchor {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * Put a tooltip above what it explains, or below where there is no room above, kept in the window and its point toward
+ * the middle of it. Its place is worked out in the window's pixels and given in its own, which its size (`scale`, the
+ * interface's over the game) multiplies.
+ */
+export function placeBubble(tip: HTMLElement, r: TipAnchor, scale: number) {
+  const { width: w, height: h } = tip.getBoundingClientRect();
+  const below = r.top - GAP - h < MARGIN;
+  const mid = (r.left + r.right) / 2;
+  const x = Math.min(Math.max(mid - w / 2, MARGIN), innerWidth - MARGIN - w);
+  const y = below ? Math.min(r.bottom + GAP, innerHeight - MARGIN - h) : r.top - GAP - h;
+  tip.classList.toggle('below', below);
+  tip.style.transform = `translate(${Math.round(x / scale)}px, ${Math.round(y / scale)}px)`;
+  tip.style.setProperty(
+    '--arrow-x',
+    `${Math.round(Math.min(Math.max(mid - x, 14 * scale), w - 14 * scale) / scale)}px`,
+  );
 }
 
 /** Draws a tooltip richer than words, from the value after its kind in `data-tip-rich="kind:value"`. */
@@ -207,22 +238,10 @@ export function installTooltips() {
       tip.classList.toggle('rich', !!rich);
       render(rich ?? <Tip text={target.dataset.tip} />, tip);
     }
-    // over the game, drawn at the interface's size like what it explains; its place is worked out in the window's pixels
-    // and given in its own, which the size multiplies
+    // over the game, drawn at the interface's size like what it explains
     const scale = target.closest('#ui') ? loadDisplay().uiScale : 1;
     tip.style.setProperty('--ui-scale', String(scale));
-    const r = target.getBoundingClientRect();
-    const { width: w, height: h } = tip.getBoundingClientRect();
-    const below = r.top - GAP - h < MARGIN;
-    const centre = r.left + r.width / 2;
-    const x = Math.min(Math.max(centre - w / 2, MARGIN), innerWidth - MARGIN - w);
-    const y = below ? Math.min(r.bottom + GAP, innerHeight - MARGIN - h) : r.top - GAP - h;
-    tip.classList.toggle('below', below);
-    tip.style.transform = `translate(${Math.round(x / scale)}px, ${Math.round(y / scale)}px)`;
-    tip.style.setProperty(
-      '--arrow-x',
-      `${Math.round(Math.min(Math.max(centre - x, 14 * scale), w - 14 * scale) / scale)}px`,
-    );
+    placeBubble(tip, target.getBoundingClientRect(), scale);
     frame = requestAnimationFrame(place);
   };
 

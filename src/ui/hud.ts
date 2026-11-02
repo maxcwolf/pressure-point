@@ -120,6 +120,11 @@ export class HudState {
   moneyTab: MoneyTab = 'books';
   /** The plot of land the pointer is over in the Land tab, shown brighter on the ground. */
   landPointedAt: string | null = null;
+  /**
+   * The finished room the pointer rests on over the scene, whose line the tooltip over it shows (`RoomTip.tsx`); 0 for
+   * none, and while a button is held or a tool is in hand. Kept up to date by the pointer (`app/pointer.ts`).
+   */
+  pointedRoom = 0;
   /** The plot of land asked about in the dialog to buy it. */
   plotAsked: string | null = null;
   /** The member of staff asked about in the dialog to let them go. */

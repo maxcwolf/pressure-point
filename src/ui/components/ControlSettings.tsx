@@ -1,4 +1,5 @@
-// The controls in the settings: edge scrolling, pausing while placing, how often to autosave, and which key does what.
+// The controls in the settings: edge scrolling, pausing while placing, the queue on hover, how often to autosave, and
+// which key does what.
 
 import { useLayoutEffect, useState } from 'preact/hooks';
 
@@ -50,7 +51,10 @@ export interface ControlSettingsProps {
   onChange: () => void;
 }
 
-/** Edge scrolling, pausing while placing, the autosave interval, and a key for each action, any of which can be set to another. */
+/**
+ * Edge scrolling, pausing while placing, the queue on hover, the autosave interval, and a key for each action, any of
+ * which can be set to another.
+ */
 export function ControlSettings({ onChange }: ControlSettingsProps) {
   const redraw = useRedraw();
   const prefs = loadControls();
@@ -104,6 +108,15 @@ export function ControlSettings({ onChange }: ControlSettingsProps) {
           on={prefs.pauseToPlace}
           onToggle={() => {
             change({ ...prefs, pauseToPlace: !prefs.pauseToPlace });
+          }}
+        />
+        <SettingRow
+          icon="ui-guests"
+          name="Queue on hover"
+          desc="Rest the mouse on a room to see who is being seen there and who is waiting."
+          on={prefs.queueTip}
+          onToggle={() => {
+            change({ ...prefs, queueTip: !prefs.queueTip });
           }}
         />
         <li>

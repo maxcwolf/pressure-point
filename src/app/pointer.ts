@@ -30,6 +30,8 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
   /** The frame and the timer waiting to look at what is under the pointer, if any. */
   let frame = 0;
   let recheck = 0;
+  /** A room clicked, whose tooltip stays away until the pointer leaves it, as a control's does. */
+  let dismissed = 0;
 
   /** What a click at a point would select, or with a tool in hand, the piece of a blueprint's furniture it would pick up. */
   const clickable = (x: number, y: number): Selection | null => {
@@ -37,10 +39,17 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
     const piece = tools.pieceAt(x, y);
     return piece ? { kind: 'item', id: piece.id } : null;
   };
+  /** The finished room on the floor under a point, or 0. */
+  const roomAt = (x: number, y: number): number => {
+    const g = view.groundAt(x, y);
+    const room = g && ui.host.sim.world.roomAt(Math.floor(g.x), Math.floor(g.y));
+    return room?.done ? room.id : 0;
+  };
   /**
    * Show what a click would select under the pointer, and a hand for the pointer if anything: nothing while a button is
    * held or once the pointer has left the canvas, and with a tool in hand, which draws its own preview, only a piece of
-   * an open blueprint's furniture that a click would pick up to move.
+   * an open blueprint's furniture that a click would pick up to move. Note the room under it for its tooltip, with no
+   * tool in hand.
    */
   const hover = () => {
     frame = 0;
@@ -49,6 +58,10 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
     const sel = at ? clickable(at.x, at.y) : null;
     view.overlays.hovered = sel;
     canvas.style.cursor = sel ? 'pointer' : '';
+    const room = at && !tools.active ? roomAt(at.x, at.y) : 0;
+    // a press is not the pointer leaving, so a room clicked stays dismissed until the pointer is over another or none
+    if (room !== dismissed && (room || !down)) dismissed = 0;
+    ui.pointedRoom = room === dismissed ? 0 : room;
     if (over) recheck = window.setTimeout(hoverSoon, HOVER_RECHECK_MS);
   };
   /** Look at what is under the pointer on the next frame, once however often it moves before then. */
@@ -64,6 +77,7 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
     audio.unlock();
     canvas.setPointerCapture(e.pointerId);
     down = { x: e.clientX, y: e.clientY, button: e.button, moved: false, at: performance.now() };
+    dismissed = ui.pointedRoom;
     last = { x: e.clientX, y: e.clientY };
     if (e.button === 0) {
       ui.closeMenu();
