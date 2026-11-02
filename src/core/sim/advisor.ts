@@ -27,11 +27,12 @@ import { an, article, listed, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { featureOn, offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
+import { roomLabels } from './assignments';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
 import { roomFor } from './careers';
 import type { SimContext } from './context';
-import { capacity, demand, machineDemand, unfedStations } from './demand';
+import { capacity, demand, machineDemand, specialtyGaps, unfedStations } from './demand';
 import {
   cashflow,
   countdownLever,
@@ -228,6 +229,8 @@ function nudge(ctx: SimContext): string | Advice {
   if (payday) return alarm(payday);
   const gap = modalityAdvice(ctx);
   if (gap) return gap;
+  const posted = postingAdvice(ctx);
+  if (posted) return posted;
   for (const it of s.items) {
     const st = ITEMS[it.type].station;
     if (!st?.staff || !ctx.world.usable(it)) continue;
@@ -549,7 +552,7 @@ export function untrainedAdvice(ctx: SimContext): string {
     s.staff.some((st) => st.training?.course === m || (st.state !== 'leaving' && st.quals.includes(m)));
   for (const row of demand(ctx)) {
     const wanted = row.untrained.filter((m) => !coming(m));
-    if (!row.trained || !wanted.length) continue;
+    if (!row.offered || !wanted.length) continue;
     const them = wanted.length === 1 ? 'it' : 'them';
     const why = `Guests needing ${listed(wanted.map(modalityLabel))} stay away while nobody here is trained in ${them}.`;
     return trainingTip(ctx, row.discipline, wanted, why);
@@ -577,6 +580,21 @@ function trainingTip(ctx: SimContext, d: Discipline, wanted: Modality[], why: st
   return hasRoom(ctx, 'training')
     ? `${why} ${send.charAt(0).toUpperCase()}${send.slice(1)} to bring them in.`
     : `${why} Build a Training Room and ${send} to bring them in.`;
+}
+
+/**
+ * Nudge about a specialty item whose guests come to a room where nobody working is trained to use it, while someone at
+ * work elsewhere is: assign them there. With nobody trained at all, the nudge about guests needing it says so.
+ */
+export function postingAdvice(ctx: SimContext): string | Advice {
+  const gap = specialtyGaps(ctx).find((g) => g.trained.length);
+  const who = gap?.trained[0];
+  if (!gap || !who) return '';
+  const room = roomLabels(ctx.s.rooms).get(gap.room.id) ?? ROOMS[gap.room.type].name;
+  return {
+    text: `${modalityLabel(gap.modality)} guests come for the ${ITEMS[gap.item].name} in the ${room}, but nobody working there is trained in it. ${who.name} is: assign them to that room from their inspector.`,
+    about: { kind: 'staff', id: who.id },
+  };
 }
 
 /** Nudge about modalities guests are waiting for that the center cannot deliver. */

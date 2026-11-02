@@ -112,7 +112,7 @@ function Row({ row, healed }: { row: DisciplineDemand; healed: number }) {
           bar={row.following}
         />
         <Factor name="Finest room" value={roomWord(row)} by={row.room.pull} />
-        <Factor name="Trained for" value={trainingWord(row)} by={row.training} />
+        <Factor name="On offer" value={trainingWord(row)} by={row.training} />
         {Math.abs(row.flavour - 1) > 0.02 && <Factor name="Local favourites" value="This center" by={row.flavour} />}
         <Factor name="Line" value={lineWord(row)} by={row.line.factor} />
       </div>

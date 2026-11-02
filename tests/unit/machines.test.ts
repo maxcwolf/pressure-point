@@ -124,15 +124,15 @@ describe('a machine room and the guests it draws', () => {
     expect(own.demand.room.pull).toBe(roomPull(ctx, own.demand.room.room as never));
   });
 
-  it('draws nobody while nobody is trained to run it, and fewer behind a long line of its own', () => {
+  it('draws its guests whether or not anyone is trained to run it, and fewer behind a long line of its own', () => {
     const { sim, ctx, therapist } = staffed();
     const trained = machineDemand(ctx)[0]?.pull ?? 0;
     expect(trained).toBeGreaterThan(0);
+    // a specialty item like any other: its guests come all the same, and the panel says it goes badly for them
     therapist.quals = therapist.quals.filter((q) => q !== 'kneading');
-    expect(machineDemand(ctx)[0]).toMatchObject({ pull: 0, trained: 0, training: 0 });
-    expect(sim.arrivalPace().perMonth).toBe(sim.arrivalPace().tables);
+    expect(machineDemand(ctx)[0]).toMatchObject({ pull: trained, trained: 0, training: 1 });
     expect(paceNote(sim.arrivalPace(), 50, centerOf(sim.s))).toMatch(
-      /The Kneadmaster.* draws nobody for its own ailments while nobody is trained to run it/,
+      /The Kneadmaster.*'s guests come all the same while nobody at work is trained to run it, and it goes badly for them/,
     );
     therapist.quals.push('kneading');
     // eight waiting for its one chair: past the three nobody minds

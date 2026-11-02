@@ -114,7 +114,7 @@ import {
 } from './classes';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
-import { demand, type DisciplineDemand, fadeFollowing, roomPull } from './demand';
+import { demand, type DisciplineDemand, fadeFollowing, roomPull, type SpecialtyGap, specialtyGaps } from './demand';
 import {
   borrow,
   monthEnd,
@@ -542,6 +542,11 @@ export class Sim {
   /** Every discipline on offer, what draws guests to it, and its share of new guests. */
   demand(): DisciplineDemand[] {
     return demand(this.ctx);
+  }
+
+  /** The specialty items in a room whose guests come though nobody working there is trained to use them. */
+  specialtyGaps(room: Room): SpecialtyGap[] {
+    return specialtyGaps(this.ctx, room);
   }
 
   /** How often guests arrive now, and each thing that moves the pace: reputation, what the center can treat, the lines. */

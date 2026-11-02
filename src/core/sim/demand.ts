@@ -1,7 +1,8 @@
 // Which discipline a guest comes for. Each discipline the center offers pulls by how popular it is, the following it
 // has built up, the finest room it has and how much of it the staff can do; the guest picks one by that pull, and then
-// a condition within it, the center's local favorites more often. Nobody comes for a condition nobody at work here is
-// trained to treat.
+// a condition within it, the center's local favorites more often. Guests come only for what the center offers: a
+// technique done with a specialty item while the item stands in one of its rooms, trained or not, and any other only
+// while someone at work here is trained in it.
 
 import {
   CAPACITY_ARRIVALS,
@@ -101,17 +102,20 @@ export interface DisciplineDemand {
   followed: number;
   /** The finest room's pull, and the room. */
   room: { room?: Room; pull: number };
-  /** The conditions guests could come with, and how many of them someone on the payroll is trained for. */
+  /** The conditions guests could come with, and how many of them the center offers now. */
   conditions: number;
-  trained: number;
+  offered: number;
   /**
-   * How its training holds it back, as a multiplier: the share of those conditions someone at work is trained for, since
-   * nobody comes for the rest. And the techniques guests would come for if someone at work were trained in them, and of
-   * those, the ones someone trained in is only away for now, on a course or a house call.
+   * How what it offers holds it back, as a multiplier: the share of those conditions on offer, since nobody comes for
+   * the rest. Then the techniques not on offer: those nobody at work is trained in, and of those, the ones someone
+   * trained in is only away from for now, on a course or a house call; and those whose specialty item no room has.
+   * And those on offer for their item though nobody at work is trained in them, whose guests come and are botched.
    */
   training: number;
   untrained: Modality[];
   away: Away[];
+  unequipped: Modality[];
+  unskilled: Modality[];
   /** How the center's local favourites and any campaign lift it, as a multiplier. */
   flavour: number;
   /** Its line for treatment: guests waiting, how many they wait for, and how it puts new guests off, as a multiplier. */
@@ -170,14 +174,15 @@ function lineFor(ctx: SimContext, d: Discipline, cap: Capacity): Line {
 
 /**
  * A condition guests could come with now: how much the center's local favorites and any campaign draw them to it,
- * whether someone at work here is trained to treat it, and so how often they come with it against the rest of its
- * discipline: not at all while nobody is. Someone away on a course or a house call is not here to give it; someone on
- * a break or off shift is.
+ * whether someone at work here is trained to treat it, whether the center offers it, and so how often they come with it
+ * against the rest of its discipline: not at all while it is not on offer. Someone away on a course or a house call is
+ * not here to give it; someone on a break or off shift is.
  */
 export interface Weighted {
   condition: ConditionDef;
   appeal: number;
   trained: boolean;
+  offered: boolean;
   weight: number;
 }
 
@@ -192,6 +197,66 @@ export function sentFor(ctx: SimContext, m: Modality): boolean {
   return !openedEarly(ctx.s, m) || waveReady(ctx, m);
 }
 
+/** Whether an item of a kind stands in a finished room of a kind: broken, unpowered or cold, it still stands. */
+export const standsIn = (ctx: SimContext, type: ItemType, room: RoomType) =>
+  ctx.s.items.some((it) => {
+    const r = ctx.world.roomOfItem(it);
+    return it.type === type && !!r?.done && r.type === room;
+  });
+
+/**
+ * Whether the center offers a technique to guests who can come for it, given whether someone at work is trained in it:
+ * one done on a signature machine, or with a specialty item standing in a room of its discipline and someone in its role
+ * at work, whether or not they are trained in it; any other only while someone at work is.
+ */
+export function onOffer(ctx: SimContext, m: Modality, trained: boolean): boolean {
+  const def = MODALITIES[m];
+  if (def.machine) return true;
+  if (!def.equipment) return trained;
+  const d = DISCIPLINES[def.discipline];
+  return standsIn(ctx, def.equipment, d.room) && ctx.s.staff.some((st) => st.role === d.role && atWork(st));
+}
+
+/**
+ * A specialty item standing in a treatment room whose technique nobody working there is trained in: its guests come
+ * for it and are botched. Who at work is trained in it elsewhere, if anyone, to assign there.
+ */
+export interface SpecialtyGap {
+  room: Room;
+  modality: Modality;
+  item: ItemType;
+  trained: Staff[];
+}
+
+/**
+ * The specialty items guests come for in a finished treatment room, or in every one, that nobody working there is
+ * trained to use: working there being assigned to the room, or posted at one of its stations now. A room with nobody
+ * working there says nothing, since anyone may come to work it.
+ */
+export function specialtyGaps(ctx: SimContext, only?: Room): SpecialtyGap[] {
+  const gaps: SpecialtyGap[] = [];
+  for (const room of only ? [only] : ctx.s.rooms) {
+    const d = DISCIPLINE_ORDER.find((x) => DISCIPLINES[x].room === room.type);
+    if (!room.done || !d) continue;
+    const role = DISCIPLINES[d].role;
+    const here = ctx.s.staff.filter((st) => {
+      if (st.role !== role || !atWork(st)) return false;
+      const post = ctx.world.item(st.post);
+      return st.rooms.includes(room.id) || (!!post && ctx.world.roomOfItem(post) === room);
+    });
+    if (!here.length) continue;
+    for (const def of Object.values(MODALITIES)) {
+      const kit = def.equipment;
+      if (def.discipline !== d || !kit || !sentFor(ctx, def.id)) continue;
+      if (!ctx.s.items.some((it) => it.type === kit && ctx.world.roomOfItem(it) === room)) continue;
+      if (here.some((st) => st.quals.includes(def.id))) continue;
+      const trained = ctx.s.staff.filter((st) => st.role === role && atWork(st) && st.quals.includes(def.id));
+      gaps.push({ room, modality: def.id, item: kit, trained });
+    }
+  }
+  return gaps;
+}
+
 /** Some conditions guests could come with now, each with its weight against the others. */
 function weighed(ctx: SimContext, conditions: readonly ConditionDef[]): Weighted[] {
   const staff = ctx.s.staff.filter(atWork);
@@ -200,25 +265,32 @@ function weighed(ctx: SimContext, conditions: readonly ConditionDef[]): Weighted
     .filter((c) => conditionHere(c, ctx.s.center) && sentFor(ctx, c.modality))
     .map((c) => {
       const trained = staff.some((t) => t.quals.includes(c.modality));
+      const offered = onOffer(ctx, c.modality, trained);
       const appeal = (local[c.id] ?? 1) * campaignBoost(ctx.s, c.id, CONDITION_BOOST);
-      return { condition: c, appeal, trained, weight: trained ? appeal : 0 };
+      return { condition: c, appeal, trained, offered, weight: offered ? appeal : 0 };
     });
 }
 
 /**
- * How training holds some conditions back, and how the local favorites and any campaign lift them, as multipliers whose
- * product is their mean weight: the share someone is trained for, and the mean appeal of those, or of all while none is.
+ * How what is on offer holds some conditions back, and how the local favorites and any campaign lift them, as
+ * multipliers whose product is their mean weight: the share on offer, and the mean appeal of those, or of all while
+ * none is.
  */
-function trainedFor(conditions: readonly Weighted[]): { trained: number; training: number; flavour: number } {
+function offerOf(conditions: readonly Weighted[]): { offered: number; training: number; flavour: number } {
   /** The mean appeal of some conditions. */
   const mean = (list: readonly Weighted[]) => list.reduce((sum, w) => sum + w.appeal, 0) / Math.max(1, list.length);
-  const ready = conditions.filter((w) => w.trained);
+  const ready = conditions.filter((w) => w.offered);
   return {
-    trained: ready.length,
+    offered: ready.length,
     training: ready.length / Math.max(1, conditions.length),
     flavour: ready.length ? mean(ready) : mean(conditions),
   };
 }
+
+/** The techniques among some conditions that pass a test, each once. */
+const techniques = (conditions: readonly Weighted[], test: (w: Weighted) => boolean) => [
+  ...new Set(conditions.filter(test).map((w) => w.condition.modality)),
+];
 
 /**
  * The conditions guests could come with now for the tables, each with its weight within its discipline. A signature
@@ -241,8 +313,13 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
     const following = followingOf(ctx.s, d);
     const followed = followingPull(following);
     const room = bestRoom(ctx, d);
-    const { trained, training, flavour } = trainedFor(mine);
-    const untrained = [...new Set(mine.filter((w) => !w.trained).map((w) => w.condition.modality))];
+    const { offered, training, flavour } = offerOf(mine);
+    const untrained = techniques(mine, (w) => !w.offered && !MODALITIES[w.condition.modality].equipment);
+    const unequipped = techniques(mine, (w) => {
+      const kit = MODALITIES[w.condition.modality].equipment;
+      return !w.offered && !!kit && !standsIn(ctx, kit, DISCIPLINES[d].room);
+    });
+    const unskilled = techniques(mine, (w) => w.offered && !w.trained);
     const line = lineFor(ctx, d, cap);
     const away = untrained.flatMap((m): Away[] => {
       const st = ctx.s.staff.find((x) => x.state !== 'leaving' && !atWork(x) && x.quals.includes(m));
@@ -258,10 +335,12 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
         followed,
         room,
         conditions: mine.length,
-        trained,
+        offered,
         training,
         untrained,
         away,
+        unequipped,
+        unskilled,
         flavour,
         line,
         pull: popularity * followed * room.pull * training * flavour * line.factor,
@@ -402,12 +481,12 @@ export interface MachineDemand {
   fed: number;
   /** Its finest room's pull, and the room. */
   room: { room?: Room; pull: number };
-  /** Its ailments guests could come with now, each with its weight, and how many someone on the payroll is trained for. */
+  /** Its ailments guests could come with now, each with its weight, and how many someone at work is trained for. */
   conditions: Weighted[];
   trained: number;
   /**
-   * How its training holds it back, as the share of its ailments someone at work is trained for (nobody comes for the
-   * rest), and how the center's local favorites and any campaign lift it, as multipliers.
+   * How what it offers holds it back, as the share of its ailments on offer (all of them, a machine being its own
+   * specialty item, trained or not), and how the center's local favorites and any campaign lift it, as multipliers.
    */
   training: number;
   flavour: number;
@@ -420,9 +499,9 @@ export interface MachineDemand {
 /**
  * The guests each signature machine draws for its own ailments, on top of those the tables draw: `MACHINE_DRAW` of
  * the center's pace for each one standing with a practitioner of its own at work to run it, times its finest room's
- * pull, held back by the share of its ailments nobody is trained for and by a line of its own, which puts guests off
- * sooner than a discipline's. A machine that is down, has nobody of its own to run it, or nobody trained in what it
- * does, draws nobody.
+ * pull, held back by a line of its own, which puts guests off sooner than a discipline's. Like any specialty item, it
+ * draws its guests whether or not the one running it is trained to, and they are botched while they are not. A machine
+ * that is down, or has nobody of its own to run it, draws nobody.
  */
 export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): MachineDemand[] {
   return cap.machines.flatMap((m): MachineDemand[] => {
@@ -433,7 +512,8 @@ export function machineDemand(ctx: SimContext, cap: Capacity = capacity(ctx)): M
     );
     if (!conditions.length) return [];
     const room = finest(ctx, machineRoom(m.machine) ?? DISCIPLINES.massage.room);
-    const { trained, training, flavour } = trainedFor(conditions);
+    const { training, flavour } = offerOf(conditions);
+    const trained = conditions.filter((w) => w.trained).length;
     const waiting = waitingFor(ctx, (x) => x.machine === m.machine);
     const line = { waiting, places: m.staffed, factor: lineFactor(waiting, m.staffed, MACHINE_LINE) };
     return [
@@ -493,8 +573,7 @@ function pickWeighted<T>(list: readonly T[], weight: (t: T) => number, roll: num
 
 /**
  * The condition a new guest comes with: a discipline by its pull, then a condition within it by its weight. Two rolls
- * from 0 to 1 make the choice, so it can be tested. Nothing on offer that anyone is trained in, and it is the plainest
- * massage.
+ * from 0 to 1 make the choice, so it can be tested. Nothing on offer, and it is the plainest massage.
  */
 export function chooseCondition(ctx: SimContext, rollDiscipline: number, rollCondition: number): ConditionId {
   const rows = demand(ctx);

@@ -26,7 +26,7 @@ import { useGame, useHud } from '../../hooks/use-hud';
 import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
-import { machinePullNote, pullNote } from '../../lib/demand';
+import { gapNote, machinePullNote, pullNote } from '../../lib/demand';
 import { FLOODED_LABEL } from '../../lib/mishaps';
 import { statusClass } from '../../lib/status';
 import { saveAsTemplate } from '../../templates';
@@ -244,7 +244,13 @@ export function RoomInfo({ room }: { room: Room }) {
       {assigned.length > 0 && (
         <p class="sub assigned">{`Assigned here: ${assigned.map((st) => st.name).join(', ')}`}</p>
       )}{' '}
-      {table && <CanDeliver stations={stations} />} <Draw room={room} /> <Blessing room={room} />
+      {table && <CanDeliver stations={stations} />}{' '}
+      {sim.specialtyGaps(room).map((g) => (
+        <p key={g.modality} class="status warn">
+          {gapNote(g)}
+        </p>
+      ))}{' '}
+      <Draw room={room} /> <Blessing room={room} />
       <p class="sub">{def.desc}</p>{' '}
       <p title="Bigger rooms with more decor and daylight are more prestigious, which lifts staff morale and results.">
         {'Prestige '}

@@ -17,7 +17,7 @@ import {
   modalityLabel,
 } from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
-import { unfedAdvice, untrainedAdvice } from '../../src/core/sim/advisor';
+import { postingAdvice, unfedAdvice, untrainedAdvice } from '../../src/core/sim/advisor';
 import { makeCall } from '../../src/core/sim/calls';
 import { slotFree } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
@@ -41,6 +41,7 @@ import {
   capacityNote,
   demandAdvice,
   followingWord,
+  gapNote,
   limitNote,
   lineWord,
   paceNote,
@@ -66,10 +67,14 @@ const ctxOf = (c: { sim: unknown }) => (c.sim as { ctx: SimContext }).ctx;
 /** Every technique of a discipline. */
 const modsOf = (d: Discipline) => (Object.keys(MODALITIES) as Modality[]).filter((m) => MODALITIES[m].discipline === d);
 
-/** A center with a Massage Suite and a Sound Bath Studio, everyone trained in everything, at the first star. */
-function twoRooms() {
+/**
+ * A center with a Massage Suite and a Sound Bath Studio, everyone trained in everything, at the first star, and if
+ * asked, the Stretch Rack that puts Sports Massage on offer.
+ */
+function twoRooms(rack = false) {
   const c = openCenter(1);
   c.s.stars = 1;
+  if (rack && !c.sim.placeItem('stretch_rack', 14, 7, 0)) throw new Error('no room for a Stretch Rack');
   addSound(c.sim);
   const healer = hire(c.sim, 'healer');
   c.therapist.quals = modsOf('massage');
@@ -95,7 +100,7 @@ const row = (rows: DisciplineDemand[], d: Discipline) => rows.find((r) => r.disc
 
 describe('which discipline guests come for', () => {
   it('goes by popularity, all else equal', () => {
-    const c = twoRooms();
+    const c = twoRooms(true);
     c.s.following = { massage: 40, sound: 40 };
     const rows = c.sim.demand();
     const massage = row(rows, 'massage');
@@ -110,7 +115,7 @@ describe('which discipline guests come for', () => {
   });
 
   it('comes more for a discipline with a bigger following', () => {
-    const c = twoRooms();
+    const c = twoRooms(true);
     c.s.following = { massage: 40, sound: 0 };
     const quiet = row(c.sim.demand(), 'sound')?.share ?? 0;
     c.s.following.sound = 80;
@@ -126,7 +131,7 @@ describe('which discipline guests come for', () => {
     const untrained = row(c.sim.demand(), 'sound');
     expect(trained?.training).toBe(1);
     // nobody comes for the conditions nobody is trained in, so the discipline draws as many fewer
-    expect(untrained?.training).toBeCloseTo((untrained?.trained ?? 0) / (untrained?.conditions ?? 1), 5);
+    expect(untrained?.training).toBeCloseTo((untrained?.offered ?? 0) / (untrained?.conditions ?? 1), 5);
     expect(untrained?.training).toBeGreaterThan(0);
     expect(untrained?.training).toBeLessThan(1);
     expect(untrained?.untrained).toEqual(['forks']);
@@ -183,7 +188,7 @@ describe('which discipline guests come for', () => {
     const c = twoRooms();
     c.healer.state = 'leaving';
     const sound = row(c.sim.demand(), 'sound');
-    expect(sound).toMatchObject({ trained: 0, training: 0, pull: 0, share: 0 });
+    expect(sound).toMatchObject({ offered: 0, training: 0, pull: 0, share: 0 });
     expect(Number.isFinite(sound?.flavour)).toBe(true);
     expect(row(c.sim.demand(), 'massage')?.share).toBe(1);
     if (sound)
@@ -206,12 +211,83 @@ describe('which discipline guests come for', () => {
   });
 });
 
+describe('a specialty item', () => {
+  /** The techniques of the conditions chosen over a grid of rolls. */
+  const chosen = (ctx: SimContext) => {
+    const seen = new Set<Modality>();
+    for (let i = 0; i <= 30; i++)
+      for (let j = 0; j <= 30; j++) seen.add(conditionOf(chooseCondition(ctx, i / 30, j / 30)).modality);
+    return seen;
+  };
+
+  it('puts its technique on offer while it stands, trained or not, and nothing does without it', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    // no Stretch Rack: nobody comes for Sports Massage, and the panel says what would bring them
+    let massage = row(c.sim.demand(), 'massage');
+    expect(massage?.unequipped).toEqual(['sports']);
+    expect(chosen(c.ctx)).not.toContain('sports');
+    if (massage) expect(demandAdvice(massage)).not.toContain('Sports');
+    // one in the Massage Suite, and they come for it though nobody is trained in it, to be botched
+    const rack = c.sim.placeItem('stretch_rack', 14, 7, 0);
+    if (!rack) throw new Error('no room for a Stretch Rack');
+    massage = row(c.sim.demand(), 'massage');
+    expect(massage?.unequipped).toEqual([]);
+    expect(massage?.unskilled).toEqual(['sports']);
+    expect(chosen(c.ctx)).toContain('sports');
+    if (massage)
+      expect(demandAdvice({ ...massage, untrained: [] })).toMatch(
+        /^Guests come for Sports massage for the Stretch Rack, but nobody at work is trained in it, so it goes badly\./,
+      );
+    // broken, it still stands, and they still come
+    rack.wear = 100;
+    expect(chosen(c.ctx)).toContain('sports');
+    // trained, and nothing goes badly
+    c.therapist.quals.push('sports');
+    expect(row(c.sim.demand(), 'massage')?.unskilled).toEqual([]);
+    // with nobody in the role at work, nobody comes for it
+    c.therapist.state = 'training';
+    expect(row(c.sim.demand(), 'massage')?.offered).toBe(0);
+  });
+
+  it('says in the room, and from the advisor, who would give it well, or that a course would', () => {
+    const c = twoRooms(true);
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    c.therapist.rooms = [c.massage.id];
+    const [gap] = c.sim.specialtyGaps(c.massage);
+    expect(gap).toMatchObject({ modality: 'sports', item: 'stretch_rack', trained: [] });
+    if (gap)
+      expect(gapNote(gap)).toBe(
+        'Sports massage guests come for the Stretch Rack, but nobody working here is trained in it, so it goes badly. A course in a Training Room puts that right.',
+      );
+    expect(postingAdvice(c.ctx)).toBe('');
+    // a colleague who is, working elsewhere
+    const colleague = hire(c.sim, 'therapist');
+    colleague.quals = [DISCIPLINES.massage.base, 'sports'];
+    colleague.state = 'idle';
+    const [elsewhere] = c.sim.specialtyGaps(c.massage);
+    expect(elsewhere?.trained).toEqual([colleague]);
+    if (elsewhere)
+      expect(gapNote(elsewhere)).toBe(
+        `Sports massage guests come for the Stretch Rack, but nobody working here is trained in it, so it goes badly. ${colleague.name} is: assign ${colleague.name} to this room from their inspector.`,
+      );
+    expect(postingAdvice(c.ctx)).toMatchObject({
+      text: `Sports massage guests come for the Stretch Rack in the Massage Suite, but nobody working there is trained in it. ${colleague.name} is: assign them to that room from their inspector.`,
+      about: { kind: 'staff', id: colleague.id },
+    });
+    // assigned there, and the gap is gone
+    colleague.rooms = [c.massage.id];
+    expect(c.sim.specialtyGaps(c.massage)).toEqual([]);
+    expect(postingAdvice(c.ctx)).toBe('');
+  });
+});
+
 describe('what nobody here is trained in', () => {
   it('has the advisor say which guests stay away, and how to bring them in', () => {
     const c = twoRooms();
     c.therapist.quals = [DISCIPLINES.massage.base];
     expect(untrainedAdvice(c.ctx)).toMatch(
-      /^Guests needing .+ and .+ stay away while nobody here is trained in them\. Build a Training Room and send Massage Therapists on the courses to bring them in\.$/,
+      /^Guests needing Deep Tissue massage stay away while nobody here is trained in it\. Build a Training Room and send a Massage Therapist on the course to bring them in\.$/,
     );
     // nothing to say once everyone is trained, or the training is under way
     c.therapist.quals = modsOf('massage');
@@ -238,7 +314,7 @@ describe('what nobody here is trained in', () => {
     c.therapist.general = ['smudging'];
     expect(slotFree(c.therapist)).toBe(false);
     expect(untrainedAdvice(c.ctx)).toMatch(
-      /stay away while nobody here is trained in them\. Every Massage Therapist's qualification slots are full: a promotion brings another\.$/,
+      /stay away while nobody here is trained in it\. Every Massage Therapist's qualification slots are full: a promotion brings another\.$/,
     );
   });
 
@@ -665,10 +741,12 @@ describe('the Guests panel', () => {
     followed: 1.5,
     room: { pull: 2 },
     conditions: 3,
-    trained: 3,
+    offered: 3,
     training: 1,
     untrained: [],
     away: [],
+    unequipped: [],
+    unskilled: [],
     line: { waiting: 0, places: 1, factor: 1 },
     flavour: 1,
     pull: 1.8,
@@ -690,18 +768,25 @@ describe('the Guests panel', () => {
     expect(lineWord(long)).toBe('8 waiting for 2 Massage Therapists');
     expect(lineWord({ ...base, line: { waiting: 3, places: 4, factor: 1 } })).toBe('3 waiting for 4 mats');
     expect(lineWord({ ...base, line: { waiting: 2, places: 0, factor: 1 } })).toBe('2 waiting');
-    expect(demandAdvice({ ...long, untrained: ['swedish'] })).toMatch(
+    expect(demandAdvice({ ...long, untrained: ['deep'], unskilled: ['sports'] })).toMatch(
       /^The line for massage therapy is putting new guests off: 8 waiting for 2 Massage Therapists\./,
     );
   });
 
   it('advises training first, then word of mouth, then the room, and nothing when all is well', () => {
-    expect(demandAdvice({ ...base, untrained: ['forks'], trained: 2 })).toMatch(
+    // guests botched for want of training come first, then those staying away for it, then those a new item would bring
+    expect(demandAdvice({ ...base, untrained: ['forks'], unskilled: ['gong'], unequipped: ['crystalbowls'] })).toBe(
+      'Guests come for Gong Bath for the Gong, but nobody at work is trained in it, so it goes badly. A course in a Training Room, or a trained practitioner posted with the item, puts that right.',
+    );
+    expect(demandAdvice({ ...base, untrained: ['forks'], unequipped: ['crystalbowls'], offered: 2 })).toMatch(
       /^Guests needing Tuning Forks stay away while nobody is trained in it\./,
+    );
+    expect(demandAdvice({ ...base, unequipped: ['crystalbowls', 'gong'] })).toBe(
+      'A Crystal Bowls and a Gong in a Sound Bath Studio would bring guests needing Crystal Bowls and Gong Bath.',
     );
     // nobody to give it comes before a long line, which a practitioner leaving can leave behind
     const left = { waiting: 6, places: 0, factor: 0.8 };
-    expect(demandAdvice({ ...base, untrained: ['sound', 'forks'], trained: 0, training: 0, line: left })).toBe(
+    expect(demandAdvice({ ...base, untrained: ['sound', 'forks'], offered: 0, training: 0, line: left })).toBe(
       'Guests come for sound healing only once someone here can give it. A Sound Healer would bring them.',
     );
     expect(demandAdvice({ ...base, following: 10 })).toMatch(/^Few have heard of sound healing here yet/);
