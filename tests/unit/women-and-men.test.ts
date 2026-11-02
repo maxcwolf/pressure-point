@@ -256,12 +256,13 @@ describe('the rest of a look', () => {
     const look = { ...s.staff[0]!.look, top: 0xf2f2f2 };
     s.regulars = [{ id: 5, name: 'Some One', look, visits: 1, loyalty: 50, due: 3 }];
     upgradeSave(s);
-    expect(s.regulars[0]!.look.top).toBe(0xa8d14f);
+    expect(s.regulars[0]!.look.top).toBe(0x2a7af5);
     for (const [was, now] of [
       [0x2a9d8f, 0xd23ca8],
       [0x4d7ea8, 0x3a56d0],
       [0x8ab17d, 0x6a3fa0],
-      [0xf4a261, 0xf4a261],
+      [0xf4a261, 0x9a3ff0],
+      [0xd23ca8, 0xd23ca8],
     ]) {
       const p = { top: was!, bottom: 0x3d405b };
       settleClothes(p);

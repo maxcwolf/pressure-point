@@ -204,6 +204,26 @@ const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: numbe
   firefighter: { top: 0x2c3f6e, bottom: 0x23262e },
 };
 
+/** The band of rust woven round a Shaman's poncho. */
+const PONCHO_BAND = 0x8a3b24;
+
+/**
+ * The roles whose accent is worn big enough to see at the game's distance, over the uniform: a scarf, the Caretaker's
+ * bib and cap, a shawl, a poncho. The rest wear theirs on a pocket or a medallion, or not at all.
+ */
+const WORN_ACCENTS: ReadonlySet<Role> = new Set(['receptionist', 'acupuncturist', 'caretaker', 'healer', 'shaman']);
+
+/** Every color of a role's uniform big enough to see at the game's distance, which no guest's clothes may come near. */
+export function uniformColors(role: Role): number[] {
+  const def = ROLES[role];
+  return [
+    def.uniform,
+    ...(def.bottom === undefined ? [] : [def.bottom]),
+    ...(WORN_ACCENTS.has(role) ? [def.accent] : []),
+    ...(role === 'shaman' ? [PONCHO_BAND] : []),
+  ];
+}
+
 /** The blue of a sodden wool blanket, a deeper blue than the Sound Healer's teal, so its wearer is not taken for one. */
 export const BLANKET = 0x2d4a9a;
 
@@ -295,7 +315,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(torso, pump, mat(0xf4f1ea, 0.4), 0.15, 0.13, 0.135);
   }
   // a woven poncho over the shoulders
-  if (role === 'shaman') detailPoncho(torso, accent, mat(0x8a3b24, 0.85));
+  if (role === 'shaman') detailPoncho(torso, accent, mat(PONCHO_BAND, 0.85));
   // a gold chain round the neck to a medallion
   if (role === 'practitioner') detailMedallion(torso, mat(0xc9963f, 0.3), accent);
 
@@ -423,7 +443,12 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'band') {
     headSymptom(rig, visual);
   } else if (visual === 'flex') {
-    for (const arm of [armL, armR]) rig.props.push(put(arm, sph(0.092, 12), top, 0, -0.1, 0.02));
+    // biceps bulging through the sleeves, in the shirt, and bare with it on a really bad trip
+    for (const arm of [armL, armR]) {
+      const muscle = put(arm, sph(0.092, 12), top, 0, -0.1, 0.02);
+      muscle.name = 'muscle';
+      rig.props.push(muscle);
+    }
   } else if (visual === 'frost') {
     const ice = mat(0xcdeeff, 0.15, 0.25);
     rig.props.push(put(torso, ico(0.135), ice, 0.21, 0.4, 0));

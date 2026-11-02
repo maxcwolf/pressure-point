@@ -1,18 +1,18 @@
 // A member of staff is picked out of a crowd by their uniform, so no guest may wear anything near one: no top and no
-// trousers within a clear distance, in OKLab, of any uniform's top or trousers, nor a symptom worn over the shirt.
+// trousers within a clear distance, in OKLab, of any uniform's top or trousers or what is worn big over them (a scarf,
+// bib, cap, shawl or poncho), nor a symptom worn over the shirt.
 import { describe, expect, it } from 'vitest';
 
 import { ROLE_ORDER, ROLES } from '../../src/core/data';
 import { BOTTOMS, CLEAR_OF_UNIFORMS, randomLook, settleClothes, TOPS } from '../../src/core/people';
 import { stream } from '../../src/core/random';
-import { BLANKET } from '../../src/render/models/character';
+import { BLANKET, uniformColors } from '../../src/render/models/character';
 import { apart } from './oklab';
 
-/** Every color a uniform is made of, top and trousers, by what it is. */
-const UNIFORMS: [string, number][] = ROLE_ORDER.flatMap((role) => [
-  [`the ${role}'s top`, ROLES[role].uniform] as [string, number],
-  ...(ROLES[role].bottom === undefined ? [] : [[`the ${role}'s trousers`, ROLES[role].bottom] as [string, number]]),
-]);
+/** Every color of a uniform big enough to see, by whose it is. */
+const UNIFORMS: [string, number][] = ROLE_ORDER.flatMap((role) =>
+  uniformColors(role).map((c): [string, number] => [`the ${role}'s ${c.toString(16)}`, c]),
+);
 
 /** Each of these colors that comes too close to a uniform, and how close. */
 function nearUniforms(colors: readonly number[]) {
@@ -26,6 +26,15 @@ function nearUniforms(colors: readonly number[]) {
 describe("guests' clothes", () => {
   it('keep every top clear of every uniform', () => {
     expect(nearUniforms(TOPS)).toEqual([]);
+  });
+
+  it('count what is worn big over a uniform: the bib and cap, the shawl, the poncho and its band, and the scarves', () => {
+    expect(uniformColors('caretaker')).toEqual([ROLES.caretaker.uniform, 0x5c6b33, ROLES.caretaker.accent]);
+    expect(uniformColors('shaman')).toContain(ROLES.shaman.accent);
+    expect(uniformColors('healer')).toContain(ROLES.healer.accent);
+    expect(uniformColors('receptionist')).toContain(ROLES.receptionist.accent);
+    // a pocket or a medallion is too small to see from the game's camera
+    expect(uniformColors('consultant')).toEqual([ROLES.consultant.uniform]);
   });
 
   it('keep every pair of trousers clear of every uniform', () => {
