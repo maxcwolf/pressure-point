@@ -27,12 +27,11 @@ import { an, article, listed, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { featureOn, offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
-import { roomLabels } from './assignments';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
 import { roomFor } from './careers';
 import type { SimContext } from './context';
-import { capacity, demand, machineDemand, specialtyGaps, unfedStations } from './demand';
+import { capacity, demand, kitFor, machineDemand, type SpecialtyGap, specialtyGaps, unfedStations } from './demand';
 import {
   cashflow,
   countdownLever,
@@ -593,15 +592,24 @@ export function postingAdvice(ctx: SimContext): string | Advice {
   const gap = specialtyGaps(ctx)[0];
   const who = gap?.trained[0];
   if (!gap || !who) return '';
-  const room = roomLabels(ctx.s.rooms).get(gap.room.id) ?? ROOMS[gap.room.type].name;
-  return {
-    text: `${modalityLabel(gap.modality)} guests come for the ${ITEMS[gap.item].name} in the ${room}, and while ${who.name}, who is trained in it, is busy in another room, whoever works there sees them untrained, and it goes badly. Assign them to that room from their inspector.`,
-    about: { kind: 'staff', id: who.id },
-  };
+  return { text: gapAdvice(gap, gap.label), about: { kind: 'staff', id: who.id } };
+}
+
+/**
+ * What a specialty item whose guests may be seen untrained means, and what puts it right: one of those trained in it
+ * assigned to its room. Of a room by name, or of the room in hand when none is given.
+ */
+export function gapAdvice(gap: SpecialtyGap, room?: string): string {
+  const one = gap.trained.length === 1;
+  const names = listed(gap.trained.map((st) => st.name));
+  const who = gap.trained[0]?.name ?? '';
+  const busy = one ? 'is busy in another room' : 'are busy in other rooms';
+  const there = room ? 'there' : 'here';
+  return `${modalityLabel(gap.modality)} guests come for the ${ITEMS[gap.item].name} ${room ? `in the ${room}` : 'here'}, and while ${names}, who ${one ? 'is' : 'are'} trained in it, ${busy}, whoever works ${there} sees them untrained, and it goes badly. Assign ${who} to ${room ? 'that' : 'this'} room from their inspector.`;
 }
 
 /** Nudge about modalities guests are waiting for that the center cannot deliver. */
-function modalityAdvice(ctx: SimContext): string | Advice {
+export function modalityAdvice(ctx: SimContext): string | Advice {
   const s = ctx.s;
   for (const m of MODALITY_ORDER) {
     const def = MODALITIES[m];
@@ -621,11 +629,13 @@ function modalityAdvice(ctx: SimContext): string | Advice {
     }
     if (def.equipment) {
       const eq = ITEMS[def.equipment];
-      const have = s.items.filter((i) => i.type === def.equipment && ctx.world.usable(i));
+      // the item, or a machine that does the technique itself, as the Hot Stone Kiln does hot stones
+      const kit = kitFor(m);
+      const have = s.items.filter((i) => kit.includes(i.type) && ctx.world.usable(i));
       if (!have.length)
         return `${modalityLabel(m)} needs a ${eq.name} in the ${room.name}. You'll find it in the Items menu.`;
       const warmer = have[0];
-      if (warmer && def.equipment === 'stone_warmer' && have.every((i) => i.water < STONE_USE))
+      if (warmer && have.every((i) => i.type === 'stone_warmer' && i.water < STONE_USE))
         return {
           text: hasStaff(ctx, 'caretaker')
             ? 'The massage stones have gone cold. Your Caretaker is stretched thin.'

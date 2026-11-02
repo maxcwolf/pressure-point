@@ -12,12 +12,13 @@ import {
   FOLLOWING,
   followingPull,
   GUEST_CAP,
+  ITEMS,
   LINE_PUT_OFF,
   MODALITIES,
   modalityLabel,
 } from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
-import { postingAdvice, unfedAdvice, untrainedAdvice } from '../../src/core/sim/advisor';
+import { modalityAdvice, postingAdvice, unfedAdvice, untrainedAdvice } from '../../src/core/sim/advisor';
 import { makeCall } from '../../src/core/sim/calls';
 import { slotFree } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
@@ -291,14 +292,16 @@ describe('a specialty item', () => {
       expect(gapNote(gap)).toBe(
         `Sports massage guests come for the Stretch Rack here, and while ${c.therapist.name}, who is trained in it, is busy in another room, whoever works here sees them untrained, and it goes badly. Assign ${c.therapist.name} to this room from their inspector.`,
       );
-    expect(postingAdvice(c.ctx)).toMatchObject({
-      text: `Sports massage guests come for the Stretch Rack in the Massage Suite 2, and while ${c.therapist.name}, who is trained in it, is busy in another room, whoever works there sees them untrained, and it goes badly. Assign them to that room from their inspector.`,
-      about: { kind: 'staff', id: c.therapist.id },
-    });
+    const posting = `Sports massage guests come for the Stretch Rack in the Massage Suite 2, and while ${c.therapist.name}, who is trained in it, is busy in another room, whoever works there sees them untrained, and it goes badly. Assign ${c.therapist.name} to that room from their inspector.`;
+    expect(postingAdvice(c.ctx)).toMatchObject({ text: posting, about: { kind: 'staff', id: c.therapist.id } });
+    // and the Guests panel says it before the untrained techniques, the items and the line
+    const massage = must(row(c.sim.demand(), 'massage'), 'a massage row');
+    expect(demandAdvice({ ...massage, line: { waiting: 9, places: 1, factor: 0.5 } })).toBe(posting);
     // assigned there too, and there is nothing to say
     c.therapist.rooms = [c.massage.id, suite.id];
     expect(c.sim.specialtyGaps(suite)).toEqual([]);
     expect(postingAdvice(c.ctx)).toBe('');
+    expect(row(c.sim.demand(), 'massage')?.gaps).toEqual([]);
   });
 
   it('has a guest passed over for a colleague seen all the same once that colleague is busy in a room without it', () => {
@@ -380,11 +383,16 @@ describe('a specialty item', () => {
         mod,
       );
       const g = must(spawnGuest(c.ctx, ailment.id), 'a guest');
+      g.goal = 'treat';
       expect(leftForSpecialist(c.ctx, other, g)).toBe(true);
+      // and the advisor does not send anyone shopping for the item the machine stands in for
+      const item = ITEMS[must(MODALITIES[mod].equipment, 'an item')].name;
+      expect(modalityAdvice(c.ctx)).not.toContain(item);
       // sold, and with neither, the panel asks for the item
       c.sim.sellItem(kit.id);
       expect(onOffer(c.ctx, mod, true)).toBe(false);
       expect(row(c.sim.demand(), d)?.unequipped).toContain(mod);
+      expect(modalityAdvice(c.ctx)).toContain(`needs a ${item}`);
     }
   });
 
@@ -859,6 +867,7 @@ describe('the Guests panel', () => {
     untrained: [],
     away: [],
     unequipped: [],
+    gaps: [],
     line: { waiting: 0, places: 1, factor: 1 },
     flavour: 1,
     pull: 1.8,
@@ -875,13 +884,16 @@ describe('the Guests panel', () => {
     expect(followingWord(75)).toBe('Talked about everywhere');
   });
 
-  it('says how long a line is, and that it puts guests off before anything else', () => {
+  it('says how long a line is, and that it puts guests off, after what training or an item would bring', () => {
     const long = { ...base, discipline: 'massage' as const, line: { waiting: 8, places: 2, factor: 0.9 } };
     expect(lineWord(long)).toBe('8 waiting for 2 Massage Therapists');
     expect(lineWord({ ...base, line: { waiting: 3, places: 4, factor: 1 } })).toBe('3 waiting for 4 mats');
     expect(lineWord({ ...base, line: { waiting: 2, places: 0, factor: 1 } })).toBe('2 waiting');
-    expect(demandAdvice({ ...long, untrained: ['deep'], unequipped: ['sports'] })).toMatch(
+    expect(demandAdvice(long)).toMatch(
       /^The line for massage therapy is putting new guests off: 8 waiting for 2 Massage Therapists\./,
+    );
+    expect(demandAdvice({ ...long, untrained: ['deep'], unequipped: ['sports'] })).toMatch(
+      /^Guests needing Deep Tissue massage stay away while nobody is trained in it\./,
     );
   });
 

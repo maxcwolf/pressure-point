@@ -15,6 +15,7 @@ import {
 } from '../../core/data';
 import type { Discipline, ItemType, Modality } from '../../core/data/types';
 import { an, listed } from '../../core/format';
+import { gapAdvice } from '../../core/sim/advisor';
 import type { Capacity, DisciplineDemand, MachineDemand, SpecialtyGap } from '../../core/sim/demand';
 import { type ArrivalPace, fedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
@@ -95,10 +96,13 @@ export function demandAdvice(row: DisciplineDemand): string | null {
   const base = DISCIPLINES[row.discipline].base;
   if (row.untrained.includes(base) && !row.away.some((a) => a.modality === base))
     return `Guests come for ${name.toLowerCase()} only once someone here can give it. ${an(ROLES[DISCIPLINES[row.discipline].role].name, true)} would bring them.`;
-  if (row.line.factor < 0.99)
-    return `The line for ${name.toLowerCase()} is putting new guests off: ${lineWord(row)}. Nobody minds until more than three wait for each, and those put off do not come at all. Another room and practitioner, or quicker treatment, would bring them back.`;
+  // who to post where, and what training or item would bring guests, before the line and the following
+  const [gap] = row.gaps;
+  if (gap) return gapAdvice(gap, gap.label);
   if (row.untrained.length) return untrainedWord(row);
   if (row.unequipped.length) return unequippedWord(row);
+  if (row.line.factor < 0.99)
+    return `The line for ${name.toLowerCase()} is putting new guests off: ${lineWord(row)}. Nobody minds until more than three wait for each, and those put off do not come at all. Another room and practitioner, or quicker treatment, would bring them back.`;
 
   if (row.following < 30)
     return `Few have heard of ${name.toLowerCase()} here yet. Every guest healed spreads the word, and every failure sets it back.`;
@@ -138,16 +142,8 @@ function unequippedWord(row: DisciplineDemand): string {
   return `${kit.charAt(0).toUpperCase()}${kit.slice(1)} in ${an(room)} would bring guests needing ${listed(row.unequipped.map(modalityLabel))}, which your staff are trained in.`;
 }
 
-/**
- * A specialty item whose guests may be seen untrained in a room while those trained in it are busy in another, and what
- * puts it right: one of them assigned to the room.
- */
-export function gapNote(g: SpecialtyGap): string {
-  const one = g.trained.length === 1;
-  const names = listed(g.trained.map((st) => st.name));
-  const who = g.trained[0]?.name ?? '';
-  return `${modalityLabel(g.modality)} guests come for the ${ITEMS[g.item].name} here, and while ${names}, who ${one ? 'is' : 'are'} trained in it, ${one ? 'is busy in another room' : 'are busy in other rooms'}, whoever works here sees them untrained, and it goes badly. Assign ${who} to this room from their inspector.`;
-}
+/** What a specialty item whose guests may be seen untrained in this room means, and who to assign here. */
+export const gapNote = (g: SpecialtyGap): string => gapAdvice(g);
 
 /** A count of things as it reads: "1 station", "6 stations". */
 const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;

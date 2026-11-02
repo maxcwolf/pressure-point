@@ -31,7 +31,7 @@ import type { ConditionDef, ConditionId, Discipline, Modality, ModalityDef, Role
 import type { GameState, Guest, Item, Room, Staff } from '../state/types';
 import { at, clamp } from '../util';
 import { prestige } from './ambience';
-import { worksIn } from './assignments';
+import { roomLabels, worksIn } from './assignments';
 import type { SimContext } from './context';
 import { practicable, signatureMachine } from './machines';
 import { campaignBoost } from './marketing';
@@ -116,6 +116,8 @@ export interface DisciplineDemand {
   untrained: Modality[];
   away: Away[];
   unequipped: Modality[];
+  /** Its specialty items whose guests may be seen untrained, in a room of its while those trained are busy in another. */
+  gaps: SpecialtyGap[];
   /** How the center's local favourites and any campaign lift it, as a multiplier. */
   flavour: number;
   /** Its line for treatment: guests waiting, how many they wait for, and how it puts new guests off, as a multiplier. */
@@ -233,6 +235,8 @@ export function onOffer(ctx: SimContext, m: Modality, trained: boolean): boolean
  */
 export interface SpecialtyGap {
   room: Room;
+  /** What the room is called, told apart from others of its kind: "Massage Suite 2". */
+  label: string;
   modality: Modality;
   item: ItemType;
   trained: Staff[];
@@ -246,6 +250,7 @@ export interface SpecialtyGap {
  */
 export function specialtyGaps(ctx: SimContext, only?: Room): SpecialtyGap[] {
   const gaps: SpecialtyGap[] = [];
+  const labels = roomLabels(ctx.s.rooms);
   for (const room of only ? [only] : ctx.s.rooms) {
     const d = DISCIPLINE_ORDER.find((x) => DISCIPLINES[x].room === room.type);
     if (!room.done || !d) continue;
@@ -262,7 +267,8 @@ export function specialtyGaps(ctx: SimContext, only?: Room): SpecialtyGap[] {
       /** Whether someone may work another room of its kind, without the item, where they cannot give it. */
       const elsewhere = (st: Staff) =>
         ctx.s.rooms.some((r) => r !== room && r.done && r.type === room.type && worksIn(st.rooms, r.id) && !kitIn(r));
-      if (trained.some(elsewhere)) gaps.push({ room, modality: def.id, item: item.type, trained });
+      const label = labels.get(room.id) ?? room.type;
+      if (trained.some(elsewhere)) gaps.push({ room, label, modality: def.id, item: item.type, trained });
     }
   }
   return gaps;
@@ -317,6 +323,7 @@ const conditionWeights = (ctx: SimContext) =>
 export function demand(ctx: SimContext): DisciplineDemand[] {
   const weights = conditionWeights(ctx);
   const cap = capacity(ctx);
+  const gaps = specialtyGaps(ctx);
   const rows = DISCIPLINE_ORDER.flatMap((d): DisciplineDemand[] => {
     const mine = weights.filter((w) => MODALITIES[w.condition.modality].discipline === d);
     if (!mine.length) return [];
@@ -347,6 +354,7 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
         untrained,
         away,
         unequipped,
+        gaps: gaps.filter((g) => MODALITIES[g.modality].discipline === d),
         flavour,
         line,
         pull: popularity * followed * room.pull * training * flavour * line.factor,

@@ -245,7 +245,7 @@ export const treatmentCourses = (courses: readonly { id: string }[]) =>
 export function trainedInAll(s: GameState) {
   const quals = Object.keys(MODALITIES) as Modality[];
   for (const d of Object.values(DISCIPLINES))
-    s.staff.push({ id: s.nextId++, role: d.role, state: 'atPost', quals } as unknown as Staff);
+    s.staff.push({ id: s.nextId++, role: d.role, state: 'atPost', quals, rooms: [] } as unknown as Staff);
 }
 
 /**
