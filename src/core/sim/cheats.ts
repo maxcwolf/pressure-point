@@ -107,7 +107,11 @@ export function runCheat(ctx: SimContext, line: string, fastForward: (days: numb
   if (!word) return refused('Type a command, or help for the list.');
   if (!Object.hasOwn(CHEATS, word)) return refused(`Unknown command "${word}". Type help for the list.`);
   const result = run(ctx, word as CheatName, args, fastForward);
-  if (result.ok && word !== 'help' && !dev) ctx.s.cheated = true;
+  // in dev mode the game goes on counting, but its play statistics are labeled
+  if (result.ok && word !== 'help') {
+    if (dev) ctx.s.devCheats = true;
+    else ctx.s.cheated = true;
+  }
   return result;
 }
 

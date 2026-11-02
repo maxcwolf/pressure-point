@@ -64,8 +64,8 @@ export interface ControlPrefs {
   /** Whether ~ opens the cheat console. Off until switched on at the bottom of the settings. */
   console: boolean;
   /**
-   * Whether dev mode is unlocked on this computer, by typing its code on the title screen: ~ opens the cheat console
-   * whatever `console` says. Off again from the settings.
+   * Whether dev mode is unlocked on this computer, from the title screen (`clickVersion` in `TitleScreen.tsx`): ~ opens
+   * the cheat console whatever `console` says, and its commands leave a game counting. Off again from the settings.
    */
   dev: boolean;
 }

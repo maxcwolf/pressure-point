@@ -269,6 +269,7 @@ describe('a game the console is used in, in dev mode', () => {
     expect(sim.cheat('win', true).ok).toBe(true);
     expect(sim.cheat('amanda', true).ok).toBe(true);
     expect(sim.s.cheated).toBe(false);
+    expect(sim.s.devCheats, 'for play statistics to tell apart').toBe(true);
     checkAchievements(createContext(sim.s));
     expect(sim.s.achieved).toContain('nest-egg');
     recordGame(sim.s);
@@ -278,7 +279,10 @@ describe('a game the console is used in, in dev mode', () => {
 
   it('keeps a game cheated before dev mode cheated', () => {
     const sim = new Sim(newGame('willow'));
+    expect(sim.cheat('help', true).ok).toBe(true);
+    expect(sim.s.devCheats, 'help is no cheat').toBeUndefined();
     sim.cheat('money');
+    expect(sim.s.devCheats, 'outside dev mode').toBeUndefined();
     sim.cheat('money', true);
     expect(sim.s.cheated).toBe(true);
   });

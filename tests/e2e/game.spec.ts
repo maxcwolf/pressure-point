@@ -82,12 +82,20 @@ test.describe('starting out', () => {
   }) => {
     await page.goto('/');
     const version = page.locator('#title .title-version');
+    // the settings, opened before and kept while hidden, have no switch for it yet
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const devSwitch = page.locator('#title-settings').getByRole('switch', { name: 'Dev mode' });
+    await expect(devSwitch).toHaveCount(0);
+    await page.keyboard.press('Escape');
     // a click on the version alone does nothing
     await version.click();
     await expect(page.locator('#title .dev-badge')).toHaveCount(0);
     await page.keyboard.press('ControlOrMeta+Shift+KeyD');
     await version.click();
     await expect(page.locator('#title .dev-badge')).toHaveText('Dev mode');
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(devSwitch).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
     // kept for the next visit, and ~ opens the console with its switch in the settings still off
     await game.start();
     await page.keyboard.press('Backquote');
