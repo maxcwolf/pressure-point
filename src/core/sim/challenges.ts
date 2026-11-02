@@ -87,10 +87,13 @@ export function clashes(goal: GoalSpec, star: GoalSpec): boolean {
   return true;
 }
 
+/** Whether one of the next star's objectives already asks what a challenge's goal asks. */
+export const starAsks = (s: GameState, goal: GoalSpec) =>
+  (centerOf(s).goals[s.stars] ?? []).some((g) => clashes(goal, g));
+
 /** The goals a challenge could set now that none of the next star's objectives already asks. */
 export function freshGoals(ctx: SimContext, days: number): GoalSpec[] {
-  const star = centerOf(ctx.s).goals[ctx.s.stars] ?? [];
-  return challengeGoals(ctx, days).filter((goal) => !star.some((g) => clashes(goal, g)));
+  return challengeGoals(ctx, days).filter((goal) => !starAsks(ctx.s, goal));
 }
 
 /** The staff who could set a challenge: everyone on the payroll and at work, not coming or going. */
@@ -211,6 +214,18 @@ export function updateChallenge(ctx: SimContext) {
       about,
       'ui-target',
     );
+  } else if (starAsks(s, ch.goal)) {
+    // the next star asks the same, one earned since it was set: it is put aside, with no hard feelings, for a fresh one
+    toast(
+      ctx,
+      `${ch.staffName} has set their challenge aside, as the next star asks the same. They will think of another.`,
+      'info',
+      about,
+      'ui-target',
+    );
+    s.challenge = null;
+    s.nextChallenge = s.day;
+    return;
   } else return;
   s.challenge = null;
   waitForNext(s);

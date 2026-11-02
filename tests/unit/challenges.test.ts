@@ -282,6 +282,27 @@ describe('a staff challenge and the star objectives', () => {
     expect(freshGoals(ctx, 90)).toContainEqual(expect.objectContaining({ kind: 'healed' }));
   });
 
+  it('is put aside for a fresh one when a star earned since it was set asks the same', () => {
+    const { ctx, s } = withChallenges();
+    s.stars = 0;
+    const setter = s.staff[0]!;
+    setter.morale = 50;
+    // the sandbox's first star asks no money in the bank, and its second does
+    s.challenge = challenge(s, { kind: 'balance', amount: 10_000_000 });
+    updateChallenge(ctx);
+    expect(s.challenge).not.toBeNull();
+    s.stars = 1;
+    drainEvents(ctx);
+    updateChallenge(ctx);
+    expect(s.challenge).toBeNull();
+    expect(setter.morale, 'no hard feelings').toBe(50);
+    expect(drainEvents(ctx).some((e) => e.type === 'toast' && e.text.includes('set their challenge aside'))).toBe(true);
+    updateChallenge(ctx);
+    const next = s.challenge as Challenge | null;
+    expect(next).not.toBeNull();
+    expect(CENTERS.sandbox.goals[1]!.filter((g) => clashes(next!.goal, g))).toEqual([]);
+  });
+
   it('sets nothing that time when every goal it could ask clashes, and waits a while to ask again', () => {
     const { ctx, s } = withChallenges();
     s.center = 'willow';
