@@ -328,6 +328,7 @@ function monthProps(s: GameState, m: GameState['months'][number]): PlayProps {
     priced: m.priced,
     sent: m.sent,
     worse: m.worse,
+    accidents: m.accidents,
     healed_by: m.healedBy,
     staff: s.staff.filter((x) => x.state !== 'leaving').length,
     rooms: s.rooms.filter((r) => r.done).length,

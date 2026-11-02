@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { startTutorial } from '../../src/app/start';
 import { type CenterId, QUIT_AFTER } from '../../src/core/data';
+import type { SimContext } from '../../src/core/sim/context';
+import { spawnGuest } from '../../src/core/sim/guests';
 import { lessonTip } from '../../src/core/sim/lessons';
-import { primerTip } from '../../src/core/sim/primer';
+import { PRIMER_BLADDER, primerTip } from '../../src/core/sim/primer';
 import { Sim } from '../../src/core/sim/sim';
 import { HANDOFF, LOOK_DAYS, wantsHire } from '../../src/core/sim/tutorial';
 import { newGame } from '../../src/core/state/game';
@@ -13,6 +15,7 @@ import { loadLessonsPref, loadTutorialPref, noteTutorialDone, saveTutorialPref }
 import {
   addConsult,
   addMassage,
+  addRestroom,
   addStaffRoom,
   addTraining,
   freshSim,
@@ -74,6 +77,7 @@ describe('the tutorial', () => {
       'therapist',
       'play',
       'benches',
+      'restroom',
       'caretaker',
       'smudging',
       'staffroom',
@@ -278,7 +282,7 @@ describe('the tutorial', () => {
     sim.s.stats.healed = 1;
     expect(sim.tutorialStep()).toMatchObject({
       id: 'caretaker',
-      n: 11,
+      n: 12,
       title: 'Hire a Caretaker',
       text: expect.stringMatching(/Hire a Caretaker from the Hire menu/),
       want: { kind: 'hire', role: 'caretaker' },
@@ -300,6 +304,23 @@ describe('the tutorial', () => {
     expect(sim.tutorialStep()).toMatchObject({ id: 'staffroom', want: { kind: 'room', type: 'staffroom' } });
   });
 
+  it('asks for a Restroom once a guest starts to need the toilet, well before anyone bursts', () => {
+    const sim = tutorialGame();
+    walkOpening(sim);
+    placeBenches(sim);
+    expect(stepOf(sim)).toBeNull();
+    spawnGuest((sim as unknown as { ctx: SimContext }).ctx)!.bladder = PRIMER_BLADDER;
+    expect(sim.tutorialStep()).toMatchObject({
+      id: 'restroom',
+      n: 11,
+      title: 'Build a Restroom',
+      text: expect.stringMatching(/accident on the floor/),
+      want: { kind: 'room', type: 'restroom' },
+    });
+    addRestroom(sim);
+    expect(stepOf(sim)).toBeNull();
+  });
+
   it('notes the heads-ups as said without a word of their own, since its card says them', () => {
     const sim = tutorialGame();
     walkOpening(sim);
@@ -316,6 +337,7 @@ describe('the tutorial', () => {
     placeBenches(sim);
     hire(sim, 'caretaker').general.push('smudging');
     addStaffRoom(sim);
+    addRestroom(sim);
     sim.drain();
     run(sim, 1.5);
     expect(sim.s.tutorial).toBe(false);
@@ -341,6 +363,7 @@ describe('the tutorial', () => {
     placeBenches(sim);
     hire(sim, 'caretaker').general.push('smudging');
     addStaffRoom(sim);
+    addRestroom(sim);
     run(sim, 1.5);
     expect(toasts(sim.drain())).toContain(HANDOFF);
     sim.setTutorial(false);
@@ -375,7 +398,7 @@ describe('the tutorial', () => {
     walkOpening(sim);
     expect(stepOf(sim)).toBe('benches');
     sim.s.stats.healed = 1;
-    expect(sim.tutorialStep()).toMatchObject({ id: 'caretaker', n: 11 });
+    expect(sim.tutorialStep()).toMatchObject({ id: 'caretaker', n: 12 });
     expect(sim.tutorialLines().find((l) => l.current)?.id).toBe('caretaker');
     hire(sim, 'caretaker').general.push('smudging');
     expect(stepOf(sim)).toBe('benches');

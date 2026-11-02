@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 44 still to record.
+43 recorded, 46 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -115,6 +115,10 @@ As its guests start to come, one of these by whether the center is ready, or has
 
 - ✅ Would the naked guest running through the lobby please note that the walls are not, in fact, melting.
 - ⬜ A reminder that the walls are load-bearing and cannot be reasoned with.
+
+## The first accident on the floor (`ACCIDENT_NEWS` in `src/core/sim/accidents.ts`)
+
+- ⬜ A reminder that the floor is not a restroom, however grounding it may feel.
 
 ## Visits, as a visitor writes ahead (`VISIT_NEWS` in `src/core/data/visits.ts`)
 

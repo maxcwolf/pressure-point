@@ -1,7 +1,7 @@
 // A picture of every model on its own, from the model lab: each item, a guest with each condition, each role of
 // staff, each kind of visitor, how people look as they feel (a waiting guest's patience, a face, staff with nothing to
-// do, a guest on a really bad trip), a crowd, a room's doorway and sign, and the scenery, puddles of kombucha and flood
-// water among it. A change to a shared part shows up in every model that uses it.
+// do, a guest on a really bad trip), a crowd, a room's doorway and sign, and the scenery, puddles of kombucha, flood
+// water and accidents among it. A change to a shared part shows up in every model that uses it.
 import { expect, type Page, test } from '@playwright/test';
 
 import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
@@ -77,6 +77,8 @@ const IDS = [
   'walk:guest',
   'room:door',
   'scenery:puddles',
+  // a poop and a puddle of pee, as a guest leaves them who could not find a toilet in time
+  'scenery:accidents',
   'scenery:trees',
   'scenery:pines',
   'scenery:orchard',
@@ -177,6 +179,11 @@ const SIGNS = [
 test('a guest calmed down after a really bad trip, dressed again', async ({ page }) => {
   await openLab(page, 'mood:runaway', '&calmed=1');
   await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', 'mood-runaway-calmed.png']);
+});
+
+test('a poop left uncleaned a while, with flies round it', async ({ page }) => {
+  await openLab(page, 'scenery:accidents', '&flies=1');
+  await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', 'scenery-accidents-flies.png']);
 });
 
 test.describe("a room's sign showing how the room is doing", () => {

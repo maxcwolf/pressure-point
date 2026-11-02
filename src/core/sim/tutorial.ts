@@ -187,6 +187,8 @@ function headsWant(ctx: SimContext, id: PrimerStepId): Want | undefined {
     // walked through as the opening's own steps
     case 'open':
       return undefined;
+    case 'restroom':
+      return { kind: 'room', type: 'restroom' };
     case 'caretaker':
       return { kind: 'hire', role: 'caretaker' };
     case 'smudging':
@@ -206,6 +208,8 @@ function headsSpend(ctx: SimContext, id: PrimerStepId): { cost: number; wage: nu
       return { cost: 0, wage: ROLES.caretaker.baseSalary };
     case 'smudging':
       return { cost: (hasRoom(ctx, 'training') ? 0 : ROOMS.training.cost) + GENERAL_COURSES.smudging.cost, wage: 0 };
+    case 'restroom':
+      return { cost: ROOMS.restroom.cost, wage: 0 };
     case 'staffroom':
       return { cost: ROOMS.staffroom.cost, wage: 0 };
     case 'open':

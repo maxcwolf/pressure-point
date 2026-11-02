@@ -43,6 +43,7 @@ import type { GagStage } from '../render/gags/types';
 import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
+import { animateAccident, buildPee, buildPoop, showFlies } from '../render/models/accident';
 import { showBare } from '../render/models/bare';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig, cureRig } from '../render/models/character';
@@ -1172,6 +1173,32 @@ const SCENERY: Specimen[] = [
       flood.position.x = 0.8;
       root.add(kombucha, flood);
       return { root, animate: still, controls: [] };
+    },
+  },
+  {
+    id: 'scenery:accidents',
+    group: 'Scenery',
+    name: 'Accidents: a poop and a puddle of pee',
+    footprint: [2, 1],
+    /** A poop and a puddle of pee side by side, the poop with its flies once it has been left a while. */
+    build: () => {
+      const st = { flies: false };
+      const root = new THREE.Group();
+      const poop = buildPoop(1);
+      poop.position.x = -0.5;
+      const pee = buildPee(2);
+      pee.position.x = 0.5;
+      root.add(poop, pee);
+      return {
+        root,
+        /** Bring the flies or send them away, send them round and glint the sparkles. */
+        animate: (t) => {
+          showFlies(poop, st.flies);
+          animateAccident(poop, t, 1);
+          animateAccident(pee, t, 2);
+        },
+        controls: [toggle('Left a while: flies', st, 'flies')],
+      };
     },
   },
   {

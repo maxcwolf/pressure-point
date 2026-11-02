@@ -99,14 +99,15 @@ Twelve steps, each a small function over the state as `primer.ts` does it (`due`
 6. **Build a Massage Suite.**
 7. **Hire a Massage Therapist.** Done opens the center, and the first lesson (your first guest) follows when they walk in.
 8. **Put down two Benches.** Due once the center is open. Done: two benches.
-9. **Hire a Caretaker.** The heads-up as today, due after the first heal.
-10. **Train a Caretaker in Smudging**, by way of a Training Room. As today.
-11. **Build a Staff Room.** Due as anyone tires (`PRIMER_TIRING`). As today.
-12. **See the land for sale.** The heads-up on land being added to `primer.ts` on main (uncommitted at the time of writing: at the first star, what came up for sale and when to buy), which becomes the chain's last step.
+9. **Build a Restroom.** Due as a guest starts to need the toilet (`PRIMER_BLADDER`). Added with accidents (0.36.0).
+10. **Hire a Caretaker.** The heads-up as today, due after the first heal.
+11. **Train a Caretaker in Smudging**, by way of a Training Room. As today.
+12. **Build a Staff Room.** Due as anyone tires (`PRIMER_TIRING`). As today.
+13. **See the land for sale.** The heads-up on land being added to `primer.ts` on main (uncommitted at the time of writing: at the first star, what came up for sale and when to buy), which becomes the chain's last step.
 
-A Restroom is left to the advisor's "crossing their legs" nudge, since by then the player has built three rooms. The chain ends with a **handoff card** in the advisor's spot: "That's the basics. From here the advisor speaks up when something needs you, and the objectives at the top left earn your first star. Click any objective for the numbers behind it." Then the tutorial is done for good in this game, as the heads-ups are today.
+A Restroom was first left to the advisor's "crossing their legs" nudge, since by then the player has built three rooms. Since accidents on the floor came in (0.36.0) it is a heads-up of its own, step 9, and no guest has an accident before it is said or a Restroom is built. The chain ends with a **handoff card** in the advisor's spot: "That's the basics. From here the advisor speaks up when something needs you, and the objectives at the top left earn your first star. Click any objective for the numbers behind it." Then the tutorial is done for good in this game, as the heads-ups are today.
 
-As built (`OPENING` in `src/core/sim/tutorial.ts`): the chain is thirteen steps, not twelve. A **Pause the clock** step comes second and a **Start the clock** step once the desk, both rooms and all three hires are in (0.33.1), then the two Benches, ten for the opening; the Caretaker, Smudging and Staff Room heads-ups follow as steps. Looking around counts as done after two game days rather than 20 seconds. The heads-up on land stayed a heads-up of its own at the first star rather than the chain's last step, and the Benches wait behind any heads-up that is due.
+As built (`OPENING` in `src/core/sim/tutorial.ts`): the chain is fourteen steps, not thirteen. A **Pause the clock** step comes second and a **Start the clock** step once the desk, both rooms and all three hires are in (0.33.1), then the two Benches, ten for the opening; the Restroom (0.36.0), Caretaker, Smudging and Staff Room heads-ups follow as steps. Looking around counts as done after two game days rather than 20 seconds. The heads-up on land stayed a heads-up of its own at the first star rather than the chain's last step, and the Benches wait behind any heads-up that is due.
 
 ### The step card
 

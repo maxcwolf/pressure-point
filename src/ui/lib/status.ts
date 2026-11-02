@@ -1,13 +1,14 @@
 // Describing what people are up to, in a few words.
 
 import { ITEMS, POOR_CONDITION, ROLES, ROOMS } from '../../core/data';
+import { wentHomeMortified } from '../../core/sim/accidents';
 import { expert, slots, trained, xpToNext } from '../../core/sim/careers';
 import { missNote } from '../../core/sim/classes';
 import { roomForModality } from '../../core/sim/machines';
 import type { Sim } from '../../core/sim/sim';
 import { courseName } from '../../core/sim/training';
 import { conditionDays, worsening } from '../../core/sim/worsening';
-import type { Guest, Staff } from '../../core/state/types';
+import type { Guest, Room, Staff } from '../../core/state/types';
 import { cx } from './cx';
 import type { IconLine } from './icon-line';
 import { meterTone } from './meters';
@@ -48,24 +49,10 @@ export function guestStatus(g: Guest, sim: Sim): string {
     case 'enter':
       return 'Arriving';
     case 'toWait':
-    case 'waiting':
-      if (!st)
-        return g.goal === 'treat'
-          ? `Waiting for a working ${ROOMS[roomForModality(sim.modalityOf(g).id)].name}`
-          : g.goal === 'consult'
-            ? 'Waiting for a Consultation Room to exist'
-            : g.goal === 'assess'
-              ? 'Waiting for a working Posture Lab'
-              : 'Looking for Reception';
-      return g.goal === 'reception'
-        ? 'In line at Reception'
-        : g.goal === 'consult'
-          ? 'Waiting for a consultation'
-          : g.goal === 'assess'
-            ? 'Waiting for a posture scan'
-            : g.goal === 'shop'
-              ? 'In line at the Shop Counter'
-              : 'Waiting for treatment';
+    case 'waiting': {
+      const why = g.held === undefined ? '' : holdingWhy(sim);
+      return why ? `${waitingStatus(g, sim)}, bursting: ${why}` : waitingStatus(g, sim);
+    }
     case 'called':
       return `Heading to the ${where}`;
     case 'served':
@@ -100,12 +87,56 @@ export function guestStatus(g: Guest, sim: Sim): string {
         ? 'Going home healed'
         : g.outcome === 'failed'
           ? 'Going home, still knotted'
-          : g.outcome === 'stormed'
-            ? 'Leaving in a huff'
-            : g.outcome === 'sent'
-              ? 'Sent home'
-              : 'Leaving';
+          : wentHomeMortified(g)
+            ? 'Going home mortified after an accident'
+            : g.outcome === 'stormed'
+              ? 'Leaving in a huff'
+              : g.outcome === 'sent'
+                ? 'Sent home'
+                : 'Leaving';
   }
+}
+
+/**
+ * What a Restroom says while guests in a line hold on, bursting, long enough to warn of: what has its own toilets out of
+ * action, or that every one is taken, and what to do before someone has an accident.
+ */
+export function burstingNote(sim: Sim, room: Room, n: number): string {
+  const who = `${n} ${n === 1 ? 'guest is' : 'guests are'} bursting`;
+  const out = sim.restroomOut(room);
+  if (!out)
+    return `Every toilet is taken, and ${who}. Build another Restroom, or put more toilets in this one, before someone has an accident.`;
+  return `${out.why.charAt(0).toUpperCase()}${out.why.slice(1)}, and ${who}. ${out.fix}`;
+}
+
+/** Why a guest bursting in a line cannot go, as their status says it; nothing while a toilet is free for them. */
+function holdingWhy(sim: Sim): string {
+  const trouble = sim.toiletTrouble();
+  if (!trouble) return '';
+  if (trouble === 'none') return 'there is no Restroom to use';
+  return trouble === 'taken' ? 'every toilet is taken' : sim.toiletsOut().why;
+}
+
+/** What a guest in a line, or on the way to one, is waiting for. */
+function waitingStatus(g: Guest, sim: Sim): string {
+  const st = sim.world.item(g.station);
+  if (!st)
+    return g.goal === 'treat'
+      ? `Waiting for a working ${ROOMS[roomForModality(sim.modalityOf(g).id)].name}`
+      : g.goal === 'consult'
+        ? 'Waiting for a Consultation Room to exist'
+        : g.goal === 'assess'
+          ? 'Waiting for a working Posture Lab'
+          : 'Looking for Reception';
+  return g.goal === 'reception'
+    ? 'In line at Reception'
+    : g.goal === 'consult'
+      ? 'Waiting for a consultation'
+      : g.goal === 'assess'
+        ? 'Waiting for a posture scan'
+        : g.goal === 'shop'
+          ? 'In line at the Shop Counter'
+          : 'Waiting for treatment';
 }
 
 /** The chore a member of staff is on, in a few words. */
@@ -142,7 +173,9 @@ function choreStatus(st: Staff, sim: Sim): string {
     case 'douse':
       return `${st.state === 'doingJob' ? 'Putting out' : 'Running to put out'} the fire on the ${ITEMS[it?.type ?? 'bin'].name}`;
     default: {
-      const flood = st.job && sim.s.litter.find((l) => l.id === st.job?.id)?.flood;
+      const mess = st.job ? sim.s.litter.find((l) => l.id === st.job?.id) : undefined;
+      if (mess?.accident) return 'Cleaning up after an accident';
+      const flood = mess?.flood;
       const room = flood ? sim.world.room(flood) : undefined;
       return room ? `Mopping out the flooded ${ROOMS[room.type].name}` : flood ? 'Mopping up' : 'Clearing litter';
     }
@@ -257,7 +290,8 @@ export type StatusKind =
   | 'broken'
   | 'burning'
   | 'stopped'
-  | 'flooded';
+  | 'flooded'
+  | 'bursting';
 
 /**
  * How each kind of status line looks. Trouble that is losing guests or staff now is red; what wants seeing to before it
@@ -277,6 +311,7 @@ const STATUS_TONES: Readonly<Record<StatusKind, StatusTone>> = {
   promotion: 'warn',
   offer: 'warn',
   miserable: 'warn',
+  bursting: 'warn',
   quitting: 'bad',
   broken: 'bad',
   burning: 'bad',

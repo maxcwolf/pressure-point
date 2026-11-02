@@ -680,6 +680,33 @@ test.describe('in a game', () => {
     await screens.shot('mishap-on');
   });
 
+  test('a guest bursting in a line with no Restroom to use', async ({ screens, game }) => {
+    await screens.play();
+    // a guest in for treatment holding on, and the advisor counting down to an accident
+    await game.eval((pp) => {
+      const g = pp.state.guests.find((g) => g.state !== 'leaving')!;
+      Object.assign(g, { state: 'waiting', bladder: 100, held: 5 });
+      pp.tools.select({ kind: 'guest', id: g.id });
+    });
+    await screens.shot('inspector-bursting');
+  });
+
+  test('a Restroom with every toilet taken and a guest bursting', async ({ screens, game }) => {
+    await screens.play();
+    // its one toilet taken by someone else, and a guest in line holding on long enough to be warned of
+    await game.eval((pp) => {
+      const g = pp.state.guests.find((g) => g.state !== 'leaving')!;
+      Object.assign(g, { state: 'waiting', bladder: 100, held: 12 });
+      const r = pp.sim.createRoom('restroom', { x: 21, y: 5, w: 3, h: 2 }, { x: 23, y: 6, dx: 0, dy: 1 });
+      pp.sim.placeItem('toilet', 21, 5, 0, { free: true, roomId: r.id });
+      pp.sim.placeItem('sink', 22, 5, 0, { free: true, roomId: r.id });
+      pp.sim.finishRoom(r);
+      pp.state.items.find((i) => i.type === 'toilet')!.users[0] = pp.state.guests.find((o) => o !== g)!.id;
+      pp.tools.select({ kind: 'room', id: r.id });
+    });
+    await screens.shot('inspector-restroom-bursting');
+  });
+
   test('the floor colored by an overlay', async ({ screens, page }) => {
     await screens.play();
     await page.locator('#sys').locator('[data-tip^="Overlays"]').click();

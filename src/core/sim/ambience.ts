@@ -1,4 +1,4 @@
-// How pleasant the place is: decor, litter, grime and the prestige of each room.
+// How pleasant the place is: decor, litter, accidents, grime and the prestige of each room.
 
 import {
   DECOR_BOOST,
@@ -10,6 +10,8 @@ import {
   isWatered,
   ITEMS,
   type ItemType,
+  MESS_DECOR,
+  MESS_PRESTIGE,
   WINDOW_MAX_BONUS,
 } from '../data';
 import { extraTiles } from '../resize';
@@ -58,7 +60,8 @@ export function updateAmbience(ctx: SimContext) {
     const [cx, cy] = itemCenter(it);
     spreadDecor(world, grid, it.type, Math.floor(cx), Math.floor(cy), decor);
   }
-  for (const l of ctx.s.litter) spread(world, grid, l.x, l.y, -2.5, DECOR_RADIUS, DECOR_RADIUS + 1);
+  for (const l of ctx.s.litter)
+    spread(world, grid, l.x, l.y, l.accident ? MESS_DECOR : -2.5, DECOR_RADIUS, DECOR_RADIUS + 1);
 }
 
 /**
@@ -82,7 +85,7 @@ export interface PrestigeTerms {
   size: number;
   decor: number;
   windows: number;
-  /** Points taken off for litter, as a positive number. */
+  /** Points taken off for litter and accidents, as a positive number. */
   litter: number;
   score: number;
   /** The prestige the score comes to, one to five. */
@@ -98,7 +101,7 @@ export function prestigeTerms(ctx: SimContext, room: Room, extra = 0): PrestigeT
   let decor = extra;
   for (const it of ctx.s.items) if (ctx.world.zoneAt(it.x, it.y) === room.id) decor += decorOf(it);
   let litter = 0;
-  for (const l of ctx.s.litter) if (ctx.world.zoneAt(l.x, l.y) === room.id) litter += 2;
+  for (const l of ctx.s.litter) if (ctx.world.zoneAt(l.x, l.y) === room.id) litter += l.accident ? MESS_PRESTIGE : 2;
   // daylight helps, up to a point
   const windows = Math.min(room.windows.length, WINDOW_MAX_BONUS) * 1.5;
   const score = size + decor + windows - litter;

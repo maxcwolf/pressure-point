@@ -265,6 +265,31 @@ export const FIZZ_WEAR = 60;
 export const FIZZ_CHANCE = 0.3;
 /** How fast someone walks across a puddle, against usual. */
 export const PUDDLE_SLOW = 0.55;
+/**
+ * How long a waiting guest holds on, bursting, before they have an accident, in seconds: with no restroom they can use
+ * at all (none built, or none working), and with one but every toilet taken, against 3.5 seconds for a visit to one.
+ */
+export const HOLD_NO_RESTROOM = 15;
+export const HOLD_TOILETS_TAKEN = 40;
+/**
+ * How long a guest holds on with every toilet taken before the advisor and the Restroom's inspector warn of them, in
+ * seconds: a toilet often comes free well before then. With no toilet working at all, they warn at once.
+ */
+export const HOLD_WARN_TAKEN = 10;
+/** The share of accidents that are a poop rather than a puddle of pee. */
+export const POOP_SHARE = 0.35;
+/** How much patience an accident costs the guest who had it, and the chance they go home there and then. */
+export const ACCIDENT_PATIENCE = 40;
+export const ACCIDENT_LEAVE = 0.5;
+/** How much reputation a guest going home after an accident costs, as one leaving fed up does. */
+export const ACCIDENT_REP = 3;
+/** How far a waiting guest sees an accident from, in tiles: further than litter, which is 2. */
+export const MESS_SIGHT = 3;
+/** How much an accident takes off the pleasantness around it, and off its room's prestige: twice what litter does. */
+export const MESS_DECOR = -5;
+export const MESS_PRESTIGE = 4;
+/** How long a poop is left uncleaned before flies come to it, in seconds. */
+export const FLIES_AFTER = 30;
 /** How fast a Staff Fridge in the Staff Room sees to the thirst and hunger of staff on a break, in points a second. */
 export const FRIDGE_REFRESH = 20;
 /** How much each Motivational Poster in a Staff Room lifts the morale everyone settles toward, and how many count. */

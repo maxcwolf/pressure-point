@@ -256,7 +256,7 @@ export class View {
       if (!loading && !this.rig.reduceMotion()) for (const model of landed) this.settling.add(model);
     }
     this.people.update(this.time, dt);
-    this.litter.update(this.time);
+    this.litter.update(this.time, this.rig.camera, this.renderer.getSize(drawn).y);
     this.rooms.update(this.time);
     this.vibes.update(this.time);
     this.snow.update(this.time);

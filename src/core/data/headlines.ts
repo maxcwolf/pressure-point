@@ -63,6 +63,7 @@ export type HeadlineCase =
   | 'mishap-power'
   | 'mishap-storm'
   | 'mishap-flood'
+  | 'accident'
   | 'mishap-freeze'
   | 'mishap-wasps'
   | 'mishap-ready'
@@ -123,6 +124,7 @@ export const HEADLINES: Readonly<Record<HeadlineCase, readonly string[]>> = {
   'mishap-power': ['Power cut hits {center}; guests "barely noticed, eyes were shut"'],
   'mishap-storm': ['Storm hits {center}, breaks some equipment; gulls blamed'],
   'mishap-flood': ['Storm floods {center} restroom; guest leaves with tide table'],
+  accident: ['{center} reminds town the floor is not a restroom; town "had assumed"'],
   'mishap-freeze': ['Pipes freeze at {center}; icicles "not a feature"'],
   'mishap-wasps': ['Wasps take the snacks; vicar blames croquet club'],
   'mishap-ready': ['{center} ready for {mishap}, as it turns out'],
@@ -189,6 +191,7 @@ export const STORIES: Readonly<Record<HeadlineCase, string>> = {
   'mishap-power': 'The power went out on {date} for {lasted}, and nothing with a plug worked.',
   'mishap-storm': 'A storm came in on {date} and broke some equipment.',
   'mishap-flood': 'A storm came in on {date}, broke some equipment and flooded a restroom.',
+  accident: 'A guest who could not find a toilet in time had an accident on the floor on {date}.',
   'mishap-freeze': 'The pipes froze on {date}, and the water was off for {lasted}.',
   'mishap-wasps': 'Wasps found the snacks on {date}, and nobody could get near them for {lasted}.',
   'mishap-ready': 'The {mishap} came on {date}, and {center} was ready for it.',

@@ -622,8 +622,9 @@ function findWork(ctx: SimContext, st: Staff) {
       const p = ctx.world.item(b.item);
       if (p && !p.claimedBy) tasks.push({ kind: 'douse', id: p.id, x: p.x, y: p.y, urgency: 3 });
     }
-    // a flooded restroom is out of action until it is mopped out, as urgent as anything broken
-    for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, l.flood ? 2 : 1);
+    // a flooded restroom is out of action until it is mopped out, as urgent as anything broken; an accident puts
+    // everyone off, so it comes before litter
+    for (const l of s.litter) if (!l.claimedBy) add('litter', l.id, l.x, l.y, l.flood ? 2 : l.accident ? 1.5 : 1);
     for (const p of s.items) {
       // something on fire is put out before it is seen to
       if (p.claimedBy || blazeAt(s, p.id)) continue;

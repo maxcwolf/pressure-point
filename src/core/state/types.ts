@@ -387,6 +387,8 @@ export interface Guest extends CharBase {
   thirst: number;
   hunger: number;
   bladder: number;
+  /** How long they have been bursting with nowhere to go while they wait, in seconds; missing while they are not. */
+  held?: number;
   patience: number;
   /** The lowest their patience has fallen this visit: what the waiting cost them. Missing in saves from before it was kept. */
   lowest?: number;
@@ -536,6 +538,12 @@ export interface Litter {
   flood?: number;
   /** Soot left on the floor by a fire, swept up like any other litter. */
   soot?: boolean;
+  /**
+   * An accident, left by a guest who could not hold on for a toilet: a poop, or a puddle of pee, which slows walkers
+   * like kombucha. `at` is the game day it was left, which flies come to a poop some time after.
+   */
+  accident?: 'poop' | 'pee';
+  at?: number;
 }
 
 /** Something on fire: the item, the room it is in, how long it has burned, and how long since it last spread, in seconds. */
@@ -698,6 +706,8 @@ export interface Stats {
   fires: number;
   /** Inspections failed because the inspector found the mushrooms under the counter. */
   busted: number;
+  /** Guests who could not hold on for a toilet and had an accident on the floor. */
+  accidents: number;
   /** What mushroom sales have taken. */
   mushroomSales: number;
 }
@@ -722,6 +732,8 @@ export interface Tally {
   healedBy: Partial<Record<Discipline, number>>;
   /** Class-goers who came to a Qi Gong class. */
   classgoers: number;
+  /** Guests who had an accident on the floor. */
+  accidents: number;
 }
 
 /** A finished month: its tally and its books, and how the center stood at the end of it. */
@@ -972,6 +984,8 @@ export interface GameState {
   blazes: Blaze[];
   brigade?: Brigade;
   blazesOn: boolean;
+  /** Whether a guest bursting with nowhere to go has an accident on the floor (a sandbox setting). */
+  accidentsOn: boolean;
   /** The fire burning now, or the last one, once there has been one. */
   fire?: FireReport;
   /** The last year-end awards ceremony, and every award won. */
@@ -1140,7 +1154,8 @@ export type NewsKind =
   | 'grade'
   | 'star'
   | 'awards'
-  | 'wait';
+  | 'wait'
+  | 'accident';
 
 /**
  * How a story ended, in its kind's own terms: how a fire was put out; whether a runner found the door or was calmed,

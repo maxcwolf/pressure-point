@@ -100,8 +100,20 @@ function open(what: string | null): GameState | 'no-room' | null {
   const state = center ? newGame(center) : readSave(what);
   // a new sandbox game starts as set up on the title screen; a campaign center decides everything itself
   if (state && center === 'sandbox') {
-    const { money, unlockAll, challenges, outbreaks, weather, visits, rival, mishaps, fires, bankruptcy, difficulty } =
-      loadSandbox();
+    const {
+      money,
+      unlockAll,
+      challenges,
+      outbreaks,
+      weather,
+      visits,
+      rival,
+      mishaps,
+      fires,
+      accidents,
+      bankruptcy,
+      difficulty,
+    } = loadSandbox();
     state.options = loadDisciplinePrefs();
     state.money = money;
     state.unlockAll = unlockAll;
@@ -112,6 +124,7 @@ function open(what: string | null): GameState | 'no-room' | null {
     state.rivalOn = rival;
     state.mishapsOn = mishaps;
     state.blazesOn = fires;
+    state.accidentsOn = accidents;
     state.bankruptcyOn = bankruptcy;
     state.difficulty = difficulty;
   }
