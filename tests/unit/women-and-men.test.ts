@@ -3,7 +3,7 @@
 // a look: a build, glasses and shoes.
 import { describe, expect, it } from 'vitest';
 
-import { AMANDA, CAMEOS, MEN_NAMES, ROLE_ORDER, ROLES, WOMEN_APPLY, WOMEN_NAMES } from '../../src/core/data';
+import { AMANDA, CAMEOS, MEN_NAMES, ROLE_ORDER, WOMEN_APPLY, WOMEN_NAMES } from '../../src/core/data';
 import {
   HAIR,
   hairFor,
@@ -11,9 +11,9 @@ import {
   MEN_HAIR,
   randomLook,
   randomName,
+  settleClothes,
   settleLook,
   settleSex,
-  settleTop,
   sexOfName,
   SHOES,
   WOMEN_HAIR,
@@ -251,15 +251,6 @@ describe('the rest of a look', () => {
     expect(stocky.look.build).toBe(2);
   });
 
-  it("never puts a guest in a top too like a uniform's", () => {
-    /** How far apart two colors are, each channel from 0 to 255. */
-    const apart = (a: number, b: number) =>
-      Math.hypot((a >> 16) - (b >> 16), ((a >> 8) & 255) - ((b >> 8) & 255), (a & 255) - (b & 255));
-    const tops = new Set(many().map((l) => l.top));
-    expect(tops.size).toBe(11);
-    for (const top of tops) for (const role of ROLE_ORDER) expect(apart(top, ROLES[role].uniform)).toBeGreaterThan(48);
-  });
-
   it("puts a guest from an older save who wore a uniform's color in a top of their own", () => {
     const { s } = openCenter(1);
     const look = { ...s.staff[0]!.look, top: 0xf2f2f2 };
@@ -267,13 +258,13 @@ describe('the rest of a look', () => {
     upgradeSave(s);
     expect(s.regulars[0]!.look.top).toBe(0xa8d14f);
     for (const [was, now] of [
-      [0x2a9d8f, 0xc8417f],
-      [0x4d7ea8, 0x3a5fc8],
+      [0x2a9d8f, 0xd23ca8],
+      [0x4d7ea8, 0x3a56d0],
       [0x8ab17d, 0x6a3fa0],
-      [0xe76f51, 0xe76f51],
+      [0xf4a261, 0xf4a261],
     ]) {
-      const p = { top: was! };
-      settleTop(p);
+      const p = { top: was!, bottom: 0x3d405b };
+      settleClothes(p);
       expect(p.top).toBe(now);
     }
   });

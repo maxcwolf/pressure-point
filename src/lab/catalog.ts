@@ -28,7 +28,7 @@ import {
   UPGRADE_LEVELS,
 } from '../core/data';
 import { footprintOf } from '../core/footprint';
-import { HAIR, randomLook } from '../core/people';
+import { BOTTOMS, HAIR, randomLook, TOPS } from '../core/people';
 import { newSeed, stream } from '../core/random';
 import type { Season } from '../core/sim/twists';
 import type { BubbleId, Char, Guest, Look, Room, VisitorKind } from '../core/state/types';
@@ -776,6 +776,55 @@ function runawaySpecimen(): Specimen {
   };
 }
 
+/** How far apart the people in the crowd stand, in meters. */
+const CROWD_GAP = 0.9;
+
+/**
+ * A crowd at a glance: a guest in each top the game dresses guests in, mingled with one of each role of staff, all in
+ * trousers guests wear, to see at the game's distance that no guest could be taken for staff.
+ */
+function crowdSpecimen(): Specimen {
+  return {
+    id: 'crowd',
+    group: 'Guests',
+    name: 'A crowd: every guest top among the staff',
+    footprint: [5, 4],
+    /** Build everyone, a guest and a member of staff by turns, in rows. */
+    build() {
+      const r = stream(7);
+      const root = new THREE.Group();
+      const guests = TOPS.map((top, i) => {
+        const look = {
+          ...randomLook(r, i % 2 ? 'male' : 'female'),
+          top,
+          bottom: must(BOTTOMS[i % BOTTOMS.length], 'a bottom'),
+        };
+        return { rig: buildCharacter(look), c: demoGuest(look, must(CONDITIONS[0], 'a condition').id) };
+      });
+      const staff = ROLE_ORDER.map((role, i) => {
+        const look = randomLook(r, i % 2 ? 'female' : 'male');
+        look.bottom = must(BOTTOMS[(i + 3) % BOTTOMS.length], 'a bottom');
+        return { rig: buildCharacter(look, role), c: demoStaff(look, role) };
+      });
+      const people = guests.flatMap((g, i) => [g, ...(staff[i] ? [staff[i]] : [])]);
+      people.forEach(({ rig, c }, i) => {
+        Object.assign(c, {
+          id: i + 1,
+          x: ((i % 5) - 2) * CROWD_GAP,
+          y: (Math.floor(i / 5) - 1.5) * CROWD_GAP,
+          facing: (i * 2.4) % (Math.PI * 2),
+        });
+        root.add(rig.group);
+      });
+      /** Pose them all, standing about. */
+      const animate = (t: number, dt: number) => {
+        for (const { rig, c } of people) poseChar(rig, c, t, dt, { style: null });
+      };
+      return { root, controls: [], animate };
+    },
+  };
+}
+
 /** A Caretaker mopping up the flood water a storm left in a restroom, over a puddle of it. */
 function moppingSpecimen(): Specimen {
   return {
@@ -1280,6 +1329,7 @@ export const CATALOG: readonly Specimen[] = [
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
   runawaySpecimen(),
+  crowdSpecimen(),
   moppingSpecimen(),
   curedSpecimen(),
   ...ACTS.map(([act, label]) => actSpecimen(act, label)),

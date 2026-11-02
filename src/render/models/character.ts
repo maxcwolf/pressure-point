@@ -201,6 +201,9 @@ const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: numbe
   firefighter: { top: 0x2c3f6e, bottom: 0x23262e },
 };
 
+/** The blue of a sodden wool blanket, a deeper blue than the Sound Healer's teal, so its wearer is not taken for one. */
+export const BLANKET = 0x2d4a9a;
+
 /** A firefighter's yellow, on their helmet and the reflective bands on their coat, cuffs and trousers. */
 const HI_VIS = 0xf2c418;
 
@@ -250,7 +253,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const clothes = visitor && VISITOR_CLOTHES[visitor];
   const topColor = role ? ROLES[role].uniform : (clothes?.top ?? look.top);
   const top = mat(topColor, 0.7);
-  const bottom = mat(role === 'caretaker' ? 0x5c6b33 : (clothes?.bottom ?? look.bottom), 0.8);
+  const bottom = mat((role && ROLES[role].bottom) ?? clothes?.bottom ?? look.bottom, 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
   // a firefighter's boots are black whatever shoes they would wear
@@ -469,7 +472,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       rig.props.push(put(leg, rbox(0.21, 0.15, 0.3, 0.03), ice, 0, -0.36 + kneeUp, 0.035));
   } else if (visual === 'blanket') {
     // a sodden wool blanket over the shoulders and down the back, striped and fringed at its hem, sagging, and dripping
-    const wool = mat(0x3c6a93, 0.35);
+    const wool = mat(BLANKET, 0.35);
     const stripe = mat(0xd9e4ec, 0.4);
     // the wool in one shape and its stripes and fringe in another, so it costs a part or two to draw
     const sheet: Piece[] = [];

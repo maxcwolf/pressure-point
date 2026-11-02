@@ -16,6 +16,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Move furniture before you build.** In a room's blueprint, click a piece of furniture you have put in to pick it up and put it down elsewhere in the room, for nothing. Esc leaves it where it was.
 - **The tutorial stops asking to start the clock** once you have started it, so pausing to put the Benches down no longer brings the step back, nor does the game pausing itself while you place something.
 - **Amanda on demand.** A new console command, amanda, has Amanda Jablonsky apply straight away, as the newest Massage Therapist applicant, unless she already works for you or is applying. Tab now finishes a command as you type it in the console.
+- **Guests never dress like staff.** No guest now wears a top or trousers anywhere near the colors of a uniform, so staff stand out in a crowd at a glance. Guests and staff in an older save change into the nearest new colors, and a guest with Wet Blanket wears a deeper blue than the Sound Healer's.
 
 ## v0.35.0
 

@@ -39,33 +39,59 @@ const SKINS = [0xf6d2b8, 0xeebf9e, 0xd9a078, 0xb97a55, 0x8d5a3b, 0x6b4229, 0xf9d
 const HAIRS = [0x2b1d16, 0x4a2f1d, 0x8a5a2b, 0xd9a441, 0xb5422e, 0x8c8c8c, 0xe9e3d3, 0x6a4fb0, 0x2f7f7a];
 
 /**
- * The colors guests' tops come in: none a uniform's, so a member of staff stands out in a crowd. As many as there
- * always were, so making someone up takes the game's random numbers as it always did.
+ * How far apart in OKLab, in hundredths, every color a guest wears is from every color of a uniform, so no guest is
+ * taken for staff at the game's distance. About 2 is a difference just seen side by side; the trims that tell rooms
+ * apart are at least 8.
  */
-const TOPS = [
-  0xe76f51, 0xf4a261, 0xe9c46a, 0xc8417f, 0x3a5fc8, 0xb56576, 0x6a3fa0, 0x6d597a, 0xef8fa2, 0x5fa8d3, 0xa8d14f,
-];
+export const CLEAR_OF_UNIFORMS = 15;
 
 /**
- * The tops guests wore that were too like a uniform, and what each became: the receptionist's teal, the healer's blue,
- * the Caretaker's sage, and the white of the consultant's and practitioner's coats.
+ * The colors guests' tops come in: none near a uniform's, so a member of staff stands out in a crowd. As many as there
+ * always were, so making someone up takes the game's random numbers as it always did.
+ */
+export const TOPS = [
+  0xf07a1e, 0xf4a261, 0xe9c46a, 0xd23ca8, 0x3a56d0, 0x1f2f6b, 0x6a3fa0, 0x2a2a30, 0xef8fa2, 0x7cc6fa, 0xa8d14f,
+];
+
+/** The colors guests' trousers come in, which staff wear too under their uniform tops: none near a uniform's either. */
+export const BOTTOMS = [0x3d405b, 0x2a2a30, 0x2f4858, 0xc9b48a, 0x2e3f78, 0x3b3550, 0xb8b8bc];
+
+/**
+ * The tops guests wore that were too like a uniform, and what each became. First the receptionist's teal, the healer's
+ * blue, the Caretaker's sage, and the white of the consultant's and practitioner's coats; then, measured, the coral and
+ * dusty rose near the Instructor's red, the raspberry near it and the plum near the Shaman's brown, and the sky blue
+ * near the receptionist's teal.
  */
 const RETIRED_TOPS: ReadonlyMap<number, number> = new Map([
-  [0x2a9d8f, 0xc8417f],
-  [0x4d7ea8, 0x3a5fc8],
+  [0x2a9d8f, 0xd23ca8],
+  [0x4d7ea8, 0x3a56d0],
   [0x8ab17d, 0x6a3fa0],
   [0xf2f2f2, 0xa8d14f],
+  [0xe76f51, 0xf07a1e],
+  [0xc8417f, 0xd23ca8],
+  [0x3a5fc8, 0x3a56d0],
+  [0xb56576, 0x1f2f6b],
+  [0x6d597a, 0x2a2a30],
+  [0x5fa8d3, 0x7cc6fa],
 ]);
 
-/** Put a guest from an older save in the top a guest in that color would wear now, rather than a uniform's. */
-export function settleTop(look: Pick<Look, 'top'>) {
+/** The trousers too like a uniform, and what each became: the browns near the Shaman's, the grays near the Caretaker's. */
+const RETIRED_BOTTOMS: ReadonlyMap<number, number> = new Map([
+  [0x5c4b3a, 0x2a2a30],
+  [0x6b705c, 0xc9b48a],
+  [0x7f5539, 0x2e3f78],
+  [0x4a4e69, 0x3b3550],
+  [0x8d99ae, 0xb8b8bc],
+]);
+
+/** Put someone from an older save in the clothes they would wear now, rather than in a uniform's colors. */
+export function settleClothes(look: Pick<Look, 'top' | 'bottom'>) {
   look.top = RETIRED_TOPS.get(look.top) ?? look.top;
+  look.bottom = RETIRED_BOTTOMS.get(look.bottom) ?? look.bottom;
 }
 
 /** The colors shoes come in: the brown everyone wore before, black, tan and white. */
 export const SHOES = [0x3a302b, 0x1d1d22, 0x9b6b3f, 0xe8e4dc];
-
-const BOTTOMS = [0x3d405b, 0x5c4b3a, 0x2f4858, 0x6b705c, 0x7f5539, 0x4a4e69, 0x8d99ae];
 
 /** The hair styles, by the number a look keeps. A number already in saves never changes meaning. */
 export const HAIR = {
