@@ -1,7 +1,7 @@
 // The keyboard: shortcuts, set in the settings, and which keys are held for moving the camera.
 
 import type { GameState } from '../core/state/types';
-import { actionFor, CONSOLE_KEY, type KeyBindings, loadControls } from '../storage/controls';
+import { actionFor, CONSOLE_KEY, consoleOn, type KeyBindings, loadControls } from '../storage/controls';
 import type { HudState } from '../ui/hud';
 import type { Tools } from './tools/tools';
 
@@ -80,8 +80,9 @@ export function bindKeyboard({
     // a key held down repeats, and a chord with Ctrl, Cmd or Alt is meant for the browser.
     // On a Mac the key-up of a Cmd chord never comes, so such a key is not counted as held either.
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-    // ~ opens the cheat console, once it is switched on in the settings; with Shift or without, it is the same key
-    if (e.code === CONSOLE_KEY && loadControls().console) {
+    // ~ opens the cheat console, once it is switched on in the settings or dev mode is; with Shift or without, it is
+    // the same key
+    if (e.code === CONSOLE_KEY && consoleOn(loadControls())) {
       e.preventDefault();
       ui.toggleConsole();
       onChange();

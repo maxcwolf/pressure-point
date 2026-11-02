@@ -196,12 +196,18 @@ export function settleSex(person: {
 export const amandaAround = (s: GameState) =>
   s.staff.some((st) => st.name === AMANDA.name) || s.candidates.some((c) => c.name === AMANDA.name);
 
+/** How skilled applicants can be at most, before a recruitment drive: more as stars are earned and standing rises. */
+const applicantReach = (s: GameState) => 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL;
+
+/** The extra rank a recruitment drive running now brings applicants. */
+const recruitDrive = (s: GameState) => (s.campaigns.some((c) => c.kind === 'recruit') ? RECRUIT_SKILL : 0);
+
 /** Make up a job applicant for a role. More stars bring more skilled ones, and now and then a familiar face. */
 export function makeCandidate(s: GameState, role: Role): Candidate {
   // a recruitment drive brings in a better class of applicant
-  const drive = s.campaigns.some((c) => c.kind === 'recruit') ? RECRUIT_SKILL : 0;
+  const drive = recruitDrive(s);
   // and a center standing higher, better still
-  const reach = 3.4 + s.stars * 0.6 + s.grade * GRADE_APPLICANT_SKILL;
+  const reach = applicantReach(s);
   const skill = clamp(Math.round(rnd(s, 0.6, reach)) + drive, 1, 5);
   const traits = rollQuirks(s, role);
   // practitioners all know their discipline's basic modality; a few arrive trained in something more
@@ -220,26 +226,36 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   const sex = amanda ? AMANDA.sex : rollSex(s, WOMEN_APPLY[role]);
   const look = randomLook(s, sex);
   look.top = ROLES[role].uniform;
-  if (amanda) {
-    // she outranks the best the pool could offer right now, so she keeps pace as the center grows
-    const best = clamp(Math.round(reach) + drive + AMANDA.edge, AMANDA.minSkill, 5);
-    const hers = [...AMANDA.quals];
-    // her quirks are always the same ones; those rolled above go unused, so everyone else's random numbers stay put
-    const quirks = [...AMANDA.traits];
-    Object.assign(look, { hairStyle: AMANDA.hairStyle, hair: AMANDA.hair });
-    return {
-      id: s.nextId++,
-      name: AMANDA.name,
-      role,
-      skill: best,
-      salary: scalePay(fairSalary(role, best, quirks, hers), tuning(s, 'salaries')),
-      traits: quirks,
-      quals: hers,
-      look,
-    };
-  }
+  // her quirks are always the same ones; those rolled above go unused, so everyone else's random numbers stay put
+  if (amanda) return amandaIn(s, look, Math.round(reach) + drive);
   const salary = scalePay(fairSalary(role, skill, traits, quals), tuning(s, 'salaries'));
   return { id: s.nextId++, name: randomName(s, sex), role, skill, salary, traits, quals, look };
+}
+
+/** Amanda Jablonsky applying, now, whether or not the pool would bring her: for the console's amanda. */
+export function makeAmanda(s: GameState): Candidate {
+  const look = randomLook(s, AMANDA.sex);
+  look.top = ROLES.therapist.uniform;
+  return amandaIn(s, look, Math.round(applicantReach(s)) + recruitDrive(s));
+}
+
+/** Amanda Jablonsky as an applicant in a look made up for her, given the best rank the pool could bring now. */
+function amandaIn(s: GameState, look: Look, best: number): Candidate {
+  // she outranks the best the pool could offer right now, so she keeps pace as the center grows
+  const skill = clamp(best + AMANDA.edge, AMANDA.minSkill, 5);
+  const quals = [...AMANDA.quals];
+  const traits = [...AMANDA.traits];
+  Object.assign(look, { hairStyle: AMANDA.hairStyle, hair: AMANDA.hair });
+  return {
+    id: s.nextId++,
+    name: AMANDA.name,
+    role: 'therapist',
+    skill,
+    salary: scalePay(fairSalary('therapist', skill, traits, quals), tuning(s, 'salaries')),
+    traits,
+    quals,
+    look,
+  };
 }
 
 /**

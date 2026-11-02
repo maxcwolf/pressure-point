@@ -187,7 +187,7 @@ The pause menu (☰ or Esc) has **Main menu**, which saves and returns to the ti
 
 ## Cheat console
 
-For testing, or for fun. Switch on **Cheat console** at the bottom of **Settings**, and then **~** (the key under Esc) opens it in a game. Type a command and press Enter. The up and down arrows bring back commands you typed before, and Esc or ~ closes it. The console is off to begin with, and ~ does nothing until it is switched on. Two Point's games have no console of their own, so the commands follow Theme Hospital's cheats and what Two Point's trainers offer.
+For testing, or for fun. Switch on **Cheat console** at the bottom of **Settings**, and then **~** (the key under Esc) opens it in a game. Type a command and press Enter. The up and down arrows bring back commands you typed before, Tab finishes the command you are typing, and Esc or ~ closes it. The console is off to begin with, and ~ does nothing until it is switched on. Two Point's games have no console of their own, so the commands follow Theme Hospital's cheats and what Two Point's trainers offer.
 
 | Command                      | What it does                                                                         |
 | ---------------------------- | ------------------------------------------------------------------------------------ |
@@ -198,6 +198,7 @@ For testing, or for fun. Switch on **Cheat console** at the bottom of **Settings
 | `star`                       | Earn the next star, prize and all                                                    |
 | `win`                        | Earn every star left in the center                                                   |
 | `staff`                      | Every member of staff at full energy and morale, fed and watered                     |
+| `amanda`                     | Amanda Jablonsky applies now, as the newest Massage Therapist applicant              |
 | `happy`                      | Every guest at full patience, with no thirst, hunger or need for the restroom        |
 | `guests [count] [condition]` | Send in guests, 5 unless you say, with a condition if you name it (`guests 3 slump`) |
 | `emergency`                  | Offer an emergency now                                                               |

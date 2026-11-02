@@ -156,7 +156,9 @@ const campaignKey = (c: GameState['campaigns'][number]) => `${c.kind}:${c.condit
 export function gameProps(s: GameState): PlayProps {
   // the features being tried out that are on in this game, so a chart can split the games that have them
   const features = FEATURE_ORDER.filter((f) => featureOn(s, f)).join(',');
-  return { center: s.center, day: Math.floor(s.day), stars: s.stars, cheated: s.cheated, features };
+  // dev mode's commands leave a game counting for the campaign, so they are told apart here instead of by `cheated`
+  const dev = s.devCheats === true;
+  return { center: s.center, day: Math.floor(s.day), stars: s.stars, cheated: s.cheated, dev, features };
 }
 
 /** What has happened in a game since it stood as marked, oldest first. */

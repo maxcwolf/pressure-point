@@ -76,6 +76,43 @@ test.describe('starting out', () => {
     expect(game.errors).toEqual([]);
   });
 
+  test('dev mode is unlocked from the title screen, and opens a console that leaves the game counting', async ({
+    game,
+    page,
+  }) => {
+    await page.goto('/');
+    const version = page.locator('#title .title-version');
+    // the settings, opened before and kept while hidden, have no switch for it yet
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const devSwitch = page.locator('#title-settings').getByRole('switch', { name: 'Dev mode' });
+    await expect(devSwitch).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    // a click on the version alone does nothing
+    await version.click();
+    await expect(page.locator('#title .dev-badge')).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+Shift+KeyD');
+    await version.click();
+    await expect(page.locator('#title .dev-badge')).toHaveText('Dev mode');
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(devSwitch).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    // kept for the next visit, and ~ opens the console with its switch in the settings still off
+    await game.start();
+    await page.keyboard.press('Backquote');
+    const box = page.getByRole('textbox', { name: 'Cheat command' });
+    await expect(box).toBeFocused();
+    await box.fill('ama');
+    await page.keyboard.press('Tab');
+    await expect(box).toHaveValue('amanda ');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#console')).toContainText('Amanda Jablonsky has applied');
+    expect(await game.eval((pp) => pp.sim.s.cheated)).toBe(false);
+    await page.keyboard.press('Escape');
+    await game.menu('Hire');
+    await page.getByRole('button', { name: 'Massage Therapist' }).click();
+    await expect(page.getByText('Amanda Jablonsky')).toBeVisible();
+  });
+
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
     const music = page.locator('#title').locator('[data-tip="Music"]');

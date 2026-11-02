@@ -993,6 +993,11 @@ export interface GameState {
   bankruptcyOn: boolean;
   /** A command has been used in the cheat console, so this game earns no achievements or campaign stars. */
   cheated: boolean;
+  /**
+   * A command has been used in the cheat console in dev mode: the game still counts for the campaign, but its play
+   * statistics say so. Missing from a save before dev mode, which had none.
+   */
+  devCheats?: boolean;
   seenTips: string[];
   /**
    * A first go at the campaign's first center: the advisor looks ahead to what the center will soon need, and a

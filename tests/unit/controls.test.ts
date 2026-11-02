@@ -5,6 +5,7 @@ import {
   actionFor,
   AUTOSAVE_CHOICES,
   canBind,
+  consoleOn,
   DEFAULT_KEYS,
   defaultControls,
   forgetControls,
@@ -60,13 +61,14 @@ describe('key bindings', () => {
 });
 
 describe('the controls kept', () => {
-  it('start with the default keys, no edge scrolling, an autosave every 5 minutes, pausing to place and no console', () => {
+  it('start with the default keys, no edge scrolling, an autosave every 5 minutes, pausing to place, no cheat console or dev mode', () => {
     expect(loadControls()).toEqual({
       keys: DEFAULT_KEYS,
       edgeScroll: false,
       autosave: 300,
       pauseToPlace: true,
       console: false,
+      dev: false,
     });
   });
 
@@ -77,6 +79,7 @@ describe('the controls kept', () => {
       autosave: 60,
       pauseToPlace: false,
       console: true,
+      dev: false,
     });
     forgetControls();
     expect(loadControls()).toEqual({
@@ -85,7 +88,21 @@ describe('the controls kept', () => {
       autosave: 60,
       pauseToPlace: false,
       console: true,
+      dev: false,
     });
+  });
+
+  it('keep dev mode unlocked for every game on this computer until it is switched off, opening the console', () => {
+    expect(consoleOn(loadControls())).toBe(false);
+    saveControls({ ...loadControls(), dev: true });
+    forgetControls();
+    expect(loadControls().dev, 'after the page is opened again').toBe(true);
+    expect(consoleOn(loadControls()), 'with the console switch off').toBe(true);
+    saveControls({ ...loadControls(), dev: false });
+    forgetControls();
+    expect(loadControls().dev).toBe(false);
+    expect(consoleOn(loadControls())).toBe(false);
+    expect(readControls({ dev: 'yes' }).dev, 'anything but true or false is left off').toBe(false);
   });
 
   it('leave anything unusable at its default when read back', () => {
