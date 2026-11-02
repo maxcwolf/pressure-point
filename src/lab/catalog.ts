@@ -43,6 +43,15 @@ import type { GagStage } from '../render/gags/types';
 import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
+import {
+  animateAccident,
+  buildPee,
+  buildPoop,
+  PEE_LOOKS,
+  type PeeLook,
+  POOP_LOOKS,
+  type PoopLook,
+} from '../render/models/accident';
 import { showBare } from '../render/models/bare';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig, cureRig } from '../render/models/character';
@@ -1172,6 +1181,70 @@ const SCENERY: Specimen[] = [
       flood.position.x = 0.8;
       root.add(kombucha, flood);
       return { root, animate: still, controls: [] };
+    },
+  },
+  {
+    id: 'scenery:accidents',
+    group: 'Scenery',
+    name: 'Accidents: a poop and a puddle of pee',
+    footprint: [2, 1],
+    /** A poop and a puddle of pee side by side, each in the look chosen. */
+    build: () => {
+      const st = { poop: 'swirl' as PoopLook, pee: 'gloss' as PeeLook };
+      const root = new THREE.Group();
+      const poop = buildPoop(1, st.poop);
+      poop.position.x = -0.5;
+      const pee = buildPee(2, st.pee);
+      pee.position.x = 0.5;
+      root.add(poop, pee);
+      return {
+        root,
+        /** Send the flies round and glint the sparkles. */
+        animate: (t) => {
+          animateAccident(poop, t, 1);
+          animateAccident(pee, t, 2);
+        },
+        controls: [
+          choice(
+            'Poop',
+            st,
+            'poop',
+            POOP_LOOKS.map((l): Option => [l, l]),
+            true,
+          ),
+          choice(
+            'Pee',
+            st,
+            'pee',
+            PEE_LOOKS.map((l): Option => [l, l]),
+            true,
+          ),
+        ],
+      };
+    },
+  },
+  {
+    id: 'scenery:accidents-all',
+    group: 'Scenery',
+    name: 'Accidents: every look side by side',
+    footprint: [3, 2],
+    /** Every look of poop along the back, and every look of pee along the front, each on its own tile. */
+    build: () => {
+      const root = new THREE.Group();
+      const all = [
+        ...POOP_LOOKS.map((l, i) => [buildPoop(i + 1, l), i - 1, -0.5] as const),
+        ...PEE_LOOKS.map((l, i) => [buildPee(i + 4, l), i - 1, 0.5] as const),
+      ];
+      for (const [g, x, z] of all) {
+        g.position.set(x, 0, z);
+        root.add(g);
+      }
+      return {
+        root,
+        /** Send the flies round and glint the sparkles. */
+        animate: (t) => all.forEach(([g], i) => animateAccident(g, t, i + 1)),
+        controls: [],
+      };
     },
   },
   {
