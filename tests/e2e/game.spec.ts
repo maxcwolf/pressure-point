@@ -3216,6 +3216,8 @@ test.describe('magic mushrooms', () => {
       pp.state.visitsOn = true;
       pp.state.nextVip = 1e9;
       pp.state.nextInspection = 0;
+      // the first failed inspection is only a warning: this is a later one
+      pp.state.inspectionWarned = true;
     });
     await game.fastForward(2);
     await expect(page.locator('#toasts')).toContainText('still on sale');
@@ -3227,12 +3229,53 @@ test.describe('magic mushrooms', () => {
     });
     await game.settle();
     const modal = page.locator('#modal');
-    await expect(modal.locator('.visit-rooms')).toContainText('Magic mushrooms under the counter!');
+    await expect(modal.locator('.visit-rooms')).toContainText('Magic mushrooms under the Shop Counter.');
     const fines = await game.eval((pp) => pp.state.ledger.fines);
-    await modal.getByRole('button', { name: /Make it go away/ }).click();
+    const [fine, top] = await game.eval((pp) => [-pp.state.visitReport!.money, pp.state.visitReport!.bribes![2]!]);
+    expect(top).toBeLessThan(fine);
+    await modal.getByRole('button', { name: /85% chance/ }).click();
+    // the report stays to say how it went, taken or turned down
+    await expect(modal.getByRole('button', { name: 'Back to work' })).toBeVisible();
+    const outcome = await game.eval((pp) => pp.state.visitReport?.outcome);
+    const paid = (await game.eval((pp) => pp.state.ledger.fines)) - fines;
+    if (outcome === 'paid off') {
+      expect(paid).toBe(top);
+      await expect(modal).toContainText('it went away');
+    } else {
+      expect(paid).toBeGreaterThan(fine);
+      await expect(modal).toContainText('turned down');
+    }
+    await modal.getByRole('button', { name: 'Back to work' }).click();
     await expect(modal.locator('h2')).toHaveCount(0);
-    expect(await game.eval((pp) => pp.state.visitReport?.outcome)).toBe('paid off');
-    expect((await game.eval((pp) => pp.state.ledger.fines)) - fines).toBeGreaterThanOrEqual(10000);
+    expect(game.errors).toEqual([]);
+  });
+});
+
+test.describe('the first failed inspection', () => {
+  test('is only a warning, listing what was wrong where, with Show me to the room', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    // the inspector comes, and finds no Fire Extinguisher near any door
+    await game.eval((pp) => {
+      pp.state.visitsOn = true;
+      pp.state.nextVip = 1e9;
+      pp.state.nextInspection = 1e9;
+      pp.state.visitNotice = { visit: 'inspector', name: 'Pat', title: 'the health inspector', arrives: pp.state.day };
+      pp.state.speed = 1;
+      for (let i = 0; i < 2400 && !pp.state.visitReport; i++) pp.sim.tick(0.1);
+    });
+    await game.settle();
+    const modal = page.locator('#modal');
+    await expect(modal.locator('h2')).toContainText('The inspection: a warning');
+    await expect(modal).toContainText('only a warning: no fine');
+    await expect(modal).toContainText('The next inspection failed will be fined $800 for each thing wrong');
+    await expect(modal.locator('.visit-rooms')).toContainText('No Fire Extinguisher near the door.');
+    expect(await game.eval((pp) => [pp.state.ledger.fines, pp.state.inspectionWarned])).toEqual([0, true]);
+    await modal.getByRole('button', { name: 'Show me' }).first().click();
+    await expect(modal.locator('h2')).toHaveCount(0);
+    // closed, so it no longer opens again after a reload
+    expect(await game.eval((pp) => pp.state.visitReport?.unread)).toBeUndefined();
+    await expect(page.locator('#inspector')).toContainText('Failed inspection: No Fire Extinguisher near the door.');
     expect(game.errors).toEqual([]);
   });
 });

@@ -270,15 +270,15 @@ describe('play events', () => {
       outcome: 'failed',
       money: -1000,
       rep: -5,
-      bribe: 2000,
+      bribes: [200, 400, 600],
     };
     let mark = markOf(sim.s);
     sim.s.visitReport = report;
     expect(playEvents(mark, sim.s).map((e) => [e.name, e.props.outcome])).toEqual([['visit_ended', 'failed']]);
     mark = markOf(sim.s);
     sim.s.money = 5000;
-    expect(sim.settleInspection(true)).toBe(true);
-    expect(playEvents(mark, sim.s).find((e) => e.name === 'inspection_settled')?.props.how).toBe('paid_off');
+    expect(sim.settleInspection()).toBe(true);
+    expect(playEvents(mark, sim.s).find((e) => e.name === 'inspection_settled')?.props.how).toBe('fined');
   });
 
   it('never say what the player named the game', () => {

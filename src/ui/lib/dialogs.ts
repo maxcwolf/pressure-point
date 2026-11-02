@@ -32,17 +32,20 @@ export function raise(
   return { show: null, line: [...line.slice(0, after), d, ...line.slice(after)] };
 }
 
-/** The dialog a stopped game is waiting on, if it is: a bankruptcy, a payday to borrow for, or an inspection to settle. */
+/**
+ * The dialog a stopped game is waiting on, if it is: a bankruptcy, a payday to borrow for, an inspection to settle, or
+ * the warning for a first failed one, until the player has closed it.
+ */
 export function pendingDialog(s: GameState): DialogId | null {
   if (s.bankrupt) return 'bankrupt';
   if (s.payrollDue) return 'payroll';
-  if (s.visitReport?.bribe !== undefined) return 'visit';
+  if (s.visitReport?.bribes !== undefined || s.visitReport?.unread) return 'visit';
   return null;
 }
 
 /** Whether a dialog has to be answered from its own buttons, so Esc does not close it. */
 export function mustAnswer(id: DialogId, s: GameState): boolean {
-  return FIRST.has(id) || (id === 'visit' && s.visitReport?.bribe !== undefined);
+  return FIRST.has(id) || (id === 'visit' && s.visitReport?.bribes !== undefined);
 }
 
 /** Whether a dialog waiting in line still has something to show when its turn comes. */

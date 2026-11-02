@@ -211,7 +211,14 @@ import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
 import { decayItems, wearByTheDay } from './upkeep';
 import { fadeVibes } from './vibes';
-import { extinguisherNear, lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
+import {
+  extinguisherNear,
+  inspectionProblems,
+  lapseInspection,
+  settleInspection,
+  updateVisitor,
+  updateVisits,
+} from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
 import { letWaveIn, updateWaves, type WaveChecks, waveChecks, waveReady, wavesSwitched } from './waves';
 import { warnWorsening } from './worsening';
@@ -762,9 +769,9 @@ export class Sim {
     return renamePlot(this.ctx, id, name);
   }
 
-  /** Settle a failed inspection: pay the fine, or pay to make it go away. */
-  settleInspection(payOff: boolean): boolean {
-    return settleInspection(this.ctx, payOff);
+  /** Settle a failed inspection: pay the fine, with no offer, or make one of its offers to make it go away. */
+  settleInspection(offer?: number): boolean {
+    return settleInspection(this.ctx, offer);
   }
 
   /** The center's standing points as it is now, part by part. */
@@ -1124,6 +1131,16 @@ export class Sim {
   /** Whether a room is ready for a fire: sprinklers, or a Fire Extinguisher that works near its door. */
   extinguisherNear(room: Room): boolean {
     return extinguisherNear(this.ctx, room);
+  }
+
+  /** The player has closed the last visit's report: a warning no longer opens again after a reload. */
+  readVisitReport() {
+    if (this.s.visitReport) delete this.s.visitReport.unread;
+  }
+
+  /** What the health inspector would find wrong in a room now. */
+  inspectionProblems(room: Room): string[] {
+    return inspectionProblems(this.ctx, room);
   }
 
   /** Whether an item is on fire. */

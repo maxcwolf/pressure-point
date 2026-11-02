@@ -143,8 +143,9 @@ export const defaultPolicy = (): Policy => ({
  * 43: Former Influencer and Healing Hands only for those who treat guests, taken from anyone else who has one.
  * 44: Holds Space only for those who work at a post, taken from any Caretaker who has it.
  * 45: Amanda Jablonsky's own quirks, Healing Hands, Quick Study and Dawdler, in place of any she rolled.
+ * 46: the first failed inspection let go with a warning, and a few offers to make a failed one go away in place of one.
  */
-export const SAVE_VERSION = 45;
+export const SAVE_VERSION = 46;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -223,6 +224,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     visitors: [],
     visitNotice: null,
     visitReport: null,
+    inspectionWarned: false,
     nextVip: firstOn(day, VIP_FIRST_DAY, VIP_GAP_DAYS[0]),
     nextInspection: firstOn(day, INSPECTION_FIRST_DAY, INSPECTION_FIRST_DAY),
     visitsOn: true,

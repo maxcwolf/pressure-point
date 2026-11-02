@@ -85,11 +85,11 @@ describe('dialogs the game raises', () => {
       outcome: 'failed',
       money: -2000,
       rep: -3,
-      bribe: 4000,
+      bribes: [400, 800, 1200],
     };
     expect(pendingDialog(s)).toBe('visit');
     expect(mustAnswer('visit', s)).toBe(true);
-    delete s.visitReport.bribe;
+    delete s.visitReport.bribes;
     expect(pendingDialog(s)).toBeNull();
     expect(mustAnswer('visit', s)).toBe(false);
     expect(mustAnswer('payroll', s)).toBe(true);

@@ -6,11 +6,11 @@
 import {
   type Aspect,
   ASPECT_NOTES,
-  BRIBE_LEAK,
-  BRIBE_MIN,
+  BRIBE_OFFERS,
   BRIBE_RECHECK_DAYS,
+  BRIBE_REFUSED_FINE,
   BRIBE_REP,
-  BRIBE_TIMES,
+  bribeOffers,
   centerOf,
   DIRT_FILTHY,
   EXTINGUISHER_REACH,
@@ -347,7 +347,9 @@ export function updateVisits(ctx: SimContext) {
     return;
   }
   if (s.day >= s.nextInspection) writeAhead(ctx, 'inspector');
-  else if (s.stars >= 1 && s.day >= s.nextVip) writeAhead(ctx, 'vip');
+  // a VIP waits for an inspector about to write, rather than hold them up
+  else if (s.stars >= 1 && s.day >= s.nextVip && s.nextInspection > s.day + VISIT_NOTICE_DAYS + 1)
+    writeAhead(ctx, 'vip');
 }
 
 /** Send a visitor to the next room on their tour that they can reach, or out if there is none. False if stuck. */
@@ -413,8 +415,9 @@ export function updateVisitor(ctx: SimContext, v: Visitor, dt: number) {
 
 /**
  * A visitor has gone: weigh up what they saw, pay out or fine, and write the report. The inspector glances at the Shop
- * Counter on the way out. A failed inspection waits to be settled: by the fine, or by making it go away. A visitor
- * who could reach no room on their tour has nothing to judge, and leaves no report.
+ * Counter on the way out. The first failed inspection of a game is let go with a warning; any after it waits to be
+ * settled: by the fine, or by an offer to make it go away. A visitor who could reach no room on their tour has nothing
+ * to judge, and leaves no report.
  */
 export function finishVisit(ctx: SimContext, v: Visitor) {
   const s = ctx.s;
@@ -429,13 +432,14 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
     return;
   }
   // an earlier inspection still unsettled is settled by its fine before this one is written up
-  settleInspection(ctx, false);
+  settleInspection(ctx);
   if (v.visit === 'inspector') {
     const counter = counterVerdict(ctx);
     if (counter) v.seen.push(counter);
   }
   const result = verdict(v.visit, v.seen, s.stars);
   const failed = v.visit === 'inspector' && result.outcome === 'failed';
+  const warned = failed && !s.inspectionWarned;
   if (!failed) {
     if (result.money > 0) {
       earn(ctx, result.money, 'bonus');
@@ -444,65 +448,79 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
   }
   if (v.visit === 'vip' && result.outcome === 'delighted') vipSetback(ctx);
   s.visitReport = { visit: v.visit, name: v.name, title: v.title, day: s.day, rooms: v.seen, ...result };
-  if (failed) {
-    s.visitReport.bribe = bribeFor(-result.money);
-    // caught with the mushrooms out, whether or not it is made to go away
-    if (v.seen.some((r) => r.problems.includes(MUSHROOMS_FOUND))) s.stats.busted++;
-  }
+  if (warned) {
+    s.inspectionWarned = true;
+    Object.assign(s.visitReport, { outcome: 'warned', money: 0, rep: 0, waived: -result.money, unread: true });
+  } else if (failed) s.visitReport.bribes = bribeOffers(-result.money);
+  // caught with the mushrooms out, whether or not it is made to go away
+  if (failed && v.seen.some((r) => r.problems.includes(MUSHROOMS_FOUND))) s.stats.busted++;
   // the mushrooms come back out only once the inspector has been past the counter
   if (v.visit === 'inspector') inspectorGone(ctx);
   const good = result.outcome === 'delighted' || result.outcome === 'passed';
   emit(ctx, { type: 'sfx', name: good ? 'fanfare' : 'fail' });
   emit(ctx, { type: 'visit' });
-  if (failed) toast(ctx, `The inspection failed: a ${money(-result.money)} fine, unless it goes away.`, 'bad');
+  if (warned)
+    toast(ctx, 'The inspection failed, but this time it is only a warning. The next one failed will be fined.', 'bad');
+  else if (failed) toast(ctx, `The inspection failed: a ${money(-result.money)} fine, unless it goes away.`, 'bad');
 }
 
-/** What making a failed inspection go away costs: twice its fine, rounded to $500, and never less than the floor. */
-export const bribeFor = (fine: number) => Math.max(BRIBE_MIN, Math.round((fine * BRIBE_TIMES) / 500) * 500);
+/** The fine an offer turned down puts up to: a share more, rounded to $100. */
+export const refusedFine = (fine: number) => Math.round((fine * (1 + BRIBE_REFUSED_FINE)) / 100) * 100;
 
 /**
- * Settle a failed inspection: pay its fine and take the hit to reputation, or pay to make it go away, so it counts as
- * passed. Now and then word of that gets out, which costs reputation anyway and brings the inspector back sooner.
- * False if there is nothing to settle, or the bribe cannot be paid.
+ * Settle a failed inspection: pay its fine and take the hit to reputation, with no offer; or make one of its offers, by
+ * its index. One taken makes it go away, so it counts as passed. One turned down is kept, but the fine goes up, word
+ * gets out, which costs reputation on top, and the inspector is back sooner. False if there is nothing to settle, or
+ * the offer cannot be paid.
  */
-export function settleInspection(ctx: SimContext, payOff: boolean): boolean {
+export function settleInspection(ctx: SimContext, offer?: number): boolean {
   const s = ctx.s;
   const r = s.visitReport;
-  if (r?.bribe === undefined) return false;
-  if (!payOff) {
+  if (!r?.bribes) return false;
+  if (offer === undefined) {
     spend(ctx, -r.money, 'fines');
     changeRep(ctx, r.rep);
-    delete r.bribe;
+    delete r.bribes;
     return true;
   }
-  if (s.money < r.bribe) {
-    toast(ctx, `Making it go away costs ${money(r.bribe)}. You can't afford it.`, 'bad');
+  const price = r.bribes[offer];
+  const odds = BRIBE_OFFERS[offer]?.odds;
+  if (price === undefined || odds === undefined) return false;
+  if (s.money < price) {
+    toast(ctx, `Offering ${money(price)} needs the money in hand. You can't afford it.`, 'bad');
     emit(ctx, { type: 'sfx', name: 'error' });
     return false;
   }
-  spend(ctx, r.bribe, 'fines');
-  r.outcome = 'paid off';
-  r.money = -r.bribe;
-  r.rep = 0;
-  delete r.bribe;
-  emit(ctx, { type: 'sfx', name: 'cash' });
-  if (random(s) < BRIBE_LEAK) {
-    r.rep = -BRIBE_REP;
-    changeRep(ctx, -BRIBE_REP);
-    s.nextInspection = Math.min(s.nextInspection, s.day + BRIBE_RECHECK_DAYS);
-    toast(
-      ctx,
-      'Word got out that the inspector was paid off. They will be back soon, and they will look harder.',
-      'bad',
-      undefined,
-      'ui-news',
-    );
-  } else toast(ctx, 'The inspector’s report seems to have been lost. How unfortunate.', 'good', undefined, 'ui-bribe');
+  delete r.bribes;
+  if (random(s) < odds) {
+    spend(ctx, price, 'fines');
+    r.outcome = 'paid off';
+    r.money = -price;
+    r.rep = 0;
+    emit(ctx, { type: 'sfx', name: 'cash' });
+    toast(ctx, 'The inspector’s report seems to have been lost. How unfortunate.', 'good', undefined, 'ui-bribe');
+    return true;
+  }
+  r.refused = price;
+  r.money = -refusedFine(-r.money);
+  r.rep -= BRIBE_REP;
+  spend(ctx, -r.money, 'fines');
+  changeRep(ctx, r.rep);
+  // they write ahead in time to arrive within the days promised, with a day to spare for the hour they write at
+  s.nextInspection = Math.min(s.nextInspection, s.day + BRIBE_RECHECK_DAYS - VISIT_NOTICE_DAYS - 1);
+  emit(ctx, { type: 'sfx', name: 'fail' });
+  toast(
+    ctx,
+    `The inspector turned down the ${money(price)} and wrote it up. The fine went up to ${money(-r.money)}, word got out, and they will be back within ${BRIBE_RECHECK_DAYS} days.`,
+    'bad',
+    undefined,
+    'ui-news',
+  );
   return true;
 }
 
 /** A failed inspection nobody settled is settled by its fine the day after. */
 export function lapseInspection(ctx: SimContext) {
   const r = ctx.s.visitReport;
-  if (r?.bribe !== undefined && ctx.s.day - r.day >= 1) settleInspection(ctx, false);
+  if (r?.bribes && ctx.s.day - r.day >= 1) settleInspection(ctx);
 }

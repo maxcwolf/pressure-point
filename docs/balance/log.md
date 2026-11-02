@@ -6,6 +6,24 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 1 November 2026: the inspection warning and the three offers
+
+Measured with `yarn balance` on `claude/036-inspections-dd34ab` against `1fc72bf1` (main), every campaign center, seeds 1 to 3, four years a game. Both sides ran with the same measuring changes to the bot: each inspection logged, and the `sloppy` extra.
+
+### 54. Inspections still bite: the warning saves one fine a game, and the best offer about a fifth more
+
+**Done** (`src/core/sim/visits.ts`, `src/core/data/rules.ts`, save version 46): the first failed inspection of a game is only a warning, with no fine and no hit to reputation. After it, in place of one bribe at twice the fine (at least $10,000) with a 10% leak, a failed inspection offers three: 20%, 40% and 60% of the fine, taken 35%, 60% and 85% of the time. One turned down is kept, but the fine goes up by a quarter, costs 6% more reputation and brings the inspector back within 30 days. The numbers are Max's.
+
+**The good bot never fails an inspection**: it puts a Fire Extinguisher by every room's door and keeps Caretakers, so its games are identical before and after (stars at months 5.0 / 10.1 / 16.2 on average, $25.3k a month from month 13, nothing lost). So does the thoughtless `baseline` bot. With `BOT_ON=sloppy`, the extinguishers left out, every inspection fails, about nine a game, at $4,700 each on average:
+
+| Run (sloppy)        | Inspections: warned / fined / paid off / refused | All inspections cost | Mean star months | Profit a month | Games lost |
+| ------------------- | ------------------------------------------------ | -------------------- | ---------------- | -------------- | ---------- |
+| main                | 0 / 131 / 0 / 0                                  | $617k                | 4.8 / 9.4 / 17.2 | $25.5k         | 1          |
+| warning, fines paid | 15 / 119 / 0 / 0                                 | $567k (−8%)          | 4.6 / 9.7 / 16.4 | $28.8k         | 1          |
+| warning, best offer | 15 / 38 / 75 / 11                                | $462k (−25%)         | 4.6 / 9.6 / 16.0 | $26.7k         | 0          |
+
+The warning saves one fine a game. The best offer, made whenever it leaves a month's wages in the bank, saves about a fifth more, with 11 of 86 turned down (13%, against the 15% asked for). A careless center still pays about $30k to $40k a game in fines and offers. The star months and profit move by less than the seeds do between themselves (a single game, The Exchange's seed 3, went from its third star at month 12.9 to 30.9 and then 23.8), so neither change makes the campaign measurably easier.
+
 ## 28 October 2026, evening: a Chatterbox's pay
 
 Measured with `yarn balance` on `claude/chatterbox-pay-dbab96` (on `bd334094`, the 0.35.0 candidate with entry 52 merged), Willow Lane and The Exchange, seeds 0 to 24, four years a game, six slots. Four runs: Chatterbox at its old ×0.92 and at ×0.85, each with the bot blind to quirks (`BOT_OFF=quirks`, the best rank and then the cheapest) and with the bot reading the card. The two ×0.92 runs are entry 52's own games for these centers and seeds: nothing under `src/core` changed between its branch and `bd334094`, only the renderer and the lab, so the same seeds play the same games. Each ×0.85 run took about six minutes for 50 games. v0.34.3, also from entry 52, is there for reference. A mean star month counts a star never earned as month 48, and a lost game's bank at month 47 is its last month's; differences are paired seed by seed, with their standard error and each half's (seeds 0 to 12 and 13 to 24).

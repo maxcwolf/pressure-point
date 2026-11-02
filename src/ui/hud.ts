@@ -433,6 +433,8 @@ export class HudState {
   close() {
     const closing = this.dialog;
     this.dialog = null;
+    // a warning's report, once closed, stops opening again
+    if (closing === 'visit') this.host.sim.readVisitReport();
     const s = this.host.sim.s;
     this.line = this.line.filter((d) => stillDue(d.id, s));
     // the next lesson waiting takes its turn behind whatever else is in line

@@ -29,6 +29,7 @@ import { deliveryNote } from '../../lib/delivery';
 import { machinePullNote, pullNote } from '../../lib/demand';
 import { FLOODED_LABEL } from '../../lib/mishaps';
 import { statusClass } from '../../lib/status';
+import { problemNote, stillWrong } from '../../lib/visits';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
@@ -171,6 +172,24 @@ function Flooded({ room }: { room: Room }) {
   ) : null;
 }
 
+/** What the last inspection found wrong in a room, while it still is, and what to do about it before the next. */
+function Inspection({ room }: { room: Room }) {
+  const { sim } = useGame();
+  const wrong = stillWrong(sim.s.visitReport, room.id, sim.inspectionProblems(room));
+  return (
+    <>
+      {wrong.map((p) => {
+        const { what, fix } = problemNote(p);
+        return (
+          <p key={p} class={cx('status', 'warn', 'inspection')}>
+            <IconText id="bubble-inspecting">{`Failed inspection: ${what}. ${fix}`}</IconText>
+          </p>
+        );
+      })}
+    </>
+  );
+}
+
 /** How warm and how calm it is in the middle of a room. */
 function Comfort({ room }: { room: Room }) {
   const { sim } = useGame();
@@ -238,7 +257,8 @@ export function RoomInfo({ room }: { room: Room }) {
       <h3>
         <IconText id={def.icon}>{roomLabels(sim.s.rooms).get(room.id) ?? def.name}</IconText>
       </h3>
-      <Flooded room={room} /> {/* a studio's spots are summed up in its timetable rather than listed one by one */}
+      <Flooded room={room} /> <Inspection room={room} />{' '}
+      {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
       {room.done && room.type === 'qigong' && <Timetable room={room} />} <BadVibes room={room} />{' '}
       {assigned.length > 0 && (
