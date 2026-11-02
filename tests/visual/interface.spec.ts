@@ -273,6 +273,40 @@ test.describe('in a game', () => {
     await screens.shot('inspector-line');
   });
 
+  test('the queue over a room', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      // a few more guests sent in, lined up at the table, one of them an emergency, and one more on the table
+      pp.sim.cheat('guests 4', true);
+      const table = pp.state.items.find((i) => i.type === 'massage_table')!;
+      const guests = pp.state.guests.filter((g) => g.state !== 'leaving').slice(0, 5);
+      for (const it of pp.state.items) it.queue = it.queue.filter((id) => !guests.some((g) => g.id === id));
+      const [seen, ...waiting] = guests;
+      table.queue = waiting.map((g) => g.id);
+      // named here, as the guests sent in differ from one run to the next
+      const names = ['Wilma Thumbwell', 'Ada Relaxworth', 'Vernon Stretchley', 'Percy Kneadham'];
+      const conditions = ['slump', 'knotted', 'band', 'crick'];
+      waiting.forEach((g, i) =>
+        Object.assign(g, {
+          name: names[i],
+          station: table.id,
+          state: 'waiting',
+          goal: 'treat',
+          condition: conditions[i],
+          waited: 15 - i * 4,
+          emergency: i === 1,
+        }),
+      );
+      if (seen) {
+        Object.assign(seen, { station: table.id, state: 'served', goal: 'treat' });
+        table.serving = seen.id;
+      }
+    });
+    await game.hoverRoom('massage');
+    await expect(page.locator('#room-tip')).toBeVisible();
+    await screens.shot('room-tip');
+  });
+
   for (const type of ['massage', 'consult'] as const) {
     test(`the inspector for a ${type} room`, async ({ screens, game }) => {
       await screens.play();

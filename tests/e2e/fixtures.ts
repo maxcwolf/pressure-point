@@ -71,6 +71,8 @@ interface Handle {
     subscribe(listener: () => void): () => void;
     update(): void;
     overlay: string | null;
+    /** The room the pointer rests on, for its tooltip, or 0. */
+    pointedRoom: number;
     /** The messages on the right, oldest first. */
     toasts: { text: string; count: number }[];
     /** Run the messages' clock for a frame of so many seconds. */
@@ -441,6 +443,10 @@ export class Game {
   /** Click a bare patch of floor in a room, which selects the room. */
   async clickRoom(type: string) {
     await this.clickAt(await this.find('roomFloor', type));
+  }
+  /** Hold the mouse over a bare patch of floor in a room. */
+  async hoverRoom(type: string) {
+    await this.hoverAt(await this.find('roomFloor', type));
   }
   /** Hold the mouse over the lawn. */
   async hoverLawn() {

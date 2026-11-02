@@ -1,6 +1,6 @@
 // The player's controls, kept for every game on this computer: which key does what, edge scrolling, how often the
-// game autosaves, whether the clock stops while something is placed, whether ~ opens the cheat console, and whether
-// dev mode is unlocked. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan
+// game autosaves, whether the clock stops while something is placed, whether a room shows its line in a tooltip, whether
+// ~ opens the cheat console, and whether dev mode is unlocked. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan
 // on any layout.
 import { isRecord } from './json';
 
@@ -64,6 +64,8 @@ export interface ControlPrefs {
   autosave: number;
   /** Whether the clock stops while a room or an item is being placed, and starts again once it is down. */
   pauseToPlace: boolean;
+  /** Whether resting the pointer on a room shows its line in a tooltip. */
+  queueTip: boolean;
   /** Whether ~ opens the cheat console. Off until switched on at the bottom of the settings. */
   console: boolean;
   /**
@@ -80,6 +82,7 @@ export const defaultControls = (): ControlPrefs => ({
   // every five minutes: a save is tens of kilobytes, and the game is saved anyway as it is left or hidden
   autosave: 300,
   pauseToPlace: true,
+  queueTip: true,
   console: false,
   dev: false,
 });
@@ -137,6 +140,7 @@ export function readControls(raw: unknown): ControlPrefs {
   if (typeof raw.edgeScroll === 'boolean') out.edgeScroll = raw.edgeScroll;
   if (typeof raw.autosave === 'number' && AUTOSAVE_CHOICES.includes(raw.autosave)) out.autosave = raw.autosave;
   if (typeof raw.pauseToPlace === 'boolean') out.pauseToPlace = raw.pauseToPlace;
+  if (typeof raw.queueTip === 'boolean') out.queueTip = raw.queueTip;
   if (typeof raw.console === 'boolean') out.console = raw.console;
   if (typeof raw.dev === 'boolean') out.dev = raw.dev;
   return out;

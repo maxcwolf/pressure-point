@@ -191,7 +191,7 @@ import {
   updateStaff,
 } from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
-import { type Chance, successChance, updateStations } from './stations';
+import { callOrder, type Chance, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
 import { checkSurroundings, restoreSurroundings } from './surroundings';
 import type { Course } from './training';
@@ -1177,6 +1177,10 @@ export class Sim {
   /** Whoever works a station: posted at it, or for a mat, at the bowls in its room. */
   stationStaff(it: Item): Staff | undefined {
     return stationStaff(this.ctx, it);
+  }
+  /** A station's line in the order it calls them: emergencies put first, the rest it would call, those it cannot yet. */
+  callOrder(it: Item): [Guest[], Guest[], Guest[]] {
+    return callOrder(this.ctx, it);
   }
 
   /** The guest being seen at a station: its own, or at the bowls, the first lying on the mats it plays for. */
