@@ -243,19 +243,29 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
 }
 
 /**
- * The guest a station calls next: the first waiting in line, or the first emergency if the policy puts them first. A
- * Practice Spot passes over anyone in early for a later class than its studio's next, and a table passes over anyone
- * waiting for a colleague trained in what they need.
+ * A station's line in the order it calls them, in three groups, each in its order in line: the emergencies, while the
+ * policy puts them first; everyone else it would call; and those it cannot call yet, off seeing to a need, in early for
+ * a later class than its studio's next (at a Practice Spot), or waiting for a colleague trained in what they need (at a
+ * table). A guest moved up or down the line stays in their group.
  */
-export function nextInLine(ctx: SimContext, it: Item): Guest | undefined {
+export function callOrder(ctx: SimContext, it: Item): [Guest[], Guest[], Guest[]] {
   const goal = ITEMS[it.type].station?.goal;
   const staff = goal === 'treat' ? stationStaff(ctx, it) : undefined;
-  const waiting = it.queue
-    .map((id) => guestById(ctx, id))
-    .filter((q): q is Guest => q?.state === 'waiting' || q?.state === 'toWait')
-    .filter((q) => goal !== 'class' || dueForSpot(ctx, it, q))
-    .filter((q) => !staff || !leftForSpecialist(ctx, staff, q));
-  return (ctx.s.policy.emergenciesFirst ? waiting.find((q) => q.emergency) : undefined) ?? waiting[0];
+  const line = it.queue.flatMap((id) => guestById(ctx, id) ?? []);
+  /** Whether the station would call them now. */
+  const callable = (q: Guest) =>
+    (q.state === 'waiting' || q.state === 'toWait') &&
+    (goal !== 'class' || dueForSpot(ctx, it, q)) &&
+    (!staff || !leftForSpecialist(ctx, staff, q));
+  const ready = line.filter(callable);
+  const first = ctx.s.policy.emergenciesFirst ? ready.filter((q) => q.emergency) : [];
+  return [first, ready.filter((q) => !first.includes(q)), line.filter((q) => !callable(q))];
+}
+
+/** The guest a station calls next: the first in its line it would call, emergencies first if the policy says so. */
+export function nextInLine(ctx: SimContext, it: Item): Guest | undefined {
+  const [first, ready] = callOrder(ctx, it);
+  return first[0] ?? ready[0];
 }
 
 /** Run every station: tidy its line, call the next guest and move the service along. */

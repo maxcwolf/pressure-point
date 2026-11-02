@@ -26,7 +26,7 @@ export interface LineTip {
   name: string;
   /** Who is being seen there now and by whom, or who works it and that they are free, or that nobody does. */
   seeing: string;
-  /** The first few waiting, in the order they will be seen. */
+  /** The first few waiting, in the order they will be called (`callOrder` in `core/sim/stations.ts`). */
   waiting: WaitingGuest[];
   /** How many more are waiting than are listed. */
   more: number;
@@ -87,8 +87,9 @@ function interleave(queues: readonly (readonly Guest[])[]): Guest[] {
 }
 
 /**
- * What a line is doing: who is being seen and by whom; or that the one who works it is free, or that nobody works it.
- * A room's mats or spots, worked together from one lead station, are seen together.
+ * What a line is doing: who is being seen and by whom; or, with nobody being seen, why: the one who works it is free, on
+ * the way, on a break or away, or nobody works it, or its stations are out of use (broken, flooded, on fire, stopped by
+ * a mishap or waiting for an upgrade). A room's mats or spots, worked together from one lead station, are seen together.
  */
 function seeingText(sim: Sim, stations: readonly Item[]): string {
   const [first] = stations;
@@ -97,15 +98,19 @@ function seeingText(sim: Sim, stations: readonly Item[]): string {
   const staff = sim.stationStaff(first);
   const seen = stations.flatMap((it) => sim.guest(it.serving) ?? []);
   const served = seen.filter((g) => g.state === 'served');
-  if (!def.staff) {
-    // a station nobody works, such as the Posture Scanner
-    const [g] = served;
-    return g ? `${g.name} is being scanned` : seen[0] ? `${seen[0].name} is on the way` : 'Free';
-  }
-  if (!staff) return `No ${ROLES[def.staff].name} at work`;
   const doing = DOING[def.goal] ?? 'seeing';
-  if (served.length > 3) return `${staff.name} is ${doing} ${served.length} guests`;
-  if (served.length) return `${staff.name} is ${doing} ${names(served.map((g) => g.name))}`;
+  if (served.length && staff) {
+    if (served.length > 3) return `${staff.name} is ${doing} ${served.length} guests`;
+    return `${staff.name} is ${doing} ${names(served.map((g) => g.name))}`;
+  }
+  if (!def.staff && served[0]) return `${served[0].name} is being scanned`;
+  if (stations.every((it) => !sim.world.usable(it)))
+    return `${ITEMS[first.type].name}${stations.length > 1 ? 's' : ''} out of use`;
+  if (!def.staff) return seen[0] ? `${seen[0].name} is on the way` : 'Free';
+  if (!staff) return `No ${ROLES[def.staff].name} at work`;
+  if (staff.state === 'toPost') return `${staff.name} is on the way`;
+  if (staff.state === 'toBreak' || staff.state === 'onBreak') return `${staff.name} is on a break`;
+  if (staff.state !== 'atPost') return `${staff.name} is away`;
   if (seen.length) return `${staff.name} is calling ${names(seen.map((g) => g.name))} in`;
   return `${staff.name} is free`;
 }
@@ -148,7 +153,9 @@ export function roomTip(sim: Sim, room: Room): RoomTip | null {
     name: roomLabels(sim.s.rooms).get(room.id) ?? ROOMS[room.type].name,
     icon: ROOMS[room.type].icon,
     lines: lines.map((line) => {
-      const waiting = interleave(line.stations.map((it) => it.queue.flatMap((id) => sim.guest(id) ?? [])));
+      // each group in the order it is called, across a room's mats or spots as well as along each line
+      const orders = line.stations.map((it) => sim.callOrder(it));
+      const waiting = [0, 1, 2].flatMap((group) => interleave(orders.map((o) => o[group] ?? [])));
       return {
         name: lines.length > 1 ? line.name : '',
         seeing: seeingText(sim, line.stations),

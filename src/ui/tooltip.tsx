@@ -120,16 +120,16 @@ export interface TipAnchor {
 }
 
 /**
- * Put a tooltip above what it explains, or below where there is no room above, kept in the window and its point toward
- * the middle of it. Its place is worked out in the window's pixels and given in its own, which its size (`scale`, the
- * interface's over the game) multiplies.
+ * Put a tooltip above what it explains, or below where there is no room above, kept in the window, and above `floor`
+ * where it is given, and its point toward the middle of it. Its place is worked out in the window's pixels and given
+ * in its own, which its size (`scale`, the interface's over the game) multiplies.
  */
-export function placeBubble(tip: HTMLElement, r: TipAnchor, scale: number) {
+export function placeBubble(tip: HTMLElement, r: TipAnchor, scale: number, floor = innerHeight) {
   const { width: w, height: h } = tip.getBoundingClientRect();
   const below = r.top - GAP - h < MARGIN;
   const mid = (r.left + r.right) / 2;
   const x = Math.min(Math.max(mid - w / 2, MARGIN), innerWidth - MARGIN - w);
-  const y = below ? Math.min(r.bottom + GAP, innerHeight - MARGIN - h) : r.top - GAP - h;
+  const y = Math.max(MARGIN, below ? Math.min(r.bottom + GAP, floor - MARGIN - h) : r.top - GAP - h);
   tip.classList.toggle('below', below);
   tip.style.transform = `translate(${Math.round(x / scale)}px, ${Math.round(y / scale)}px)`;
   tip.style.setProperty(

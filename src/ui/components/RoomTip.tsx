@@ -51,6 +51,15 @@ function roomBox(view: View, room: Room): TipAnchor {
 }
 
 /**
+ * Put the tooltip on its room as the camera has it now, kept above the bar along the bottom (`#bottom` in `Hud.tsx`),
+ * which is drawn over it.
+ */
+function place(tip: HTMLElement, view: View, room: Room) {
+  const floor = document.getElementById('bottom')?.getBoundingClientRect().top ?? innerHeight;
+  placeBubble(tip, roomBox(view, room), loadDisplay().uiScale, floor);
+}
+
+/**
  * The room whose tooltip should show: the one the pointer rests on, while the switch in Settings is on, with nothing in
  * hand and no menu or dialog over the scene; else 0.
  */
@@ -118,7 +127,7 @@ export function RoomTip() {
         setShown(next);
       }
       const r = current ? hud.host.sim.world.room(current) : undefined;
-      if (r && tip.current && !tip.current.hidden) placeBubble(tip.current, roomBox(view, r), loadDisplay().uiScale);
+      if (r && tip.current && !tip.current.hidden) place(tip.current, view, r);
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
@@ -129,8 +138,7 @@ export function RoomTip() {
 
   // placed as it first shows, before it is drawn, so it never shows a frame anywhere else
   useLayoutEffect(() => {
-    if (room && tip.current && !tip.current.hidden)
-      placeBubble(tip.current, roomBox(view, room), loadDisplay().uiScale);
+    if (room && tip.current && !tip.current.hidden) place(tip.current, view, room);
   }, [room, view]);
 
   return (

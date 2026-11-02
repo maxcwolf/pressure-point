@@ -78,6 +78,12 @@ test.describe('the queue on hover', () => {
     await page.mouse.up();
     await game.settle();
     await expect(tip, 'a room clicked keeps it away until the pointer leaves').toBeHidden();
+    await page.mouse.down();
+    await page.mouse.up();
+    // past the pointer's next look at what is under it, it still points the tooltip at no room
+    await page.waitForTimeout(400);
+    expect(await game.eval((pp) => pp.ui.pointedRoom), 'and clicked again').toBe(0);
+    await expect(tip).toBeHidden();
     await game.hoverLawn();
     await game.hoverRoom('consult');
     await expect(tip).toContainText('Consultation Room');

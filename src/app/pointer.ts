@@ -77,7 +77,8 @@ export function bindPointer(canvas: HTMLCanvasElement, { audio, tools, view, ui 
     audio.unlock();
     canvas.setPointerCapture(e.pointerId);
     down = { x: e.clientX, y: e.clientY, button: e.button, moved: false, at: performance.now() };
-    dismissed = ui.pointedRoom;
+    // a second press in a room clicked keeps it dismissed
+    dismissed ||= ui.pointedRoom;
     last = { x: e.clientX, y: e.clientY };
     if (e.button === 0) {
       ui.closeMenu();

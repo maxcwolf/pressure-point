@@ -4,6 +4,7 @@ import { conditionOf, DAY_SECONDS } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
 import { spawnGuest } from '../../src/core/sim/guests';
 import type { Sim } from '../../src/core/sim/sim';
+import { nextInLine } from '../../src/core/sim/stations';
 import type { Guest, Item } from '../../src/core/state/types';
 import { guestWants, LISTED, LISTED_SEVERAL, roomTip, waitedText } from '../../src/ui/lib/queue-tip';
 import { addSound, addStaffRoom, buildRoom, hire, openCenter, runUntil } from './helpers';
@@ -123,6 +124,52 @@ describe('the tooltip over a room', () => {
     const line = roomTip(sim, room)?.lines;
     expect(line?.map((l) => l.name)).toEqual(['']);
     expect(line?.[0]?.waiting.map((g) => g.id)).toEqual([one[0]?.id, two[0]?.id, one[1]?.id]);
+  });
+
+  it('lists the line in the order it is called: emergencies first under the policy, and those it cannot call yet last', () => {
+    const { sim, room, table } = quietSuite();
+    const [a, b, c, d] = queueAt(sim, table, 4);
+    if (!a || !b || !c || !d) throw new Error('no guests');
+    d.emergency = true;
+    b.state = 'need';
+    /** The ids of the guests listed, in order. */
+    const order = () => roomTip(sim, room)?.lines[0]?.waiting.map((g) => g.id);
+    expect(order(), 'off seeing to a need, so passed over').toEqual([a.id, c.id, d.id, b.id]);
+    sim.s.policy.emergenciesFirst = true;
+    expect(order(), 'the emergency is called next').toEqual([d.id, a.id, c.id, b.id]);
+    expect(nextInLine(createContext(sim.s), table)?.id, 'as the table calls them').toBe(d.id);
+  });
+
+  it('shows an emergency who is called next even far down a line in a room of several', () => {
+    const { sim } = openCenter(1);
+    sim.s.policy.emergenciesFirst = true;
+    const room = buildRoom(sim, 'massage', { x: 17, y: 5, w: 6, h: 4 }, { x: 18, y: 8, dx: 0, dy: 1 }, [
+      ['massage_table', 18, 5],
+      ['massage_table', 21, 5],
+      ['oil_trolley', 17, 5],
+    ]);
+    const [table] = sim.s.items.filter((i) => i.type === 'massage_table' && sim.world.zoneAt(i.x, i.y) === room.id);
+    if (!table) throw new Error('no table');
+    const guests = queueAt(sim, table, 6);
+    const last = guests.at(-1);
+    if (!last) throw new Error('no guests');
+    last.emergency = true;
+    const line = roomTip(sim, room)?.lines[0];
+    expect(line?.waiting[0]).toMatchObject({ id: last.id, emergency: true });
+    expect(line?.more).toBe(3);
+  });
+
+  it('says honestly why nobody is being seen: staff on the way or on a break, or the table out of use', () => {
+    const { sim, room, table, therapist } = quietSuite();
+    /** What the tooltip says the line is doing. */
+    const seeing = () => roomTip(sim, room)?.lines[0]?.seeing;
+    therapist.state = 'toPost';
+    expect(seeing()).toBe(`${therapist.name} is on the way`);
+    therapist.state = 'onBreak';
+    expect(seeing()).toBe(`${therapist.name} is on a break`);
+    therapist.state = 'atPost';
+    table.wear = 100;
+    expect(seeing()).toBe('Massage Table out of use');
   });
 
   it('has nothing to say for a room with no line, or a blueprint', () => {
