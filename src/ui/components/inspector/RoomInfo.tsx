@@ -178,15 +178,14 @@ function Flooded({ room }: { room: Room }) {
 
 /**
  * A Restroom too small for the crowd, or with nothing in it working: guests in a line holding on, bursting, long enough
- * to warn of, while accidents can happen.
+ * to warn of, while accidents can happen, and what this Restroom needs.
  */
 function Bursting({ room }: { room: Room }) {
   const { sim } = useGame();
-  if (room.type !== 'restroom' || sim.toiletTrouble() === 'none') return null;
-  const holding = sim.holdingOn().length;
+  const holding = room.type === 'restroom' ? sim.holdingOn().length : 0;
   return holding ? (
     <p class={statusClass('bursting', 'bursting')}>
-      <IconText id="bubble-restroom">{burstingNote(sim, holding)}</IconText>
+      <IconText id="bubble-restroom">{burstingNote(sim, room, holding)}</IconText>
     </p>
   ) : null;
 }

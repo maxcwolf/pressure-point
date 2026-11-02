@@ -42,7 +42,15 @@ import type {
 } from '../state/types';
 import { layoutProblem } from '../templates';
 import type { Check, Placed, Rect, World } from '../world';
-import { type Holding, holdingOn, toiletsOut, type ToiletTrouble, toiletTrouble } from './accidents';
+import {
+  type Holding,
+  holdingOn,
+  restroomOut,
+  type ToiletsOut,
+  toiletsOut,
+  type ToiletTrouble,
+  toiletTrouble,
+} from './accidents';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce, warnPrimer, warnUnfed } from './advisor';
 import { drainFactor, prestige } from './ambience';
@@ -1176,14 +1184,19 @@ export class Sim {
     return sprinklerBlocker(this.ctx, room);
   }
 
-  /** Why a guest bursting for the toilet cannot go now: no Restroom, none working, or every toilet taken. */
-  toiletTrouble(): ToiletTrouble {
+  /** Why a guest bursting for the toilet cannot go now: no Restroom, none working, or every toilet taken; null if one is free. */
+  toiletTrouble(): ToiletTrouble | null {
     return toiletTrouble(this.ctx);
   }
 
-  /** What has the toilets out of action, in a few words, and what puts it right. */
-  toiletsOut(): { why: string; fix: string } {
+  /** What has the toilets out of action across every Restroom, in a few words, and what puts it right. */
+  toiletsOut(): ToiletsOut {
     return toiletsOut(this.ctx);
+  }
+
+  /** What has a Restroom's own toilets out of action, if they are, and what puts it right. */
+  restroomOut(room: Room): ToiletsOut | null {
+    return restroomOut(this.ctx, room);
   }
 
   /** The guests holding on, bursting, long enough to warn of, the soonest to have an accident first. */

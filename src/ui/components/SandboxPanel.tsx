@@ -196,7 +196,7 @@ export function SandboxPanel({ audio, onStart }: SandboxPanelProps) {
         <SettingRow
           icon="feeling-bursting"
           name="Accidents"
-          desc="A guest bursting for the toilet with no Restroom to use, or every toilet taken, has an accident on the floor for a Caretaker to clean up."
+          desc="A guest bursting for the toilet with no Restroom to use, or none working, or every toilet taken, has an accident on the floor for a Caretaker to clean up."
           on={settings.accidents}
           onToggle={() => {
             change(() => {

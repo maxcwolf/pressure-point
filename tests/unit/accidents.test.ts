@@ -20,6 +20,7 @@ import {
   fliesOn,
   haveAccident,
   holdOn,
+  startHolding,
   toiletTrouble,
   wentHomeMortified,
 } from '../../src/core/sim/accidents';
@@ -36,7 +37,18 @@ import type { GameState, Guest, Litter } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { must } from '../../src/core/util';
 import { burstingNote, guestStatus, staffStatus } from '../../src/ui/lib/status';
-import { addRestroom, freshSim, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';
+import {
+  addRestroom,
+  buildRoom,
+  freshSim,
+  hire,
+  inconsistencies,
+  LAYOUT,
+  openCenter,
+  run,
+  runUntil,
+  toasts,
+} from './helpers';
 
 beforeEach(() => setSeed(3));
 
@@ -57,7 +69,10 @@ function burstingInLine(sim: Sim): Guest {
 /** The accidents on the floor. */
 const accidents = (sim: Sim) => sim.s.litter.filter((l) => l.accident);
 
-/** The one Toilet Stall. */
+/** Where a second Restroom goes, beside the first, where the Staff Room would be. */
+const SECOND_RESTROOM = { rect: { x: 17, y: 5, w: 3, h: 2 }, door: { x: 18, y: 6, dx: 0, dy: 1 } };
+
+/** The first Toilet Stall. */
 const toiletOf = (sim: Sim) =>
   must(
     sim.s.items.find((i) => i.type === 'toilet'),
@@ -79,7 +94,8 @@ describe('a guest bursting with no restroom to use', () => {
     // warned meanwhile by a restroom bubble over them, and the inspector saying why
     expect(g.bubble).toBe('bubble-restroom');
     expect(guestStatus(g, sim)).toBe('In line at Reception, bursting: there is no Restroom to use');
-    run(sim, 3);
+    // holding on from the first time they tried for a toilet, a moment after they burst
+    run(sim, 4);
     const [mess] = accidents(sim);
     expect(mess).toMatchObject({ x: g.tx, y: g.ty, claimedBy: 0 });
     expect(['poop', 'pee']).toContain(mess?.accident);
@@ -145,9 +161,10 @@ describe('a guest bursting with no restroom to use', () => {
     expect(sim.holdingOn()).toEqual([]);
     sim.s.accidentsOn = true;
     g.classDay = 1;
-    holdOn(ctx, g, HOLD_TOILETS_TAKEN, true);
+    startHolding(ctx, g);
     expect(g.held).toBeUndefined();
     g.classDay = 0;
+    startHolding(ctx, g);
     holdOn(ctx, g, HOLD_TOILETS_TAKEN, true);
     expect(accidentDue(ctx, g)).toBe(true);
   });
@@ -181,7 +198,7 @@ describe('a guest bursting with no restroom to use', () => {
     const g = burstingInLine(sim);
     expect(sim.s.seenTips).not.toContain(primerTip('restroom'));
     expect(accidentsAllowed(ctxOf(sim))).toBe(true);
-    run(sim, HOLD_TOILETS_TAKEN + 1);
+    run(sim, HOLD_TOILETS_TAKEN + 2);
     expect(g.feelings).toContain('accident');
   });
 
@@ -207,6 +224,26 @@ describe('a guest bursting with no restroom to use', () => {
     expect(sim.adviceNote().text).toBe('Guests are crossing their legs. A Restroom would be a kindness.');
   });
 
+  it('says nothing of cleaning up in its message when there was nowhere for a mess to land', () => {
+    const { sim } = openCenter();
+    const ctx = ctxOf(sim);
+    const g = must(spawnGuest(ctx), 'a guest');
+    Object.assign(g, { tx: 10, ty: 10 });
+    for (const [x, y] of [
+      [10, 10],
+      [11, 10],
+      [9, 10],
+      [10, 11],
+      [10, 9],
+    ] as const)
+      sim.s.litter.push({ id: sim.s.nextId++, x, y, claimedBy: 0 });
+    sim.drain();
+    haveAccident(ctx, g);
+    expect(accidents(sim)).toEqual([]);
+    const said = toasts(sim.drain()).find((t) => t.includes('had an accident'));
+    expect(said).toMatch(/Build a Restroom: guests start to need one once they have waited a while.$/);
+  });
+
   it('lands on open floor beside them, never through a wall into a room', () => {
     const { sim } = openCenter();
     const ctx = ctxOf(sim);
@@ -220,18 +257,48 @@ describe('a guest bursting with no restroom to use', () => {
   });
 });
 
+describe('holding on', () => {
+  it('starts only once a guest has tried for a toilet and found none', () => {
+    const sim = freshSim();
+    const ctx = ctxOf(sim);
+    const g = must(spawnGuest(ctx), 'a guest');
+    g.bladder = 100;
+    holdOn(ctx, g, 5, true);
+    expect(g.held).toBeUndefined();
+    startHolding(ctx, g);
+    holdOn(ctx, g, 5, true);
+    expect(g.held).toBe(5);
+  });
+
+  it('never starts for a guest on their way to a line with a toilet free for them', () => {
+    const { sim } = openCenter();
+    addRestroom(sim);
+    const g = must(spawnGuest(ctxOf(sim)), 'a guest');
+    g.bladder = 100;
+    for (let t = 0; t < 60 && g.state !== 'toNeed' && g.state !== 'need'; t += 0.1) {
+      run(sim, 0.1);
+      g.bladder = Math.max(g.bladder, 100);
+      expect(g.held).toBeUndefined();
+      expect(sim.holdingOn()).toEqual([]);
+    }
+    expect(g.needKind).toBe('toilet');
+  });
+});
+
 describe('a guest bursting with the only toilet out of action', () => {
   it(`holds on for ${HOLD_NO_RESTROOM} seconds, and everything that warns of it says what is wrong`, () => {
     const sim = freshSim();
     sim.s.money = 100_000;
-    addRestroom(sim);
+    const room = addRestroom(sim);
     toiletOf(sim).wear = 100;
     const g = burstingInLine(sim);
     expect(toiletTrouble(ctxOf(sim))).toBe('out');
     run(sim, 3);
     expect(guestStatus(g, sim)).toBe('In line at Reception, bursting: the toilet is broken');
     expect(sim.holdingOn().map((h) => h.guest)).toEqual([g]);
-    expect(burstingNote(sim, 1)).toBe('The toilet is broken, and 1 guest is bursting. Hire a Caretaker to repair it.');
+    expect(burstingNote(sim, room, 1)).toBe(
+      'The toilet is broken, and 1 guest is bursting. Hire a Caretaker to repair it.',
+    );
     sim.drain();
     run(sim, HOLD_NO_RESTROOM);
     expect(accidents(sim)).toHaveLength(1);
@@ -254,23 +321,68 @@ describe('a guest bursting with the only toilet out of action', () => {
     });
   });
 
-  it('is explained by what had the toilets out of action, flooded or broken, and who puts it right', () => {
+  it('is explained on a card for each thing that has the toilets out of action, a Caretaker offered only for what one puts right', () => {
     const sim = freshSim();
     const ctx = ctxOf(sim);
     sim.s.money = 100_000;
     const room = addRestroom(sim);
-    sim.s.litter.push({ id: sim.s.nextId++, x: room.x, y: room.y, claimedBy: 0, flood: room.id });
-    expect(sim.toiletsOut().why).toBe('the Restroom is flooded');
-    for (let i = 0; i < HARM_EXPLAIN; i++) haveAccident(ctx, must(spawnGuest(ctx), 'a guest'));
+    /** As many accidents as it takes to explain them. */
+    const accidentsEnough = () => {
+      for (let i = 0; i < HARM_EXPLAIN; i++) haveAccident(ctx, must(spawnGuest(ctx), 'a guest'));
+    };
+    toiletOf(sim).wear = 100;
+    accidentsEnough();
     expect(sim.s.harmNotes).toContainEqual(
       expect.objectContaining({
-        key: 'accident:out',
+        key: 'accident:out:broken',
         title: `${HARM_EXPLAIN} guests had accidents with no toilet working`,
-        causes: expect.arrayContaining([{ label: 'The Restroom is flooded' }]),
-        help: expect.stringMatching(/^Hire a Caretaker to mop it out./),
+        causes: expect.arrayContaining([{ label: 'The toilet is broken' }]),
+        help: 'Hire a Caretaker to repair it, and to clean up after each accident. A second toilet means one breaking down still leaves somewhere to go.',
         fix: { hire: 'caretaker' },
       }),
     );
+    // mended, then flooded: a card of its own, saying so, with the Caretaker asked for once
+    toiletOf(sim).wear = 0;
+    sim.s.litter.push({ id: sim.s.nextId++, x: room.x, y: room.y, claimedBy: 0, flood: room.id });
+    expect(sim.toiletsOut().why).toBe('the Restroom is flooded');
+    accidentsEnough();
+    expect(sim.s.harmNotes).toContainEqual(
+      expect.objectContaining({
+        key: 'accident:out:flooded',
+        causes: expect.arrayContaining([{ label: 'The Restroom is flooded' }]),
+        help: 'Hire a Caretaker to mop it out, and to clean up after each accident.',
+        fix: { hire: 'caretaker' },
+      }),
+    );
+  });
+
+  it('offers no Caretaker for what none can put right, such as a Restroom not finished', () => {
+    const sim = freshSim();
+    const ctx = ctxOf(sim);
+    sim.s.money = 100_000;
+    const room = sim.createRoom('restroom', LAYOUT.restroom.rect, LAYOUT.restroom.door);
+    sim.placeItem('toilet', 21, 5, 0, { free: true, roomId: room.id });
+    for (let i = 0; i < HARM_EXPLAIN; i++) haveAccident(ctx, must(spawnGuest(ctx), 'a guest'));
+    const card = sim.s.harmNotes.find((n) => n.key === 'accident:out:unfinished');
+    expect(card).toMatchObject({ help: 'Finish building it. Hire a Caretaker to clean up each one.' });
+    expect(card?.fix).toBeUndefined();
+  });
+
+  it('names both when one Restroom has no toilet and another is not finished', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const finished = addRestroom(sim);
+    sim.s.items = sim.s.items.filter((i) => i.type !== 'toilet');
+    const other = sim.createRoom('restroom', SECOND_RESTROOM.rect, SECOND_RESTROOM.door);
+    sim.placeItem('toilet', 17, 5, 0, { free: true, roomId: other.id });
+    expect(toiletTrouble(ctxOf(sim))).toBe('out');
+    expect(sim.toiletsOut()).toMatchObject({
+      why: 'one Restroom has no toilet and another is not finished',
+      fix: 'Put a Toilet Stall in the finished one, or finish building the other.',
+    });
+    // and each Restroom says what it needs itself
+    expect(sim.restroomOut(finished)?.why).toBe('the Restroom has no toilet');
+    expect(sim.restroomOut(other)?.why).toBe('the Restroom is not finished');
   });
 });
 
@@ -291,7 +403,7 @@ describe('a guest bursting with every toilet taken', () => {
 
   it(`is warned of by the advisor and the Restroom once they have held on ${HOLD_WARN_TAKEN} seconds`, () => {
     const { sim } = openCenter();
-    addRestroom(sim);
+    const room = addRestroom(sim);
     const g = burstingInLine(sim);
     takeToilet(sim, must(spawnGuest(ctxOf(sim)), 'a guest'));
     // a toilet often comes free before then
@@ -304,8 +416,43 @@ describe('a guest bursting with every toilet taken', () => {
       text: `${g.name} is bursting, and every toilet is taken: an accident on the floor in about ${HOLD_TOILETS_TAKEN - HOLD_WARN_TAKEN - 1} seconds. Build another Restroom, or put more toilets in the one you have.`,
       about: { kind: 'guest', id: g.id },
     });
-    expect(burstingNote(sim, sim.holdingOn().length)).toBe(
+    expect(burstingNote(sim, room, sim.holdingOn().length)).toBe(
       'Every toilet is taken, and 1 guest is bursting. Build another Restroom, or put more toilets in this one, before someone has an accident.',
+    );
+  });
+
+  it('is no trouble the moment a toilet comes free, though they have not gone to it yet', () => {
+    const { sim } = openCenter();
+    addRestroom(sim);
+    const g = burstingInLine(sim);
+    takeToilet(sim, must(spawnGuest(ctxOf(sim)), 'a guest'));
+    g.held = 25;
+    expect(sim.adviceNote().about).toEqual({ kind: 'guest', id: g.id });
+    toiletOf(sim).users[0] = 0;
+    expect(sim.toiletTrouble()).toBeNull();
+    expect(sim.holdingOn()).toEqual([]);
+    expect(accidentDue(ctxOf(sim), g)).toBe(false);
+    expect(guestStatus(g, sim)).toBe('In line at Reception');
+    expect(sim.adviceNote().text).not.toMatch(/bursting/);
+  });
+
+  it('says in each Restroom what that one needs: more toilets in the full one, a repair in the broken one', () => {
+    const sim = freshSim();
+    sim.s.money = 100_000;
+    const full = addRestroom(sim);
+    const broken = buildRoom(sim, 'restroom', SECOND_RESTROOM.rect, SECOND_RESTROOM.door, [
+      ['toilet', 17, 5],
+      ['sink', 18, 5],
+    ]);
+    takeToilet(sim, must(spawnGuest(ctxOf(sim)), 'a guest'));
+    must(
+      sim.s.items.find((i) => i.type === 'toilet' && sim.world.roomOfItem(i)?.id === broken.id),
+      'the second toilet',
+    ).wear = 100;
+    expect(toiletTrouble(ctxOf(sim))).toBe('taken');
+    expect(burstingNote(sim, full, 1)).toMatch(/^Every toilet is taken, and 1 guest is bursting/);
+    expect(burstingNote(sim, broken, 1)).toBe(
+      'The toilet is broken, and 1 guest is bursting. Hire a Caretaker to repair it.',
     );
   });
 

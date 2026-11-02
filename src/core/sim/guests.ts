@@ -30,7 +30,7 @@ import { pick, random, rnd } from '../random';
 import type { GameState, Guest, Item, Need, Regular } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, Z_CORRIDOR } from '../world';
-import { accidentDue, haveAccident, holdOn, messNear } from './accidents';
+import { accidentDue, haveAccident, holdOn, messNear, startHolding } from './accidents';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
 import { lobbyTile, say, streetTile, streetTileNear } from './chars';
@@ -460,14 +460,14 @@ function tryNeed(ctx: SimContext, g: Guest): boolean {
   if (!a) {
     // nowhere to go because the restroom is under water: that, they will mention
     if (kind === 'toilet' && ctx.s.rooms.some((r) => ctx.world.flooded(r))) feel(g, 'no-restroom');
-    bursting(g, kind);
+    bursting(ctx, g, kind);
     return false;
   }
   claim(ctx, g, a.item, a.idx);
   const [ax, ay] = accessTile(a.item, a.idx);
   if (!goTo(ctx, g, ax, ay, accessPose(a.item, a.idx))) {
     release(ctx, g);
-    bursting(g, kind);
+    bursting(ctx, g, kind);
     return false;
   }
   g.needKind = kind;
@@ -476,9 +476,14 @@ function tryNeed(ctx: SimContext, g: Guest): boolean {
   return true;
 }
 
-/** A guest bursting for the toilet with nowhere to go shows it, as warning that they cannot hold on for ever. */
-function bursting(g: Guest, need: Need) {
-  if (need === 'toilet' && g.bladder >= 100) say(g, 'bubble-restroom', 1.5);
+/**
+ * A guest bursting for the toilet with nowhere to go shows it, as warning that they cannot hold on for ever, and from
+ * this first failed try holds on.
+ */
+function bursting(ctx: SimContext, g: Guest, need: Need) {
+  if (need !== 'toilet' || g.bladder < 100) return;
+  say(g, 'bubble-restroom', 1.5);
+  startHolding(ctx, g);
 }
 
 /** What a waiting guest makes of where they are waiting: pleasant or grim, with a seat or without. */
@@ -580,7 +585,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   const walkingToClass = g.state === 'toWait' && g.goal === 'class';
   const waiting =
     (g.state === 'toWait' && !walkingToClass) || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
-  // bursting in a line, not on the way to a toilet: how long they have held on, which they cannot do for ever
+  // bursting in a line since they last tried for a toilet: how long they have held on, which they cannot do for ever
   holdOn(ctx, g, dt, waiting && g.state !== 'toNeed' && g.state !== 'need');
   if (waiting) {
     let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);

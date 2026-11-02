@@ -8,7 +8,7 @@ import { roomForModality } from '../../core/sim/machines';
 import type { Sim } from '../../core/sim/sim';
 import { courseName } from '../../core/sim/training';
 import { conditionDays, worsening } from '../../core/sim/worsening';
-import type { Guest, Staff } from '../../core/state/types';
+import type { Guest, Room, Staff } from '../../core/state/types';
 import { cx } from './cx';
 import type { IconLine } from './icon-line';
 import { meterTone } from './meters';
@@ -49,8 +49,10 @@ export function guestStatus(g: Guest, sim: Sim): string {
     case 'enter':
       return 'Arriving';
     case 'toWait':
-    case 'waiting':
-      return g.held ? `${waitingStatus(g, sim)}, bursting: ${holdingWhy(sim)}` : waitingStatus(g, sim);
+    case 'waiting': {
+      const why = g.held === undefined ? '' : holdingWhy(sim);
+      return why ? `${waitingStatus(g, sim)}, bursting: ${why}` : waitingStatus(g, sim);
+    }
     case 'called':
       return `Heading to the ${where}`;
     case 'served':
@@ -96,20 +98,21 @@ export function guestStatus(g: Guest, sim: Sim): string {
 }
 
 /**
- * What a Restroom says while guests in a line hold on, bursting, long enough to warn of: every toilet taken, or none
- * working, and what to do before someone has an accident.
+ * What a Restroom says while guests in a line hold on, bursting, long enough to warn of: what has its own toilets out of
+ * action, or that every one is taken, and what to do before someone has an accident.
  */
-export function burstingNote(sim: Sim, n: number): string {
+export function burstingNote(sim: Sim, room: Room, n: number): string {
   const who = `${n} ${n === 1 ? 'guest is' : 'guests are'} bursting`;
-  if (sim.toiletTrouble() === 'taken')
+  const out = sim.restroomOut(room);
+  if (!out)
     return `Every toilet is taken, and ${who}. Build another Restroom, or put more toilets in this one, before someone has an accident.`;
-  const { why, fix } = sim.toiletsOut();
-  return `${why.charAt(0).toUpperCase()}${why.slice(1)}, and ${who}. ${fix}`;
+  return `${out.why.charAt(0).toUpperCase()}${out.why.slice(1)}, and ${who}. ${out.fix}`;
 }
 
-/** Why a guest bursting in a line cannot go, as their status says it. */
+/** Why a guest bursting in a line cannot go, as their status says it; nothing while a toilet is free for them. */
 function holdingWhy(sim: Sim): string {
   const trouble = sim.toiletTrouble();
+  if (!trouble) return '';
   if (trouble === 'none') return 'there is no Restroom to use';
   return trouble === 'taken' ? 'every toilet is taken' : sim.toiletsOut().why;
 }
