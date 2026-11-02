@@ -4,7 +4,7 @@
 import { type CampaignStars, centerOpen, nextCenter, withStars } from '../../core/campaign';
 import { CAMPAIGN, type CenterId, CENTERS, DISCIPLINES } from '../../core/data';
 import { openingCosts, openingLine } from '../../core/sim/economy';
-import { AUTOSAVE_ID, gameDate, PREVIOUS_ID, type SaveInfo } from '../../storage/saves';
+import { AUTOSAVE_ID, gameDate, MAX_SAVES, PREVIOUS_ID, type SaveInfo } from '../../storage/saves';
 
 /** One center on the campaign trail. */
 export interface CampaignCard {
@@ -57,19 +57,23 @@ export interface RestartWarning {
 }
 
 /**
- * The warning before starting a center over. A new game moves the autosave to "Previous game", in place of whatever
- * was there, so a game there in the autosave is kept for now, one already in "Previous game" is lost when another game
- * is in the autosave, and a named save is never touched. The campaign's stars, karma, achievements and unlocks are
- * kept apart from every saved game, so starting over never loses any of them.
+ * The warning before starting a center over. A new game moves the autosave to "Previous game", in place of the game
+ * there, which is kept as a save of its own when it is the last one in its center; a named save is never touched. The
+ * campaign's stars, karma, achievements and unlocks are kept apart from every saved game, so starting over never loses
+ * any of them.
  */
 export function restartWarning(card: CampaignCard, saves: readonly SaveInfo[]): RestartWarning {
   const save = card.save;
   const date = save ? gameDate(save.day, save.startMonth) : '';
+  const others = saves.filter((s) => s.center === card.id && s.id !== save?.id);
+  const auto = saves.find((s) => s.id === AUTOSAVE_ID);
   let game = '';
   if (save?.id === AUTOSAVE_ID)
-    game = `Your game there, on ${date}, moves to "Previous game" under Load game, and is kept until another new game takes its place.`;
-  else if (save?.id === PREVIOUS_ID && saves.some((s) => s.id === AUTOSAVE_ID))
-    game = `Your game there, on ${date}, is the "Previous game" under Load game, and the game you played last takes its place: export it first to keep it.`;
+    game = `Your game there, on ${date}, moves to "Previous game" under Load game, and stays until another new game takes its place.`;
+  else if (save?.id === PREVIOUS_ID && auto && auto.center !== card.id && !others.length)
+    game = `Your game there, on ${date}, is kept under Load game as a save of its own.`;
+  else if (save?.id === PREVIOUS_ID && auto)
+    game = `Your game there, on ${date}, makes way in "Previous game" for the game you played last, and your other saves there stay under Load game.`;
   else if (save?.id === PREVIOUS_ID)
     game = `Your game there, on ${date}, stays under Load game as "Previous game" until another new game takes its place.`;
   else if (save) game = `Your save "${save.name}" stays under Load game, to go back to whenever you like.`;
@@ -111,4 +115,23 @@ export function nextCenterChoice(
   if (!id || !centerOpen(opened, id)) return undefined;
   const save = saves.find((s) => s.center === id);
   return { id, name: CENTERS[id].name, what: save ? save.id : `new:${id}`, started: !!save };
+}
+
+/** The name a game is kept under as it moves on from its center's last star. */
+export const threeStarName = (center: CenterId) => `${CENTERS[center].name}, three stars`;
+
+/**
+ * The slot a game moving on from `center` is kept in: the center's three-star save if it has one, so moving on again
+ * replaces it rather than adding another, or a new one.
+ */
+export function threeStarSlot(center: CenterId, saves: readonly SaveInfo[]): string | undefined {
+  return saves.find((s) => s.center === center && s.name === threeStarName(center))?.id;
+}
+
+/** Why a game could not be kept as a save of its own: every named slot in use, or no room left in storage. */
+export function cannotKeepText(saves: readonly SaveInfo[]): string {
+  const named = saves.filter((s) => s.id !== AUTOSAVE_ID && s.id !== PREVIOUS_ID).length;
+  return named >= MAX_SAVES
+    ? `All ${MAX_SAVES} named saves are in use, so this game could not be kept as one.`
+    : 'There is no room left in storage, so this game could not be kept as a save of its own.';
 }

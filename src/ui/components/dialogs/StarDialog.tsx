@@ -1,6 +1,6 @@
 // The celebration when a star is earned.
 
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 
 import { nextCenter } from '../../../core/campaign';
 import { CAMPAIGN, centerOf, CENTERS, FOUNDATION_KARMA, STAR_KARMA } from '../../../core/data';
@@ -12,7 +12,8 @@ import { storeThumb } from '../../../storage/thumbnails';
 import { css } from '../../../styled-system/css';
 import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
-import { nextCenterChoice } from '../../lib/campaign';
+import { cannotKeepText, nextCenterChoice, threeStarName, threeStarSlot } from '../../lib/campaign';
+import { cx } from '../../lib/cx';
 import { giftList } from '../../lib/foundation';
 import { karmaText } from '../../lib/karma';
 import { newRoomsText, treatmentsUnlockedAt } from '../../lib/unlocks';
@@ -41,6 +42,17 @@ const unlock = css({
   fontSize: '14 !important',
 });
 
+/** Why moving on has stopped: the game could not be kept as a save of its own. */
+const trouble = css({
+  bg: 'bad.bg',
+  color: 'bad',
+  borderRadius: '12',
+  py: '8',
+  px: '12',
+  mt: '10',
+  fontSize: '14',
+});
+
 /** The new star, the grant that comes with it, and what it unlocks. */
 export function StarDialog() {
   const hud = useHud();
@@ -63,12 +75,27 @@ export function StarDialog() {
   );
   // the last star in a campaign center offers to move on to the next one (worked out once, since it reads every save)
   const [next] = useState(() => nextCenterChoice(sim.s.center, n, sim.s.cheated, loadCampaign().stars, listSaves()));
+  /** Why moving on has stopped, when this game could not be kept as a save of its own. */
+  const [stuck, setStuck] = useState('');
+  // a second press while the page is reloading must not save or leave twice
+  const leaving = useRef(false);
+  /** Leave for the next center, once. */
+  const leave = (to: string) => {
+    if (leaving.current) return;
+    leaving.current = true;
+    loadGame(to);
+  };
   /** Keep this game as a save of its own, so no later new game moves it out of "Previous game", and go on to the next. */
   const goNext = (to: string) => {
-    const saved = writeSave(sim.s, `${centerOf(sim.s).name}, three stars`);
-    if (typeof saved !== 'string') storeThumb(saved.id, view.snapshot());
-    // leaving saves the autosave too, so even with no room for a save of its own the game is kept as "Previous game"
-    loadGame(to);
+    if (leaving.current) return;
+    const saves = listSaves();
+    const saved = writeSave(sim.s, threeStarName(sim.s.center), threeStarSlot(sim.s.center, saves));
+    if (typeof saved === 'string') {
+      setStuck(cannotKeepText(saves));
+      return;
+    }
+    storeThumb(saved.id, view.snapshot());
+    leave(to);
   };
   // every star in a campaign center opens the Foundation, for the gifts not made here already
   const gifts = n >= goals.length && counts && CAMPAIGN.includes(sim.s.center) ? giftsToCome(sim.s) : [];
@@ -138,14 +165,38 @@ export function StarDialog() {
               ? `${centerOf(sim.s).name} is complete. Every star there is yours.`
               : 'Cheats were used in this game, so the campaign keeps none of its stars.'}
       </p>{' '}
-      {next && (
+      {next && !stuck && (
         <p class={unlock}>
           <b>{`${next.name} awaits.`}</b>
           {next.started ? ' Your game there picks up where you left it' : ' A new game starts there'}
-          {`, and this one is kept under Load game as "${centerOf(sim.s).name}, three stars".`}
+          {`, and this one is kept under Load game as "${threeStarName(sim.s.center)}".`}
         </p>
       )}{' '}
-      {next ? (
+      {/* `trouble` is for the tests */}
+      {next && stuck && (
+        <p class={cx('trouble', trouble)} role="alert">
+          {`${stuck} Move on anyway and it is kept only as "Previous game" under Load game, or make room there first.`}
+        </p>
+      )}{' '}
+      {next && stuck ? (
+        <div class={buttonRow()}>
+          <Button
+            class={goButton()}
+            onPress={() => {
+              leave(next.what);
+            }}
+          >
+            Move on anyway
+          </Button>
+          <Button
+            onPress={() => {
+              hud.open('saves');
+            }}
+          >
+            Make room under Load game
+          </Button>
+        </div>
+      ) : next ? (
         <div class={buttonRow()}>
           <Button
             class={goButton()}

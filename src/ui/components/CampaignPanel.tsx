@@ -1,13 +1,13 @@
 // The campaign on the title screen: the trail of centers, the karma shop, and the achievements that earn karma.
 
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 
 import { track } from '../../app/analytics';
 import type { Audio } from '../../audio/audio';
 import { karmaLeft } from '../../core/campaign';
 import { CAMPAIGN } from '../../core/data';
 import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../storage/campaign';
-import { gameDate, listSaves, type SaveInfo, timeAgo } from '../../storage/saves';
+import { gameDate, listSaves, readSave, type SaveInfo, timeAgo } from '../../storage/saves';
 import { loadTutorialPref, saveTutorialPref } from '../../storage/settings';
 import { css } from '../../styled-system/css';
 import { dangerButton, goButton, tabButton, tabStrip, toggleSwitch } from '../../styled-system/recipes';
@@ -23,6 +23,8 @@ export interface CampaignPanelProps {
   onStart: (what: string) => void;
   /** For the click of a switch. */
   audio: Audio;
+  /** Whether the panel is showing: the saves are read again each time it is, as Load game may have changed them. */
+  shown: boolean;
 }
 
 type Tab = 'centers' | 'shop' | 'achievements';
@@ -112,6 +114,9 @@ const restartButton = css({ mt: '0', bg: 'control', color: 'fg' });
 /** Where the game Continue picks up has got to, and when it was saved. */
 const savedLine = css({ flexBasis: 'full', fontSize: '12', opacity: 'soft' });
 
+/** Why the game Continue was to pick up would not open. */
+const goneLine = css({ flexBasis: 'full', fontSize: '13', fontWeight: 'bold', color: 'bad' });
+
 /** The question before a center starts over, on the card in place of its buttons. */
 const asking = css({ fontSize: '13', m: '0', mt: '2', mb: '6' });
 
@@ -164,7 +169,7 @@ const shopHead = css({ m: '0', mt: '14', textAlign: 'left', fontSize: '15' });
 const swatch = css({ w: '24', h: '24', borderRadius: '6', border: 'card' });
 
 /** The campaign's tabs, under the karma there is to spend. */
-export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
+export function CampaignPanel({ onStart, audio, shown }: CampaignPanelProps) {
   const [tab, setTab] = useState<Tab>('centers');
   const redraw = useRedraw();
   const progress = loadCampaign();
@@ -189,7 +194,7 @@ export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
           </button>
         ))}
       </div>
-      {tab === 'centers' && <Centers onStart={onStart} audio={audio} />}
+      {tab === 'centers' && <Centers onStart={onStart} audio={audio} shown={shown} />}
       {tab === 'shop' && <Shop onBuy={redraw} />}
       {tab === 'achievements' && <Achievements />}
     </div>
@@ -223,9 +228,28 @@ function TutorialSwitch({ audio }: { audio: Audio }) {
 }
 
 /** A card per campaign center, joined by a trail, with Play on the ones that are open, or Continue and Restart. */
-function Centers({ onStart, audio }: CampaignPanelProps) {
-  // read once, not on every redraw: reading the list reads every save in it
-  const [saves] = useState(listSaves);
+function Centers({ onStart, audio, shown }: CampaignPanelProps) {
+  /** The center whose save would not open, and why. */
+  const [gone, setGone] = useState<{ id: CampaignCard['id']; text: string } | null>(null);
+  // read as the panel shows, not on every redraw: a save deleted or imported under Load game shows here next time
+  const [saves, setSaves] = useState(listSaves);
+  useEffect(() => {
+    if (!shown) return;
+    setSaves(listSaves());
+    setGone(null);
+  }, [shown]);
+  /** Pick up a center's latest game, or say why it cannot be and read the saves again. */
+  const resume = (c: CampaignCard, save: SaveInfo) => {
+    if (readSave(save.id)) {
+      onStart(save.id);
+      return;
+    }
+    setGone({
+      id: c.id,
+      text: `"${save.name}" could not be opened: it may have been deleted, or be from a newer version.`,
+    });
+    setSaves(listSaves());
+  };
   /** The center whose Restart has been pressed, waiting for the player to say they mean it. */
   const [restarting, setRestarting] = useState<CampaignCard['id'] | ''>('');
   const cards = campaignCards(loadCampaign().stars, saves);
@@ -261,7 +285,7 @@ function Centers({ onStart, audio }: CampaignPanelProps) {
                       <button
                         class={cx(goButton(), playButton)}
                         onClick={() => {
-                          if (c.save) onStart(c.save.id);
+                          if (c.save) resume(c, c.save);
                         }}
                       >
                         Continue
@@ -289,6 +313,12 @@ function Centers({ onStart, audio }: CampaignPanelProps) {
                   {c.save && (
                     <small class={savedLine}>
                       {`${gameDate(c.save.day, c.save.startMonth)}, saved ${timeAgo(c.save.savedAt)}`}
+                    </small>
+                  )}
+                  {/* `gone` is for the tests */}
+                  {gone?.id === c.id && (
+                    <small class={cx('gone', goneLine)} role="alert">
+                      {gone.text}
                     </small>
                   )}
                 </div>

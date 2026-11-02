@@ -25,8 +25,15 @@ import {
 import { addWear } from '../../src/core/sim/upkeep';
 import { disciplineHere, disciplineOn, newGame, offeringHere, offeringOn } from '../../src/core/state/game';
 import { loadCampaign, recordGame, recordLesson } from '../../src/storage/campaign';
-import { AUTOSAVE_ID, PREVIOUS_ID, type SaveInfo } from '../../src/storage/saves';
-import { campaignCards, nextCenterChoice, restartWarning } from '../../src/ui/lib/campaign';
+import { AUTOSAVE_ID, MAX_SAVES, PREVIOUS_ID, type SaveInfo } from '../../src/storage/saves';
+import {
+  campaignCards,
+  cannotKeepText,
+  nextCenterChoice,
+  restartWarning,
+  threeStarName,
+  threeStarSlot,
+} from '../../src/ui/lib/campaign';
 import { hireableRoles } from '../../src/ui/lib/catalog';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
 import { openCenter, runUntil } from './helpers';
@@ -134,7 +141,11 @@ describe('continuing and restarting a center', () => {
     );
     // the game there is the previous game, and the autosave, another center's, would take its place
     const previous = [saved(AUTOSAVE_ID, 'exchange'), saved(PREVIOUS_ID, 'willow', 'Previous game', 5)];
-    expect(restartWarning(cards(previous), previous).game).toContain('export it first to keep it');
+    // ...and it is the last game there, so it is kept as a save of its own
+    expect(restartWarning(cards(previous), previous).game).toContain('is kept under Load game as a save of its own');
+    // ...or the center has another, such as the one kept as it moved on, so it is not overstated as lost
+    const moved = [...previous, saved('t3', 'willow', 'Willow Lane, three stars', 6)];
+    expect(restartWarning(cards(moved), moved).game).toContain('your other saves there stay under Load game');
     const alone = [saved(PREVIOUS_ID, 'willow', 'Previous game')];
     expect(restartWarning(cards(alone), alone).game).toContain('stays under Load game');
     const named = [saved('a1', 'willow', 'Spring')];
@@ -156,6 +167,20 @@ describe('continuing and restarting a center', () => {
     // started: its latest save
     const saves = [saved(AUTOSAVE_ID, 'willow'), saved('b2', 'exchange', 'Busy', 1), saved('b1', 'exchange', 'Old', 9)];
     expect(nextCenterChoice('willow', 3, false, { willow: 3 }, saves)).toMatchObject({ what: 'b2', started: true });
+  });
+
+  it("keeps a game moving on in its center's one three-star save, and says why when it cannot", () => {
+    expect(threeStarName('willow')).toBe('Willow Lane, three stars');
+    const saves = [saved(AUTOSAVE_ID, 'willow'), saved('t1', 'exchange', 'The Exchange, three stars')];
+    expect(threeStarSlot('willow', saves)).toBeUndefined();
+    expect(threeStarSlot('willow', [...saves, saved('t2', 'willow', 'Willow Lane, three stars')])).toBe('t2');
+    // a save of that name from another center is not this one's
+    expect(threeStarSlot('exchange', [saved('t3', 'willow', 'The Exchange, three stars')])).toBeUndefined();
+    const full = Array.from({ length: MAX_SAVES }, (_, i) => saved(`s${i}`, 'sandbox', `Save ${i}`));
+    expect(cannotKeepText([saved(PREVIOUS_ID, 'willow'), ...full])).toBe(
+      `All ${MAX_SAVES} named saves are in use, so this game could not be kept as one.`,
+    );
+    expect(cannotKeepText(saves)).toContain('no room left in storage');
   });
 
   it('leads nowhere before the last star, after the last center, in the sandbox, or to a center a cheat would open', () => {
