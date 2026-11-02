@@ -103,12 +103,14 @@ function sameStory(a: NewsItem, b: NewsItem): boolean {
 /**
  * Log a piece of news for this quarter's paper. The same story told again takes its place (the longest wait only if it
  * is longer); a full log makes room by letting go of its smallest story, if the new one is bigger, so a busy quarter
- * keeps its biggest moments. Nothing to log, nothing happens.
+ * keeps its biggest moments. Nothing to log, nothing happens; and news dated before the last issue printed, such as an
+ * inspection settled the day after, is old news: that issue told the story as it stood.
  */
 export function logNews(ctx: SimContext, news: News | null) {
   if (!news) return;
   const s = ctx.s;
   const item: NewsItem = { ...news, day: news.day ?? s.day };
+  if (s.paper && item.day < s.paper.day) return;
   const log = (s.news ??= []);
   const same = log.findIndex((o) => sameStory(o, item));
   const old = log[same];
@@ -366,6 +368,7 @@ function knownOf(s: GameState, n: NewsItem): Record<string, string | undefined> 
     verdict: n.kind === 'vip' ? n.what : undefined,
     note: n.kind === 'vip' && n.what ? noteOf(n.what, n.how !== 'disappointed') : undefined,
     rooms: n.rooms === undefined ? undefined : counted(n.rooms, 'room'),
+    problems: n.kind === 'inspection' && n.n !== undefined ? counted(n.n, 'problem') : undefined,
     mess: n.item && ITEMS[n.item].machine?.overload?.mess,
     mishap: mishap?.name.toLowerCase(),
     lasted: mishap && lasting(mishap.days),
@@ -384,8 +387,8 @@ function knownOf(s: GameState, n: NewsItem): Record<string, string | undefined> 
     healed: healedLine(s),
   };
   if (n.kind === 'fire') {
-    known.burnt =
-      (n.n ?? 1) > 1 ? `${capital(counted(n.n ?? 1, 'thing'))} burnt before it was out.` : 'Nothing else caught.';
+    known.burned =
+      (n.n ?? 1) > 1 ? `${capital(counted(n.n ?? 1, 'thing'))} burned before it was out.` : 'Nothing else caught.';
     known.putout = putOutLine(n, known);
   }
   return known;
@@ -602,15 +605,19 @@ const quietItem = (s: GameState): NewsItem => ({ kind: 'opened', day: s.day });
 
 // What each hook logs. Each is called in one line from where the news happens, so it is kept here, out of their way.
 
-/** A fire, once the last of it is out: what caught, where, how much burnt, who put it out and how, and any fee. */
-export function fireNews(ctx: SimContext, roomId: number, how: PutOut, by?: Staff): News | null {
+/**
+ * A fire, once the last of it is out: what caught first and the room it was in (none where fires burned in more than
+ * one room at once), how much burned, who put the last of it out and how, and any fee.
+ */
+export function fireNews(ctx: SimContext, how: PutOut, by?: Staff): News | null {
   const s = ctx.s;
   const fire = s.fire;
   if (!fire) return null;
-  const room = ctx.world.room(roomId);
+  const room = fire.room === undefined ? undefined : ctx.world.room(fire.room);
   const brigade = s.brigade;
-  // the brigade charges as it puts the last of it out, just after this
-  const fee = fire.fee || (how === 'brigade' ? BRIGADE_FEE : 0);
+  // the brigade charges as it puts the last of it out, just after this, but only once a call-out: a fire it puts out on
+  // its way back to the truck costs nothing more
+  const fee = fire.fee || (how === 'brigade' && brigade && !brigade.charged ? BRIGADE_FEE : 0);
   const early = !!brigade && brigade.state !== 'leaving' && !brigade.charged && how !== 'brigade';
   return {
     kind: 'fire',
@@ -660,27 +667,32 @@ export function visitNews(s: GameState, r: VisitReport): News {
       ...(how === 'delighted' && r.money > 0 && { fee: r.money }),
     };
   }
-  const mushrooms = r.rooms.some((v) => !v.room);
-  const how =
-    r.outcome === 'paid off'
-      ? 'paid off'
-      : r.refused
-        ? 'refused'
-        : r.outcome === 'warned'
-          ? 'warned'
-          : r.outcome === 'failed'
-            ? mushrooms
-              ? 'mushrooms'
-              : 'failed'
-            : r.score
-              ? 'passed'
-              : 'clean';
-  return { kind: 'inspection', day: r.day, how, n: r.score, rooms: rooms.length, ...(r.refused && { fee: r.refused }) };
+  return {
+    kind: 'inspection',
+    day: r.day,
+    how: inspectionHow(r),
+    n: r.score,
+    rooms: rooms.length,
+    ...(r.refused && { fee: r.refused }),
+  };
 }
 
-/** A mishap as it starts: warded off, ready for, kept at bay by something here, or not. */
-export function mishapNews(m: Mishap, held: boolean): News {
-  const how = m.prepared ? (m.ward === 'done' ? 'warded' : 'ready') : held ? 'ready' : 'unready';
+/** How an inspection went, for the paper: mushrooms under the counter are the story, warning or no warning. */
+function inspectionHow(r: VisitReport): NonNullable<NewsItem['how']> {
+  if (r.outcome === 'paid off') return 'paid off';
+  if (r.refused) return 'refused';
+  const failed = r.outcome === 'failed' || r.outcome === 'warned';
+  if (failed && r.rooms.some((v) => !v.room)) return 'mushrooms';
+  if (failed) return r.outcome;
+  return r.score ? 'passed' : 'clean';
+}
+
+/**
+ * A mishap as it starts: warded off, ready for, kept at bay by something here, or not. Prepared for at a price, it was
+ * ready, ward or no ward; prepared otherwise, a Shaman's ward held.
+ */
+export function mishapNews(m: Mishap, held: boolean, paid: boolean): News {
+  const how = paid ? 'ready' : m.prepared ? 'warded' : held ? 'ready' : 'unready';
   return { kind: 'mishap', how, what: m.kind };
 }
 

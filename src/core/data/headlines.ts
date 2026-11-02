@@ -91,7 +91,7 @@ export type HeadlineCase =
  */
 export const HEADLINES: Readonly<Record<HeadlineCase, readonly string[]>> = {
   opened: ['{center} opens; Rang praised, as required'],
-  'opened-sandbox': ['Grand opening; queue forms in order of aura color'],
+  'opened-sandbox': ['Grand opening; line forms in order of aura color'],
   quiet: ['{center} has quiet quarter; wind chimes questioned'],
   fire: ['{item} catches fire; {room} "fine, mostly"', '{item} catches fire; building "fine, mostly"'],
   'fire-early': ['Fire brigade arrives, finds fire out, leaves slightly disappointed'],
@@ -115,8 +115,8 @@ export const HEADLINES: Readonly<Record<HeadlineCase, readonly string[]>> = {
   'vip-satisfied': ['{visitor} visits {center}, is fine about it'],
   'inspection-clean': ['Inspector finds nothing, checks again, still nothing'],
   'inspection-passed': ['Inspector calls at {center}, finds one thing, lets it go'],
-  'inspection-failed': ['Inspector finds {n} problems, needs second clipboard'],
-  'inspection-warned': ['Inspector finds {n} problems, needs second clipboard'],
+  'inspection-failed': ['Inspector finds {problems}, needs second clipboard'],
+  'inspection-warned': ['Inspector finds {problems}, needs second clipboard'],
   'inspection-mushrooms': ['Mushrooms found under shop counter; inspector takes one for tests'],
   'inspection-refused': ['Inspector hands envelope back at {center}, writes it up anyway'],
   'inspection-paid': ['The health inspector called on {date}. This paper has no further questions.'],
@@ -158,17 +158,17 @@ export const FIRE_PUT_OUT = {
 
 /**
  * The story under each lead, two or three sentences of facts only, with the real names, rooms, days and sums. A
- * fire's are put together from `{burnt}` and `{putout}`, and every story about guests healed reads `{healed}`.
+ * fire's are put together from `{burned}` and `{putout}`, and every story about guests healed reads `{healed}`.
  */
 export const STORIES: Readonly<Record<HeadlineCase, string>> = {
   opened: '{center} opened its doors on {date}. {healed}',
   'opened-sandbox': '{center} opened its doors on {date}. {healed}',
   quiet: 'Nothing at {center} made the front page this quarter. {healed}',
-  fire: 'The {item}{in} caught fire on {date}. {burnt} {putout}',
-  'fire-early': 'The {item}{in} caught fire on {date}. {burnt} {putout}',
-  'fire-beaten': 'The {item}{in} caught fire on {date}. {burnt} {putout}',
-  'fire-brigade': 'The {item}{in} caught fire on {date}. {burnt} {putout}',
-  'fire-sprinklers': 'The {item}{in} caught fire on {date}. {burnt} {putout}',
+  fire: 'The {item}{in} caught fire on {date}. {burned} {putout}',
+  'fire-early': 'The {item}{in} caught fire on {date}. {burned} {putout}',
+  'fire-beaten': 'The {item}{in} caught fire on {date}. {burned} {putout}',
+  'fire-brigade': 'The {item}{in} caught fire on {date}. {burned} {putout}',
+  'fire-sprinklers': 'The {item}{in} caught fire on {date}. {burned} {putout}',
   'runaway-door': '{guest} was on a really bad trip on {date}, found the door, and went home still tripping.',
   'runaway-calmed': '{guest} was on a really bad trip on {date} until {staff}, {role}, talked them down.',
   'runaway-shaman': '{guest} was on a really bad trip on {date} until {staff}, {role}, talked them down.',
@@ -176,14 +176,14 @@ export const STORIES: Readonly<Record<HeadlineCase, string>> = {
     '{visitor} toured {rooms} on {date} and left delighted. Of the {room}: "{verdict}" The visit brought in {prize}.',
   'vip-disappointed': '{visitor} toured {rooms} on {date} and left disappointed. Of the {room}: "{verdict}"',
   'vip-satisfied': '{visitor} toured {rooms} on {date} and left satisfied. Of the {room}: "{verdict}"',
-  'inspection-clean': 'The health inspector looked round {rooms} on {date} and found nothing wrong.',
+  'inspection-clean': 'The health inspector looked around {rooms} on {date} and found nothing wrong.',
   'inspection-passed':
-    'The health inspector looked round {rooms} on {date} and found one thing wrong, which is allowed.',
-  'inspection-failed': 'The health inspector looked round {rooms} on {date} and found {n} problems.',
+    'The health inspector looked around {rooms} on {date} and found one thing wrong, which is allowed.',
+  'inspection-failed': 'The health inspector looked around {rooms} on {date} and found {problems}.',
   'inspection-warned':
-    'The health inspector looked round {rooms} on {date} and found {n} problems, and let it go with a warning this time.',
+    'The health inspector looked around {rooms} on {date} and found {problems}, and let it go with a warning this time.',
   'inspection-mushrooms':
-    'The health inspector looked round {rooms} on {date} and found magic mushrooms under the Shop Counter.',
+    'The health inspector looked around {rooms} on {date} and found magic mushrooms under the Shop Counter.',
   'inspection-refused': 'The health inspector called on {date}, was offered {fee}, turned it down and wrote it up.',
   'inspection-paid': 'The health inspector called on {date}. This paper has no further questions.',
   'mishap-power': 'The power went out on {date} for {lasted}, and nothing with a plug worked.',

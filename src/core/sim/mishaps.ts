@@ -148,6 +148,7 @@ function announceMishap(ctx: SimContext, kind: MishapId) {
 function startMishap(ctx: SimContext, m: Mishap) {
   const s = ctx.s;
   const def = MISHAPS[m.kind];
+  const paid = m.prepared;
   m.started = true;
   emit(ctx, { type: 'announce', text: def.start });
   emit(ctx, { type: 'sfx', name: 'error' });
@@ -165,7 +166,7 @@ function startMishap(ctx: SimContext, m: Mishap) {
     );
   } else if (!m.prepared && m.ward === 'asked')
     toast(ctx, 'The Shaman did not get to the ward in time.', 'bad', undefined, 'discipline-shaman');
-  logNews(ctx, mishapNews(m, !!mishapHolder(s)));
+  logNews(ctx, mishapNews(m, !!mishapHolder(s), paid));
   if (m.prepared) return;
   const holder = mishapHolder(s);
   if (holder) {

@@ -6,9 +6,11 @@ import { automated } from '../../src/app/automation';
 import { FrameStats } from '../../src/app/frames';
 import { feelProps, freshFeel, gameProps, markOf, noteFeel, playEvents } from '../../src/app/play-events';
 import { DAYS_PER_MONTH } from '../../src/core/data';
+import type { SimContext } from '../../src/core/sim/context';
+import { monthEnd } from '../../src/core/sim/economy';
 import type { Emergency, Outbreak, VisitReport } from '../../src/core/state/types';
 import { forgetSharing, loadSharing, saveSharing } from '../../src/storage/analytics';
-import { addConsult, addMassage, freshSim } from './helpers';
+import { addConsult, addMassage, freshSim, hire } from './helpers';
 
 /** The names of the events, in order. */
 const names = (events: { name: string }[]) => events.map((e) => e.name);
@@ -55,17 +57,38 @@ describe('play events', () => {
     expect(month?.props).toMatchObject({ month: 1, money: sim.s.months.at(-1)?.money, loan: 0 });
     // the next look, a moment later, counts it no more
     expect(names(playEvents(markOf(sim.s), sim.s))).not.toContain('month_ended');
-    expect(month?.props, 'no paper on an ordinary payday').not.toHaveProperty('headline');
+    expect(names(playEvents(mark, sim.s)), 'no paper on an ordinary payday').not.toContain('paper_printed');
   });
 
-  it('count the town paper’s lead with the month whose payday printed it', () => {
+  it('count each issue of the town paper as it prints, with its lead', () => {
     const sim = freshSim();
     sim.fastForward(2 * DAYS_PER_MONTH + 1);
     const mark = markOf(sim.s);
     sim.fastForward(DAYS_PER_MONTH);
-    const month = playEvents(mark, sim.s).find((e) => e.name === 'month_ended');
+    const printed = playEvents(mark, sim.s).filter((e) => e.name === 'paper_printed');
     expect(sim.s.paper?.issue).toBe(1);
-    expect(month?.props.headline).toBe(sim.s.paper?.lead.kind);
+    expect(printed.map((e) => e.props)).toEqual([
+      expect.objectContaining({ issue: 1, headline: sim.s.paper?.lead.kind }),
+    ]);
+    // the next look, a moment later, counts it no more
+    expect(names(playEvents(markOf(sim.s), sim.s))).not.toContain('paper_printed');
+  });
+
+  it('count an issue whose payday waited on the bank when it prints, after its month was counted', () => {
+    const sim = freshSim();
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    hire(sim, 'therapist').salary = 3000;
+    sim.s.day = 3 * DAYS_PER_MONTH;
+    sim.s.money = 500;
+    let mark = markOf(sim.s);
+    monthEnd(ctx);
+    expect(sim.s.payrollDue).not.toBeNull();
+    expect(names(playEvents(mark, sim.s))).not.toContain('paper_printed');
+    mark = markOf(sim.s);
+    expect(sim.takePayrollLoan()).toBe(true);
+    expect(sim.s.paper?.issue).toBe(1);
+    const printed = playEvents(mark, sim.s).find((e) => e.name === 'paper_printed');
+    expect(printed?.props).toMatchObject({ issue: 1, headline: sim.s.paper?.lead.kind });
   });
 
   it("count a new player's firsts, and each kind of item the first time it goes down", () => {

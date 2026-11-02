@@ -569,6 +569,8 @@ export type PutOut = 'extinguisher' | 'beaten' | 'sprinklers' | 'brigade';
  */
 export interface FireReport {
   item: ItemType;
+  /** The room the first item caught in, unless something in another room caught while it burned. */
+  room?: number;
   burnt: number;
   how?: PutOut;
   fee: number;

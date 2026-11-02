@@ -40,24 +40,24 @@ The masthead is the center's paper's name and the issue, the month's number in t
 
 Each item scores its kind's base plus its extras. The highest leads; the next is "Also". If nothing scores 20 or more, the quiet-month headline prints. Each kind's two or three templates take turns by issue number, so nothing else is saved. All numbers are first guesses.
 
-| Kind                        | Base | Extras                                              |
-| --------------------------- | ---- | --------------------------------------------------- |
-| Bribe found out             | 70   |                                                     |
-| Fire                        | 60   | +5 for each thing burnt; +10 if the brigade charged |
-| Awards (Center of the Year) | 60   | 40 for any other award won                          |
-| Runaway found the door      | 55   | 35 if calmed                                        |
-| Star earned                 | 50   |                                                     |
-| VIP                         | 50   | delighted 50, disappointed 45, satisfied 20         |
-| Inspection failed           | 50   | passed with nothing found 25                        |
-| Grade of standing           | 45   |                                                     |
-| Amanda Jablonsky hired      | 45   |                                                     |
-| Staff poached by ZenMart    | 40   | quit 30; made Expert 25                             |
-| Overtook ZenMart            | 40   |                                                     |
-| Emergency, outbreak         | 35   | +5 if it failed or escaped                          |
-| Machine overload            | 35   |                                                     |
-| Mishap                      | 30   | +15 if not prepared for; warded off by a Shaman 30  |
-| ZenMart sale                | 25   |                                                     |
-| Long wait                   | 10   | +3 a day past 6; never leads under 8 days           |
+| Kind                        | Base | Extras                                               |
+| --------------------------- | ---- | ---------------------------------------------------- |
+| Bribe found out             | 70   |                                                      |
+| Fire                        | 60   | +5 for each thing burned; +10 if the brigade charged |
+| Awards (Center of the Year) | 60   | 40 for any other award won                           |
+| Runaway found the door      | 55   | 35 if calmed                                         |
+| Star earned                 | 50   |                                                      |
+| VIP                         | 50   | delighted 50, disappointed 45, satisfied 20          |
+| Inspection failed           | 50   | passed with nothing found 25                         |
+| Grade of standing           | 45   |                                                      |
+| Amanda Jablonsky hired      | 45   |                                                      |
+| Staff poached by ZenMart    | 40   | quit 30; made Expert 25                              |
+| Overtook ZenMart            | 40   |                                                      |
+| Emergency, outbreak         | 35   | +5 if it failed or escaped                           |
+| Machine overload            | 35   |                                                      |
+| Mishap                      | 30   | +15 if not prepared for; warded off by a Shaman 30   |
+| ZenMart sale                | 25   |                                                      |
+| Long wait                   | 10   | +3 a day past 6; never leads under 8 days            |
 
 **A bribe nobody found out about** is not a headline. It can be the "Also": "The health inspector called on Day 12. This paper has no further questions."
 
@@ -188,7 +188,7 @@ Placeholders, all printed in capitals: `{center}`; `{guest}`, `{staff}` and `{vi
 | 32  | Center of the Year           | {CENTER} IS CENTER OF THE YEAR; ZENMART "DIDN'T WANT IT ANYWAY"    |
 | 33  | Quiet month                  | {CENTER} HAS QUIET MONTH; WIND CHIMES QUESTIONED                   |
 | 34  | First month                  | {CENTER} OPENS; RANG PRAISED, AS REQUIRED                          |
-| 35  | First month, Sandbox         | GRAND OPENING; QUEUE FORMS IN ORDER OF AURA COLOR                  |
+| 35  | First month, Sandbox         | GRAND OPENING; LINE FORMS IN ORDER OF AURA COLOR                   |
 
 A handled emergency prints plainly: "{N} CASES OF {CONDITION} HEALED ON TIME." Kinds with one template print it every time; the busiest kinds (fires, VIPs, mishaps) have the most.
 

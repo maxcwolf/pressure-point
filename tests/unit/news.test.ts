@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BRIGADE_FEE,
   CLASSIFIEDS,
   DAY_SECONDS,
   DAYS_PER_MONTH,
@@ -23,6 +24,7 @@ import {
   columnOf,
   emergencyEnded,
   fill,
+  fireNews,
   headlineOf,
   hireNews,
   issueAt,
@@ -184,7 +186,7 @@ describe('every headline and story', () => {
     const story = storyOf(s, fire, 'fire-early') ?? '';
     expect(story).toContain('Kneadmaster 9000 in the Massage Suite');
     expect(story).toContain('Hamish Crickmore, Caretaker, put it out with the Fire Extinguisher by the door.');
-    expect(story).toContain('Two things burnt');
+    expect(story).toContain('Two things burned');
     expect(story).toContain('day 11 of month 3');
     expect(storyOf(s, SAMPLES['fire-brigade'], 'fire-brigade')).toContain('charged $2,500');
     expect(headlineOf(s, SAMPLES.wait, 0)?.text).toBe(
@@ -237,7 +239,7 @@ describe('the news log', () => {
     const ctx = createContext(newGame('boardwalk'));
     logNews(ctx, { kind: 'inspection', day: 40, how: 'failed', n: 3, rooms: 6 });
     logNews(ctx, { kind: 'inspection', day: 40, how: 'refused', n: 3, rooms: 6, fee: 960 });
-    logNews(ctx, mishapNews({ kind: 'storm', prepared: false } as never, false));
+    logNews(ctx, mishapNews({ kind: 'storm', prepared: false } as never, false, false));
     logNews(ctx, { kind: 'mishap', how: 'flooded', what: 'storm', room: 'restroom' });
     expect(ctx.s.news?.map((n) => n.how)).toEqual(['refused', 'flooded']);
   });
@@ -246,6 +248,21 @@ describe('the news log', () => {
     const ctx = createContext(newGame('willow'));
     logNews(ctx, null);
     expect(ctx.s.news).toBeUndefined();
+  });
+
+  it('lets go of news dated before the last issue printed: that issue told the story as it stood', () => {
+    const s = newGame('willow');
+    s.day = 3 * DAYS_PER_MONTH;
+    const ctx = createContext(s);
+    logNews(ctx, { kind: 'inspection', day: s.day - 0.2, how: 'failed', n: 3, rooms: 6 });
+    printIssue(ctx);
+    expect(ctx.s.paper?.lead.kind).toBe('inspection');
+    // the same inspection, failed on the quarter's last day, is settled the morning after, the paper already out
+    s.day += 0.3;
+    logNews(ctx, { kind: 'inspection', day: s.day - 0.5, how: 'refused', n: 3, rooms: 6, fee: 960 });
+    expect(ctx.s.news).toEqual([]);
+    logNews(ctx, { kind: 'star', n: 1 });
+    expect(ctx.s.news?.map((n) => n.kind)).toEqual(['star']);
   });
 });
 
@@ -428,7 +445,7 @@ describe('the rest of the page', () => {
     });
     expect(quiet.links).toEqual([]);
     ctx.s.day = 180.001;
-    logNews(ctx, { ...SAMPLES.expert, ids: { staff: 12 } });
+    logNews(ctx, { ...SAMPLES.expert, day: 170, ids: { staff: 12 } });
     expect(printIssue(ctx).links).toEqual([{ text: 'Sam Kneader', kind: 'staff', id: 12 }]);
   });
 });
@@ -463,8 +480,11 @@ describe('what each hook logs', () => {
       of: 5,
     });
     expect(outbreakNews({ lost: 1, lostMax: 3 } as never)).toMatchObject({ how: 'contained', n: 1 });
-    expect(mishapNews({ kind: 'power', prepared: true, ward: 'done' } as never, false).how).toBe('warded');
-    expect(mishapNews({ kind: 'power', prepared: false } as never, true).how).toBe('ready');
+    expect(mishapNews({ kind: 'power', prepared: true, ward: 'done' } as never, false, false).how).toBe('warded');
+    expect(mishapNews({ kind: 'power', prepared: false } as never, true, false).how).toBe('ready');
+    expect(mishapNews({ kind: 'power', prepared: false, ward: 'done' } as never, false, false).how).toBe('unready');
+    // paid for, the ward was never put to the test: it was the preparation that saw it off
+    expect(mishapNews({ kind: 'power', prepared: true, ward: 'done' } as never, false, true).how).toBe('ready');
   });
 
   it('logs a visit from its report, a settled inspection as it was settled', () => {
@@ -497,5 +517,53 @@ describe('what each hook logs', () => {
     expect(visitNews(s, { ...inspection, refused: 960 })).toMatchObject({ how: 'refused', fee: 960 });
     expect(visitNews(s, { ...inspection, outcome: 'paid off' }).how).toBe('paid off');
     expect(visitNews(s, { ...inspection, outcome: 'passed', score: 0 }).how).toBe('clean');
+    // a first failure only warned about is still the mushrooms' story
+    expect(visitNews(s, { ...inspection, outcome: 'warned' })).toMatchObject({ how: 'mushrooms', n: 1 });
+    const grubby = { room: 9, name: 'Massage Suite', score: 0, note: '', problems: ['dirt', 'no extinguisher'] };
+    expect(visitNews(s, { ...inspection, rooms: [grubby], score: 2, outcome: 'warned' }).how).toBe('warned');
+  });
+
+  it('counts an inspection’s problems in words, one or more', () => {
+    const s = newGame('willow');
+    expect(headlineOf(s, SAMPLES['inspection-failed'], 0)?.text).toBe(
+      'Inspector finds four problems, needs second clipboard',
+    );
+    const one = { ...SAMPLES['inspection-warned'], n: 1 };
+    expect(headlineOf(s, one, 0)?.text).toBe('Inspector finds one problem, needs second clipboard');
+    expect(storyOf(s, one, 'inspection-warned')).toContain(
+      'looked around six rooms on day 11 of month 3 and found one problem,',
+    );
+  });
+
+  it('charges the brigade’s fee only to the fire it was charged for', () => {
+    const s = newGame('willow');
+    const ctx = createContext(s);
+    s.fire = { item: 'stone_kiln', burnt: 1, fee: 0, out: true, how: 'brigade' };
+    // the brigade puts out the last of it, and is about to charge for the call-out
+    s.brigade = { state: 'parked', charged: false } as never;
+    expect(fireNews(ctx, 'brigade')).toMatchObject({ how: 'brigade', fee: BRIGADE_FEE });
+    // already charged, for a fire before this one on the same call-out: this one costs nothing
+    s.brigade = { state: 'parked', charged: true } as never;
+    expect(fireNews(ctx, 'brigade')).not.toHaveProperty('fee');
+    // charged for this very fire, as it was being put out
+    s.fire = { ...s.fire, fee: BRIGADE_FEE };
+    expect(fireNews(ctx, 'brigade')).toMatchObject({ fee: BRIGADE_FEE });
+  });
+
+  it('names the room a fire was in only when it burned in one room', () => {
+    const s = newGame('willow');
+    const ctx = createContext(s);
+    s.fire = { item: 'stone_kiln', burnt: 2, fee: 0, out: true, how: 'beaten' };
+    const news = fireNews(ctx, 'beaten');
+    expect(news).not.toHaveProperty('room');
+    const story = storyOf(s, { ...news, day: 10 } as NewsItem, 'fire') ?? '';
+    expect(story).toMatch(
+      /^The Hot Stone Kiln caught fire on day 11 of month 3\. Two things burned before it was out\./,
+    );
+    // the headlines that need a room are left for one that does not
+    expect(casesOf({ ...news, day: 10 } as NewsItem, 'willow')).toEqual(['fire-beaten', 'fire']);
+    expect(headlineOf(s, { ...news, day: 10 } as NewsItem, 0)?.text).toBe(
+      'Hot Stone Kiln catches fire; building "fine, mostly"',
+    );
   });
 });
