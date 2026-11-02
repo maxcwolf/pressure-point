@@ -8,6 +8,8 @@ import type { Tools } from './tools/tools';
 /** What the keyboard acts on. */
 export interface KeyboardTargets {
   state: GameState;
+  /** Set the game's speed by hand, which makes a pause the game made for placing the player's own. */
+  setSpeed: (speed: number) => void;
   tools: Tools;
   ui: HudState;
   /** Turn the camera round a quarter at a time: 1 to the right, -1 to the left. */
@@ -56,7 +58,14 @@ export function typingIn(target: unknown): boolean {
 }
 
 /** Listen for the keyboard and return the set of keys currently held down. */
-export function bindKeyboard({ state, tools, ui, turnCamera, onChange }: KeyboardTargets): ReadonlySet<string> {
+export function bindKeyboard({
+  state,
+  setSpeed,
+  tools,
+  ui,
+  turnCamera,
+  onChange,
+}: KeyboardTargets): ReadonlySet<string> {
   const held = new Set<string>();
   window.addEventListener('keydown', (e) => {
     // Esc still backs out of a field, but every other key is typing
@@ -94,10 +103,10 @@ export function bindKeyboard({ state, tools, ui, turnCamera, onChange }: Keyboar
     else if (action === 'rotate') tools.rotate();
     else if (action === 'turnLeft') turnCamera(-1);
     else if (action === 'turnRight') turnCamera(1);
-    else if (action === 'pause') state.speed = state.speed === 0 ? 1 : 0;
-    else if (action === 'speed1') state.speed = 1;
-    else if (action === 'speed2') state.speed = 2;
-    else if (action === 'speed3') state.speed = 3;
+    else if (action === 'pause') setSpeed(state.speed === 0 ? 1 : 0);
+    else if (action === 'speed1') setSpeed(1);
+    else if (action === 'speed2') setSpeed(2);
+    else if (action === 'speed3') setSpeed(3);
     onChange();
   });
   window.addEventListener('keyup', (e) => held.delete(e.code));

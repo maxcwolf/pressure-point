@@ -149,6 +149,19 @@ describe('the tutorial', () => {
     expect(stepOf(sim)).toBe('benches');
   });
 
+  it('counts only a pause the player made as pausing the clock, not one the game made while something is placed', () => {
+    const sim = tutorialGame();
+    sim.noteLooked();
+    expect(stepOf(sim)).toBe('pause');
+    // a Consultation Room taken up to place, before the desk, stops the clock by itself
+    sim.watchPlacing({ placing: true, choosing: false, auto: true });
+    expect(sim.s.speed).toBe(0);
+    expect(stepOf(sim)).toBe('pause');
+    // the pause button pressed over it is the player's own
+    sim.setSpeed(0);
+    expect(stepOf(sim)).toBe('desk');
+  });
+
   it('does not ask to start the clock again once it has run, for a pause to put the Benches down', () => {
     const sim = tutorialGame();
     walkOpening(sim);

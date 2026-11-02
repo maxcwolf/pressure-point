@@ -81,10 +81,40 @@ test.describe('pausing to place', () => {
     await page.keyboard.press('Escape');
     await game.settle();
     expect(await speedOf(game)).toBe(1);
+
+    // Space while placing starts the clock, as it does anywhere, and the clock is theirs from then on
+    await game.menu('Items');
+    await game.card('Plant').click();
+    await expect.poll(() => speedOf(game)).toBe(0);
+    await page.keyboard.press('Space');
+    expect(await speedOf(game)).toBe(1);
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Escape');
+    await game.settle();
+    expect(await speedOf(game), 'paused again by hand, it stays paused').toBe(0);
   });
 
-  test('the switch in Settings turns it off', async ({ game, page }) => {
+  test('the pause button pressed while placing keeps the game paused once placing is done', async ({ game, page }) => {
     await game.start();
+    await game.eval((pp) => (pp.state.speed = 2));
+    await game.menu('Items');
+    await game.card('Bench').click();
+    await expect.poll(() => speedOf(game)).toBe(0);
+    await page.locator('#stats').getByRole('button', { name: 'Pause (Space)' }).click();
+    await page.keyboard.press('Escape');
+    await game.settle();
+    expect(await speedOf(game)).toBe(0);
+  });
+
+  test('the switch in Settings turns it off, and turned off while placing, the clock goes back at once', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.eval((pp) => (pp.state.speed = 2));
+    await game.menu('Items');
+    await game.card('Plant').click();
+    await expect.poll(() => speedOf(game)).toBe(0);
     await openSettings(page);
     const toggle = page.getByRole('switch', { name: 'Pause while placing' });
     await expect(toggle).toHaveAttribute('aria-checked', 'true');
@@ -92,7 +122,10 @@ test.describe('pausing to place', () => {
     await expect(toggle).toHaveAttribute('aria-checked', 'false');
     await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Resume' }).click();
-    await game.eval((pp) => (pp.state.speed = 2));
+    // the Plant still in hand
+    await expect.poll(() => speedOf(game)).toBe(2);
+    expect(await game.eval((pp) => pp.tools.tool.kind)).toBe('item');
+    await page.keyboard.press('Escape');
     await game.menu('Items');
     await game.card('Bench').click();
     await game.settle();

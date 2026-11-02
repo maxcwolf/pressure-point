@@ -67,6 +67,33 @@ describe('the clock while something is placed', () => {
     expect(sim.s.speed, 'stopped by hand stays stopped').toBe(0);
   });
 
+  it('stays paused once the player pauses by hand over a pause the game made', () => {
+    const sim = freshSim();
+    sim.s.speed = 2;
+    sim.watchPlacing(now(true));
+    // the pause button pressed while the game has the clock stopped already
+    sim.setSpeed(0);
+    expect(sim.pausedToPlace()).toBe(false);
+    sim.watchPlacing(now(true));
+    sim.watchPlacing(now(false));
+    expect(sim.s.speed).toBe(0);
+  });
+
+  it('goes back to its speed at once when the switch is turned off while placing, and waits for the next to stop', () => {
+    const sim = freshSim();
+    sim.s.speed = 2;
+    sim.watchPlacing(now(true));
+    expect(sim.s.speed).toBe(0);
+    sim.watchPlacing(now(true, { auto: false }));
+    expect(sim.s.speed).toBe(2);
+    // turned on again with the same thing still in hand: it carries on running
+    sim.watchPlacing(now(true));
+    expect(sim.s.speed).toBe(2);
+    sim.watchPlacing(now(false));
+    sim.watchPlacing(now(true));
+    expect(sim.s.speed, 'the next placing').toBe(0);
+  });
+
   it('does nothing with the switch off', () => {
     const sim = freshSim();
     sim.s.speed = 2;

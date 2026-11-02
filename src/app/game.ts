@@ -149,6 +149,10 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
   bindPointer(canvas, { audio, tools, view, ui });
   const held = bindKeyboard({
     state,
+    /** Set the speed by hand. */
+    setSpeed: (speed) => {
+      sim.setSpeed(speed);
+    },
     tools,
     ui,
     /** Turn the camera round the building. */

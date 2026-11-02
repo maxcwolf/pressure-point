@@ -144,7 +144,7 @@ import { hasSupplier, setMushrooms } from './mushrooms';
 import { itemNoise, noiseAt } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { updateOutdoors } from './outdoors';
-import { pausedToPlace, type PlacingNow, watchPlacing } from './placing';
+import { pausedToPlace, type PlacingNow, setSpeed, watchPlacing } from './placing';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import { type PlacePreview, previewItem } from './preview';
 import { type PrimerLine, primerLines } from './primer';
@@ -233,6 +233,11 @@ export class Sim {
    */
   watchPlacing(now: PlacingNow) {
     watchPlacing(this.ctx, now);
+  }
+
+  /** Set the game's speed by hand, which makes a pause the game made for placing the player's own. */
+  setSpeed(speed: number) {
+    setSpeed(this.ctx, speed);
   }
 
   /** Whether the clock is stopped only for something being placed, and starts again by itself once it is down. */
