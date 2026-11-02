@@ -16,6 +16,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Move furniture before you build.** In a room's blueprint, click a piece of furniture you have put in to pick it up and put it down elsewhere in the room, for nothing. Esc leaves it where it was.
 - **The tutorial stops asking to start the clock** once you have started it, so pausing to put the Benches down no longer brings the step back, nor does the game pausing itself while you place something.
 - **Amanda on demand.** A new console command, amanda, has Amanda Jablonsky apply straight away, as the newest Massage Therapist applicant, unless she already works for you or is applying. Tab now finishes a command as you type it in the console.
+- **Profiles, for sharing a computer.** The button at the top left of the title screen shows who is playing and opens the list of profiles, to play as another, add one, rename or delete one. Each profile has its own saved games, campaign, templates, tutorial, keys and choices for new games; the display, sound and full screen are the computer's. Everything played so far is the first profile's, Player 1.
 
 ## v0.35.0
 
