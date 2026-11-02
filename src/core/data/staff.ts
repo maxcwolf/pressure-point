@@ -138,14 +138,6 @@ export const TRAITS: readonly TraitDef[] = [
     bad: true,
   },
   {
-    id: 'survivor',
-    name: 'Burnout Survivor',
-    desc: 'Morale never falls below 35, so they never quit and no rival can poach them. Has a mug about it.',
-    pay: 1.25,
-    floor: 35,
-    rare: true,
-  },
-  {
     id: 'hands',
     name: 'Healing Hands',
     desc: 'One treatment in three that would have failed works anyway.',
@@ -237,8 +229,8 @@ export const traitProduct = (
   key: 'speed' | 'stamina' | 'walk' | 'learn' | 'pay' | 'hold',
 ) => traits.reduce((x, t) => x * (traitOf(t)[key] ?? 1), 1);
 
-/** The highest of one number their quirks each set, such as `floor`, or 0 if none sets it. */
-export const traitMost = (traits: readonly TraitId[], key: 'rep' | 'floor' | 'rescue') =>
+/** The highest of one number their quirks each set, such as `rescue`, or 0 if none sets it. */
+export const traitMost = (traits: readonly TraitId[], key: 'rep' | 'rescue') =>
   traits.reduce((x, t) => Math.max(x, traitOf(t)[key] ?? 0), 0);
 
 /** How much faster than usual someone's quirks make them work: Brisk quicker, Chatterbox slower. */

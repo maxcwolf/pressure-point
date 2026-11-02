@@ -362,7 +362,6 @@ export type TraitId =
   | 'quick'
   | 'green'
   | 'influencer'
-  | 'survivor'
   | 'hands'
   | 'space';
 
@@ -391,8 +390,6 @@ export interface TraitDef {
   posted?: boolean;
   /** Reputation earned on top for each guest they heal. */
   rep?: number;
-  /** The lowest their morale can fall. */
-  floor?: number;
   /** The chance that a treatment of theirs that failed works anyway. */
   rescue?: number;
   /** How much faster colleagues work near them, through walls. */

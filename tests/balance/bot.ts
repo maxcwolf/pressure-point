@@ -689,7 +689,6 @@ const HABIT_WORTH: Record<NonNullable<ReturnType<typeof traitOf>['habit']>, numb
  * - habits as `HABIT_WORTH`, a Grump's only for those who treat or teach (a little for anyone else);
  * - Former Influencer: a point of reputation a heal on top of about two is worth 15% to a busy center that needs the
  *   stars' reputation, and less to one that has it; its 10% slower hands are counted as speed;
- * - Burnout Survivor: never quitting saves the reputation a quit costs and a week's search, 5%;
  * - Healing Hands: a third of the 10 to 25% of treatments that fail, each a guest unhealed, the table's time spent and
  *   a heal's reputation missed: 45% of the rescue;
  * - Holds Space: 15% faster service for the one or two colleagues usually in reach at their posts, 80% of whose day is
@@ -707,7 +706,6 @@ export function quirkWorth(traits: readonly TraitId[], role: Role): number {
     if (t.learn) worth += (t.learn - 1) * 0.03;
     if (t.habit) worth += t.habit === 'grump' && !treats ? -0.02 : HABIT_WORTH[t.habit];
     if (t.rep) worth += t.rep * 0.15;
-    if (t.floor) worth += 0.05;
     if (t.rescue) worth += t.rescue * 0.45;
     if (t.hold) worth += (t.hold - 1) * 0.8 * 1.5;
   }

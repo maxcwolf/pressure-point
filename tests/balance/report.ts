@@ -464,7 +464,6 @@ export function runnerTable(after: Run[], before?: Run[]): string {
 /** The rare quirks, by id, as the table names them. */
 const RARE_NAMES: Record<string, string> = {
   influencer: 'Influencer',
-  survivor: 'Survivor',
   hands: 'Hands',
   space: 'Space',
 };
