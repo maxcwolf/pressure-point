@@ -4,6 +4,7 @@ import { DAY_SECONDS, GENERAL_COURSES, type IconId, isGeneral, MODALITIES, modal
 import { money } from '../format';
 import type { CourseId, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
+import { callWait } from './calls';
 import { expert, generalToLearn, offerPromotion, roomFor, treatmentsToLearn } from './careers';
 import { say, staffById } from './chars';
 import { claim, findAccess, release } from './claims';
@@ -47,7 +48,7 @@ export function courses(ctx: SimContext, st: Staff): Course[] {
 export function trainBlocker(ctx: SimContext, st: Staff, course: Course): string {
   if (st.state === 'leaving') return 'They are leaving.';
   // sending them off would leave the call never finished, and never paid for
-  if (st.call?.due) return 'They are off on a house call once this treatment is done.';
+  if (st.call?.due) return `They are off on a house call once this ${callWait(ctx, st) ?? 'treatment'} is done.`;
   if (st.state === 'toCall' || st.state === 'away') return 'They are out on a house call.';
   if (st.training) return 'Already on a course.';
   if (!roomFor(st, course.id))

@@ -1,6 +1,6 @@
 // Two or more therapists sharing a Massage Suite: a line at its tables is always seen to.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ItemType } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
@@ -95,5 +95,34 @@ describe('three therapists at two tables', () => {
     expect(seers.filter((id) => id === specialist.id).length).toBeGreaterThanOrEqual(2);
     expect(seers).not.toContain(first.id);
     expect(seers).not.toContain(second.id);
+  });
+});
+
+describe('a therapist trained in what a line needs, who cannot get to its table', () => {
+  it('leaves the one posted there at it, rather than stand them down for nobody', () => {
+    const sim = suite(1);
+    const untrained = hire(sim, 'therapist');
+    untrained.quals = ['swedish'];
+    runUntil(sim, () => untrained.state === 'atPost', 120);
+    const specialist = hire(sim, 'therapist');
+    specialist.quals = ['swedish', 'deep'];
+    runUntil(sim, () => specialist.state === 'idle' || specialist.state === 'wander', 120);
+    const table = must(tablesOf(sim)[0], 'a table');
+    const ctx = createContext(sim.s);
+    const g = must(spawnGuest(ctx, 'knotted'), 'a guest');
+    Object.assign(g, { goal: 'treat', diagnosis: 1, station: table.id });
+    table.queue.push(g.id);
+    goWait(ctx, g);
+    // no way anywhere from where the specialist stands
+    const find = sim.world.findPath.bind(sim.world);
+    vi.spyOn(sim.world, 'findPath').mockImplementation((sx, sy, tx, ty) =>
+      sx === specialist.tx && sy === specialist.ty ? null : find(sx, sy, tx, ty),
+    );
+    for (let i = 0; i < 100; i++) {
+      deepTissueOnly(sim);
+      sim.tick(0.1);
+      expect(table.staffId).toBe(untrained.id);
+      expect(untrained.state).toBe('atPost');
+    }
   });
 });

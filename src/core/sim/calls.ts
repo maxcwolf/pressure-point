@@ -117,14 +117,15 @@ export type CallWait = 'treatment' | 'class' | 'session';
 
 /**
  * What this member of staff is in the middle of, to finish before they set off on a house call: a guest on their table,
- * a class under way, or a sound bath playing. Null if they are free to go now, a guest only called over included.
+ * a class under way, or guests lying on the mats for a sound bath, which plays for them at once (`updateSession`).
+ * Null if they are free to go now, a guest only called over included.
  */
 export function callWait(ctx: SimContext, st: Staff): CallWait | null {
   if (st.state !== 'atPost') return null;
   const it = ctx.world.item(st.post);
   if (it?.staffId !== st.id || !ctx.world.usable(it)) return null;
   if (isClassLead(it)) return it.progress > 0 ? 'class' : null;
-  if (isLeadStation(it)) return sessionState(ctx, it).playing ? 'session' : null;
+  if (isLeadStation(it)) return sessionState(ctx, it).lying ? 'session' : null;
   return guestById(ctx, it.serving)?.state === 'served' ? 'treatment' : null;
 }
 

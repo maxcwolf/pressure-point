@@ -25,7 +25,7 @@ import {
 import { rnd } from '../random';
 import { offeringOn } from '../state/game';
 import type { ClassMiss, Guest, Item, Room, Staff } from '../state/types';
-import { at, clamp } from '../util';
+import { at, clamp, must } from '../util';
 import { prestige } from './ambience';
 import { gainXp, habitOf, hasGeneral } from './careers';
 import { guestById, say } from './chars';
@@ -154,6 +154,18 @@ const AWAY: readonly Staff['state'][] = ['toBreak', 'onBreak', 'toTrain', 'train
 export const instructorAway = (st: Staff) => AWAY.includes(st.state);
 
 /**
+ * The day an Instructor on a house call is back. Taken in the middle of a class, the days away count from when it is
+ * done and they set off, not from when the call was taken; anything else they finish first is over in a day.
+ */
+function callBack(ctx: SimContext, st: Staff): number {
+  const call = must(st.call, 'a house call');
+  if (!call.due) return call.back;
+  const post = ctx.world.item(st.post);
+  const left = post && isClassLead(post) ? ((1 - post.progress) * serviceSeconds(CLASS_SECONDS, st)) / DAY_SECONDS : 1;
+  return ctx.s.day + left + call.days;
+}
+
+/**
  * Whether an Instructor will still be away when a class day comes, too late to call its class-goers to their spots: on
  * a house call or a course that lasts past it, or on a break they cannot be up from and back in time, rested as far
  * as they may get up early for a class. A drink, a snack or a walk back to the mat is over long before.
@@ -161,7 +173,7 @@ export const instructorAway = (st: Staff) => AWAY.includes(st.state);
 export function awayForClass(ctx: SimContext, st: Staff, day: number): boolean {
   const s = ctx.s;
   const due = day + 1 - REST_RETURN;
-  if (st.call) return st.call.back > due;
+  if (st.call) return callBack(ctx, st) > due;
   if (st.training) return s.day + ((1 - st.training.progress) * st.training.seconds) / DAY_SECONDS > due;
   if (st.state !== 'toBreak' && st.state !== 'onBreak') return false;
   const rest = Math.max(0, Math.min(100, s.policy.breakAt + REST_AHEAD) - st.energy) / BREAK_REST;

@@ -279,7 +279,8 @@ export function updateStations(ctx: SimContext, dt: number) {
       const at = staff?.state === 'atPost' && ctx.world.usable(it) ? staff : undefined;
       // an Instructor with a house call to go on starts no class, and one under way is finished first
       if (isClassLead(it)) updateClass(ctx, it, at, dt, !!at?.call?.due);
-      else updateSession(ctx, it, at, dt, !!at && wantsAway(ctx, at, it));
+      // and a Sound Healer with one plays for whoever is lying down now, and nobody more
+      else updateSession(ctx, it, at, dt, !!at && wantsAway(ctx, at, it), !!at?.call?.due);
       continue;
     }
     const ready = !!staff && staff.state === 'atPost' && ctx.world.usable(it) && (!lead || ctx.world.usable(lead));
