@@ -38,6 +38,8 @@ function quietSuite() {
   runUntil(sim, () => therapist.state === 'atPost' && therapist.post === table.id, 120);
   // nobody comes in while the test sets the line up
   sim.s.speed = 0;
+  // emergencies are called first in a new game; the tests that want it turn it back on
+  sim.s.policy.emergenciesFirst = false;
   for (const g of [...sim.s.guests]) sim.sendHome(g.id);
   table.queue = [];
   table.serving = 0;
