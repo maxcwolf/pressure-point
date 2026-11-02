@@ -40,6 +40,7 @@ import { feel } from './feelings';
 import { smoking } from './machines';
 import { floodTiles } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
+import { fireNews, logNews } from './news';
 import { caretakerSpeed, standBeside } from './staffing';
 import { extinguisherNear } from './visits';
 
@@ -194,6 +195,7 @@ export function putOut(ctx: SimContext, b: Blaze, how: PutOut, by?: Staff) {
   const it = ctx.world.item(b.item);
   if (s.fire) s.fire.how = how;
   if (!s.blazes.length && s.fire) s.fire = { ...s.fire, out: true };
+  if (!s.blazes.length) logNews(ctx, fireNews(ctx, b.room, how, by));
   if (!it) return;
   it.burnt = true;
   it.wear = 100;

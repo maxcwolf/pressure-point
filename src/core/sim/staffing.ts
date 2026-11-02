@@ -60,6 +60,7 @@ import { resetGuest } from './guests';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
 import { startWard, wardStep, wardWanted } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
+import { hireNews, logNews } from './news';
 import { hasItem } from './progress';
 import { calmStep, followRunner } from './runaways';
 import { isLeadStation, matsOf, sessionState } from './sessions';
@@ -132,6 +133,7 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
   s.candidates = s.candidates.filter((x) => x !== c);
   emit(ctx, { type: 'sfx', name: 'hire' });
   toast(ctx, `${c.name} joins as a ${ROLES[c.role].name}.`, 'good', { kind: 'staff', id: st.id });
+  logNews(ctx, hireNews(st));
   return st;
 }
 
@@ -161,6 +163,7 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
       ? `${st.name} has quit. Unhappy staff do not stay.`
       : `${st.name} has left to work at ${RIVAL_NAME}. Unhappy staff do not stay.`;
   toast(ctx, text, 'bad', { kind: 'staff', id: st.id });
+  logNews(ctx, { kind: 'left', how, who: st.name, role: st.role });
   emit(ctx, { type: 'sfx', name: 'fail' });
 }
 

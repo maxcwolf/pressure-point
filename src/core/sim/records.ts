@@ -7,6 +7,7 @@ import type { Guest, MonthRecord } from '../state/types';
 import type { SimContext } from './context';
 import { followVisit } from './demand';
 import { feel, writeReview } from './feelings';
+import { logNews, waitNews } from './news';
 
 /** How many finished months are kept. */
 export const MONTHS_KEPT = 12;
@@ -49,6 +50,7 @@ export function countVisit(ctx: SimContext, g: Guest, end: VisitEnd) {
   if (end !== 'priced') {
     tally.waitTotal += g.waited;
     tally.waitCount++;
+    logNews(ctx, waitNews(g));
     // a month begun before patience was kept goes without it, rather than count only some of its guests
     if (tally.patienceTotal !== undefined) tally.patienceTotal += Math.max(0, Math.min(100, g.lowest ?? g.patience));
   }

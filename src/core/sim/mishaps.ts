@@ -26,6 +26,7 @@ import { say } from './chars';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, tipOnce, toast } from './events';
+import { logNews, mishapNews } from './news';
 import { seasonOf } from './twists';
 
 /** The mishap that comes next here: the center's own, if it has one and it is in season, or none. */
@@ -164,6 +165,7 @@ function startMishap(ctx: SimContext, m: Mishap) {
     );
   } else if (!m.prepared && m.ward === 'asked')
     toast(ctx, 'The Shaman did not get to the ward in time.', 'bad', undefined, 'discipline-shaman');
+  logNews(ctx, mishapNews(m, !!mishapHolder(s)));
   if (m.prepared) return;
   const holder = mishapHolder(s);
   if (holder) {
@@ -222,6 +224,7 @@ export function floodRestroom(ctx: SimContext, def: MishapDef): Room | undefined
     { kind: 'room', id: room.id },
     def.icon,
   );
+  logNews(ctx, { kind: 'mishap', how: 'flooded', what: def.id, room: 'restroom', ids: { room: room.id } });
   return room;
 }
 

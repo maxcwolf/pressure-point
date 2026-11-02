@@ -172,7 +172,10 @@ export function playEvents(mark: PlayMark, s: GameState, known: PlayContext = {}
   // only the month just closed is in the records: the books for any before it in the same look are summed into it
   const last = s.months.at(-1);
   if (monthOf(s) > mark.month && last)
-    out.push({ name: 'month_ended', props: { ...game, ...monthProps(s, last), ...known.month } });
+    out.push({
+      name: 'month_ended',
+      props: { ...game, ...monthProps(s, last), ...headlineOf(s, mark), ...known.month },
+    });
   out.push(...sketchEvents(mark, s, game));
   for (let star = mark.stars + 1; star <= s.stars; star++) out.push({ name: 'star_earned', props: { ...game, star } });
   for (const id of s.achieved)
@@ -329,6 +332,12 @@ function monthProps(s: GameState, m: GameState['months'][number]): PlayProps {
     if (m.patienceTotal !== undefined) props.patience = Math.round(m.patienceTotal / m.waitCount);
   }
   return props;
+}
+
+/** The town paper's lead, by kind or `quiet`, for a month whose payday printed it since the last look. */
+function headlineOf(s: GameState, mark: PlayMark): PlayProps {
+  const paper = s.paper;
+  return paper && paper.day >= (mark.month + 1) * DAYS_PER_MONTH ? { headline: paper.lead.kind } : {};
 }
 
 /** How a month has felt, from a look once a second while the game runs and the doors are open. */

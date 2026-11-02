@@ -63,6 +63,8 @@ export const tokens = defineTokens({
   },
   fonts: {
     body: { value: "'Fredoka', 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif" },
+    /** The town paper's masthead and headlines, in a newspaper's serif. */
+    paper: { value: "Georgia, 'Times New Roman', serif" },
   },
   /** The spacing scale, each step its size in pixels, in steps of 2 up to 16 and wider beyond. */
   spacing: {
