@@ -1,8 +1,9 @@
-// The player's controls, kept for every game on this computer: which key does what, edge scrolling, how often the
-// game autosaves, whether the clock stops while something is placed, whether ~ opens the cheat console, and whether
-// dev mode is unlocked. Keys are kept by where they sit on the keyboard (`KeyboardEvent.code`), so W, A, S and D pan
-// on any layout.
+// The player's controls, kept for every game in their profile: which key does what, edge scrolling, how often the
+// game autosaves, whether the clock stops while something is placed and whether ~ opens the cheat console; and whether
+// dev mode is unlocked, which is kept for every profile on this computer. Keys are kept by where they sit on the
+// keyboard (`KeyboardEvent.code`), so W, A, S and D pan on any layout.
 import { isRecord } from './json';
+import { profileKey } from './profiles';
 
 /** What a key can be set to do. Esc is not among them: it always cancels, and opens the pause menu. */
 export type KeyAction =
@@ -67,8 +68,9 @@ export interface ControlPrefs {
   /** Whether ~ opens the cheat console. Off until switched on at the bottom of the settings. */
   console: boolean;
   /**
-   * Whether dev mode is unlocked on this computer, from the title screen (`clickVersion` in `TitleScreen.tsx`): ~ opens
-   * the cheat console whatever `console` says, and its commands leave a game counting. Off again from the settings.
+   * Whether dev mode is unlocked on this computer, for every profile, from the title screen (`clickVersion` in
+   * `TitleScreen.tsx`): ~ opens the cheat console whatever `console` says, and its commands leave a game counting. Off
+   * again from the settings.
    */
   dev: boolean;
 }
@@ -143,6 +145,8 @@ export function readControls(raw: unknown): ControlPrefs {
 }
 
 const KEY = 'pressure-point-controls';
+/** Whether dev mode is unlocked on this computer, 'on' or 'off': the computer's, not any one profile's. */
+const DEV_KEY = 'pressure-point-dev';
 /** The controls in use, read from storage once and kept up to date as they change. */
 let current: ControlPrefs | null = null;
 
@@ -150,18 +154,35 @@ let current: ControlPrefs | null = null;
 export function loadControls(): ControlPrefs {
   if (current) return current;
   try {
-    current = readControls(JSON.parse(localStorage.getItem(KEY) ?? '{}'));
+    current = { ...readControls(JSON.parse(localStorage.getItem(profileKey(KEY)) ?? '{}')), dev: loadDev() };
   } catch {
     current = defaultControls();
   }
   return current;
 }
 
+/**
+ * Whether dev mode is unlocked on this computer. Until it is first read it is as the first profile's controls have it,
+ * as they kept it before there were profiles, and it is kept apart from then on.
+ */
+function loadDev(): boolean {
+  try {
+    const set = localStorage.getItem(DEV_KEY);
+    if (set !== null) return set === 'on';
+    const dev = readControls(JSON.parse(localStorage.getItem(KEY) ?? '{}')).dev;
+    localStorage.setItem(DEV_KEY, dev ? 'on' : 'off');
+    return dev;
+  } catch {
+    return false;
+  }
+}
+
 /** Change the controls, for this game and the next. */
 export function saveControls(prefs: ControlPrefs) {
   current = prefs;
   try {
-    localStorage.setItem(KEY, JSON.stringify(prefs));
+    localStorage.setItem(DEV_KEY, prefs.dev ? 'on' : 'off');
+    localStorage.setItem(profileKey(KEY), JSON.stringify(prefs));
   } catch {
     // the controls still apply until the page closes
   }
