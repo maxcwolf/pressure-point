@@ -871,10 +871,21 @@ test.describe('staff', () => {
 
     await game.menu('Items');
     await page.locator('#menu .sort-by select').selectOption({ label: 'Cheapest first' });
-    const costs = await page
-      .locator('#menu .card .cost')
-      .evaluateAll((els) => els.map((el) => Number(el.textContent.replace(/\D/g, '')) || 0));
-    expect(costs).toEqual([...costs].sort((a, b) => a - b));
+    // the order holds within each of the menu's groups, which keep their places
+    const groups = await page.locator('#menu .item-group, #menu .card .cost').evaluateAll((els) =>
+      els
+        .reduce<number[][]>(
+          (out, el) => {
+            if (el.classList.contains('item-group')) out.push([]);
+            else out[out.length - 1]!.push(Number(el.textContent.replace(/\D/g, '')) || 0);
+            return out;
+          },
+          [[]],
+        )
+        .filter((costs) => costs.length),
+    );
+    expect(groups.length).toBeGreaterThan(1);
+    for (const costs of groups) expect(costs).toEqual([...costs].sort((a, b) => a - b));
     // each list keeps its own order
     await game.menu('Staff');
     await expect(page.locator('#menu .sort-by select')).toHaveValue('salary');
