@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.36.0
 
 - **Accidents on the floor.** A guest bursting for the toilet with no Restroom to use, or none working (broken, flooded or unfinished), holds on about 15 seconds, or 40 while every toilet is taken, then has an accident where they stand: a poop, which draws flies once it has been left half a minute, or a puddle of pee. They are mortified and often go home, and waiting guests who see it think worse of the place than they do of litter. A Caretaker cleans it up ahead of litter, and a puddle slows walkers as spilled kombucha does. You see it coming: a bubble over the guest, their inspector and the Restroom's saying why, and the advisor naming them with the seconds left and what to do. The first game's checklist asks for a Restroom before any can happen, and **Accidents** in the sandbox settings turns them off.
 - **Why a treatment failed.** A failed treatment now says so in a message: which technique, for whom, in which room, at what chance, and the biggest reasons with what each took off, such as "Rufus Supple was worn out (−15%)", or plain bad luck. When it was down to untrained hands it says what to do, naming the room: a Stretch Rack there brings Sports massage guests, say, so post the colleague who is trained in it there, or send whoever gave it on the course. Click it for the guest, whose inspector lists every reason while they are still around, and whether Healing Hands tried to save it. The Casebook keeps the latest 30 failures by technique, with their main causes and what helps: training, rest, upgrading the equipment or decorating. The reasons are taken from the very figures the roll used, and no odds have changed.
