@@ -1,4 +1,4 @@
-// The Stats menu's Casebook tab: how visits have ended, condition by condition.
+// The Stats menu's Casebook tab: how visits have ended, condition by condition, and why treatments failed lately.
 
 import { conditionOf, MODALITIES } from '../../../core/data';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -7,6 +7,7 @@ import { cx } from '../../lib/cx';
 import { CASEBOOK_SORTS, type CaseRow, sorted } from '../../lib/sorts';
 import { IconText } from '../common/Icon';
 import { SortBy } from '../common/SortBy';
+import { FailuresTable } from './FailuresTable';
 import { statsHead, table } from './looks';
 
 /** A row for each condition seen, most often seen first or in the order picked. */
@@ -58,6 +59,7 @@ export function CasebookTab() {
           })}
         </tbody>
       </table>
+      <FailuresTable />
     </>
   );
 }

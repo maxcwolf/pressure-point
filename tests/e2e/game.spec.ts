@@ -1040,6 +1040,36 @@ test.describe('running a center', () => {
     });
   });
 
+  test('a failed treatment says which it was and why, and its guest’s inspector lists the reasons', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    // a therapist trained in nothing fails most treatments
+    await game.eval((pp) => {
+      for (const st of pp.state.staff) if (st.role === 'therapist') st.quals = [];
+    });
+    let guest: string | undefined;
+    for (let i = 0; i < 120 && !guest; i++) {
+      await game.fastForward(2);
+      guest = await game.eval((pp) => {
+        const f = pp.state.failures?.at(-1);
+        if (!f || !pp.state.guests.some((g) => g.id === f.guestId)) return undefined;
+        pp.state.speed = 0;
+        return f.guest;
+      });
+    }
+    if (!guest) throw new Error('no treatment failed while its guest was still here');
+    const toast = page.locator('#toasts').getByRole('button', { name: new RegExp(`failed for ${guest} in the`) });
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText('is not trained in');
+    await toast.click();
+    const why = page.locator('#inspector .failed-why');
+    await expect(why).toContainText('Why the treatment failed');
+    await expect(why.locator('li.main')).toContainText('is not trained in');
+  });
+
   test("a station's line can be reordered, and a guest sent home from it", async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

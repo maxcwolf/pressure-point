@@ -28,6 +28,7 @@ import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { featureOn, offeringOn } from '../state/game';
 import type {
   Char,
+  FailedTreatment,
   GameState,
   Guest,
   Item,
@@ -132,6 +133,7 @@ import {
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
+import { currentFix } from './failures';
 import { flurrying } from './flurries';
 import { endow, foundationOpen, giftBlocker, nextGift } from './foundation';
 import { objectiveDetail } from './goals';
@@ -635,7 +637,11 @@ export class Sim {
     const staff = it && stationStaff(this.ctx, it);
     if (g.goal !== 'treat' || !it || !staff || ITEMS[it.type].station?.goal !== 'treat') return null;
     return successChance(this.ctx, it, staff, g);
+  } /** What to do about a failed treatment, worked out from how things stand now, if it has a fix of its own here. */
+  failureFix(f: FailedTreatment): string | undefined {
+    return currentFix(this.ctx, f);
   }
+
   // ---- Lines -----------------------------------------------------------------
   /** Move a guest up (negative) or down (positive) their line. */
   moveInLine(guestId: number, by: number): boolean {

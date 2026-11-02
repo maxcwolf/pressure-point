@@ -3,15 +3,7 @@
 // for comfort. One that fails is a bad trip, which leaves the lodge worse than before. And rooms a Shaman clears of bad
 // vibes, which they do faster than sage, are blessed for a week after.
 
-import {
-  BAD_TRIP_REP,
-  BLESS_BONUS,
-  BLESS_DAYS,
-  type ModalityDef,
-  SETTING_WEIGHT,
-  SHAMAN_CLEARING,
-  TRIP_DISCOMFORT,
-} from '../data';
+import { BAD_TRIP_REP, BLESS_BONUS, BLESS_DAYS, type ModalityDef, SETTING_WEIGHT, SHAMAN_CLEARING } from '../data';
 import type { Guest, Item, Room, Staff } from '../state/types';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
@@ -20,28 +12,16 @@ import { feel } from './feelings';
 import { rollRunaway } from './runaways';
 import { addVibes } from './vibes';
 
-/** What a room is like for a treatment there: what it takes off the chance, what its prestige adds, and how uncomfortable its air. */
-export interface Setting {
-  vibes: number;
-  noise: number;
-  linens: number;
-  prestige: number;
-  /** How far the air is from comfortable, from 0 to 1. */
-  discomfort: number;
-}
-
 /** Whether a modality is a psychedelic ceremony. */
 export const isTrip = (def: Pick<ModalityDef, 'trip'>) => !!def.trip;
 
 /**
- * What set and setting take off a treatment's chance beyond what they take off any other: nothing for most, but for a
- * psychedelic ceremony the room's vibes, noise and linens count again, less its prestige, and its discomfort on top.
+ * How many times over the room counts in a treatment: once for most, but twice in a psychedelic ceremony, where its
+ * vibes, noise, linens and prestige count again and its temperature counts at all, unless a machine there makes the
+ * setting perfect.
  */
-export function settingPenalty(def: Pick<ModalityDef, 'trip'>, room: Setting): number {
-  if (!isTrip(def)) return 0;
-  const again = SETTING_WEIGHT - 1;
-  return again * (room.vibes + room.noise + room.linens - room.prestige) + room.discomfort * TRIP_DISCOMFORT;
-}
+export const settingWeight = (def: Pick<ModalityDef, 'trip'>, perfect: boolean) =>
+  isTrip(def) && !perfect ? SETTING_WEIGHT : 1;
 
 /** A guest whose ceremony worked saw the universe, and liked it. */
 export function goodTrip(g: Guest) {

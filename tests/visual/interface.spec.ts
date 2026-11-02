@@ -154,6 +154,42 @@ test.describe('in a game', () => {
     await screens.shot('inspector-regular');
   });
 
+  test('the inspector for a guest whose treatment failed', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const g = pp.state.guests[0]!;
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      Object.assign(g, { condition: 'slump', goal: 'leave', state: 'leaving', outcome: 'failed', diagnosis: 1 });
+      // untrained, at the suite's table, so the inspector works out what to do about it
+      st.quals = st.quals.filter((q) => q !== 'swedish');
+      const table = pp.state.items.find((i) => i.type === 'massage_table')!;
+      pp.state.failures = [
+        {
+          day: pp.state.day,
+          guestId: g.id,
+          guest: g.name,
+          condition: 'slump',
+          modality: 'swedish',
+          staffId: st.id,
+          staff: st.name,
+          itemId: table.id,
+          place: 'in the Massage Suite',
+          chance: 0.19,
+          cause: 'unqualified',
+          reasons: [
+            { cause: 'unqualified', text: `${st.name} is not trained in Swedish massage`, amount: 0.36 },
+            { cause: 'skill', text: `${st.name}’s rank is Junior, not Expert`, amount: 0.09 },
+            { cause: 'tired', text: `${st.name} was worn out`, amount: 0.05 },
+            { cause: 'prestige', text: 'The Massage Suite has 2 stars of prestige, not 5', amount: 0.02 },
+          ],
+          hands: 1 / 3,
+        },
+      ];
+      pp.tools.select({ kind: 'guest', id: g.id });
+    });
+    await screens.shot('inspector-guest-failed');
+  });
+
   for (const role of ['receptionist', 'therapist'] as const) {
     test(`the inspector for a ${role}`, async ({ screens, game }) => {
       await screens.play();
@@ -436,6 +472,27 @@ test.describe('in a game', () => {
         slump: { healed: 9, failed: 2, stormed: 1, sent: 0, priced: 1, worse: 0 },
         knotted: { healed: 1, failed: 3, stormed: 0, sent: 1, priced: 0, worse: 0 },
       };
+      /** A failed treatment, counted under one cause, with what it took off. */
+      const failed = (modality: 'swedish' | 'deep', cause: string, text: string, amount: number, chance: number) => ({
+        day: 20,
+        guestId: 0,
+        guest: 'Guest',
+        condition: modality === 'swedish' ? ('slump' as const) : ('knotted' as const),
+        modality,
+        staffId: 0,
+        staff: 'Staff',
+        place: 'in the Massage Suite',
+        chance,
+        cause,
+        reasons: [{ cause: cause === 'odds' ? 'prestige' : cause, text, amount }],
+      });
+      pp.state.failures = [
+        failed('deep', 'unqualified', 'Not trained', 0.42, 0.22),
+        failed('deep', 'unqualified', 'Not trained', 0.44, 0.24),
+        failed('deep', 'tired', 'Worn out', 0.15, 0.6),
+        failed('swedish', 'odds', 'Plain room', 0.06, 0.82),
+        failed('swedish', 'odds', 'Plain room', 0.06, 0.86),
+      ];
     });
     await game.menu('Stats');
     await page

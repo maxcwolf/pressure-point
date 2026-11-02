@@ -7,38 +7,30 @@ import {
   DAY_SECONDS,
   DISCIPLINES,
   DISCOMFORT_DRAIN,
-  GUESS_PENALTY,
   IDEAL_TEMP,
   ITEMS,
   MODALITIES,
-  type ModalityDef,
   modalityLabel,
   ROLES,
   ROOMS,
   SEAT_DRAIN,
   SEND_HOME_REP,
-  SETTING_WEIGHT,
   STRESS_DRAIN,
-  TRIP_DISCOMFORT,
   WORSE_REP,
 } from '../data';
 import { an } from '../format';
-import type { Guest, HarmNote, Item, Staff } from '../state/types';
+import type { FailedTreatment, Guest, HarmNote, Item, Staff } from '../state/types';
 import { stationPlace } from './advisor';
 import { drainFactor } from './ambience';
-import { rankName } from './careers';
-import { isTrip } from './ceremonies';
 import type { SimContext } from './context';
 import { priceFor, putOffChance } from './economy';
-import { hamperWithRoom, linensPenalty } from './linens';
-import { perfectSetting, treatsHere } from './machines';
-import { itemNoise, noisePenalty } from './noise';
+import { hamperWithRoom } from './linens';
+import { treatsHere } from './machines';
 import { hasItem, hasRoom, hasStaff } from './progress';
-import { restPenalty } from './recovery';
-import { type DeliveryProblem, modalityOf } from './treatments';
-import { canSmudge, vibesAt, vibesPenalty } from './vibes';
+import { modalityOf } from './treatments';
+import { canSmudge } from './vibes';
 import { discomfort, warmthAt } from './warmth';
-import { conditionPenalty, type LineKey, lineOf, worsening } from './worsening';
+import { type LineKey, lineOf, worsening } from './worsening';
 
 /** How many times the same harm, for the same reason, comes before it is explained. */
 export const HARM_EXPLAIN = 3;
@@ -56,75 +48,9 @@ export function noteHarm(ctx: SimContext, key: string, explain: () => Omit<HarmN
 /** A share of a chance or a rate as a whole percentage: "15%". */
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-/** Something that took off a treatment's chance of working, the thing to say about it, and the fix. */
-interface Cost {
-  cause: string;
-  label: string;
-  /** What it took off the chance, 0 to 1. */
-  amount: number;
-}
-
-/** Below this, something that took off a treatment's chance is too small to name as the reason it failed. */
-const NAMED_COST = 0.05;
-/** Below this, it is too small to list at all. */
-const LISTED_COST = 0.02;
-
-/**
- * What took off a treatment's chance of working, biggest first: what was wrong with the room, the staff and the guest,
- * reckoned as the chance of success does, and the shortfall against an Expert's hands and a certain diagnosis.
- */
-export function failureCosts(ctx: SimContext, it: Item, staff: Staff, g: Guest): Cost[] {
-  const mod = MODALITIES[conditionOf(g.condition).modality];
-  const room = ctx.world.roomOfItem(it);
-  const roomName = room ? ROOMS[room.type].name : ITEMS[it.type].name;
-  // a ceremony counts the room twice over, unless a machine there makes the setting perfect
-  const weight = isTrip(mod) && !perfectSetting(ctx, it) ? SETTING_WEIGHT : 1;
-  const temp = warmthAt(ctx, g.tx, g.ty);
-  const costs: Cost[] = [
-    { cause: 'vibes', label: `Bad vibes in the ${roomName}`, amount: vibesPenalty(vibesAt(ctx, it)) * weight },
-    { cause: 'tired', label: `${staff.name} was worn out`, amount: staff.energy < 15 ? 0.15 : 0 },
-    { cause: 'worse', label: `${g.name} had got worse while waiting`, amount: conditionPenalty(g.health) },
-    { cause: 'noise', label: `Noise in the ${roomName}`, amount: noisePenalty(itemNoise(ctx, it)) * weight },
-    { cause: 'linens', label: `Stale linens on the ${ITEMS[it.type].name}`, amount: linensPenalty(it) * weight },
-    {
-      cause: 'temperature',
-      label: `Too ${temp > IDEAL_TEMP ? 'hot' : 'cold'} for a ceremony`,
-      amount: weight > 1 ? discomfort(temp) * TRIP_DISCOMFORT : 0,
-    },
-    { cause: 'rest', label: 'Nowhere to lie down afterwards', amount: restPenalty(ctx, g) },
-    {
-      cause: 'guess',
-      label: 'A best guess at a structural condition, unscanned',
-      amount: g.guessed ? GUESS_PENALTY : 0,
-    },
-    {
-      cause: 'skill',
-      label: `${staff.name} is ${an(rankName(staff.skill))}, not an Expert`,
-      amount: Math.max(0, 5 - staff.skill) * 0.09,
-    },
-    {
-      cause: 'diagnosis',
-      label: `The diagnosis was only ${pct(Math.min(1, g.diagnosis))} sure`,
-      amount: (1 - Math.min(1, g.diagnosis)) * 0.15,
-    },
-  ];
-  return costs.filter((c) => c.amount >= LISTED_COST).sort((a, b) => b.amount - a.amount);
-}
-
-/** The shortfalls every treatment has against the best there could be, rather than something going wrong. */
-const SHORTFALLS = new Set(['skill', 'diagnosis']);
-
-/** Why a treatment failed, in a word: what stopped it being delivered, the biggest thing wrong, or just the odds. */
-export function failureCause(problem: DeliveryProblem, costs: readonly Cost[]): string {
-  if (problem) return problem;
-  return costs.find((c) => !SHORTFALLS.has(c.cause) && c.amount >= NAMED_COST)?.cause ?? 'odds';
-}
-
 /** Count a failed treatment by why it failed, and explain it once it has failed that way a few times. */
-export function noteFailure(ctx: SimContext, it: Item, staff: Staff, g: Guest, problem: DeliveryProblem) {
-  const costs = failureCosts(ctx, it, staff, g);
-  const cause = failureCause(problem, costs);
-  noteHarm(ctx, `failed:${cause}`, () => failureNote(ctx, it, staff, g, problem, cause, costs));
+export function noteFailure(ctx: SimContext, it: Item, staff: Staff, g: Guest, failure: FailedTreatment) {
+  noteHarm(ctx, `failed:${failure.cause}`, () => failureNote(ctx, it, staff, g, failure));
 }
 
 /** The explanation of treatments failing for the same reason. */
@@ -133,20 +59,20 @@ function failureNote(
   it: Item,
   staff: Staff,
   g: Guest,
-  problem: DeliveryProblem,
-  cause: string,
-  costs: readonly Cost[],
+  failure: FailedTreatment,
 ): Omit<HarmNote, 'key'> {
+  const { cause } = failure;
   const mod = MODALITIES[conditionOf(g.condition).modality];
   const room = ctx.world.roomOfItem(it);
   const roomName = room ? ROOMS[room.type].name : ITEMS[it.type].name;
   const role = ROLES[staff.role].name;
   const equipment = mod.equipment ? ITEMS[mod.equipment].name : 'equipment';
   // the reason it is explained for leads, whatever is bigger
-  const ordered = [...costs.filter((c) => c.cause === cause), ...costs.filter((c) => c.cause !== cause)];
-  const listed = ordered.slice(0, 4).map((c) => ({ label: c.label, amount: `−${pct(c.amount)}` }));
-  const head = problemLine(problem, staff, mod, equipment);
-  const causes = head ? [{ label: head }, ...listed.slice(0, 3)] : listed;
+  const ordered = [
+    ...failure.reasons.filter((r) => r.cause === cause),
+    ...failure.reasons.filter((r) => r.cause !== cause),
+  ];
+  const causes = ordered.slice(0, 4).map((r) => ({ label: r.text, amount: `−${pct(r.amount)}` }));
   const about = { kind: 'item' as const, id: it.id };
   const caretaker = hasStaff(ctx, 'caretaker');
   const hireCaretaker = caretaker ? {} : { fix: { hire: 'caretaker' as const } };
@@ -279,22 +205,6 @@ const CAUSE_WORDS: Readonly<Record<string, string>> = {
   temperature: 'the temperature off',
   rest: 'nowhere to rest after',
 };
-
-/** What stopped a treatment being delivered properly, as a line of its own, if anything did. */
-function problemLine(problem: DeliveryProblem, staff: Staff, mod: ModalityDef, equipment: string): string {
-  switch (problem) {
-    case 'unqualified':
-      return `${staff.name} is not trained in ${modalityLabel(mod.id)}`;
-    case 'no-equipment':
-      return `No ${equipment} in the room`;
-    case 'out-of-action':
-      return `The ${equipment} was out of action`;
-    case 'cold':
-      return 'The massage stones were cold';
-    default:
-      return '';
-  }
-}
 
 /**
  * The station a guest was waiting for: the one they were called to or lined up at, or else the busiest of those that

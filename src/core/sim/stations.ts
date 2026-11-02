@@ -14,6 +14,7 @@ import {
   modalityLabel,
   MOTIVATION_SPEED,
   PRICEY,
+  RANKS,
   ROOMS,
   SCAN_SUCCESS,
   SERVICE_SPEED,
@@ -24,6 +25,8 @@ import {
   STRUCTURAL_SURE,
   traitMost,
   traitSpeed,
+  TRIP_DISCOMFORT,
+  UPGRADE_LEVELS,
   XP_PER_GUEST,
 } from '../data';
 import { tuning } from '../difficulty';
@@ -35,13 +38,14 @@ import { prestige } from './ambience';
 import { worksAt } from './assignments';
 import { trackBusy } from './bottleneck';
 import { gainXp, habitOf, hasGeneral, heldSpace } from './careers';
-import { badTrip, blessBonus, goodTrip, isTrip, settingPenalty } from './ceremonies';
+import { badTrip, blessBonus, goodTrip, isTrip, settingWeight } from './ceremonies';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
 import { dueForSpot, isClassLead, restDue, updateClass } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
+import { handsSave, recordFailure } from './failures';
 import { feel, reviewStars } from './feelings';
 import { decide, goWait, leave, resetGuest } from './guests';
 import { noteFailure, notePriced } from './harms';
@@ -105,7 +109,7 @@ export function stationScore(ctx: SimContext, it: Item, g: Guest) {
 }
 
 /** Staff who will not be seeing anyone for a while: going, or away for days on a course or a house call. */
-const AWAY: readonly StaffState[] = ['leaving', 'toCall', 'away', 'toTrain', 'training'];
+export const AWAY: readonly StaffState[] = ['leaving', 'toCall', 'away', 'toTrain', 'training'];
 
 /**
  * Whether a guest should wait for a colleague trained in their treatment rather than be seen by this member of staff,
@@ -161,10 +165,15 @@ export function serviceSeconds(base: number, st: Staff, held = 1) {
   return base / speed;
 }
 
+/** What each star of a room's prestige past the first adds to a service's results there. */
+export const PRESTIGE_SUCCESS = 0.02;
+/** The most stars of prestige a room can have. */
+const MAX_PRESTIGE = 5;
+
 /** How much a room's prestige adds to a service's results there. */
 function prestigeBonus(ctx: SimContext, it: Item): number {
   const room = ctx.world.roomOfItem(it);
-  return room ? (prestige(ctx, room) - 1) * 0.02 : 0;
+  return room ? (prestige(ctx, room) - 1) * PRESTIGE_SUCCESS : 0;
 }
 
 /**
@@ -194,52 +203,122 @@ export function worksAnyway(ctx: SimContext, st: Staff): boolean {
   return rescue > 0 && random(ctx.s) < rescue;
 }
 
-/** A treatment's chance of working, and what, if anything, stops it being delivered properly. */
+/** What moved a treatment's chance of working, one term each. */
+export type ChanceCause =
+  | 'skill'
+  | 'diagnosis'
+  | 'scan'
+  | 'guess'
+  | 'prestige'
+  | 'chart'
+  | 'blessed'
+  | 'upgrade'
+  | 'machine'
+  | 'difficulty'
+  | 'tired'
+  | 'worse'
+  | 'vibes'
+  | 'noise'
+  | 'linens'
+  | 'temperature'
+  | 'rest';
+
+/**
+ * One term in a treatment's chance of working: what it added (or, below zero, took off), and the most it could have
+ * added, for a term that falls short of its best rather than going wrong.
+ */
+export interface ChanceFactor {
+  cause: ChanceCause;
+  amount: number;
+  best?: number;
+}
+
+/** A treatment's chance of working, what if anything stops it being delivered properly, and what it is made of. */
 export interface Chance {
   chance: number;
   problem: DeliveryProblem;
+  /** The terms added up, before they are kept between the least and the most. */
+  raw: number;
+  /** The chance had it been delivered properly: the terms added up, kept between the least and the most. */
+  proper: number;
+  factors: ChanceFactor[];
+}
+
+/** A treatment's chance of working before anything about it is counted. */
+export const BASE_CHANCE = 0.56;
+/** What each rank of skill adds to the chance. */
+export const SKILL_SUCCESS = 0.09;
+/** What a certain diagnosis adds to the chance, a less certain one in proportion. */
+export const DIAGNOSIS_SUCCESS = 0.15;
+/** What a member of staff worn out below `TIRED_ENERGY` takes off the chance. */
+export const TIRED_PENALTY = 0.15;
+/** The energy below which a member of staff is worn out. */
+export const TIRED_ENERGY = 15;
+/** The least and the most a treatment's chance can be before a botch cuts it. */
+export const MIN_CHANCE = 0.3;
+export const MAX_CHANCE = 0.98;
+
+/**
+ * Every term in the chance a guest's treatment at this table works if this member of staff gives it now: better with
+ * skill, a confident diagnosis, a posture scan, a prestigious room, a chart on the wall, a room a Shaman has blessed
+ * and upgraded equipment, worse for a hard technique, a tired therapist, a guest whose condition has worsened, a room
+ * with bad vibes, noise or stale linens, and nowhere to rest afterwards if it needs it. For a psychedelic ceremony the
+ * room counts for twice as much, and so does an uncomfortable temperature.
+ */
+export function chanceFactors(ctx: SimContext, it: Item, staff: Staff, g: Guest): ChanceFactor[] {
+  const mod = MODALITIES[conditionOf(g.condition).modality];
+  const weight = settingWeight(mod, perfectSetting(ctx, it));
+  const room = ctx.world.roomOfItem(it);
+  return [
+    { cause: 'skill', amount: staff.skill * SKILL_SUCCESS, best: RANKS.length * SKILL_SUCCESS },
+    { cause: 'diagnosis', amount: Math.min(1, g.diagnosis) * DIAGNOSIS_SUCCESS, best: DIAGNOSIS_SUCCESS },
+    { cause: 'scan', amount: g.scanned ? SCAN_SUCCESS + upgradeSuccess(g.scanLevel ?? 0) : 0 },
+    { cause: 'guess', amount: g.guessed ? -GUESS_PENALTY : 0 },
+    {
+      cause: 'prestige',
+      amount: prestigeBonus(ctx, it) * weight,
+      ...(room && { best: (MAX_PRESTIGE - 1) * PRESTIGE_SUCCESS * weight }),
+    },
+    { cause: 'chart', amount: chartBonus(ctx, it) },
+    { cause: 'blessed', amount: blessBonus(room, ctx.s.day) },
+    {
+      cause: 'upgrade',
+      amount: upgradeSuccess(it.level),
+      ...(ITEMS[it.type].upgrade !== undefined && { best: upgradeSuccess(UPGRADE_LEVELS) }),
+    },
+    { cause: 'machine', amount: machineSuccess(ctx, it) },
+    { cause: 'difficulty', amount: -mod.difficulty },
+    { cause: 'tired', amount: staff.energy < TIRED_ENERGY ? -TIRED_PENALTY : 0 },
+    { cause: 'worse', amount: -conditionPenalty(g.health) },
+    { cause: 'vibes', amount: -vibesPenalty(vibesAt(ctx, it)) * weight },
+    { cause: 'noise', amount: -noisePenalty(itemNoise(ctx, it)) * weight },
+    { cause: 'linens', amount: -linensPenalty(it) * weight },
+    {
+      cause: 'temperature',
+      amount: weight > 1 ? -discomfort(warmthAt(ctx, g.tx, g.ty)) * TRIP_DISCOMFORT : 0,
+    },
+    { cause: 'rest', amount: -restPenalty(ctx, g) },
+  ];
 }
 
 /**
- * The chance a guest's treatment at this table works if this member of staff gives it now: better with skill, a
- * confident diagnosis, a posture scan, a prestigious room and upgraded equipment, worse for a hard technique, a tired therapist, a guest
- * whose condition has worsened, a room with bad vibes, noise or stale linens, nowhere to rest afterwards if it needs
- * it, and only a fraction of that without the right training or equipment. A room a Shaman has blessed helps a
- * little, and so does a chart on the wall. For a psychedelic ceremony the room counts for twice as much, and so does an uncomfortable temperature.
+ * The chance a guest's treatment at this table works if this member of staff gives it now: its terms
+ * (`chanceFactors`) added up, and only a fraction of that without the right training or equipment.
  */
 export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
-  const mod = MODALITIES[conditionOf(g.condition).modality];
-  const problem = deliveryProblem(ctx, it, staff, mod);
-  const setting = {
-    vibes: vibesPenalty(vibesAt(ctx, it)),
-    noise: noisePenalty(itemNoise(ctx, it)),
-    linens: linensPenalty(it),
-    prestige: prestigeBonus(ctx, it),
-    discomfort: isTrip(mod) ? discomfort(warmthAt(ctx, g.tx, g.ty)) : 0,
-  };
-  const chance = clamp(
-    0.56 +
-      staff.skill * 0.09 +
-      Math.min(1, g.diagnosis) * 0.15 +
-      (g.scanned ? SCAN_SUCCESS + upgradeSuccess(g.scanLevel ?? 0) : 0) -
-      (g.guessed ? GUESS_PENALTY : 0) +
-      setting.prestige +
-      chartBonus(ctx, it) +
-      blessBonus(ctx.world.roomOfItem(it), ctx.s.day) +
-      upgradeSuccess(it.level) +
-      machineSuccess(ctx, it) -
-      mod.difficulty -
-      (staff.energy < 15 ? 0.15 : 0) -
-      conditionPenalty(g.health) -
-      setting.vibes -
-      setting.noise -
-      setting.linens -
-      (perfectSetting(ctx, it) ? 0 : settingPenalty(mod, setting)) -
-      restPenalty(ctx, g),
-    0.3,
-    0.98,
-  );
-  return { chance: problem ? chance * BOTCH_FACTOR : chance, problem };
+  const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
+  const factors = chanceFactors(ctx, it, staff, g);
+  const raw = factors.reduce((sum, f) => sum + f.amount, BASE_CHANCE);
+  return { ...settledChance(raw, problem), problem, raw, factors };
+}
+
+/**
+ * A chance from its terms added up: kept between the least and the most a treatment can be, then cut by a botch if
+ * something stops it being delivered properly. What the roll uses, and what a failure's reasons are sized by.
+ */
+export function settledChance(raw: number, problem: DeliveryProblem): { chance: number; proper: number } {
+  const proper = clamp(raw, MIN_CHANCE, MAX_CHANCE);
+  return { chance: problem ? proper * BOTCH_FACTOR : proper, proper };
 }
 
 /**
@@ -534,7 +613,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const cond = conditionOf(g.condition);
     const mod = MODALITIES[cond.modality];
     // the wrong hands or missing equipment: they try anyway, and it rarely works
-    const { chance, problem } = successChance(ctx, it, staff, g);
+    const odds = successChance(ctx, it, staff, g);
+    const { chance, problem } = odds;
     // the harder treatments need a lie-down after, if there is a Lounger free
     const rest = settleRest(ctx, g);
     if (problem === 'unqualified') feel(g, 'unqualified');
@@ -594,8 +674,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       // a ceremony that fails is a bad trip, whatever went wrong, and that goes in their review too
       if (isTrip(mod)) badTrip(ctx, g, it);
       countVisit(ctx, g, 'failed');
-      // why it failed, before the failure's own bad vibes cloud the room
-      noteFailure(ctx, it, staff, g, problem);
+      // why it failed, from the terms the roll used, before the failure's own bad vibes cloud the room
+      noteFailure(ctx, it, staff, g, recordFailure(ctx, it, staff, g, odds, handsSave(staff)));
       changeRep(ctx, -2.5);
       if (room) addVibes(ctx, room);
       // a thumb down: not the hourglass of a guest about to walk out
