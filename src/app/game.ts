@@ -169,6 +169,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
   let previewDrawn: PlacePreview | null = null;
   /** The overlay chosen as the floor was last drawn, so another is drawn at once as it is chosen, and fades in. */
   let overlayDrawn: OverlayMode | null = null;
+  /** What the floor was last colored by: an overlay, the land, or nothing. For the end-to-end tests. */
+  let floorShown: OverlayMode | 'land' | null = null;
   /**
    * Color the floor for an item in hand, as if it were down; or for what the interface has it show, the overlay or the
    * land around the building, or a plot of it; or clear it.
@@ -183,12 +185,16 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     // the plans veil the floor under the sketches, whatever else is on it
     view.setPlans(overlay === 'plans');
     // the Expand tool colors the land itself, as the pointer moves
-    if (tools.tool.kind === 'expand') return;
+    if (tools.tool.kind === 'expand') {
+      floorShown = 'land';
+      return;
+    }
     // an item in hand shows what it would change, over the overlay showing
     const preview = tools.preview;
     const mode = preview && previewMode(preview, overlay);
     if (preview && mode) {
       view.setHeat(heatTiles(sim, mode, preview), overlayPalette(mode));
+      floorShown = mode;
       return;
     }
     // the Land tab outlines the plots, over any overlay
@@ -204,6 +210,7 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
         'land',
       );
     else view.setHeat(colorsFloor(overlay) ? heatTiles(sim, overlay) : null, overlayPalette(overlay));
+    floorShown = land || sel?.kind === 'plot' ? 'land' : colorsFloor(overlay) ? overlay : null;
   };
   const loop = runLoop({
     sim,
@@ -295,7 +302,20 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
       },
     };
     Object.assign(window, {
-      pp: { sim, view, tools, ui, loop, state, data, geo: { itemDims, accessTile, wallSpotsOf } },
+      pp: {
+        sim,
+        view,
+        tools,
+        ui,
+        loop,
+        state,
+        data,
+        geo: { itemDims, accessTile, wallSpotsOf },
+        /** What the floor is colored by: an overlay, the land, or nothing. */
+        get floorShown() {
+          return floorShown;
+        },
+      },
     });
   }
 }

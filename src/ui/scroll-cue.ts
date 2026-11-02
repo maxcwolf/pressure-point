@@ -1,7 +1,7 @@
 // Scroll cues: a card that holds more than it shows says so, with a fade at the edge the rest is past (and a ScrollTab).
 
 /** The cards and lists that scroll when they hold more than fits. The menus, whose rows of cards cut off, go without. */
-const SCROLLERS = ['.insp', '.dialog.wide', '.save-list', '.title-panel', '.title-sub'].join(', ');
+const SCROLLERS = ['.insp', '.dialog.wide', '.save-list', '.title-panel', '.title-sub', '#overlay-picker'].join(', ');
 
 /** Content this close to an edge, in pixels, counts as showing. */
 const SLACK = 2;

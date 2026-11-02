@@ -9,12 +9,15 @@ import { cx } from '../lib/cx';
 import { OVERLAYS } from '../lib/overlays';
 import { Button } from './common/Button';
 import { Icon } from './common/Icon';
+import { ScrollTab } from './common/ScrollTab';
 
-/** Under the system buttons, over the panels down the right. */
+/** Under the system buttons, over the panels down the right; it scrolls once taller than the room above the bar. */
 const picker = css({
   top: 'below-bar',
   right: 'gutter',
   w: 'panel.picker',
+  maxH: '[calc(var(--vh) - var(--bar-h) - {spacing.below-bar})]',
+  overflowY: 'auto',
   zIndex: 'popover',
   display: 'flex',
   flexDirection: 'column',
@@ -30,6 +33,7 @@ const choice = css({
   gridTemplateColumns: '[26px 1fr]',
   alignItems: 'center',
   gap: '6',
+  flexShrink: '0',
   textAlign: 'left',
   bg: 'bg.card',
   border: 'card',
@@ -117,9 +121,10 @@ const close = css({
 export function OverlayPicker() {
   const hud = useHud();
   const showing = OVERLAYS.find((o) => o.id === hud.overlay);
+  // keyed apart, so the key never takes over the picker's element, and with it the scroll cue's marks
   if (hud.overlayPicker)
     return (
-      <div id="overlay-picker" class={cx(panelCard(), picker)}>
+      <div key="picker" id="overlay-picker" class={cx(panelCard(), picker)}>
         <h4 class={heading}>Color the floor by</h4>
         {OVERLAYS.map((o) => (
           <Button
@@ -153,13 +158,14 @@ export function OverlayPicker() {
             <span>Nothing</span>
           </Button>
         )}
+        <ScrollTab />
       </div>
     );
   if (!showing) return null;
   // the plans have no scale: their list heads the right-hand column (PlansKey)
   if (!showing.key || !showing.ends) return null;
   return (
-    <div id="overlay-key" class={cx(panelCard(), keyPanel)}>
+    <div key="key" id="overlay-key" class={cx(panelCard(), keyPanel)}>
       <b class={keyName}>
         <Icon id={showing.icon} size={20} />
         {showing.name}

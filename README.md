@@ -88,7 +88,7 @@ Whether in the campaign or the sandbox, four things grow as you play.
 - **Staff with careers:** ranks, traits, courses, raises, breaks, and duties you can set.
 - **Rooms you can change:** resize them, move them, copy them, save them as templates, and decorate them. Buy the plots of land around it, with the Expand tool, when the building gets too small: some join on, and some are buildings of their own across the grass.
 - **Events to plan for:** emergencies, stress outbreaks, VIPs, the health inspector, mishaps like power cuts and storms, staff challenges and a year-end awards ceremony.
-- **Overlays and stats:** color the floor by how pleasant, quiet or warm each spot is, or by guests' patience and staff energy, and read the reviews and a casebook of every visit.
+- **Overlays and stats:** color the floor by how pleasant, quiet or warm each spot is, or which rooms have a Fire Extinguisher near the door, or by guests' patience and staff energy, and read the reviews and a casebook of every visit.
 - **Sound and music**, with an announcer, plus keys you can set, edge scrolling and autosave.
 
 ## Download

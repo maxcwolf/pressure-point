@@ -146,3 +146,57 @@ export function placeName(place: Place): string {
 export function filterItems(types: readonly ItemType[], place: Place, kind: ItemKind | 'all'): ItemType[] {
   return types.filter((t) => fitsPlace(ITEMS[t], place) && (kind === 'all' || itemKind(t) === kind));
 }
+
+/**
+ * How the Items menu groups what it lists: `specialty`, the kit a technique needs or a machine, for one kind of room;
+ * `room`, everything else that goes only in certain kinds of room; and `general`, what is tied to no room, going
+ * anywhere indoors, in the corridors or out of doors.
+ */
+export type ItemGroup = 'specialty' | 'room' | 'general';
+
+/** Which group of the Items menu an item falls in. */
+export function itemGroup(type: ItemType): ItemGroup {
+  const def = ITEMS[type];
+  if (!roomsFor(def).length) return 'general';
+  const kit = Object.values(MODALITIES).some((m) => m.equipment === type);
+  return def.machine || kit ? 'specialty' : 'room';
+}
+
+/** A group of the Items menu's list: its heading, and its items in the order given. */
+export interface ItemSection {
+  group: ItemGroup;
+  heading: string;
+  types: ItemType[];
+}
+
+/** The kind of room a place is, if it is one. */
+const roomOf = (place: Place): RoomType | null =>
+  place === 'all' || place === 'corridor' || place === 'outdoors' ? null : place;
+
+/** What a group of the Items menu is headed, under a place: the room's own name for its items, once one is picked. */
+function groupHeading(group: ItemGroup, place: Place): string {
+  const type = roomOf(place);
+  const room = type && ROOMS[type].name;
+  if (group === 'specialty') return 'Specialty';
+  // some of these go in another kind of room as well, so the heading says who they are for rather than "only"
+  if (group === 'room') return room ? `For the ${room}` : 'Room-specific';
+  return room ? 'Anywhere' : 'Not tied to a room';
+}
+
+/**
+ * The Items menu's list in its groups, each in the order given, leaving out any with nothing in it: under a room, its
+ * own first, specialty kit leading; under everything, the everyday furniture tied to no room first, and the specialty
+ * kit, most of it unlocked later, last. A list of one group needs no heading, as the filters picked say it already, so
+ * it comes back with none.
+ */
+export function itemSections(types: readonly ItemType[], place: Place): ItemSection[] {
+  const groups: ItemGroup[] = roomOf(place) ? ['specialty', 'room', 'general'] : ['general', 'room', 'specialty'];
+  const sections = groups
+    .map((group) => ({
+      group,
+      heading: groupHeading(group, place),
+      types: types.filter((t) => itemGroup(t) === group),
+    }))
+    .filter((s) => s.types.length > 0);
+  return sections.length > 1 ? sections : sections.map((s) => ({ ...s, heading: '' }));
+}

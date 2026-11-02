@@ -3,6 +3,7 @@
 import {
   DISCIPLINE_ORDER,
   DISCIPLINES,
+  EXTINGUISHER_REACH,
   ITEMS,
   machineRoom,
   MODALITIES,
@@ -16,7 +17,9 @@ import {
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
+import { canCatchFire, NO_EXTINGUISHER_FOUND } from '../../../core/sim/fire-cover';
 import { signatureMachine, treatsHere } from '../../../core/sim/machines';
+import type { Sim } from '../../../core/sim/sim';
 import { tempFeel } from '../../../core/sim/warmth';
 import { unlockedUpTo } from '../../../core/state/game';
 import type { Item, Room } from '../../../core/state/types';
@@ -27,6 +30,7 @@ import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
 import { gapNote, machinePullNote, pullNote } from '../../lib/demand';
+import { noExtinguisher } from '../../lib/fire';
 import { FLOODED_LABEL } from '../../lib/mishaps';
 import { statusClass } from '../../lib/status';
 import { problemNote, stillWrong } from '../../lib/visits';
@@ -190,6 +194,51 @@ function Inspection({ room }: { room: Room }) {
   );
 }
 
+/**
+ * What a finished room with neither sprinklers nor a Fire Extinguisher near its door risks in this game: the inspector's
+ * fine, a fire spreading from a machine that can catch fire, both, or nothing ('').
+ */
+function fireWarning(sim: Sim, room: Room): string {
+  if (!room.done || sim.extinguisherNear(room)) return '';
+  const risky = sim.s.items.some((it) => canCatchFire(it.type) && sim.world.roomOfItem(it)?.id === room.id);
+  return noExtinguisher(sim.s, risky);
+}
+
+/**
+ * A finished room with no Fire Extinguisher near its door, nor sprinklers, found before the inspector finds it, unless
+ * the last inspection's line already says so.
+ */
+function FireCover({ room }: { room: Room }) {
+  const { sim } = useGame();
+  const warning = fireWarning(sim, room);
+  if (!warning) return null;
+  if (stillWrong(sim.s.visitReport, room.id, sim.inspectionProblems(room)).includes(NO_EXTINGUISHER_FOUND)) return null;
+  return (
+    <p class={cx('status', 'warn', 'fire-cover')}>
+      <IconText id="item-fire-extinguisher">{warning}</IconText>
+    </p>
+  );
+}
+
+/** A button to take a Fire Extinguisher in hand, beside the one for sprinklers, for a room that wants one. */
+function PlaceExtinguisher({ room }: { room: Room }) {
+  const hud = useHud();
+  const { sim, tools } = useGame();
+  if (!fireWarning(sim, room)) return null;
+  return (
+    <Button
+      class={roomButton}
+      title={`One within ${EXTINGUISHER_REACH} tiles of the door covers the room. The floor shows which rooms each would cover.`}
+      onPress={() => {
+        hud.menu = null;
+        tools.startItem('fire_extinguisher');
+      }}
+    >
+      <IconText id="item-fire-extinguisher">{`Place a Fire Extinguisher (${money(ITEMS.fire_extinguisher.cost)})`}</IconText>
+    </Button>
+  );
+}
+
 /** How warm and how calm it is in the middle of a room. */
 function Comfort({ room }: { room: Room }) {
   const { sim } = useGame();
@@ -257,7 +306,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <h3>
         <IconText id={def.icon}>{roomLabels(sim.s.rooms).get(room.id) ?? def.name}</IconText>
       </h3>
-      <Flooded room={room} /> <Inspection room={room} />{' '}
+      <Flooded room={room} /> <Inspection room={room} /> <FireCover room={room} />{' '}
       {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
       {room.done && room.type === 'qigong' && <Timetable room={room} />} <BadVibes room={room} />{' '}
@@ -324,7 +373,7 @@ export function RoomInfo({ room }: { room: Room }) {
       >
         <IconText id="ui-window">Windows</IconText>
       </Button>{' '}
-      <Sprinklers room={room} />{' '}
+      <PlaceExtinguisher room={room} /> <Sprinklers room={room} />{' '}
       <Button
         class={roomButton}
         title="Build copies of this room, furniture, windows and all, wherever you click. R turns them."

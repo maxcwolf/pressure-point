@@ -2,7 +2,7 @@
 
 import type { PlacedLayout } from '../../core/room-layout';
 import type { Room } from '../../core/state/types';
-import { footprint, type Rect } from '../../core/world';
+import { footprint, type Placed, type Rect } from '../../core/world';
 import {
   type Marker,
   OV_BAD,
@@ -14,7 +14,7 @@ import {
   type OverlayTile,
 } from '../../render/overlay-codes';
 import { useSquares } from './squares';
-import type { HeldItem } from './types';
+import type { HeldItem, Tile } from './types';
 
 /** Every tile of a rectangle, in one color. */
 export function rectTiles(rect: Rect, code: number): OverlayTile[] {
@@ -64,4 +64,32 @@ export function layoutTiles(placed: PlacedLayout, fits: boolean): OverlayTile[] 
     y,
     furniture.has(`${x},${y}`) ? OV_BLUE : code,
   ]);
+}
+
+/** The edge of the square of tiles an extinguisher on a tile reaches doors from, as far as `reach` either way. */
+export function reachEdge(x: number, y: number, reach: number): Tile[] {
+  const tiles: Tile[] = [];
+  for (let d = -reach; d <= reach; d++) tiles.push([x + d, y - reach], [x + d, y + reach]);
+  for (let d = 1 - reach; d < reach; d++) tiles.push([x - reach, y + d], [x + reach, y + d]);
+  return tiles;
+}
+
+/** Whether a room would have an extinguisher near its door, for what is marked on the floor for it. */
+interface Covered {
+  covered: boolean;
+}
+
+/**
+ * What an extinguisher in hand marks on the floor: the edge of its reach in blue, each finished room's door, and each
+ * machine that can catch fire, green or red by whether the room would have one near its door with this one down.
+ */
+export function fireMarks(
+  edge: readonly Tile[],
+  doors: readonly (Covered & { x: number; y: number })[],
+  machines: readonly (Covered & Placed)[],
+): OverlayTile[] {
+  const tiles: OverlayTile[] = edge.map(([x, y]) => [x, y, OV_BLUE]);
+  for (const d of doors) tiles.push([d.x, d.y, d.covered ? OV_GOOD : OV_BAD]);
+  for (const m of machines) for (const [x, y] of footprint(m)) tiles.push([x, y, m.covered ? OV_GOOD : OV_BAD]);
+  return tiles;
 }

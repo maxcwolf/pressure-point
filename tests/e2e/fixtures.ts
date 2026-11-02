@@ -62,6 +62,7 @@ interface Handle {
         | { kind: 'plot'; id: string }
         | null,
     ): void;
+    startItem(type: string): void;
     startResize(roomId: number): void;
     startExpand(pointed?: string | null): void;
     pointerDown(clientX: number, clientY: number): void;
@@ -84,6 +85,8 @@ interface Handle {
     close(): void;
   };
   loop: { saveSoon(): void };
+  /** What the floor is colored by: an overlay, the land, or nothing. */
+  floorShown: string | null;
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {
     itemDims(type: string, rot: number): [number, number];
