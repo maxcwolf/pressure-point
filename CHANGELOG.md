@@ -16,6 +16,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **Move furniture before you build.** In a room's blueprint, click a piece of furniture you have put in to pick it up and put it down elsewhere in the room, for nothing. Esc leaves it where it was.
 - **The tutorial stops asking to start the clock** once you have started it, so pausing to put the Benches down no longer brings the step back, nor does the game pausing itself while you place something.
 - **Staff challenges of their own.** A member of staff no longer sets a challenge that asks the same as one of the next star's objectives, such as more heals while the star wants heals too, or a cure rate while the star wants one. A challenge asks something else instead, or waits for another day if there is nothing else to ask.
+- **Filter the Staff menu by job.** A Job dropdown beside Sort by narrows the list to one role, each listed with how many you have in it. It keeps to the job you picked until you pick another.
 - **Amanda on demand.** A new console command, amanda, has Amanda Jablonsky apply straight away, as the newest Massage Therapist applicant, unless she already works for you or is applying. Tab now finishes a command as you type it in the console.
 
 ## v0.35.0

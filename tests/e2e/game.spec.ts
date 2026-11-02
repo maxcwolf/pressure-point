@@ -855,6 +855,39 @@ test.describe('staff', () => {
     await expect(rows).toHaveCount(3);
   });
 
+  test("narrow the Staff menu to one job, with each job's headcount, kept while the menu is open", async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+    });
+    await game.menu('Staff');
+    const rows = page.locator('#menu .row:not(.head)');
+    const job = page.locator('#menu .job-filter select');
+    await expect(rows).toHaveCount(3);
+    await expect(job.locator('option')).toHaveText([
+      'All (3)',
+      'Receptionist (1)',
+      'Wellness Consultant (1)',
+      'Massage Therapist (1)',
+    ]);
+    await job.selectOption({ label: 'Massage Therapist (1)' });
+    await expect(rows).toHaveCount(1);
+    await expect(rows.locator('.knows')).toContainText('Swedish');
+    // picking a job lets go of the keyboard, as the Sort by list does
+    await expect(job).not.toBeFocused();
+    // the list keeps to the job as the menu redraws, and through the menu being shut and opened again
+    await game.menu('Staff');
+    await game.menu('Staff');
+    await expect(job).toHaveValue('therapist');
+    await expect(rows).toHaveCount(1);
+    await job.selectOption({ label: 'All (3)' });
+    await expect(rows).toHaveCount(3);
+  });
+
   test('can be put in order in the Staff menu, as items can in the Items menu', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();

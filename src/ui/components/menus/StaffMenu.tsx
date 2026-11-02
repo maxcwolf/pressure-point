@@ -1,6 +1,6 @@
 // The Staff menu: everyone on the payroll.
 
-import { MODALITIES, type Modality, MODALITY_ORDER, ROLES } from '../../../core/data';
+import { MODALITIES, type Modality, MODALITY_ORDER, ROLE_ORDER, ROLES } from '../../../core/data';
 import { money } from '../../../core/format';
 import { rankName } from '../../../core/sim/careers';
 import { wagesDue } from '../../../core/sim/economy';
@@ -11,10 +11,12 @@ import { goButton, panelCard, tabButton, tabStrip } from '../../../styled-system
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { quirksSaid } from '../../lib/quirks';
+import { jobChoices, shownRole } from '../../lib/roles';
 import { sorted, STAFF_SORTS } from '../../lib/sorts';
 import { moraleLook, promotionRequests, raiseRequests, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
+import { Dropdown } from '../common/Dropdown';
 import { Icon, IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
 import { QuirkChips } from '../common/QuirkChips';
@@ -121,6 +123,9 @@ const requests = css({
 
 /** The treatments to narrow the list to, each with how many know it. */
 const knowsFilter = css({ '& .tab small': { fontSize: '11', fontWeight: 'bold', opacity: 'muted' } });
+
+/** The job filter and the Sort by list, side by side at the head of the menu. */
+const headControls = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12' });
 
 /** Whether someone knows a treatment, or is on its course. */
 const knowsOrLearning = (st: Staff, m: Modality) => st.quals.includes(m) || st.training?.course === m;
@@ -243,17 +248,23 @@ function Requests({ staff }: { staff: readonly Staff[] }) {
 
 /**
  * A row per member of staff, with their energy, morale and the treatments they know, which the list can be narrowed
- * to, in the order picked, each with a button to promote them or raise their pay. Pressing a row selects them and
+ * to by their job and by a treatment, in the order picked, each with a button to promote them or raise their pay. Pressing a row selects them and
  * moves the camera there.
  */
 export function StaffMenu() {
   const hud = useHud();
   const { sim } = useGame();
   const staff = sim.s.staff;
-  // a treatment nobody knows any more narrows the list to nobody, so it falls back to everyone
+  // a job nobody holds any more, or a treatment nobody in it knows, narrows the list to nobody, so each falls back
+  const role = shownRole(staff, hud.staffRole);
+  const inRole = role ? staff.filter((st) => st.role === role) : staff;
   const asked = hud.staffKnows;
-  const knows = asked && staff.some((st) => knowsOrLearning(st, asked)) ? asked : null;
-  const shown = sorted(knows ? staff.filter((st) => knowsOrLearning(st, knows)) : staff, STAFF_SORTS, hud.sorts.staff);
+  const knows = asked && inRole.some((st) => knowsOrLearning(st, asked)) ? asked : null;
+  const shown = sorted(
+    knows ? inRole.filter((st) => knowsOrLearning(st, knows)) : inRole,
+    STAFF_SORTS,
+    hud.sorts.staff,
+  );
   // a month of everyone staying on, and what the coming payday owes, by the days each has worked since they were paid
   const payroll = staff.reduce((total, st) => total + (st.state === 'leaving' ? 0 : st.salary), 0);
   const due = wagesDue(sim.s);
@@ -275,9 +286,22 @@ export function StaffMenu() {
     <div class={cx(panelCard(), menuPanel)}>
       <div class={menuHead}>
         <h3>Your staff</h3>
-        {staff.length > 1 && <SortBy list="staff" orders={STAFF_SORTS} />}
+        {staff.length > 1 && (
+          <div class={headControls}>
+            <Dropdown
+              name="job-filter"
+              words="Job"
+              value={role ?? 'all'}
+              choices={jobChoices(staff)}
+              onPick={(id) => {
+                hud.staffRole = ROLE_ORDER.find((r) => r === id) ?? null;
+              }}
+            />
+            <SortBy list="staff" orders={STAFF_SORTS} />
+          </div>
+        )}
       </div>
-      <KnowsFilter staff={staff} knows={knows} />
+      <KnowsFilter staff={inRole} knows={knows} />
       <Requests staff={staff} />
       {staff.length > 0 && (
         <div class={cx('row', 'head', row)} aria-hidden="true">
