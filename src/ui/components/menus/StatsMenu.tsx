@@ -18,6 +18,7 @@ import { IconText } from '../common/Icon';
 import { CasebookTab } from './CasebookTab';
 import { GuestsTab } from './GuestsTab';
 import { chartLook, menuPanel, statsHead, tabRow } from './looks';
+import { PaperTab } from './PaperTab';
 import { RegularsTab } from './RegularsTab';
 import { ReputationTab } from './ReputationTab';
 import { StandingTab } from './StandingTab';
@@ -138,6 +139,7 @@ const TABS: readonly { id: StatsTab; icon: IconId; name: string }[] = [
   { id: 'casebook', icon: 'ui-casebook', name: 'Casebook' },
   { id: 'regulars', icon: 'ui-regular', name: 'Regulars' },
   { id: 'awards', icon: 'ui-trophy', name: 'Awards' },
+  { id: 'paper', icon: 'ui-news', name: 'Paper' },
 ];
 
 /** A tab for each part of the Stats menu, and the one chosen. */
@@ -153,6 +155,7 @@ export function StatsMenu() {
             class={cx(tabButton(), hud.statsTab === t.id && 'on')}
             onPress={() => {
               hud.statsTab = t.id;
+              if (t.id === 'paper') hud.readPaper('stats');
             }}
           >
             <IconText id={t.icon}>{t.name}</IconText>
@@ -166,6 +169,7 @@ export function StatsMenu() {
       {hud.statsTab === 'casebook' && <CasebookTab />}
       {hud.statsTab === 'regulars' && <RegularsTab />}
       {hud.statsTab === 'awards' && <Trophies />}
+      {hud.statsTab === 'paper' && <PaperTab />}
     </div>
   );
 }

@@ -1149,6 +1149,13 @@ export class Sim {
     if (this.s.visitReport) delete this.s.visitReport.unread;
   }
 
+  /** The player has opened the latest issue of the town paper, if there has been one: it is marked read. */
+  readPaper() {
+    const paper = this.s.paper;
+    if (paper) paper.read = true;
+    return paper;
+  }
+
   /** What the health inspector would find wrong in a room now. */
   inspectionProblems(room: Room): string[] {
     return inspectionProblems(this.ctx, room);

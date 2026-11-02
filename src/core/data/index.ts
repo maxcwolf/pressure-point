@@ -11,6 +11,7 @@ export * from './decor';
 export * from './difficulty';
 export * from './features';
 export * from './feelings';
+export * from './headlines';
 export * from './icon-ids';
 export * from './items';
 export * from './karma';

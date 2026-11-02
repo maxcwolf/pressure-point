@@ -65,6 +65,7 @@ import { changeRep, earn, spend } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { goTo, moveAlong } from './movement';
 import { counterVerdict, inspectorComing, inspectorGone, MUSHROOMS_FOUND } from './mushrooms';
+import { logNews, visitNews } from './news';
 import { noiseAt } from './noise';
 import { vipSetback } from './rival';
 import { cutOff } from './twists';
@@ -452,6 +453,7 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
     s.inspectionWarned = true;
     Object.assign(s.visitReport, { outcome: 'warned', money: 0, rep: 0, waived: -result.money, unread: true });
   } else if (failed) s.visitReport.bribes = bribeOffers(-result.money);
+  logNews(ctx, visitNews(s, s.visitReport));
   // caught with the mushrooms out, whether or not it is made to go away
   if (failed && v.seen.some((r) => r.problems.includes(MUSHROOMS_FOUND))) s.stats.busted++;
   // the mushrooms come back out only once the inspector has been past the counter
@@ -497,6 +499,7 @@ export function settleInspection(ctx: SimContext, offer?: number): boolean {
     r.outcome = 'paid off';
     r.money = -price;
     r.rep = 0;
+    logNews(ctx, visitNews(s, r));
     emit(ctx, { type: 'sfx', name: 'cash' });
     toast(ctx, 'The inspector’s report seems to have been lost. How unfortunate.', 'good', undefined, 'ui-bribe');
     return true;
@@ -504,6 +507,7 @@ export function settleInspection(ctx: SimContext, offer?: number): boolean {
   r.refused = price;
   r.money = -refusedFine(-r.money);
   r.rep -= BRIBE_REP;
+  logNews(ctx, visitNews(s, r));
   spend(ctx, -r.money, 'fines');
   changeRep(ctx, r.rep);
   // they write ahead in time to arrive within the days promised, with a day to spare for the hour they write at

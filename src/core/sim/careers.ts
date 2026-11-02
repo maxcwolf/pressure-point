@@ -37,6 +37,7 @@ import { say, staffById } from './chars';
 import type { SimContext } from './context';
 import { emit, staffRequest, tipOnce, toast } from './events';
 import { running } from './marketing';
+import { logNews } from './news';
 import { fairPay } from './staffing';
 import { unlocked } from './treatments';
 
@@ -146,6 +147,7 @@ export function promote(ctx: SimContext, id: number, { sound = true } = {}): boo
     kind: 'staff',
     id: st.id,
   });
+  if (expert(st)) logNews(ctx, { kind: 'expert', who: st.name, role: st.role, ids: { staff: st.id } });
   return true;
 }
 

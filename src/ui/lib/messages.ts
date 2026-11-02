@@ -30,6 +30,10 @@ export const MESSAGE_TIME_NAMES: Readonly<Record<MessageTime, string>> = {
   dismissed: 'Until dismissed',
 };
 
+/** Every word a message shows, the town paper's headlines over a payday's included, for the time they take to read. */
+export const wordsOf = (t: Pick<Toast, 'text' | 'headline'>) =>
+  t.headline ? `${t.headline.name} ${t.headline.lead} ${t.headline.also ?? ''} ${t.text}` : t.text;
+
 /** How long a message stays, in milliseconds of the time its clock runs: for ever when set to stay until dismissed. */
 export function messageLife(text: string, kind: Tone, time: MessageTime): number {
   if (time === 'dismissed') return Infinity;
@@ -49,7 +53,11 @@ export function pileUp<T>(oldestFirst: readonly T[]): { shown: T[]; piled: T[] }
  */
 export function withMessage(oldestFirst: readonly Toast[], message: Omit<Toast, 'count' | 'age' | 'leaving'>): Toast[] {
   const keyed = message.key === undefined ? undefined : oldestFirst.find((t) => t.key === message.key);
-  const same = keyed ? undefined : oldestFirst.find((t) => t.text === message.text && t.kind === message.kind);
+  // the paper's message is each quarter's own, whatever payday's words under it say
+  const same =
+    keyed || message.headline
+      ? undefined
+      : oldestFirst.find((t) => !t.headline && t.text === message.text && t.kind === message.kind);
   const added: Toast = { ...message, count: (same?.count ?? 0) + 1, age: 0, leaving: false };
   return [...oldestFirst.filter((t) => t !== same && t !== keyed), added].slice(-KEPT);
 }
@@ -97,7 +105,7 @@ export function ageMessages(
   const kept: Toast[] = [];
   for (const t of messages) {
     t.age += ms;
-    const left = messageLife(t.text, t.kind, time) - t.age;
+    const left = messageLife(wordsOf(t), t.kind, time) - t.age;
     if (left <= 0) {
       changed = true;
       continue;
@@ -112,7 +120,7 @@ export function ageMessages(
 /** Leave each message at least a moment more, and bring back any fading. */
 export function spareMessages(messages: readonly Toast[], time: MessageTime) {
   for (const t of messages) {
-    t.age = Math.max(0, Math.min(t.age, messageLife(t.text, t.kind, time) - GRACE_MS));
+    t.age = Math.max(0, Math.min(t.age, messageLife(wordsOf(t), t.kind, time) - GRACE_MS));
     t.leaving = false;
   }
 }

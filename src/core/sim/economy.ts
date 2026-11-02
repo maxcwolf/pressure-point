@@ -30,6 +30,7 @@ import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast, type Tone } from './events';
 import { machineBuilt, machineUpkeep } from './machines';
+import { paperToast, printIssue, quarterEnded } from './news';
 import { closeMonth } from './records';
 
 /** A ledger's income minus its spending. */
@@ -560,11 +561,16 @@ export function monthEnd(ctx: SimContext) {
 /** The loan, in whole steps, that would cover wages from the money in the bank. */
 const loanFor = (s: GameState, wages: number) => Math.ceil((wages - s.money) / LOAN_STEP) * LOAN_STEP;
 
-/** Pay out a payday's wages. */
+/** Pay out a payday's wages. The payday that closes a quarter prints the town paper, its headlines on top of the message. */
 function payWages(ctx: SimContext, wages: number) {
-  if (wages <= 0) return;
+  const paper = quarterEnded(ctx.s) ? printIssue(ctx) : null;
+  if (wages <= 0) {
+    if (paper) paperToast(ctx, paper, `${paper.name} is out.`);
+    return;
+  }
   spend(ctx, wages, 'salaries');
-  toast(ctx, `Payday: ${money(wages)} in salaries.`, 'info');
+  if (paper) paperToast(ctx, paper, `Payday: ${money(wages)} in salaries.`);
+  else toast(ctx, `Payday: ${money(wages)} in salaries.`, 'info');
   emit(ctx, { type: 'sfx', name: 'payday' });
 }
 

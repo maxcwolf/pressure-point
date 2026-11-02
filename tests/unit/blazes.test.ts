@@ -171,6 +171,15 @@ describe('a Caretaker with a Fire Extinguisher near the door', () => {
     expect(s.litter.filter((l) => l.soot)).toHaveLength(1);
     expect(s.fire).toMatchObject({ item: 'stone_kiln', burnt: 1, how: 'extinguisher', fee: 0, out: true });
     expect(sim.world.usable(table)).toBe(true);
+    // the paper hears of it: put out by name, before the brigade got there
+    expect(s.news?.find((n) => n.kind === 'fire')).toMatchObject({
+      item: 'stone_kiln',
+      n: 1,
+      how: 'extinguisher',
+      by: caretaker.name,
+      early: true,
+      room: 'massage',
+    });
     // the brigade comes all the same, finds it out, and leaves without charging
     runUntil(sim, () => s.brigade?.state === 'parked', 60);
     expect(crew(c)).toHaveLength(2);
@@ -247,6 +256,9 @@ describe('the fire brigade, with no Caretaker', () => {
     expect(seconds(from, s.day)).toBeLessThan(60);
     expect(s.ledger.upkeep - upkeep).toBe(600 + BRIGADE_FEE);
     expect(s.fire).toMatchObject({ how: 'brigade', fee: BRIGADE_FEE, out: true });
+    expect(s.news?.filter((n) => n.kind === 'fire')).toEqual([
+      expect.objectContaining({ how: 'brigade', fee: BRIGADE_FEE }),
+    ]);
     // back to the truck, and off down the street
     runUntil(sim, () => s.brigade?.state === 'leaving', 60);
     expect(crew(c)).toEqual([]);
@@ -267,6 +279,33 @@ describe('the fire brigade, with no Caretaker', () => {
     expect(other.burnt).toBe(true);
     runUntil(sim, () => !s.brigade, 120);
     expect(s.ledger.upkeep - upkeep).toBe(600 + BRIGADE_FEE);
+    // one fire to the paper, in two rooms, so it names neither rather than put the kiln in the wrong one
+    const fires = s.news?.filter((n) => n.kind === 'fire') ?? [];
+    expect(fires).toHaveLength(1);
+    expect(fires[0]).toMatchObject({ item: 'stone_kiln', n: s.fire?.burnt, how: 'brigade', fee: BRIGADE_FEE });
+    expect(fires[0]).not.toHaveProperty('room');
+  });
+
+  it('charges nothing for a fire it puts out on its way back to the truck, and the paper says no fee', () => {
+    const c = withKiln();
+    const { sim, s, ctx, kiln, massage } = c;
+    const upkeep = s.ledger.upkeep;
+    const other = s.items.find((i) => i.type === 'massage_table' && sim.world.zoneAt(i.x, i.y) === massage.id)!;
+    startFire(ctx, kiln, 600);
+    runUntil(sim, () => !burning(c), 120);
+    expect(s.brigade?.charged).toBe(true);
+    // walking back to the truck when the next one catches
+    expect(crew(c).length).toBeGreaterThan(0);
+    expect(crew(c).every((v) => v.state === 'toTruck')).toBe(true);
+    startFire(ctx, other, 0);
+    runUntil(sim, () => !burning(c), 120);
+    expect(s.fire).toMatchObject({ item: 'massage_table', how: 'brigade', fee: 0, out: true });
+    expect(s.ledger.upkeep - upkeep).toBe(600 + BRIGADE_FEE);
+    const fires = s.news?.filter((n) => n.kind === 'fire') ?? [];
+    expect(fires.map((n) => [n.item, n.room, n.fee])).toEqual([
+      ['stone_kiln', 'massage', BRIGADE_FEE],
+      ['massage_table', 'massage', undefined],
+    ]);
   });
 
   it('keeps everyone in order while they are about, and the room is out of action only while it burns', () => {

@@ -22,6 +22,7 @@ import { startFire } from './blazes';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { announceOnce, emit, toast } from './events';
+import { logNews, overloadNews } from './news';
 import { playingFor } from './sessions';
 import { unlocked } from './treatments';
 
@@ -172,6 +173,7 @@ export function maybeOverload(ctx: SimContext, it: Item): boolean {
   emit(ctx, { type: 'float', text: 'Overload!', x: cx, y: cy, kind: 'bad' });
   emit(ctx, { type: 'sfx', name: 'fail' });
   toast(ctx, downNotice(ctx, it, `has overloaded and ${o.mess}`, o.bill), 'bad', { kind: 'item', id: it.id });
+  logNews(ctx, overloadNews(ctx, it));
   return true;
 }
 

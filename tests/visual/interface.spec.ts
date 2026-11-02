@@ -708,6 +708,62 @@ test.describe('in a game', () => {
     await screens.shot('awards');
   });
 
+  test('the town paper: its message, the paper, and the Paper tab', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const s = pp.state;
+      const caretaker = s.staff[0]!;
+      const room = s.rooms.find((r) => r.type === 'massage') ?? s.rooms[0]!;
+      const headline = 'FIRE BRIGADE ARRIVES, FINDS FIRE OUT, LEAVES SLIGHTLY DISAPPOINTED';
+      s.paper = {
+        issue: 7,
+        day: s.day,
+        name: 'The Willow Lane Leaflet',
+        motto: 'Folded by hand since last Tuesday.',
+        lead: {
+          kind: 'fire',
+          headline,
+          story: `The Kneadmaster 9000 in the Massage Suite caught fire on day 14 of month 7. Two things burnt before it was out. ${caretaker.name}, Caretaker, put it out with the Fire Extinguisher by the door. The fire brigade arrived to find it out, and did not charge.`,
+        },
+        also: 'Local woman waits 11 days, can now describe the potted fern in detail.',
+        letters: [
+          { text: 'Walked in knotted, walked out new.', sign: 'Yours, Ada Kneadham, much looser.', stars: 5 },
+          { text: 'I aged a year in that waiting area.', sign: 'Name and address supplied.', stars: 1 },
+        ],
+        column: { title: 'Florist Watch', text: 'Day 204. Still empty. A man looked in the window on Tuesday.' },
+        classified: 'LOST: one aura, red, last seen in the fire exit.',
+        links: [
+          { text: caretaker.name, kind: 'staff', id: caretaker.id },
+          { text: 'Massage Suite', kind: 'room', id: room.id },
+        ],
+        read: false,
+      };
+      // paused, the message waits to be read
+      s.speed = 0;
+      pp.sim.emit({
+        type: 'toast',
+        text: 'Payday: $4,210 in salaries.',
+        kind: 'info',
+        icon: 'ui-news',
+        headline: {
+          name: s.paper.name,
+          issue: 7,
+          lead: headline,
+          also: 'Local woman waits 11 days, can now describe the potted fern in detail.',
+        },
+        about: { kind: 'staff', id: caretaker.id },
+      });
+    });
+    await screens.shot('paper-message');
+    await page.getByRole('button', { name: 'Read the paper' }).click();
+    await screens.shot('paper');
+    await page.getByRole('button', { name: 'Back to work' }).click();
+    await game.eval((pp) => pp.ui.dismissAllToasts());
+    await game.menu('Stats');
+    await page.locator('#menu').getByRole('button', { name: /Paper/ }).click();
+    await screens.shot('stats-paper');
+  });
+
   test('a visitor, and the report after a visit', async ({ screens, game }) => {
     await screens.play();
     await game.eval((pp) => {

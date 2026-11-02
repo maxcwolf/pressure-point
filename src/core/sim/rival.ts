@@ -29,6 +29,7 @@ import type { SimContext } from './context';
 import { averagePrice } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { running } from './marketing';
+import { logNews } from './news';
 import { fire } from './staffing';
 import { gradeFor, standingPoints } from './standing';
 
@@ -102,7 +103,7 @@ function updatePoints(ctx: SimContext) {
   if (ctx.s.seenTips.includes('rival-passed')) return;
   const own = standingPoints(ctx).total;
   if (r.points > own) r.led = true;
-  else if (r.led && own > r.points)
+  else if (r.led && own > r.points) {
     tipOnce(
       ctx,
       'rival-passed',
@@ -111,6 +112,8 @@ function updatePoints(ctx: SimContext) {
       undefined,
       'ui-rival',
     );
+    logNews(ctx, { kind: 'overtook' });
+  }
 }
 
 /** The rival's grade. */
@@ -187,6 +190,7 @@ function updateSale(ctx: SimContext) {
     undefined,
     'ui-rival',
   );
+  logNews(ctx, { kind: 'sale' });
 }
 
 /** Settle offers made, and now and then make a new one to whoever is unhappiest. */

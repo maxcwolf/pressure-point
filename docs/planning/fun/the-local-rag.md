@@ -2,6 +2,8 @@
 
 Drafted 27 October 2026. An idea, not a plan: nothing here is decided. It is first in [the ranked list](README.md).
 
+**Built for 0.36.0** (1 November 2026), with Max's two changes to what follows: both parts ship at once, the headline and the one-page paper, skipping the gate on the headline proving itself; and the paper is **quarterly**, printed on every third payday, so its issue number is the quarter's count. The log covers the quarter and keeps 48 items. A long wait now scores at most 35, under a star, since over a quarter the longest wait runs long; the "Also" needs 15. The year's awards fall at the start of a quarter, so they lead the first issue of the year. A PA line plays with every issue rather than one in three, and Read the paper pauses the game like every dialog. The code is `sim/news.ts` and `data/headlines.ts`; the doc below is the design as drafted.
+
 Moved up after Max's review on 27 October 2026: "This is a great idea!" It is now the spine the other top ideas print into: the horoscope, the occasions, the staff's news, the guests won back and ZenMart's knock-offs.
 
 Revised the same day against [the review](review.md). The first slice is the review's: one headline on payday, in the message every player already gets. The paper Max liked comes next, once the headline proves itself, cut down to one page.
@@ -38,24 +40,24 @@ The masthead is the center's paper's name and the issue, the month's number in t
 
 Each item scores its kind's base plus its extras. The highest leads; the next is "Also". If nothing scores 20 or more, the quiet-month headline prints. Each kind's two or three templates take turns by issue number, so nothing else is saved. All numbers are first guesses.
 
-| Kind                        | Base | Extras                                              |
-| --------------------------- | ---- | --------------------------------------------------- |
-| Bribe found out             | 70   |                                                     |
-| Fire                        | 60   | +5 for each thing burnt; +10 if the brigade charged |
-| Awards (Center of the Year) | 60   | 40 for any other award won                          |
-| Runaway found the door      | 55   | 35 if calmed                                        |
-| Star earned                 | 50   |                                                     |
-| VIP                         | 50   | delighted 50, disappointed 45, satisfied 20         |
-| Inspection failed           | 50   | passed with nothing found 25                        |
-| Grade of standing           | 45   |                                                     |
-| Amanda Jablonsky hired      | 45   |                                                     |
-| Staff poached by ZenMart    | 40   | quit 30; made Expert 25                             |
-| Overtook ZenMart            | 40   |                                                     |
-| Emergency, outbreak         | 35   | +5 if it failed or escaped                          |
-| Machine overload            | 35   |                                                     |
-| Mishap                      | 30   | +15 if not prepared for; warded off by a Shaman 30  |
-| ZenMart sale                | 25   |                                                     |
-| Long wait                   | 10   | +3 a day past 6; never leads under 8 days           |
+| Kind                        | Base | Extras                                               |
+| --------------------------- | ---- | ---------------------------------------------------- |
+| Bribe found out             | 70   |                                                      |
+| Fire                        | 60   | +5 for each thing burned; +10 if the brigade charged |
+| Awards (Center of the Year) | 60   | 40 for any other award won                           |
+| Runaway found the door      | 55   | 35 if calmed                                         |
+| Star earned                 | 50   |                                                      |
+| VIP                         | 50   | delighted 50, disappointed 45, satisfied 20          |
+| Inspection failed           | 50   | passed with nothing found 25                         |
+| Grade of standing           | 45   |                                                      |
+| Amanda Jablonsky hired      | 45   |                                                      |
+| Staff poached by ZenMart    | 40   | quit 30; made Expert 25                              |
+| Overtook ZenMart            | 40   |                                                      |
+| Emergency, outbreak         | 35   | +5 if it failed or escaped                           |
+| Machine overload            | 35   |                                                      |
+| Mishap                      | 30   | +15 if not prepared for; warded off by a Shaman 30   |
+| ZenMart sale                | 25   |                                                      |
+| Long wait                   | 10   | +3 a day past 6; never leads under 8 days            |
 
 **A bribe nobody found out about** is not a headline. It can be the "Also": "The health inspector called on Day 12. This paper has no further questions."
 
@@ -186,7 +188,7 @@ Placeholders, all printed in capitals: `{center}`; `{guest}`, `{staff}` and `{vi
 | 32  | Center of the Year           | {CENTER} IS CENTER OF THE YEAR; ZENMART "DIDN'T WANT IT ANYWAY"    |
 | 33  | Quiet month                  | {CENTER} HAS QUIET MONTH; WIND CHIMES QUESTIONED                   |
 | 34  | First month                  | {CENTER} OPENS; RANG PRAISED, AS REQUIRED                          |
-| 35  | First month, Sandbox         | GRAND OPENING; QUEUE FORMS IN ORDER OF AURA COLOR                  |
+| 35  | First month, Sandbox         | GRAND OPENING; LINE FORMS IN ORDER OF AURA COLOR                   |
 
 A handled emergency prints plainly: "{N} CASES OF {CONDITION} HEALED ON TIME." Kinds with one template print it every time; the busiest kinds (fires, VIPs, mishaps) have the most.
 

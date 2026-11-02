@@ -16,6 +16,7 @@ import { ConfirmNewGame } from './ConfirmNewGame';
 import { FeedbackDialog } from './FeedbackDialog';
 import { KarmaDialog } from './KarmaDialog';
 import { LessonDialog } from './LessonDialog';
+import { PaperDialog } from './PaperDialog';
 import { PauseMenu } from './PauseMenu';
 import { PayrollDialog } from './PayrollDialog';
 import { SavesDialog } from './SavesDialog';
@@ -64,6 +65,8 @@ function contents(dialog: DialogId): ComponentChildren {
       return <UpdateDialog />;
     case 'lesson':
       return <LessonDialog />;
+    case 'paper':
+      return <PaperDialog />;
   }
 }
 

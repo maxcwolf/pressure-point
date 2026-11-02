@@ -22,6 +22,7 @@ import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, toast } from './events';
 import { feel } from './feelings';
+import { logNews, outbreakNews } from './news';
 import { running, sendToCalm } from './runaways';
 import { cutOff } from './twists';
 
@@ -175,6 +176,7 @@ export function endOutbreak(ctx: SimContext) {
     toast(ctx, `The stress outbreak got away: ${o.lost} guests left still stressed, and they will talk.`, 'bad');
     emit(ctx, { type: 'sfx', name: 'fail' });
   }
+  logNews(ctx, outbreakNews(o));
   for (const g of s.guests) g.calmed = false;
   s.outbreak = null;
   s.nextOutbreak = s.day + rnd(s, OUTBREAK_GAP_MIN, OUTBREAK_GAP_MAX) * tuning(s, 'trouble');

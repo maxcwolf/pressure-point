@@ -21,6 +21,7 @@ import { at } from '../util';
 import { prestige } from './ambience';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
+import { logNews } from './news';
 
 /**
  * What a center's standing is made of: its rooms (those in use, and the rest), the prestige of those in use, its
@@ -134,5 +135,6 @@ export function updateStanding(ctx: SimContext) {
     undefined,
     g.icon,
   );
+  logNews(ctx, { kind: 'grade', what: g.name });
   emit(ctx, { type: 'sfx', name: 'fanfare' });
 }

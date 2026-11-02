@@ -5,6 +5,7 @@ import type { SimContext } from './context';
 import { earn } from './economy';
 import { emit, toast } from './events';
 import { type Objective, objectiveFor } from './goals';
+import { logNews } from './news';
 import { scheduleWave } from './waves';
 
 export type { Objective } from './goals';
@@ -30,6 +31,7 @@ export function checkOpening(ctx: SimContext) {
   s.open = true;
   s.spawnT = 3;
   toast(ctx, 'Grand opening! Guests are on their way.', 'good');
+  logNews(ctx, { kind: 'opened' });
   emit(ctx, { type: 'announce', text: openingLine(s.nextId) });
   emit(ctx, { type: 'sfx', name: 'fanfare' });
 }
@@ -49,6 +51,7 @@ export function awardStar(ctx: SimContext): boolean {
   s.stars++;
   const grant = 5000 * s.stars;
   earn(ctx, grant, 'bonus');
+  logNews(ctx, { kind: 'star', n: s.stars });
   emit(ctx, { type: 'star', stars: s.stars });
   emit(ctx, { type: 'sfx', name: 'fanfare' });
   scheduleWave(ctx);

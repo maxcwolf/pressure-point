@@ -233,7 +233,12 @@ describe('visits', () => {
     // the fine waits on a choice: pay it, or make an offer to make it go away
     expect(report.bribes).toEqual(bribeOffers(2 * INSPECTION_FINE));
     expect(s.ledger.fines).toBe(0);
+    // the paper hears of it once, as it stands when it is settled
+    expect(s.news?.filter((n) => n.kind === 'inspection')).toEqual([
+      expect.objectContaining({ how: 'failed', n: 2, rooms: 2 }),
+    ]);
     expect(sim.settleInspection()).toBe(true);
+    expect(s.news?.filter((n) => n.kind === 'inspection')).toHaveLength(1);
     expect(report.bribes).toBeUndefined();
     expect(s.ledger.fines).toBe(2 * INSPECTION_FINE);
     expect(s.money).toBeLessThan(money);

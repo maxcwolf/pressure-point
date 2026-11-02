@@ -40,6 +40,7 @@ import { feel } from './feelings';
 import { smoking } from './machines';
 import { floodTiles } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
+import { fireNews, logNews } from './news';
 import { caretakerSpeed, standBeside } from './staffing';
 import { extinguisherNear } from './visits';
 
@@ -91,7 +92,10 @@ function catchFire(ctx: SimContext, it: Item) {
   const s = ctx.s;
   const room = ctx.world.roomOfItem(it);
   // a fire with nothing burning before it is a fire of its own, to be counted when it is out
-  if (!s.blazes.length || !s.fire || s.fire.out) s.fire = { item: it.type, burnt: 0, fee: 0, out: false };
+  if (!s.blazes.length || !s.fire || s.fire.out)
+    s.fire = { item: it.type, burnt: 0, fee: 0, out: false, ...(room && { room: room.id }) };
+  // one in another room meanwhile makes it fires in more than one place
+  else if (s.fire.room !== room?.id) delete s.fire.room;
   s.fire.burnt++;
   s.blazes.push({ item: it.id, room: room?.id ?? 0, t: 0, spread: 0 });
   it.wear = 100;
@@ -194,6 +198,7 @@ export function putOut(ctx: SimContext, b: Blaze, how: PutOut, by?: Staff) {
   const it = ctx.world.item(b.item);
   if (s.fire) s.fire.how = how;
   if (!s.blazes.length && s.fire) s.fire = { ...s.fire, out: true };
+  if (!s.blazes.length) logNews(ctx, fireNews(ctx, how, by));
   if (!it) return;
   it.burnt = true;
   it.wear = 100;
