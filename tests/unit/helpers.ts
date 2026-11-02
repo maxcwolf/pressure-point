@@ -1,10 +1,20 @@
 // Shared setup for the simulation tests: seeded games and a standard little center.
-import { isGeneral, ITEMS, type ItemType, type Role, type RoomType } from '../../src/core/data';
+import {
+  DISCIPLINES,
+  isGeneral,
+  ITEMS,
+  type ItemType,
+  MODALITIES,
+  type Modality,
+  type Role,
+  type RoomType,
+} from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
+import type { SimContext } from '../../src/core/sim/context';
 import type { SimEvent } from '../../src/core/sim/events';
 import { Sim } from '../../src/core/sim/sim';
 import { newGame } from '../../src/core/state/game';
-import type { Room, Staff } from '../../src/core/state/types';
+import type { GameState, Item, Room, Staff } from '../../src/core/state/types';
 import type { Rect } from '../../src/core/world';
 
 /**
@@ -227,3 +237,33 @@ export function inconsistencies(sim: Sim): string[] {
 /** The treatment courses among some courses, leaving out the general ones every role can take. */
 export const treatmentCourses = (courses: readonly { id: string }[]) =>
   courses.map((c) => c.id).filter((id) => !isGeneral(id));
+
+/**
+ * Someone in every treatment role on the payroll of a bare game state, trained in every technique, so guests may come
+ * with any condition the rooms and stars allow: nobody comes for one nobody is trained to treat.
+ */
+export function trainedInAll(s: GameState) {
+  const quals = Object.keys(MODALITIES) as Modality[];
+  for (const d of Object.values(DISCIPLINES))
+    s.staff.push({ id: s.nextId++, role: d.role, state: 'atPost', quals, rooms: [] } as unknown as Staff);
+}
+
+/**
+ * Everything on offer in a bare game state's rooms, so guests may come with any condition the rooms and stars allow:
+ * someone trained in every technique, and each specialty item standing in every room of its discipline, found there
+ * whatever the world's map says.
+ */
+export function offerAll(ctx: SimContext) {
+  trainedInAll(ctx.s);
+  const inRoom = new Map<number, Room>();
+  for (const room of ctx.s.rooms)
+    for (const def of Object.values(MODALITIES)) {
+      if (!def.equipment || DISCIPLINES[def.discipline].room !== room.type) continue;
+      const id = ctx.s.nextId++;
+      ctx.s.items.push({ id, type: def.equipment, x: room.x, y: room.y, rot: 0 } as unknown as Item);
+      inRoom.set(id, room);
+    }
+  const roomOfItem = ctx.world.roomOfItem.bind(ctx.world);
+  /** The room a stand-in item was put in, or the one the map says. */
+  ctx.world.roomOfItem = (it: Item) => inRoom.get(it.id) ?? roomOfItem(it);
+}

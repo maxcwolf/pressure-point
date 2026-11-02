@@ -90,9 +90,13 @@ export function makeCall(ctx: SimContext): HouseCall | null {
   );
   if (!disciplines.length) return null;
   const discipline = pick(s, disciplines);
-  // a machine does not travel, so a house call never asks for one
+  // a machine does not travel, so a house call never asks for one, nor for a technique nobody here is trained in
   const techniques = MODALITY_ORDER.filter(
-    (m) => MODALITIES[m].discipline === discipline && !MODALITIES[m].machine && unlocked(ctx, m),
+    (m) =>
+      MODALITIES[m].discipline === discipline &&
+      !MODALITIES[m].machine &&
+      unlocked(ctx, m) &&
+      s.staff.some((st) => st.state !== 'leaving' && st.quals.includes(m)),
   );
   const asks = techniques.length > 1 && random(s) < 0.5 ? pick(s, techniques) : undefined;
   const clients = [...CALL_CLIENTS, ...(centerOf(s).calls?.clients ?? [])];

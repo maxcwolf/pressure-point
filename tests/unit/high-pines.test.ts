@@ -24,7 +24,7 @@ import { discomfort, stoneCooling, updateWarmth, warmthAt } from '../../src/core
 import { disciplineOn, newGame } from '../../src/core/state/game';
 import { dropLine } from '../../src/render/rain';
 import { flakeHeight, flakeSpot, indoorsOf } from '../../src/render/snowfall';
-import { buildRoom, freshSim, runUntil } from './helpers';
+import { buildRoom, freshSim, offerAll, runUntil } from './helpers';
 
 const SNOW: Snowfall = CENTERS.highpines.snow ?? { chance: 0, days: 1 };
 
@@ -144,6 +144,7 @@ describe('High Pines', () => {
           vibes: 0,
           claimedBy: 0,
         });
+      offerAll(ctx);
       const found = new Set<string>();
       for (let i = 0; i < 3000; i++) found.add(rollCondition(ctx));
       return local.filter((c) => found.has(c));

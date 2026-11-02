@@ -289,6 +289,8 @@ describe('a stress outbreak', () => {
   function onOffer(seed = 1) {
     const center = openCenter(seed);
     center.s.stars = OUTBREAK_STARS;
+    // busy enough that guests wait: one therapist keeps up with the guests a middling name draws
+    center.s.reputation = 90;
     runUntil(center.sim, () => center.s.guests.filter((g) => !g.outcome).length >= 3, 300);
     expect(center.sim.offerOutbreak()).toBe(true);
     return center;

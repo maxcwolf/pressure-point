@@ -29,7 +29,6 @@ import {
   lineFactor,
   machineDemand,
   roomPull,
-  UNTRAINED_PULL,
 } from '../../src/core/sim/demand';
 import { admitGuests, guestCap, spawnGuest } from '../../src/core/sim/guests';
 import {
@@ -125,11 +124,16 @@ describe('a machine room and the guests it draws', () => {
     expect(own.demand.room.pull).toBe(roomPull(ctx, own.demand.room.room as never));
   });
 
-  it('draws fewer while nobody is trained to run it, and fewer still behind a long line of its own', () => {
-    const { ctx, therapist } = staffed();
+  it('draws nobody while nobody at work is trained to run it, and fewer behind a long line of its own', () => {
+    const { sim, ctx, therapist } = staffed();
     const trained = machineDemand(ctx)[0]?.pull ?? 0;
+    expect(trained).toBeGreaterThan(0);
     therapist.quals = therapist.quals.filter((q) => q !== 'kneading');
-    expect(machineDemand(ctx)[0]?.pull).toBeCloseTo(trained * UNTRAINED_PULL, 5);
+    expect(machineDemand(ctx)[0]).toMatchObject({ pull: 0, trained: 0, training: 0 });
+    expect(sim.arrivalPace().perMonth).toBe(sim.arrivalPace().tables);
+    expect(paceNote(sim.arrivalPace(), 50, centerOf(sim.s))).toMatch(
+      /The Kneadmaster.* draws nobody for its own ailments while nobody at work is trained to run it/,
+    );
     therapist.quals.push('kneading');
     // eight waiting for its one chair: past the three nobody minds
     for (let i = 0; i < 8; i++) {

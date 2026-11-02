@@ -35,3 +35,9 @@ export function dateOf(day: number, startMonth = 0) {
     year: Math.floor(d / (DAYS_PER_MONTH * 12)) + 1,
   };
 }
+
+/** Some names as a list that reads: "A", "A and B", "A, B and C", or past `most`, "A, B, C and 2 more". */
+export function listed(names: readonly string[], most = 3): string {
+  const shown = names.length > most ? [...names.slice(0, most), `${names.length - most} more`] : names;
+  return shown.length > 1 ? `${shown.slice(0, -1).join(', ')} and ${shown.at(-1) ?? ''}` : (shown[0] ?? '');
+}

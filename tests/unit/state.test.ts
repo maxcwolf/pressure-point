@@ -155,9 +155,10 @@ describe('a save from before the policy', () => {
     for (const g of old.guests) delete g.placed;
     upgradeSave(old as GameState);
     const up = old as GameState;
+    // a save that never had a policy has never had a say in it either: it gets today's, emergencies first
     expect(up.policy).toEqual({
       diagnosis: 0.75,
-      emergenciesFirst: false,
+      emergenciesFirst: true,
       breakAt: 18,
       breakLimit: {},
       stashMushrooms: true,

@@ -36,7 +36,7 @@ import {
 } from '../../src/ui/lib/campaign';
 import { hireableRoles } from '../../src/ui/lib/catalog';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
-import { openCenter, runUntil } from './helpers';
+import { offerAll, openCenter, runUntil } from './helpers';
 
 describe('the campaign trail', () => {
   it('opens each center once the one before it has a star', () => {
@@ -317,6 +317,7 @@ describe('what each center offers', () => {
         vibes: 0,
         claimedBy: 0,
       });
+      offerAll(ctx);
       let hits = 0;
       for (let i = 0; i < 2000; i++) if (office.has(rollCondition(ctx))) hits++;
       return hits / 2000;
@@ -525,6 +526,7 @@ describe('The Boardwalk', () => {
           vibes: 0,
           claimedBy: 0,
         });
+      offerAll(ctx);
       const found = new Set<string>();
       for (let i = 0; i < 3000; i++) found.add(rollCondition(ctx));
       return local.filter((c) => found.has(c));

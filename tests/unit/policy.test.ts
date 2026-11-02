@@ -8,7 +8,8 @@ import { breakDue, changedPolicy, onBreak } from '../../src/core/sim/policy';
 import { inLine, sameKind } from '../../src/core/sim/queues';
 import { nextInLine, successChance } from '../../src/core/sim/stations';
 import { defaultPolicy } from '../../src/core/state/game';
-import type { Guest, Item } from '../../src/core/state/types';
+import type { GameState, Guest, Item } from '../../src/core/state/types';
+import { upgradeSave } from '../../src/core/state/upgrade';
 import { accessTile } from '../../src/core/world';
 import {
   addRestroom,
@@ -108,15 +109,25 @@ describe('the policy', () => {
     expect(breakDue(ctx, second)).toBe(true);
   });
 
-  it('can call emergency guests first', () => {
+  it('calls emergency guests first from a new game on, wherever they stand in line, unless turned off', () => {
     const { s, table } = busyCenter();
+    expect(s.policy.emergenciesFirst).toBe(true);
     const ctx = createContext(s);
-    const [a, b] = s.guests;
-    lineUp(table, [a!, b!]);
-    b!.emergency = true;
+    const [a, b, c] = s.guests;
+    lineUp(table, [a!, b!, c!]);
+    c!.emergency = true;
+    expect(nextInLine(ctx, table)).toBe(c);
+    // off, they wait their turn like anyone else
+    s.policy.emergenciesFirst = false;
     expect(nextInLine(ctx, table)).toBe(a);
-    s.policy.emergenciesFirst = true;
-    expect(nextInLine(ctx, table)).toBe(b);
+  });
+
+  it('stays as the player set it in a save made before it was on by default', () => {
+    const { s } = openCenter(1);
+    s.policy.emergenciesFirst = false;
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    upgradeSave(old);
+    expect(old.policy.emergenciesFirst).toBe(false);
   });
 });
 

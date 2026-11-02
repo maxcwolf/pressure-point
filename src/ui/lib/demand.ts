@@ -8,13 +8,15 @@ import {
   GUEST_CAP,
   ITEMS,
   MACHINE_DRAW,
+  MODALITIES,
   modalityLabel,
   ROLES,
   ROOMS,
 } from '../../core/data';
-import type { Discipline, ItemType } from '../../core/data/types';
-import { an } from '../../core/format';
-import type { Capacity, DisciplineDemand, MachineDemand } from '../../core/sim/demand';
+import type { Discipline, ItemType, Modality } from '../../core/data/types';
+import { an, listed } from '../../core/format';
+import { gapAdvice } from '../../core/sim/advisor';
+import type { Capacity, DisciplineDemand, MachineDemand, SpecialtyGap } from '../../core/sim/demand';
 import { type ArrivalPace, fedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
 
@@ -67,9 +69,9 @@ export function roomWord(row: DisciplineDemand): string {
   return room ? ROOMS[room.type].name : 'No room';
 }
 
-/** How much of what guests want the staff are trained for. */
+/** How much of what guests want the center offers. */
 export function trainingWord(row: DisciplineDemand): string {
-  return `${row.trained} of ${row.conditions} conditions`;
+  return `${row.offered} of ${row.conditions} conditions`;
 }
 
 /** What the guests waiting for a discipline wait for: its practitioners, or a Sound Healer's mats. */
@@ -86,23 +88,62 @@ export function lineWord(row: DisciplineDemand): string {
 }
 
 /**
- * The one thing that would draw the most more guests to a discipline, as advice: a shorter line, training, word of
- * mouth or the room. Nothing when it is doing well on all four.
+ * The one thing that would draw the most more guests to a discipline, as advice: a shorter line, someone to treat
+ * them, training, word of mouth or the room. Nothing when it is doing well on all of them.
  */
 export function demandAdvice(row: DisciplineDemand): string | null {
   const name = DISCIPLINES[row.discipline].name;
+  const base = DISCIPLINES[row.discipline].base;
+  if (row.untrained.includes(base) && !row.away.some((a) => a.modality === base))
+    return `Guests come for ${name.toLowerCase()} only once someone here can give it. ${an(ROLES[DISCIPLINES[row.discipline].role].name, true)} would bring them.`;
+  // who to post where, and what training or item would bring guests, before the line and the following
+  const [gap] = row.gaps;
+  if (gap) return gapAdvice(gap, gap.label);
+  if (row.untrained.length) return untrainedWord(row);
+  if (row.unequipped.length) return unequippedWord(row);
   if (row.line.factor < 0.99)
     return `The line for ${name.toLowerCase()} is putting new guests off: ${lineWord(row)}. Nobody minds until more than three wait for each, and those put off do not come at all. Another room and practitioner, or quicker treatment, would bring them back.`;
-  if (row.untrained.length) {
-    const list = row.untrained.slice(0, 3).map(modalityLabel).join(', ');
-    return `Guests needing ${list} mostly stay away while nobody is trained in it. Courses in a Training Room bring them back.`;
-  }
+
   if (row.following < 30)
     return `Few have heard of ${name.toLowerCase()} here yet. Every guest healed spreads the word, and every failure sets it back.`;
   if (row.room.pull < 1.5)
     return `A finer, quieter ${ROOMS[DISCIPLINES[row.discipline].room].name} would draw more: decor, windows, room to spare and less noise.`;
   return null;
 }
+
+/**
+ * Which guests stay away for want of training, and why: nobody here trained in what they need, or the one who is away
+ * on a course or a house call for now.
+ */
+function untrainedWord(row: DisciplineDemand): string {
+  const missing = row.untrained.filter((m) => !row.away.some((a) => a.modality === m));
+  const parts: string[] = [];
+  if (missing.length)
+    parts.push(
+      `Guests needing ${listed(missing.map(modalityLabel))} stay away while nobody is trained in ${missing.length === 1 ? 'it' : 'them'}. ${missing.length === 1 ? 'A course' : 'Courses'} in a Training Room bring${missing.length === 1 ? 's' : ''} them in.`,
+    );
+  for (const a of row.away)
+    parts.push(
+      `Guests needing ${modalityLabel(a.modality)} stay away while ${a.name} is ${a.on === 'course' ? 'on a course' : 'out on a house call'}.`,
+    );
+  return parts.join(' ');
+}
+
+/** The specialty item a technique is done with, by name. */
+const kitName = (m: Modality) => {
+  const kit = MODALITIES[m].equipment;
+  return kit ? ITEMS[kit].name : 'its equipment';
+};
+
+/** Which guests would come if a room of the discipline had the specialty item their technique needs. */
+function unequippedWord(row: DisciplineDemand): string {
+  const room = ROOMS[DISCIPLINES[row.discipline].room].name;
+  const kit = listed(row.unequipped.map((m) => an(kitName(m))));
+  return `${kit.charAt(0).toUpperCase()}${kit.slice(1)} in ${an(room)} would bring guests needing ${listed(row.unequipped.map(modalityLabel))}, which your staff are trained in.`;
+}
+
+/** What a specialty item whose guests may be seen untrained in this room means, and who to assign here. */
+export const gapNote = (g: SpecialtyGap): string => gapAdvice(g);
 
 /** A count of things as it reads: "1 station", "6 stations". */
 const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -143,10 +184,19 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
   const away = Math.round((1 - p.lines) * 100);
   if (away >= 1) parts.push(`less ${away}% kept away by long lines`);
   const drawing = p.machines.filter((m) => m.perMonth > 0);
-  if (!drawing.length) return `About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`;
+  const unready = p.machines
+    .filter((m) => m.demand.fed && !m.demand.trained)
+    .map((m) => untrainedMachineNote(m.demand));
+  if (!drawing.length)
+    return [`About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`, ...unready].join(' ');
   const tables = `${Math.round(p.tables)} come for the treatment stations: ${parts.join(', ')}.`;
   const machines = drawing.map((m) => machineNote(m.demand, m.perMonth));
-  return [`About ${Math.round(p.perMonth)} new guests a month.`, tables, ...machines].join(' ');
+  return [`About ${Math.round(p.perMonth)} new guests a month.`, tables, ...machines, ...unready].join(' ');
+}
+
+/** Why a signature machine with someone to run it draws nobody: nobody at work is trained in what it does. */
+export function untrainedMachineNote(m: MachineDemand): string {
+  return `The ${ITEMS[m.machine].name} draws nobody for its own ailments while nobody at work is trained to run it: a course in a Training Room would bring them.`;
 }
 
 /** Who runs a machine, as a phrase: "a Massage Therapist". */
@@ -169,7 +219,6 @@ export function machineNote(m: MachineDemand, perMonth: number): string {
     if (Math.abs(f - 1) > 0.005) parts.push(`${times(f)} ${why}`);
   };
   by(m.room.pull, m.room.room ? `for the ${ROOMS[m.room.room.type].name}` : 'for its room');
-  by(m.training, 'while nobody is trained to run it');
   by(m.flavour, 'for the local favourites');
   const away = Math.round((1 - m.line.factor) * 100);
   if (away >= 1) parts.push(`less ${away}% kept away by its line`);
@@ -256,4 +305,4 @@ export function limitNote(l: Limit, c: Capacity): string {
 
 /** How the shares are made, for the top of the panel. */
 export const DEMAND_INTRO =
-  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room, how much of it your staff are trained for, and how long its line is. A following grows with every guest healed, shrinks with every one let down, and fades slowly while nobody is treated. A discipline new to the center starts with a little; one that heals more guests than it fails grows.';
+  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room, how much of it your staff are trained for, and how long its line is. Guests come only for a technique someone at work is trained in, and for one done with a specialty item, only while the item stands in one of your rooms too. They go to the rooms with the item, so post your trained staff there. A following grows with every guest healed, shrinks with every one let down, and fades slowly while nobody is treated. A discipline new to the center starts with a little; one that heals more guests than it fails grows.';

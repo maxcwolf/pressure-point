@@ -1,6 +1,6 @@
 // The advisor: the next thing worth telling the player, and announcements over the speakers.
 
-import type { Role } from '../data';
+import type { Discipline, Modality, Role } from '../data';
 import {
   ANNOUNCEMENTS,
   conditionOf,
@@ -23,14 +23,15 @@ import {
   STONE_USE,
   WORSE_REP,
 } from '../data';
-import { an, article, money } from '../format';
+import { an, article, listed, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { featureOn, offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
+import { roomFor } from './careers';
 import type { SimContext } from './context';
-import { capacity, unfedStations } from './demand';
+import { capacity, demand, kitFor, machineDemand, type SpecialtyGap, specialtyGaps, unfedStations } from './demand';
 import {
   cashflow,
   countdownLever,
@@ -227,6 +228,8 @@ function nudge(ctx: SimContext): string | Advice {
   if (payday) return alarm(payday);
   const gap = modalityAdvice(ctx);
   if (gap) return gap;
+  const posted = postingAdvice(ctx);
+  if (posted) return posted;
   for (const it of s.items) {
     const st = ITEMS[it.type].station;
     if (!st?.staff || !ctx.world.usable(it)) continue;
@@ -254,8 +257,12 @@ function nudge(ctx: SimContext): string | Advice {
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
     return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
-  if (allStars(ctx)) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
-  return 'Looking good. Keep an eye on the objectives to earn your next star.';
+  // with nothing more pressing, which guests stay away for want of training, after the all-clear rather than in place of it
+  const done = allStars(ctx)
+    ? 'Three stars! Every treatment is open to you. Keep the guests coming back.'
+    : 'Looking good. Keep an eye on the objectives to earn your next star.';
+  const wanted = untrainedAdvice(ctx);
+  return wanted ? `${done} ${wanted}` : done;
 }
 
 /**
@@ -532,8 +539,77 @@ export function comfortAdvice(ctx: SimContext): string | Advice {
   return '';
 }
 
+/**
+ * Nudge about techniques guests would come for if anyone here were trained in them, and nobody is learning yet: they
+ * stay away until someone is. One that someone trained in is only away from for now is left out, as is one nobody in
+ * the role has a qualification slot free for, and a discipline with nobody in its role at all, which is for the guests
+ * panel to say.
+ */
+export function untrainedAdvice(ctx: SimContext): string {
+  const s = ctx.s;
+  /** Whether someone is on the course for a technique, or knows it and is only away for now. */
+  const coming = (m: Modality) =>
+    s.staff.some((st) => st.training?.course === m || (st.state !== 'leaving' && st.quals.includes(m)));
+  /** Whether someone in a discipline's role has a qualification slot free for a technique, to go on its course. */
+  const learnable = (d: Discipline, m: Modality) =>
+    s.staff.some((st) => st.role === DISCIPLINES[d].role && st.state !== 'leaving' && roomFor(st, m));
+  for (const row of demand(ctx)) {
+    const wanted = row.untrained.filter((m) => !coming(m) && learnable(row.discipline, m));
+    if (!row.offered || !wanted.length) continue;
+    const them = wanted.length === 1 ? 'it' : 'them';
+    const why = `Guests needing ${listed(wanted.map(modalityLabel))} stay away while nobody here is trained in ${them}.`;
+    return trainingTip(ctx, row.discipline, wanted, why);
+  }
+  for (const m of machineDemand(ctx)) {
+    const d = ITEMS[m.machine].station?.discipline ?? 'massage';
+    const wanted = [...new Set(m.conditions.map((w) => w.condition.modality))].filter(
+      (x) => !coming(x) && learnable(d, x),
+    );
+    if (!m.fed || m.trained || !wanted.length) continue;
+    const why = `The ${ITEMS[m.machine].name} draws no guests while nobody here is trained to run it.`;
+    return trainingTip(ctx, d, wanted, why);
+  }
+  return '';
+}
+
+/**
+ * What to do about techniques of a discipline nobody here is trained in, after why it matters: send someone on the
+ * courses, with a Training Room first if there is none.
+ */
+function trainingTip(ctx: SimContext, d: Discipline, wanted: Modality[], why: string): string {
+  const role = ROLES[DISCIPLINES[d].role];
+  const send = wanted.length === 1 ? `send ${an(role.name)} on the course` : `send ${role.name}s on the courses`;
+  return hasRoom(ctx, 'training')
+    ? `${why} ${send.charAt(0).toUpperCase()}${send.slice(1)} to bring them in.`
+    : `${why} Build a Training Room and ${send} to bring them in.`;
+}
+
+/**
+ * Nudge about a specialty item whose guests may be seen untrained in a room while someone trained in it is busy in
+ * another: assign them there. With nobody trained at all, the nudge about guests needing it says so.
+ */
+export function postingAdvice(ctx: SimContext): string | Advice {
+  const gap = specialtyGaps(ctx)[0];
+  const who = gap?.trained[0];
+  if (!gap || !who) return '';
+  return { text: gapAdvice(gap, gap.label), about: { kind: 'staff', id: who.id } };
+}
+
+/**
+ * What a specialty item whose guests may be seen untrained means, and what puts it right: one of those trained in it
+ * assigned to its room. Of a room by name, or of the room in hand when none is given.
+ */
+export function gapAdvice(gap: SpecialtyGap, room?: string): string {
+  const one = gap.trained.length === 1;
+  const names = listed(gap.trained.map((st) => st.name));
+  const who = gap.trained[0]?.name ?? '';
+  const busy = one ? 'is busy in another room' : 'are busy in other rooms';
+  const there = room ? 'there' : 'here';
+  return `${modalityLabel(gap.modality)} guests come for the ${ITEMS[gap.item].name} ${room ? `in the ${room}` : 'here'}, and while ${names}, who ${one ? 'is' : 'are'} trained in it, ${busy}, whoever works ${there} sees them untrained, and it goes badly. Assign ${who} to ${room ? 'that' : 'this'} room from their inspector.`;
+}
+
 /** Nudge about modalities guests are waiting for that the center cannot deliver. */
-function modalityAdvice(ctx: SimContext): string | Advice {
+export function modalityAdvice(ctx: SimContext): string | Advice {
   const s = ctx.s;
   for (const m of MODALITY_ORDER) {
     const def = MODALITIES[m];
@@ -553,11 +629,13 @@ function modalityAdvice(ctx: SimContext): string | Advice {
     }
     if (def.equipment) {
       const eq = ITEMS[def.equipment];
-      const have = s.items.filter((i) => i.type === def.equipment && ctx.world.usable(i));
+      // the item, or a machine that does the technique itself, as the Hot Stone Kiln does hot stones
+      const kit = kitFor(m);
+      const have = s.items.filter((i) => kit.includes(i.type) && ctx.world.usable(i));
       if (!have.length)
         return `${modalityLabel(m)} needs a ${eq.name} in the ${room.name}. You'll find it in the Items menu.`;
       const warmer = have[0];
-      if (warmer && def.equipment === 'stone_warmer' && have.every((i) => i.water < STONE_USE))
+      if (warmer && have.every((i) => i.type === 'stone_warmer' && i.water < STONE_USE))
         return {
           text: hasStaff(ctx, 'caretaker')
             ? 'The massage stones have gone cold. Your Caretaker is stretched thin.'

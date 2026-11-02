@@ -100,8 +100,9 @@ export function stationScore(ctx: SimContext, it: Item, g: Guest) {
   if (ITEMS[it.type].station?.goal === 'treat') {
     const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
     // someone untrained is a last resort, and no resort at all while a colleague trained for it is about
+    // and a table without the specialty item can never do it properly, whoever comes to work it
     if (problem === 'unqualified') score += staff && leftForSpecialist(ctx, staff, g) ? 40 : 6;
-    else if (problem) score += 40;
+    else if (problem) score += 60;
     // between a table and a machine doing the same work, the machine is quicker, so a tie goes to it
     if (ITEMS[it.type].machine) score -= MACHINE_PULL;
   }
@@ -113,24 +114,25 @@ export const AWAY: readonly StaffState[] = ['leaving', 'toCall', 'away', 'toTrai
 
 /**
  * Whether a guest should wait for a colleague trained in their treatment rather than be seen by this member of staff,
- * who is not: there is someone who is, here and free to work a table that does it. A guest the player put in this
- * line is seen in it all the same.
+ * who is not: there is someone who is, here and free to work a table that does it, with its specialty item there if it
+ * needs one, or a machine that does it. One posted at a table that cannot do it is busy there, and leaves them to be
+ * seen as they can. A guest the player put in this line is seen in it all the same.
  */
 export function leftForSpecialist(ctx: SimContext, staff: Staff, g: Guest): boolean {
   const mod = modalityOf(g);
   if (g.placed || staff.quals.includes(mod.id)) return false;
-  return ctx.s.staff.some(
-    (t) =>
-      t.quals.includes(mod.id) &&
-      !AWAY.includes(t.state) &&
-      ctx.s.items.some(
-        (it) =>
-          ITEMS[it.type].station?.goal === 'treat' &&
-          ctx.world.usable(it) &&
-          treatsHere(it, mod) &&
-          worksAt(ctx, t, it.x, it.y),
-      ),
-  );
+  /** Whether a table does the technique properly. */
+  const does = (it: Item) =>
+    ITEMS[it.type].station?.goal === 'treat' &&
+    ctx.world.usable(it) &&
+    treatsHere(it, mod) &&
+    !deliveryProblem(ctx, it, undefined, mod);
+  return ctx.s.staff.some((t) => {
+    if (!t.quals.includes(mod.id) || AWAY.includes(t.state)) return false;
+    const post = ctx.world.item(t.post);
+    if (post && !does(post)) return false;
+    return ctx.s.items.some((it) => does(it) && worksAt(ctx, t, it.x, it.y));
+  });
 }
 
 /** The best usable station for a guest's current goal, if there is one. */

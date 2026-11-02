@@ -1075,15 +1075,16 @@ test.describe('running a center', () => {
     await expect(menu).toContainText('75% sure');
     await menu.locator('.stepper').filter({ hasText: 'Treat once' }).getByRole('button', { name: '+' }).click();
     await expect(menu).toContainText('80% sure');
-    await menu.getByRole('button', { name: /Emergencies first: off/ }).click();
-    await expect(menu).toContainText('Emergencies first: on');
+    // on from the start in a new game, and off with a click
+    await menu.getByRole('button', { name: /Emergencies first: on/ }).click();
+    await expect(menu).toContainText('Emergencies first: off');
     await menu.locator('.stepper').filter({ hasText: 'Take a break' }).getByRole('button', { name: '+' }).click();
     // no limit on breaks to begin with; stepping down from it starts at five
     await menu.locator('.stepper').filter({ hasText: 'Massage Therapists' }).getByRole('button', { name: '−' }).click();
     await expect(menu.locator('.stepper').filter({ hasText: 'Massage Therapists' })).toContainText('5');
     expect(await game.eval((pp) => pp.state.policy)).toEqual({
       diagnosis: 0.8,
-      emergenciesFirst: true,
+      emergenciesFirst: false,
       breakAt: 23,
       breakLimit: { therapist: 5 },
       stashMushrooms: true,
