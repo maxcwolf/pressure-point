@@ -1,5 +1,5 @@
 // The campaign's progress: stars, gifts to the Foundation, achievements, karma unlocks and the lessons shown, kept apart
-// from saved games.
+// from saved games, one for each profile.
 
 import {
   type CampaignProgress,
@@ -25,13 +25,17 @@ import {
 import { type LessonId, LESSONS, LESSONS_BEFORE_MEMORY } from '../core/sim/lessons';
 import type { GameState } from '../core/state/types';
 import { isRecord } from './json';
+import { currentProfile, profileGone, profileKey, scoped } from './profiles';
 
 const KEY = 'pressure-point-campaign';
 
-/** The campaign so far, ignoring anything malformed or unknown to this version. */
-export function loadCampaign(): CampaignProgress {
+/**
+ * The campaign so far, ignoring anything malformed or unknown to this version: this profile's, or another's for the
+ * profiles list to say what deleting it would lose.
+ */
+export function loadCampaign(profile = currentProfile()): CampaignProgress {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    const raw: unknown = JSON.parse(localStorage.getItem(scoped(profile, KEY)) ?? '{}');
     if (!isRecord(raw)) return freshCampaign();
     const p = freshCampaign();
     const stars = isRecord(raw.stars) ? raw.stars : {};
@@ -61,10 +65,11 @@ export function loadCampaign(): CampaignProgress {
   }
 }
 
-/** Store the campaign's progress. */
+/** Store the campaign's progress, unless its profile has been deleted since, as from another tab. */
 function saveCampaign(p: CampaignProgress) {
+  if (profileGone()) return;
   try {
-    localStorage.setItem(KEY, JSON.stringify(p));
+    localStorage.setItem(profileKey(KEY), JSON.stringify(p));
   } catch {
     // the stars and achievements are still in the game's own save, and are recorded again next time
   }

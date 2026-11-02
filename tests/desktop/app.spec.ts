@@ -1,7 +1,7 @@
 // The built desktop app, launched for real. The browser tests cover the game;
 // these cover the shell around it: the sandbox, the preload API, quitting and saving.
 import { spawn } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { ElectronApplication } from '@playwright/test';
@@ -81,6 +81,8 @@ test.describe('the desktop shell', () => {
       backupSave: 'function',
       dropBackup: 'function',
       readBackup: 'function',
+      backupProfiles: 'function',
+      dropProfileBackup: 'function',
     });
     expect(await page.evaluate(() => window.desktop?.platform)).toBe(process.platform);
   });
@@ -178,6 +180,81 @@ test.describe('leaving the desktop app', () => {
     await second.page.reload();
     await second.page.getByRole('button', { name: 'Continue' }).click();
     await expect(second.page.locator('#stats')).toContainText('$30,000');
+  });
+
+  test("keeps each profile's saves in files of its own, and puts every profile back when the page storage loses them", async ({
+    desktop,
+  }) => {
+    const first = await desktop.launch();
+    const profile = first.page.locator('#title .title-profile');
+    // the first player's sandbox game, then a profile for Sam, who plays Willow Lane
+    await newGame(first.page);
+    await openPauseMenu(first.page);
+    await first.page.getByRole('button', { name: 'Main menu' }).click();
+    await profile.click();
+    await first.page.getByLabel('Name for a new profile').fill('Sam');
+    await first.page.getByRole('button', { name: 'Add profile' }).click();
+    await expect(profile).toHaveText('Sam');
+    await first.page.getByRole('button', { name: 'Campaign' }).click();
+    await first.page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await first.page.locator('#stats').waitFor();
+    await openPauseMenu(first.page);
+    const closed = first.app.waitForEvent('close');
+    await first.page.getByRole('button', { name: 'Exit game' }).click();
+    await closed;
+
+    // the first profile's copies where they always were, Sam's in a folder of Sam's own, and the list beside them
+    const list = JSON.parse(readFileSync(path.join(desktop.profile, 'profiles.json'), 'utf8')) as {
+      profiles: { id: string; name: string }[];
+    };
+    expect(list.profiles.map((p) => p.name)).toEqual(['Player 1', 'Sam']);
+    const sam = list.profiles[1]!.id;
+    expect(readdirSync(path.join(desktop.profile, 'saved-games')).sort()).toEqual(['index.json', 'save-auto.json']);
+    expect(readdirSync(path.join(desktop.profile, 'profiles'))).toEqual([sam]);
+    expect(readdirSync(path.join(desktop.profile, 'profiles', sam)).sort()).toEqual(['index.json', 'save-auto.json']);
+
+    // as if the player cleared the app's data: both profiles come back, each with its own game, and the app opens on
+    // Sam, who played last
+    const second = await desktop.launch();
+    await second.page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}');
+    });
+    await second.page.reload();
+    const again = second.page.locator('#title .title-profile');
+    await expect(again).toHaveText('Sam');
+    await second.page.getByRole('button', { name: 'Continue' }).click();
+    await expect(second.page.locator('#stats')).toContainText('$20,000');
+    await openPauseMenu(second.page);
+    await second.page.getByRole('button', { name: 'Main menu' }).click();
+    await again.click();
+    await second.page
+      .locator('#title-profiles .profile-row', { hasText: 'Player 1' })
+      .getByRole('button', { name: 'Play' })
+      .click();
+    await expect(again).toHaveText('Player 1');
+    await second.page.getByRole('button', { name: 'Continue' }).click();
+    await expect(second.page.locator('#stats')).toContainText('$30,000');
+  });
+
+  test("finds the copies a version from before profiles kept, as the first profile's", async ({ desktop }) => {
+    // the files an older version left, with a page storage that has lost its saves
+    const folder = path.join(desktop.profile, 'saved-games');
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(
+      path.join(folder, 'save-auto.json'),
+      readFileSync(path.join(import.meta.dirname, '../visual/fixtures/center.json')),
+    );
+    writeFileSync(
+      path.join(folder, 'index.json'),
+      JSON.stringify([{ id: 'auto', name: 'Autosave', savedAt: 1, day: 50, money: 76580, stars: 1, healed: 7 }]),
+    );
+    const { page } = await desktop.launch();
+    await expect(page.locator('#title .title-profile')).toHaveText('Player 1');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.locator('#stats')).toContainText('$76,580');
+    // nothing about profiles is kept until there is more than the first
+    expect(existsSync(path.join(desktop.profile, 'profiles.json'))).toBe(false);
   });
 
   test('Main menu returns to the title screen without leaving the app', async ({ desktop }) => {

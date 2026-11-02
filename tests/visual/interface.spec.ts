@@ -56,6 +56,28 @@ test.describe('title screen', () => {
     await screens.shot('title-achievements');
   });
 
+  test('the profiles', async ({ screens, page }) => {
+    await screens.title();
+    await page.evaluate(async () => {
+      localStorage.setItem(
+        'pressure-point-campaign',
+        JSON.stringify({ stars: { willow: 2 }, achieved: ['called-in'], unlocked: ['bonsai'] }),
+      );
+      // someone else on this computer, with nothing played yet
+      const profiles = (await import(/* @vite-ignore */ `${location.origin}/src/storage/profiles.ts`)) as {
+        addProfile: (name: string) => object;
+      };
+      profiles.addProfile('Sam');
+    });
+    await page.locator('#title .title-profile').click();
+    await screens.shot('title-profiles');
+    await page
+      .locator('#title-profiles .profile-row', { hasText: 'Player 1' })
+      .getByRole('button', { name: 'Delete' })
+      .click();
+    await screens.shot('title-profiles-delete');
+  });
+
   test('in a short window', async ({ screens, page }) => {
     await page.setViewportSize({ width: 1000, height: 600 });
     await screens.title();

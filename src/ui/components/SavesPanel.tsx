@@ -23,6 +23,7 @@ import { css } from '../../styled-system/css';
 import { dangerButton, fileButton, goButton } from '../../styled-system/recipes';
 import { download } from '../dom';
 import { cx } from '../lib/cx';
+import { PROFILE_GONE, PROFILE_GONE_TITLE } from '../lib/profiles';
 
 export interface SavesPanelProps {
   /** The game in progress, if there is one to save. */
@@ -156,6 +157,13 @@ const FULL: Note = {
   bad: true,
 };
 
+/**
+ * Why a save was refused: no room, or the profile deleted in another tab or window, said for a game in progress or for
+ * the title screen.
+ */
+const refused = (why: 'full' | 'gone', inGame: boolean): Note =>
+  why === 'gone' ? { text: inGame ? PROFILE_GONE : PROFILE_GONE_TITLE, bad: true } : FULL;
+
 /** The list of saved games, with saving, loading, exporting, importing and deleting. */
 export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
   const [draft, setDraft] = useState(current ? defaultSaveName(current) : '');
@@ -176,7 +184,11 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
     const result = writeSave(current, existing ? existing.name : draft, id);
     if (typeof result !== 'string' && snapshot) storeThumb(result.id, snapshot());
     reread();
-    setNote(typeof result === 'string' ? FULL : { text: `Saved "${result.name}".`, bad: false });
+    setNote(
+      typeof result === 'string'
+        ? refused(result === 'gone' ? 'gone' : 'full', true)
+        : { text: `Saved "${result.name}".`, bad: false },
+    );
   };
   /** Write a save out as a file. */
   const exportTo = (id: string) => {
@@ -210,7 +222,7 @@ export function SavesPanel({ current, snapshot, onLoad }: SavesPanelProps) {
           text: `"${file.name}" is not a Pressure Point Institute save, or it is from a newer version of the game.`,
           bad: true,
         });
-      else if (result === 'full') setNote(FULL);
+      else if (result === 'full' || result === 'gone') setNote(refused(result, !!current));
       else setNote({ text: `Imported "${result.name}".`, bad: false });
     });
   };

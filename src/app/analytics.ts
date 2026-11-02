@@ -6,6 +6,7 @@ import posthog from 'posthog-js/dist/module.no-external';
 import type { Sim } from '../core/sim/sim';
 import type { GameState } from '../core/state/types';
 import { loadSharing, saveSharing } from '../storage/analytics';
+import { statsName } from '../storage/profiles';
 import { automated } from './automation';
 import { desktop } from './desktop';
 import { environment } from './environment';
@@ -57,6 +58,9 @@ if (sends) {
     api_host: HOST,
     // the desktop app loads the game from a file, where cookies do not work
     persistence: 'localStorage',
+    // each of the game's profiles is a player with a random id of its own, the first keeping the one there always was,
+    // so two people on one computer count as two
+    persistence_name: statsName(),
     // players are counted by a random id, with no profile kept for any of them
     person_profiles: 'never',
     // only the events the game sends: no clicks, page views, recordings, surveys or scripts from elsewhere

@@ -4,6 +4,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 import {
   BACKUP_DROP_CHANNEL,
+  BACKUP_DROP_PROFILE_CHANNEL,
+  BACKUP_PROFILES_CHANNEL,
   BACKUP_READ_CHANNEL,
   BACKUP_SAVE_CHANNEL,
   type DesktopApi,
@@ -55,15 +57,23 @@ const api: DesktopApi = {
     ipcRenderer.send(FULL_SCREEN_SET_CHANNEL, on);
   },
   /** Hand the desktop app a saved game to keep a copy of. */
-  backupSave: (id, text, index) => {
-    ipcRenderer.send(BACKUP_SAVE_CHANNEL, id, text, index);
+  backupSave: (id, text, index, profile) => {
+    ipcRenderer.send(BACKUP_SAVE_CHANNEL, id, text, index, profile);
   },
   /** Tell the desktop app a save was deleted. */
-  dropBackup: (id, index) => {
-    ipcRenderer.send(BACKUP_DROP_CHANNEL, id, index);
+  dropBackup: (id, index, profile) => {
+    ipcRenderer.send(BACKUP_DROP_CHANNEL, id, index, profile);
   },
-  /** Ask the desktop app for every copy it keeps. */
-  readBackup: () => ipcRenderer.invoke(BACKUP_READ_CHANNEL),
+  /** Ask the desktop app for every copy it keeps for a profile. */
+  readBackup: (profile) => ipcRenderer.invoke(BACKUP_READ_CHANNEL, profile),
+  /** Hand the desktop app the list of profiles to keep a copy of. */
+  backupProfiles: (text) => {
+    ipcRenderer.send(BACKUP_PROFILES_CHANNEL, text);
+  },
+  /** Tell the desktop app a profile was deleted. */
+  dropProfileBackup: (profile) => {
+    ipcRenderer.send(BACKUP_DROP_PROFILE_CHANNEL, profile);
+  },
 };
 
 contextBridge.exposeInMainWorld('desktop', api);
