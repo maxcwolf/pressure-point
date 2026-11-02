@@ -22,7 +22,7 @@ const heading = css({ mt: '12' });
 export function FailuresTable() {
   const { sim } = useGame();
   const failures = sim.s.failures ?? [];
-  const rows = failureBreakdown(failures);
+  const rows = failureBreakdown(failures, (f) => sim.failureFix(f));
   return (
     <>
       <h4 class={heading}>Why treatments failed lately</h4>

@@ -86,6 +86,8 @@ function FailedWhy({ guest: g }: { guest: Guest }) {
   const { sim } = useGame();
   const f = g.outcome === 'failed' ? failureOf(sim.s.failures, g.id) : undefined;
   if (!f) return null;
+  // what to do, as things stand now rather than when it failed
+  const fix = sim.failureFix(f);
   return (
     <div class={cx('failed-why', failedWhy)}>
       <h4>Why the treatment failed</h4>
@@ -99,7 +101,7 @@ function FailedWhy({ guest: g }: { guest: Guest }) {
         ))}
       </ul>
       {f.hands && <p class="sub">{`${f.staff}’s Healing Hands could not save it.`}</p>}
-      {f.fix && <p class="sub fix">{f.fix}</p>}
+      {fix && <p class="sub fix">{fix}</p>}
     </div>
   );
 }

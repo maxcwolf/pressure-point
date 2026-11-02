@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { BOTCH_FACTOR, GUESS_PENALTY, ROLES, UPGRADE_LEVELS, UPGRADE_SUCCESS } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import {
+  failRate,
   failureCause,
   failureOf,
   failureReasons,
@@ -18,6 +19,7 @@ import {
   type Chance,
   MAX_CHANCE,
   MIN_CHANCE,
+  settledChance,
   SKILL_SUCCESS,
   successChance,
   TIRED_PENALTY,
@@ -25,6 +27,9 @@ import {
 import type { FailedTreatment } from '../../src/core/state/types';
 import { causeText, failureBreakdown, failureHead, failureLines } from '../../src/ui/lib/failures';
 import { hire, openCenter, runUntil } from './helpers';
+
+/** The chance a member of staff with Healing Hands has to save a treatment that failed. */
+const HANDS = 1 / 3;
 
 /** The simulation's own context, for the functions that take it. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
@@ -50,6 +55,16 @@ function atTable(seed = 1) {
     return { ...chance, reasons: failureReasons(ctx, table, c.therapist, g, chance) };
   };
   return { ...c, g, table, ctx, odds };
+}
+
+/** A guest with Stiff Shoulders at a massage table in a room with a Stretch Rack, and a therapist not trained in it. */
+function withRack() {
+  const c = atTable();
+  c.s.stars = 3;
+  expect(c.sim.placeItem('stretch_rack', 14, 7, 0)).not.toBeNull();
+  c.g.condition = 'stiff';
+  c.therapist.quals = ['swedish'];
+  return c;
 }
 
 /** One term of a chance, by what it is. */
@@ -100,18 +115,44 @@ describe('the chance of a treatment working', () => {
 describe('why a treatment failed', () => {
   it('names each thing that went against it, with what it took off', () => {
     const { odds, therapist, g, massage } = atTable();
+    // a Trainee, so the chance is well off the most it can be and each thing wrong takes off its all
+    therapist.skill = 1;
     therapist.energy = 5;
     g.health = 50;
     massage.vibes = 100;
     const r = odds();
-    expect(reason(r, 'tired')).toMatchObject({ text: `${therapist.name} was worn out`, amount: TIRED_PENALTY });
-    expect(reason(r, 'worse')?.text).toBe(`${g.name} had got worse while waiting`);
+    expect(reason(r, 'tired')?.text).toBe(`${therapist.name} was worn out`);
+    expect(reason(r, 'tired')?.amount).toBeCloseTo(TIRED_PENALTY);
+    expect(reason(r, 'worse')?.text).toBe(`${g.name} had gotten worse while waiting`);
     expect(reason(r, 'worse')?.amount).toBeCloseTo(-term(r, 'worse'));
     expect(reason(r, 'vibes')?.text).toBe('Bad vibes in the Massage Suite');
     expect(reason(r, 'vibes')?.amount).toBeCloseTo(-term(r, 'vibes'));
     // biggest first, and counted under the biggest thing wrong
     expect(r.reasons.map((x) => x.amount)).toEqual([...r.reasons.map((x) => x.amount)].sort((a, b) => b - a));
     expect(failureCause(r.problem, r.reasons)).toBe(r.reasons.find((x) => x.cause !== 'skill')?.cause);
+  });
+
+  it('sizes each reason by how much putting it right alone would raise the chance, the limits and botch and all', () => {
+    const { odds, therapist, g, massage, table } = atTable(2);
+    for (const [energy, health, vibes, quals, skill] of [
+      [5, 50, 100, ['swedish'], 3],
+      [5, 0, 100, [], 1],
+      [100, 100, 0, ['swedish'], 5],
+    ] as const) {
+      Object.assign(therapist, { energy, quals: [...quals], skill });
+      g.health = health;
+      massage.vibes = vibes;
+      table.level = 0;
+      const c = odds();
+      for (const r of c.reasons) {
+        const f = c.factors.find((x) => x.cause === r.cause);
+        // what was put right: the term at its best, or the botch gone
+        const fixed = f
+          ? settledChance(c.raw - f.amount + (f.best ?? 0), c.problem).chance
+          : settledChance(c.raw, '').chance;
+        expect(r.amount, r.cause).toBeCloseTo(fixed - c.chance);
+      }
+    }
   });
 
   it('lists a shortfall against the best there could be, but does not blame it', () => {
@@ -121,7 +162,8 @@ describe('why a treatment failed', () => {
     table.level = 0;
     const r = odds();
     expect(reason(r, 'skill')).toMatchObject({ text: `${therapist.name}’s rank is Trainee, not Expert` });
-    expect(reason(r, 'skill')?.amount).toBeCloseTo(4 * SKILL_SUCCESS);
+    // an Expert's hands would take it to the most a chance can be, and no further
+    expect(reason(r, 'skill')?.amount).toBeCloseTo(Math.min(MAX_CHANCE, r.raw + 4 * SKILL_SUCCESS) - r.chance);
     expect(reason(r, 'diagnosis')?.text).toBe('The diagnosis was only 60% sure');
     expect(reason(r, 'upgrade')?.amount).toBeCloseTo(UPGRADE_LEVELS * UPGRADE_SUCCESS);
     expect(failureCause(r.problem, r.reasons)).toBe('odds');
@@ -182,7 +224,7 @@ describe('a failed treatment', () => {
     const { ctx, s, table, therapist, g, odds, sim } = atTable();
     therapist.energy = 5;
     sim.drain();
-    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+    const f = recordFailure(ctx, table, therapist, g, odds(), 0);
     const [toast] = sim.drain().filter((e) => e.type === 'toast');
     expect(toast).toMatchObject({ kind: 'bad', about: { kind: 'guest', id: g.id }, key: 'failed:swedish' });
     expect(toast?.type === 'toast' && toast.text).toBe(failureText(f));
@@ -195,57 +237,89 @@ describe('a failed treatment', () => {
     expect(failureOf(s.failures, g.id)).toBe(f);
   });
 
-  it('owns up to bad luck when nothing much was wrong, and to Healing Hands that missed', () => {
+  it('owns up to bad luck when nothing much was wrong, at the rate it really fails, Healing Hands and all', () => {
     const { ctx, table, therapist, g, odds } = atTable();
-    const f = recordFailure(ctx, table, therapist, g, odds(), true);
+    therapist.skill = 1;
+    const c = odds();
+    const f = recordFailure(ctx, table, therapist, g, c, HANDS);
     expect(f.cause).toBe('odds');
-    expect(failureText(f)).toMatch(/: bad luck, which comes \d+% of the time\. Biggest shortfall: /);
+    expect(f.limit).toBeUndefined();
+    expect(failRate(f)).toBeCloseTo((1 - c.chance) * (1 - HANDS));
+    expect(failureText(f)).toContain(
+      `: bad luck, which comes ${Math.round(failRate(f) * 100)}% of the time. Biggest shortfall: `,
+    );
     expect(failureText(f)).toMatch(new RegExp(`${therapist.name}’s Healing Hands could not save it\\.$`));
+    expect(failureLines(f)[0]?.text).toBe(`Bad luck: it fails ${Math.round(failRate(f) * 100)}% of the time`);
   });
 
-  it('puts an untrained hand at a specialty item down to the room it is in, and says who to post there', () => {
-    const { ctx, s, sim, table, therapist, g, odds } = atTable();
-    s.stars = 3;
-    expect(sim.placeItem('stretch_rack', 14, 7, 0)).not.toBeNull();
-    g.condition = 'stiff';
-    therapist.quals = ['swedish'];
-    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+  it('says plainly, at the most any treatment can be, that there is nothing to fix', () => {
+    const { ctx, table, therapist, g, odds } = atTable();
+    // an Expert, a certain diagnosis and the table fully upgraded: more than the most a chance can be
+    therapist.skill = 5;
+    table.level = UPGRADE_LEVELS;
+    const c = odds();
+    expect(c.raw).toBeGreaterThan(MAX_CHANCE);
+    // nothing short of its best counts, since putting it right could not raise the chance
+    expect(c.reasons).toEqual([]);
+    const f = recordFailure(ctx, table, therapist, g, c, 0);
+    expect(f).toMatchObject({ cause: 'odds', limit: 'ceiling' });
+    expect(failureText(f)).toMatch(/: bad luck, a 2% chance any treatment fails, however well it’s set up\.$/);
+    expect(failureBreakdown([f])[0]?.fix).toBe('Nothing to fix: no treatment is surer than 98%');
+  });
+
+  it('puts an untrained hand at a specialty item down to the room it is in, and says to train them', () => {
+    const { ctx, s, sim, table, therapist, g, odds } = withRack();
+    const f = recordFailure(ctx, table, therapist, g, odds(), 0);
     expect(f.cause).toBe('unqualified');
     expect(f.fix).toBe(
-      `The Stretch Rack in the Massage Suite brings Sports massage guests, so post a ${ROLES.therapist.name} trained in it to the Massage Suite, or send ${therapist.name} on the course.`,
+      `The Stretch Rack in the Massage Suite brings Sports massage guests. Nobody else at work is trained in it: send ${therapist.name} on the Sports massage course in a Training Room, or hire a ${ROLES.therapist.name} who is.`,
     );
     expect(failureText(f)).toContain('is not trained in Sports massage (−');
     expect(failureText(f).endsWith(` ${f.fix}`)).toBe(true);
-    // and the casebook's fix for that technique says the same
-    expect(failureBreakdown([f])[0]?.fix).toBe(f.fix);
+    // and the casebook works the same out afresh, which says nothing once they are trained
+    expect(failureBreakdown([f], (x) => sim.failureFix(x))[0]?.fix).toBe(f.fix);
+    therapist.quals.push('sports');
+    expect(sim.failureFix(f)).toBeUndefined();
+    expect(failureBreakdown([f], (x) => sim.failureFix(x))[0]?.fix).toMatch(/Training Room/);
+    expect(s.failures).toEqual([f]);
   });
 
-  it('names a colleague who is trained in it, to post there instead', () => {
-    const { ctx, s, sim, table, therapist, g, odds } = atTable();
-    s.stars = 3;
-    expect(sim.placeItem('stretch_rack', 14, 7, 0)).not.toBeNull();
-    g.condition = 'stiff';
-    therapist.quals = ['swedish'];
+  it('keeps an untrained hand out of a room a trained colleague already works in', () => {
+    const { ctx, sim, table, therapist, g, odds } = withRack();
     const sam = hire(sim, 'therapist');
     sam.quals = ['swedish', 'sports'];
-    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+    // new staff work anywhere, so Sam can already work in the Massage Suite
+    expect(sam.rooms).toEqual([]);
+    const f = recordFailure(ctx, table, therapist, g, odds(), 0);
     expect(f.fix).toBe(
-      `The Stretch Rack in the Massage Suite brings Sports massage guests, so post ${sam.name}, who is trained in it, to the Massage Suite, or send ${therapist.name} on the course.`,
+      `The Stretch Rack in the Massage Suite brings Sports massage guests. ${sam.name}, who is trained in it, already works there: assign ${therapist.name} to other rooms from their inspector, or send ${therapist.name} on the Sports massage course.`,
     );
+  });
+
+  it('assigns a trained colleague to the room when they work elsewhere, and leaves out one who is away', () => {
+    const { ctx, sim, table, therapist, g, odds, consult } = withRack();
+    const sam = hire(sim, 'therapist');
+    sam.quals = ['swedish', 'sports'];
+    sam.rooms = [consult.id];
+    expect(recordFailure(ctx, table, therapist, g, odds(), 0).fix).toBe(
+      `The Stretch Rack in the Massage Suite brings Sports massage guests. ${sam.name} is trained in it: assign them to the Massage Suite from their inspector, or send ${therapist.name} on the Sports massage course.`,
+    );
+    sam.state = 'training';
+    expect(recordFailure(ctx, table, therapist, g, odds(), 0).fix).toMatch(/^The Stretch Rack .+ Nobody else at work/);
   });
 
   it('says to train an untrained hand where no specialty item draws the guests', () => {
     const { ctx, table, therapist, g, odds } = atTable();
     therapist.quals = [];
-    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+    const f = recordFailure(ctx, table, therapist, g, odds(), 0);
     expect(f.fix).toBe(
-      `Send ${therapist.name} on the Swedish massage course in a Training Room, or post a ${ROLES.therapist.name} trained in it to the Massage Suite.`,
+      `Nobody else at work is trained in it: send ${therapist.name} on the Swedish massage course in a Training Room, or hire a ${ROLES.therapist.name} who is.`,
     );
   });
 
   it(`keeps only the latest ${FAILURES_KEPT}`, () => {
     const { ctx, s, table, therapist, g, odds } = atTable();
-    for (let i = 0; i < FAILURES_KEPT + 5; i++) recordFailure(ctx, table, therapist, g, odds(), false);
+    for (let i = 0; i < FAILURES_KEPT + 5; i++) recordFailure(ctx, table, therapist, g, odds(), 0);
     expect(s.failures).toHaveLength(FAILURES_KEPT);
   });
 
@@ -253,7 +327,7 @@ describe('a failed treatment', () => {
     const { ctx, table, therapist, g, odds, massage } = atTable();
     therapist.skill = 1;
     massage.vibes = 100;
-    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+    const f = recordFailure(ctx, table, therapist, g, odds(), 0);
     expect(failureHead(f)).toMatch(
       new RegExp(`^Swedish massage in the Massage Suite, given by ${therapist.name}, at a \\d+% chance$`),
     );

@@ -24,7 +24,7 @@ function whyFailed(ctx: SimContext, table: Item, staff: Staff, g: Guest) {
 /** Fail a treatment at a table the given number of times, counting each. */
 function failTimes(ctx: SimContext, table: Item, staff: Staff, g: Guest, n: number) {
   for (let i = 0; i < n; i++)
-    noteFailure(ctx, table, staff, g, recordFailure(ctx, table, staff, g, successChance(ctx, table, staff, g), false));
+    noteFailure(ctx, table, staff, g, recordFailure(ctx, table, staff, g, successChance(ctx, table, staff, g), 0));
 }
 
 /** A center open and staffed, on a first go at the campaign. */
@@ -222,7 +222,8 @@ describe('harm that keeps coming to guests', () => {
     runUntil(sim, () => s.guests.length > 0, 300);
     const g = s.guests[0]!;
     const table = s.items.find((i) => i.type === 'massage_table')!;
-    Object.assign(therapist, { energy: 100, skill: 5 });
+    // a Junior, so the chance is off the most it can be, where a best guess would make no difference
+    Object.assign(therapist, { energy: 100, skill: 2 });
     Object.assign(g, { health: 100, diagnosis: 1, guessed: true });
     const ctx = ctxOf(sim);
     expect(whyFailed(ctx, table, therapist, g).cause).toBe('guess');

@@ -45,7 +45,7 @@ import { dueForSpot, isClassLead, restDue, updateClass } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
-import { hasHands, recordFailure } from './failures';
+import { handsSave, recordFailure } from './failures';
 import { feel, reviewStars } from './feelings';
 import { decide, goWait, leave, resetGuest } from './guests';
 import { noteFailure, notePriced } from './harms';
@@ -109,7 +109,7 @@ export function stationScore(ctx: SimContext, it: Item, g: Guest) {
 }
 
 /** Staff who will not be seeing anyone for a while: going, or away for days on a course or a house call. */
-const AWAY: readonly StaffState[] = ['leaving', 'toCall', 'away', 'toTrain', 'training'];
+export const AWAY: readonly StaffState[] = ['leaving', 'toCall', 'away', 'toTrain', 'training'];
 
 /**
  * Whether a guest should wait for a colleague trained in their treatment rather than be seen by this member of staff,
@@ -237,6 +237,8 @@ export interface ChanceFactor {
 export interface Chance {
   chance: number;
   problem: DeliveryProblem;
+  /** The terms added up, before they are kept between the least and the most. */
+  raw: number;
   /** The chance had it been delivered properly: the terms added up, kept between the least and the most. */
   proper: number;
   factors: ChanceFactor[];
@@ -306,12 +308,17 @@ export function chanceFactors(ctx: SimContext, it: Item, staff: Staff, g: Guest)
 export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest): Chance {
   const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
   const factors = chanceFactors(ctx, it, staff, g);
-  const proper = clamp(
-    factors.reduce((sum, f) => sum + f.amount, BASE_CHANCE),
-    MIN_CHANCE,
-    MAX_CHANCE,
-  );
-  return { chance: problem ? proper * BOTCH_FACTOR : proper, problem, proper, factors };
+  const raw = factors.reduce((sum, f) => sum + f.amount, BASE_CHANCE);
+  return { ...settledChance(raw, problem), problem, raw, factors };
+}
+
+/**
+ * A chance from its terms added up: kept between the least and the most a treatment can be, then cut by a botch if
+ * something stops it being delivered properly. What the roll uses, and what a failure's reasons are sized by.
+ */
+export function settledChance(raw: number, problem: DeliveryProblem): { chance: number; proper: number } {
+  const proper = clamp(raw, MIN_CHANCE, MAX_CHANCE);
+  return { chance: problem ? proper * BOTCH_FACTOR : proper, proper };
 }
 
 /**
@@ -668,7 +675,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (isTrip(mod)) badTrip(ctx, g, it);
       countVisit(ctx, g, 'failed');
       // why it failed, from the terms the roll used, before the failure's own bad vibes cloud the room
-      noteFailure(ctx, it, staff, g, recordFailure(ctx, it, staff, g, odds, hasHands(staff)));
+      noteFailure(ctx, it, staff, g, recordFailure(ctx, it, staff, g, odds, handsSave(staff)));
       changeRep(ctx, -2.5);
       if (room) addVibes(ctx, room);
       // a thumb down: not the hourglass of a guest about to walk out

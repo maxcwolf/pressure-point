@@ -1095,8 +1095,12 @@ export interface FailedTreatment {
   /** The reason it is counted under: what stopped it being delivered, the biggest thing wrong, or just the odds. */
   cause: string;
   reasons: FailureReason[];
-  /** Healing Hands rolled to save it, and missed. */
-  hands?: boolean;
+  /** The table, machine or mat it was given at. Failures kept before this was noted have none. */
+  itemId?: number;
+  /** The chance Healing Hands had to save it, and missed, if whoever gave it has them. */
+  hands?: number;
+  /** The chance was held at the least or the most a treatment can have. */
+  limit?: 'floor' | 'ceiling';
   /** What to do about it, naming who and where, for a cause that has a fix of its own here. */
   fix?: string;
 }

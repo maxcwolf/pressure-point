@@ -160,6 +160,9 @@ test.describe('in a game', () => {
       const g = pp.state.guests[0]!;
       const st = pp.state.staff.find((x) => x.role === 'therapist')!;
       Object.assign(g, { condition: 'slump', goal: 'leave', state: 'leaving', outcome: 'failed', diagnosis: 1 });
+      // untrained, at the suite's table, so the inspector works out what to do about it
+      st.quals = st.quals.filter((q) => q !== 'swedish');
+      const table = pp.state.items.find((i) => i.type === 'massage_table')!;
       pp.state.failures = [
         {
           day: pp.state.day,
@@ -169,6 +172,7 @@ test.describe('in a game', () => {
           modality: 'swedish',
           staffId: st.id,
           staff: st.name,
+          itemId: table.id,
           place: 'in the Massage Suite',
           chance: 0.19,
           cause: 'unqualified',
@@ -178,8 +182,7 @@ test.describe('in a game', () => {
             { cause: 'tired', text: `${st.name} was worn out`, amount: 0.05 },
             { cause: 'prestige', text: 'The Massage Suite has 2 stars of prestige, not 5', amount: 0.02 },
           ],
-          hands: true,
-          fix: `Send ${st.name} on the Swedish massage course in a Training Room, or post a Massage Therapist trained in it to the Massage Suite.`,
+          hands: 1 / 3,
         },
       ];
       pp.tools.select({ kind: 'guest', id: g.id });
@@ -482,9 +485,6 @@ test.describe('in a game', () => {
         chance,
         cause,
         reasons: [{ cause: cause === 'odds' ? 'prestige' : cause, text, amount }],
-        ...(cause === 'unqualified' && {
-          fix: 'Send Staff on the Deep Tissue massage course in a Training Room, or post a Massage Therapist trained in it to the Massage Suite.',
-        }),
       });
       pp.state.failures = [
         failed('deep', 'unqualified', 'Not trained', 0.42, 0.22),

@@ -2,15 +2,33 @@
 // used (`successChance` in stations.ts), not worked out again afterwards, and the latest failures are kept for the
 // casebook.
 
-import { conditionOf, IDEAL_TEMP, ITEMS, MODALITIES, modalityLabel, ROLES, traitMost, UPGRADE_LEVELS } from '../data';
+import {
+  conditionOf,
+  IDEAL_TEMP,
+  ITEMS,
+  MODALITIES,
+  type Modality,
+  modalityLabel,
+  ROLES,
+  traitMost,
+  UPGRADE_LEVELS,
+} from '../data';
 import { an } from '../format';
 import type { FailedTreatment, FailureReason, Guest, Item, Room, Staff } from '../state/types';
 import { prestige } from './ambience';
-import { roomLabels } from './assignments';
+import { roomLabels, worksIn } from './assignments';
 import { rankName } from './careers';
 import type { SimContext } from './context';
 import { toast } from './events';
-import type { Chance, ChanceCause } from './stations';
+import {
+  AWAY,
+  type Chance,
+  type ChanceCause,
+  type ChanceFactor,
+  MAX_CHANCE,
+  MIN_CHANCE,
+  settledChance,
+} from './stations';
 import type { DeliveryProblem } from './treatments';
 import { warmthAt } from './warmth';
 
@@ -21,6 +39,8 @@ export const FAILURES_KEPT = 30;
 export const NAMED_COST = 0.05;
 /** Below this, it is too small to list at all. */
 export const LISTED_COST = 0.02;
+/** Room for rounding in a sum, so a term of exactly `NAMED_COST` or `LISTED_COST` counts at its size. */
+const EPSILON = 1e-9;
 
 /**
  * The shortfalls every treatment has against the best there could be, rather than something going wrong: the hands
@@ -32,19 +52,32 @@ const SHORTFALLS: ReadonlySet<string> = new Set(['skill', 'diagnosis', 'prestige
 /** A share of a chance as a whole percentage: "15%". */
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
+/** Where a chance sat against the least and the most a treatment can have, if it was held at either. */
+export function chanceLimit(c: Pick<Chance, 'raw'>): FailedTreatment['limit'] {
+  if (c.raw >= MAX_CHANCE) return 'ceiling';
+  return c.raw < MIN_CHANCE ? 'floor' : undefined;
+}
+
 /**
- * What took off a treatment's chance of working, biggest first, each with what it took off the chance that was rolled:
- * what stopped it being delivered properly, if anything did, then each term that went against it or fell short of its
- * best. A botch cuts the whole chance, so what the terms took off is cut with it.
+ * What took off a treatment's chance of working, biggest first, each sized by how much the chance that was rolled
+ * would have risen with that one thing put right and the rest as they were: what stopped it being delivered properly,
+ * if anything did, then each term that went against it or fell short of its best. So a botch cuts what the terms took
+ * off with it, and nothing counts for more than the least and the most a chance can be allow: at the most, a shortfall
+ * takes off nothing. A chance held at the least by several things at once, none of which alone would lift it, lists
+ * each by what it took off the terms instead.
  */
 export function failureReasons(ctx: SimContext, it: Item, staff: Staff, g: Guest, c: Chance): FailureReason[] {
   const words = wordsFor(ctx, it, staff, g);
   const reasons: FailureReason[] = [];
   if (c.problem) reasons.push({ cause: c.problem, text: words(c.problem), amount: c.proper - c.chance });
+  /** The chance with one term put at its best, or taken away. */
+  const without = (f: ChanceFactor) => settledChance(c.raw - f.amount + (f.best ?? 0), c.problem).chance;
+  const terms = c.factors.map((f) => ({ f, solo: without(f) - c.chance }));
+  const held = chanceLimit(c) === 'floor' && terms.every((t) => t.solo < LISTED_COST);
   const scale = c.proper > 0 ? c.chance / c.proper : 1;
-  for (const f of c.factors) {
-    const amount = ((f.best ?? 0) - f.amount) * scale;
-    if (amount >= LISTED_COST) reasons.push({ cause: f.cause, text: words(f.cause), amount });
+  for (const { f, solo } of terms) {
+    const amount = held ? ((f.best ?? 0) - f.amount) * scale : solo;
+    if (amount >= LISTED_COST - EPSILON) reasons.push({ cause: f.cause, text: words(f.cause), amount });
   }
   return reasons.sort((a, b) => b.amount - a.amount);
 }
@@ -52,7 +85,7 @@ export function failureReasons(ctx: SimContext, it: Item, staff: Staff, g: Guest
 /** Why a treatment failed, in a word: what stopped it being delivered, the biggest thing wrong, or just the odds. */
 export function failureCause(problem: DeliveryProblem, reasons: readonly FailureReason[]): string {
   if (problem) return problem;
-  return reasons.find((r) => !SHORTFALLS.has(r.cause) && r.amount >= NAMED_COST)?.cause ?? 'odds';
+  return reasons.find((r) => !SHORTFALLS.has(r.cause) && r.amount >= NAMED_COST - EPSILON)?.cause ?? 'odds';
 }
 
 /**
@@ -61,23 +94,32 @@ export function failureCause(problem: DeliveryProblem, reasons: readonly Failure
  */
 export function namedReasons(f: Pick<FailedTreatment, 'cause' | 'reasons'>): FailureReason[] {
   const main = f.reasons.filter((r) => r.cause === f.cause);
-  const more = f.reasons.filter((r) => r.cause !== f.cause && !SHORTFALLS.has(r.cause) && r.amount >= NAMED_COST);
+  const more = f.reasons.filter(
+    (r) => r.cause !== f.cause && !SHORTFALLS.has(r.cause) && r.amount >= NAMED_COST - EPSILON,
+  );
   return [...main, ...more];
 }
 
 /** A reason in words, with what it took off: "Priya was worn out (−15%)". */
 export const reasonText = (r: FailureReason) => `${r.text} (−${pct(r.amount)})`;
 
+/** How often a treatment fails at the chance it had, Healing Hands' save taken into account. */
+export const failRate = (f: Pick<FailedTreatment, 'chance' | 'hands'>) => (1 - f.chance) * (1 - (f.hands ?? 0));
+
 /**
  * A failed treatment in a sentence, for the message that says so: which treatment, for whom, where and its chance,
- * then the two biggest reasons, or bad luck if nothing much was wrong.
+ * then the two biggest reasons, or bad luck if nothing much was wrong, and what to do about it where that is plain.
+ * At the most a chance can be, there is nothing to do: no treatment is surer.
  */
 export function failureText(f: FailedTreatment): string {
   const head = `${modalityLabel(f.modality)} failed for ${f.guest} ${f.place}, at ${pct(f.chance)}`;
   const named = namedReasons(f).slice(0, 2);
+  const rate = pct(failRate(f));
   const why = named.length
-    ? named.map(reasonText).join('; ')
-    : `bad luck, which comes ${pct(1 - f.chance)} of the time${f.reasons[0] ? `. Biggest shortfall: ${reasonText(f.reasons[0])}` : ''}`;
+    ? `${named.map(reasonText).join('; ')}${f.limit === 'floor' ? `, which together held it at the least any treatment has, ${pct(MIN_CHANCE)}` : ''}`
+    : f.limit === 'ceiling'
+      ? `bad luck, a ${rate} chance any treatment fails, however well it’s set up`
+      : `bad luck, which comes ${rate} of the time${f.reasons[0] ? `. Biggest shortfall: ${reasonText(f.reasons[0])}` : ''}`;
   return `${head}: ${why}.${f.hands ? ` ${f.staff}’s Healing Hands could not save it.` : ''}${f.fix ? ` ${f.fix}` : ''}`;
 }
 
@@ -85,25 +127,46 @@ export function failureText(f: FailedTreatment): string {
 const roomLabel = (ctx: SimContext, room: Room) => roomLabels(ctx.s.rooms).get(room.id) ?? room.type;
 
 /**
- * What to do about a treatment that failed in untrained hands, naming the room: a specialty item or machine there
- * brings guests for its technique, so post someone trained in it there (a colleague by name, if there is one), or send
- * whoever gave it on the course. Without one, the course comes first.
+ * What to do about a treatment that failed in untrained hands, naming the room. A specialty item or machine there brings
+ * guests for its technique. A colleague in the same role who is trained in it, at work and the least busy elsewhere,
+ * can take them: if they already work in that room, keep whoever gave it out of it; if not, assign them to it. Both are
+ * done from the inspector. Without such a colleague, the course comes first.
  */
-export function untrainedFix(ctx: SimContext, it: Item, staff: Staff, g: Guest): string | undefined {
+export function untrainedFix(ctx: SimContext, it: Item, staff: Staff, modality: Modality): string | undefined {
   const room = ctx.world.roomOfItem(it);
   if (!room) return undefined;
-  const mod = MODALITIES[conditionOf(g.condition).modality];
   const where = `the ${roomLabel(ctx, room)}`;
-  const technique = modalityLabel(mod.id);
-  const colleague = ctx.s.staff.find(
-    (t) => t.id !== staff.id && t.role === staff.role && t.state !== 'leaving' && t.quals.includes(mod.id),
-  );
-  const who = colleague ? `${colleague.name}, who is trained in it,` : `${an(ROLES[staff.role].name)} trained in it`;
-  const machine = ITEMS[it.type].machine?.performs.includes(mod.id);
-  const kit = machine ? ITEMS[it.type].name : mod.equipment ? ITEMS[mod.equipment].name : '';
-  return kit
-    ? `The ${kit} in ${where} brings ${technique} guests, so post ${who} to ${where}, or send ${staff.name} on the course.`
-    : `Send ${staff.name} on the ${technique} course in a Training Room, or post ${who} to ${where}.`;
+  const technique = modalityLabel(modality);
+  /** Whether a colleague is seeing someone at a station in another room. */
+  const busyElsewhere = (t: Staff) => {
+    const post = ctx.world.item(t.post);
+    return post?.serving && ctx.world.roomOfItem(post) !== room ? 1 : 0;
+  };
+  const colleague = ctx.s.staff
+    .filter((t) => t.id !== staff.id && t.role === staff.role && !AWAY.includes(t.state) && t.quals.includes(modality))
+    .sort((a, b) => busyElsewhere(a) - busyElsewhere(b))[0];
+  const machine = ITEMS[it.type].machine?.performs.includes(modality);
+  const equipment = MODALITIES[modality].equipment;
+  const kit = machine ? ITEMS[it.type].name : equipment ? ITEMS[equipment].name : '';
+  const lead = kit ? `The ${kit} in ${where} brings ${technique} guests. ` : '';
+  const course = `send ${staff.name} on the ${technique} course`;
+  if (colleague && worksIn(colleague.rooms, room.id))
+    return `${lead}${colleague.name}, who is trained in it, already works there: assign ${staff.name} to other rooms from their inspector, or ${course}.`;
+  if (colleague)
+    return `${lead}${colleague.name} is trained in it: assign them to ${where} from their inspector, or ${course}.`;
+  return `${lead}Nobody else at work is trained in it: ${course} in a Training Room, or hire ${an(ROLES[staff.role].name)} who is.`;
+}
+
+/**
+ * What to do about a failed treatment now, worked out afresh from what stands and who works here: for untrained hands
+ * that are still untrained, at a table that still stands. Nothing once it no longer applies.
+ */
+export function currentFix(ctx: SimContext, f: FailedTreatment): string | undefined {
+  if (f.cause !== 'unqualified' || f.itemId === undefined) return undefined;
+  const it = ctx.world.item(f.itemId);
+  const staff = ctx.s.staff.find((t) => t.id === f.staffId && t.state !== 'leaving');
+  if (!it || !staff || staff.quals.includes(f.modality)) return undefined;
+  return untrainedFix(ctx, it, staff, f.modality);
 }
 
 /**
@@ -116,13 +179,14 @@ export function recordFailure(
   staff: Staff,
   g: Guest,
   c: Chance,
-  hands: boolean,
+  hands: number,
 ): FailedTreatment {
   const reasons = failureReasons(ctx, it, staff, g, c);
   const room = ctx.world.roomOfItem(it);
   const modality = conditionOf(g.condition).modality;
   const cause = failureCause(c.problem, reasons);
-  const fix = cause === 'unqualified' ? untrainedFix(ctx, it, staff, g) : undefined;
+  const fix = cause === 'unqualified' ? untrainedFix(ctx, it, staff, modality) : undefined;
+  const limit = chanceLimit(c);
   const f: FailedTreatment = {
     day: ctx.s.day,
     guestId: g.id,
@@ -131,11 +195,13 @@ export function recordFailure(
     modality,
     staffId: staff.id,
     staff: staff.name,
+    itemId: it.id,
     place: room ? `in the ${roomLabel(ctx, room)}` : `at the ${ITEMS[it.type].name}`,
     chance: c.chance,
     cause,
     reasons,
-    ...(hands && { hands }),
+    ...(hands > 0 && { hands }),
+    ...(limit && { limit }),
     ...(fix && { fix }),
   };
   const kept = (ctx.s.failures ??= []);
@@ -145,8 +211,8 @@ export function recordFailure(
   return f;
 }
 
-/** Whether a member of staff has Healing Hands, which roll to save a treatment that failed. */
-export const hasHands = (st: Staff) => traitMost(st.traits, 'rescue') > 0;
+/** The chance a member of staff's Healing Hands save a treatment that failed: none without them. */
+export const handsSave = (st: Staff) => traitMost(st.traits, 'rescue');
 
 /** The latest failed treatment a guest had, if they had one. */
 export function failureOf(failures: readonly FailedTreatment[] | undefined, guestId: number) {
@@ -189,7 +255,7 @@ function wordsFor(ctx: SimContext, it: Item, staff: Staff, g: Guest): (cause: Ch
       case 'tired':
         return `${staff.name} was worn out`;
       case 'worse':
-        return `${g.name} had got worse while waiting`;
+        return `${g.name} had gotten worse while waiting`;
       case 'vibes':
         return `Bad vibes in the ${roomName}`;
       case 'noise':

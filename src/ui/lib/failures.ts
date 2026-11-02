@@ -2,9 +2,13 @@
 // causes and what helps.
 
 import { type Modality, modalityLabel } from '../../core/data';
-import { NAMED_COST } from '../../core/sim/failures';
+import { failRate, NAMED_COST } from '../../core/sim/failures';
+import { MAX_CHANCE } from '../../core/sim/stations';
 import type { FailedTreatment, FailureReason } from '../../core/state/types';
 import { percent } from './chance';
+
+/** What helps when every failure was at the most any treatment can be: nothing. */
+const CEILING_FIX = `Nothing to fix: no treatment is surer than ${percent(MAX_CHANCE)}`;
 
 /** A reason a treatment failed, in a few words, for the breakdown. */
 const CAUSE_NAMES: Readonly<Record<string, string>> = {
@@ -75,7 +79,14 @@ export function failureLines(f: FailedTreatment): { text: string; amount: string
   ];
   const lines = ordered.slice(0, 4).map((r) => ({ text: r.text, amount: minus(r.amount), main: r.cause === f.cause }));
   if (f.cause === 'odds')
-    lines.unshift({ text: `Bad luck: it fails ${percent(1 - f.chance)} of the time`, amount: '', main: true });
+    lines.unshift({
+      text:
+        f.limit === 'ceiling'
+          ? `Bad luck: no treatment is surer than ${percent(MAX_CHANCE)}, so ${percent(failRate(f))} fail however well they’re set up`
+          : `Bad luck: it fails ${percent(failRate(f))} of the time`,
+      amount: '',
+      main: true,
+    });
   return lines;
 }
 
@@ -90,10 +101,14 @@ export interface TechniqueFailures {
 /**
  * The latest failed treatments, technique by technique, those that failed most first: each with its causes, the most
  * common first, and the fix for the commonest. The size of a cause is what it took off on average when it was the
- * reason; for bad luck it is the chance that was missed. A run of bad luck points to the biggest shortfall instead, and
- * untrained hands to the room and the colleague to post there, as the latest such failure put it.
+ * reason; for bad luck it is the chance that was missed. A run of bad luck points to the biggest shortfall instead, or
+ * to nothing at all when every one was at the most any treatment can be. A cause with a fix of its own here, such as
+ * untrained hands, takes it from `fixOf`, worked out from how things stand now for the latest such failure.
  */
-export function failureBreakdown(failures: readonly FailedTreatment[]): TechniqueFailures[] {
+export function failureBreakdown(
+  failures: readonly FailedTreatment[],
+  fixOf: (f: FailedTreatment) => string | undefined = () => undefined,
+): TechniqueFailures[] {
   const by = new Map<Modality, FailedTreatment[]>();
   for (const f of failures) by.set(f.modality, [...(by.get(f.modality) ?? []), f]);
   const rows = [...by].map(([modality, list]): TechniqueFailures => {
@@ -108,14 +123,16 @@ export function failureBreakdown(failures: readonly FailedTreatment[]): Techniqu
       .map(([cause, c]) => ({ cause, count: c.count, amount: c.total / c.count }))
       .sort((a, b) => b.count - a.count || b.amount - a.amount);
     const top = ranked[0]?.cause ?? 'odds';
-    // the latest failure for that cause that says what to do here, naming who and where, says it best
-    const own = list.filter((f) => f.cause === top && f.fix).at(-1)?.fix;
-    return {
-      modality,
-      count: list.length,
-      causes: ranked,
-      fix: own ?? fixFor(top === 'odds' ? biggestShortfall(list) : top),
-    };
+    const latest = list.filter((f) => f.cause === top).at(-1);
+    const own = latest && fixOf(latest);
+    const lucky = list.filter((f) => f.cause === 'odds');
+    const fix =
+      top !== 'odds'
+        ? (own ?? fixFor(top))
+        : lucky.every((f) => f.limit === 'ceiling')
+          ? CEILING_FIX
+          : fixFor(biggestShortfall(list));
+    return { modality, count: list.length, causes: ranked, fix };
   });
   return rows.sort((a, b) => b.count - a.count);
 }
