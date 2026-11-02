@@ -189,7 +189,7 @@ export function douse(ctx: SimContext, st: Staff, it: Item) {
 }
 
 /**
- * A fire on one item goes out: what burnt stays broken until a Caretaker repairs it, with soot on the floor beside it.
+ * A fire on one item goes out: what burned stays broken until a Caretaker repairs it, with soot on the floor beside it.
  * Once the last of a room's fire is out, the toast says so, how, and what is left to see to.
  */
 export function putOut(ctx: SimContext, b: Blaze, how: PutOut, by?: Staff) {
@@ -211,7 +211,7 @@ export function putOut(ctx: SimContext, b: Blaze, how: PutOut, by?: Staff) {
   // the sprinklers say what they did themselves, and a room with more still burning is not done yet
   if (how === 'sprinklers' || (room && ctx.world.burning(room))) return;
   const burnt = room ? s.items.filter((o) => o.burnt && ctx.world.zoneAt(o.x, o.y) === room.id).length : 1;
-  const left = `${burnt === 1 ? 'What burnt is' : `${burnt} things burnt are`} broken until a Caretaker repairs ${burnt === 1 ? 'it' : 'them'}.`;
+  const left = `${burnt === 1 ? 'What burned is' : `${burnt} things that burned are`} broken until a Caretaker repairs ${burnt === 1 ? 'it' : 'them'}.`;
   const what = room ? `The fire${where(room)}` : `The fire on the ${ITEMS[it.type].name}`;
   const done: Record<PutOut, string> = {
     extinguisher: `${what} is out: ${by?.name ?? 'a Caretaker'} put it out with the Fire Extinguisher by the door.`,

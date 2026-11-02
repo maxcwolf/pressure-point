@@ -564,7 +564,7 @@ export interface Brigade {
 export type PutOut = 'extinguisher' | 'beaten' | 'sprinklers' | 'brigade';
 
 /**
- * A fire, from the first thing that caught until the last of it was out: what caught first, how many things burnt, how
+ * A fire, from the first thing that caught until the last of it was out: what caught first, how many things burned, how
  * the last of it was put out, and what the fire brigade charged for it.
  */
 export interface FireReport {
@@ -1191,9 +1191,9 @@ export interface NewsItem {
   role?: Role;
   room?: RoomType;
   item?: ItemType;
-  /** A count: things burnt, problems found, cases healed, guests still stressed, days waited, the star or the year. */
+  /** A count: things burned, problems found, cases healed, guests still stressed, days waited, the star or the year. */
   n?: number;
-  /** How many rooms a visitor looked round. */
+  /** How many rooms a visitor looked around. */
   rooms?: number;
   /** What `n` was out of: an emergency's target. */
   of?: number;
