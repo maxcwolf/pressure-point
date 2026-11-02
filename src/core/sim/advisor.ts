@@ -1,6 +1,6 @@
 // The advisor: the next thing worth telling the player, and announcements over the speakers.
 
-import type { Role } from '../data';
+import type { Discipline, Modality, Role } from '../data';
 import {
   ANNOUNCEMENTS,
   conditionOf,
@@ -23,12 +23,13 @@ import {
   STONE_USE,
   WORSE_REP,
 } from '../data';
-import { an, article, money } from '../format';
+import { an, article, listed, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { featureOn, offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
+import { roomFor } from './careers';
 import type { SimContext } from './context';
 import { capacity, demand, machineDemand, unfedStations } from './demand';
 import {
@@ -250,14 +251,16 @@ function nudge(ctx: SimContext): string | Advice {
   if (risk) return risk;
   const unfed = unfedAdvice(ctx);
   if (unfed) return unfed;
-  const wanted = untrainedAdvice(ctx);
-  if (wanted) return wanted;
   if (s.guests.length > 4 && !s.items.some((i) => i.type === 'bench'))
     return 'Standing guests lose patience quickly. Put some Benches in the corridors.';
   if (s.guests.some((g) => g.thirst > 85) && !hasItem(ctx, 'tea_station'))
     return 'Guests are parched. A Herbal Tea Station would help, and it earns a little too.';
-  if (allStars(ctx)) return 'Three stars! Every treatment is open to you. Keep the guests coming back.';
-  return 'Looking good. Keep an eye on the objectives to earn your next star.';
+  // with nothing more pressing, which guests stay away for want of training, after the all-clear rather than in place of it
+  const done = allStars(ctx)
+    ? 'Three stars! Every treatment is open to you. Keep the guests coming back.'
+    : 'Looking good. Keep an eye on the objectives to earn your next star.';
+  const wanted = untrainedAdvice(ctx);
+  return wanted ? `${done} ${wanted}` : done;
 }
 
 /**
@@ -536,31 +539,44 @@ export function comfortAdvice(ctx: SimContext): string | Advice {
 
 /**
  * Nudge about techniques guests would come for if anyone here were trained in them, and nobody is learning yet: they
- * stay away until someone is. A discipline with nobody in its role at all is for the guests panel to say.
+ * stay away until someone is. One that someone trained in is only away from for now is left out, as is a discipline
+ * with nobody in its role at all, which is for the guests panel to say.
  */
 export function untrainedAdvice(ctx: SimContext): string {
   const s = ctx.s;
-  /** Whether someone is on the course for a technique already. */
-  const learning = (m: string) => s.staff.some((st) => st.training?.course === m);
-  /** The words for sending someone on a course, with a Training Room first if there is none. */
-  const course = (role: string) =>
-    hasRoom(ctx, 'training')
-      ? `Send ${an(role)} on the course`
-      : `Build a Training Room and send ${an(role)} on the course`;
+  /** Whether someone is on the course for a technique, or knows it and is only away for now. */
+  const coming = (m: Modality) =>
+    s.staff.some((st) => st.training?.course === m || (st.state !== 'leaving' && st.quals.includes(m)));
   for (const row of demand(ctx)) {
-    const wanted = row.untrained.filter((m) => !learning(m));
+    const wanted = row.untrained.filter((m) => !coming(m));
     if (!row.trained || !wanted.length) continue;
-    const list = wanted.slice(0, 2).map(modalityLabel).join(' and ');
-    const role = ROLES[DISCIPLINES[row.discipline].role].name;
-    return `Guests needing ${list} stay away while nobody here is trained in ${wanted.length === 1 ? 'it' : 'them'}. ${course(role)} to bring them in.`;
+    const them = wanted.length === 1 ? 'it' : 'them';
+    const why = `Guests needing ${listed(wanted.map(modalityLabel))} stay away while nobody here is trained in ${them}.`;
+    return trainingTip(ctx, row.discipline, wanted, why);
   }
   for (const m of machineDemand(ctx)) {
-    const performs = m.conditions.map((w) => w.condition.modality).filter((x) => !learning(x));
-    if (!m.fed || m.trained || !performs.length) continue;
-    const role = ROLES[DISCIPLINES[ITEMS[m.machine].station?.discipline ?? 'massage'].role].name;
-    return `The ${ITEMS[m.machine].name} draws no guests while nobody here is trained to run it. ${course(role)} to bring them in.`;
+    const wanted = [...new Set(m.conditions.map((w) => w.condition.modality))].filter((x) => !coming(x));
+    if (!m.fed || m.trained || !wanted.length) continue;
+    const why = `The ${ITEMS[m.machine].name} draws no guests while nobody here is trained to run it.`;
+    return trainingTip(ctx, ITEMS[m.machine].station?.discipline ?? 'massage', wanted, why);
   }
   return '';
+}
+
+/**
+ * What to do about techniques of a discipline nobody here is trained in, after why it matters: send someone on the
+ * courses, with a Training Room first if there is none, or, with every qualification slot in the role full, wait for a
+ * promotion.
+ */
+function trainingTip(ctx: SimContext, d: Discipline, wanted: Modality[], why: string): string {
+  const role = ROLES[DISCIPLINES[d].role];
+  const staff = ctx.s.staff.filter((st) => st.role === role.role && st.state !== 'leaving');
+  if (!staff.some((st) => wanted.some((m) => roomFor(st, m))))
+    return `${why} Every ${role.name}'s qualification slots are full: a promotion brings another.`;
+  const send = wanted.length === 1 ? `send ${an(role.name)} on the course` : `send ${role.name}s on the courses`;
+  return hasRoom(ctx, 'training')
+    ? `${why} ${send.charAt(0).toUpperCase()}${send.slice(1)} to bring them in.`
+    : `${why} Build a Training Room and ${send} to bring them in.`;
 }
 
 /** Nudge about modalities guests are waiting for that the center cannot deliver. */

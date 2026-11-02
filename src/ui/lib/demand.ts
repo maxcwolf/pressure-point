@@ -13,7 +13,7 @@ import {
   ROOMS,
 } from '../../core/data';
 import type { Discipline, ItemType } from '../../core/data/types';
-import { an } from '../../core/format';
+import { an, listed } from '../../core/format';
 import type { Capacity, DisciplineDemand, MachineDemand } from '../../core/sim/demand';
 import { type ArrivalPace, fedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
@@ -91,20 +91,35 @@ export function lineWord(row: DisciplineDemand): string {
  */
 export function demandAdvice(row: DisciplineDemand): string | null {
   const name = DISCIPLINES[row.discipline].name;
+  if (!row.trained && !row.away.length)
+    return `Guests come for ${name.toLowerCase()} only once someone here can give it. ${an(ROLES[DISCIPLINES[row.discipline].role].name, true)} would bring them.`;
   if (row.line.factor < 0.99)
     return `The line for ${name.toLowerCase()} is putting new guests off: ${lineWord(row)}. Nobody minds until more than three wait for each, and those put off do not come at all. Another room and practitioner, or quicker treatment, would bring them back.`;
-  if (!row.trained)
-    return `Guests come for ${name.toLowerCase()} only once someone here can give it. ${an(ROLES[DISCIPLINES[row.discipline].role].name, true)} would bring them.`;
-  if (row.untrained.length) {
-    const list = row.untrained.slice(0, 3).map(modalityLabel).join(', ');
-    const them = row.untrained.length === 1 ? 'it' : 'them';
-    return `Guests needing ${list} stay away while nobody is trained in ${them}. Courses in a Training Room bring them in.`;
-  }
+  if (row.untrained.length) return untrainedWord(row);
+
   if (row.following < 30)
     return `Few have heard of ${name.toLowerCase()} here yet. Every guest healed spreads the word, and every failure sets it back.`;
   if (row.room.pull < 1.5)
     return `A finer, quieter ${ROOMS[DISCIPLINES[row.discipline].room].name} would draw more: decor, windows, room to spare and less noise.`;
   return null;
+}
+
+/**
+ * Which guests stay away for want of training, and why: nobody here trained in what they need, or the one who is away
+ * on a course or a house call for now.
+ */
+function untrainedWord(row: DisciplineDemand): string {
+  const missing = row.untrained.filter((m) => !row.away.some((a) => a.modality === m));
+  const parts: string[] = [];
+  if (missing.length)
+    parts.push(
+      `Guests needing ${listed(missing.map(modalityLabel))} stay away while nobody is trained in ${missing.length === 1 ? 'it' : 'them'}. ${missing.length === 1 ? 'A course' : 'Courses'} in a Training Room bring${missing.length === 1 ? 's' : ''} them in.`,
+    );
+  for (const a of row.away)
+    parts.push(
+      `Guests needing ${modalityLabel(a.modality)} stay away while ${a.name} is ${a.on === 'course' ? 'on a course' : 'out on a house call'}.`,
+    );
+  return parts.join(' ');
 }
 
 /** A count of things as it reads: "1 station", "6 stations". */

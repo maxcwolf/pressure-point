@@ -14,10 +14,12 @@ import {
   GUEST_CAP,
   LINE_PUT_OFF,
   MODALITIES,
+  modalityLabel,
 } from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
 import { unfedAdvice, untrainedAdvice } from '../../src/core/sim/advisor';
 import { makeCall } from '../../src/core/sim/calls';
+import { slotFree } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
 import {
   capacity,
@@ -209,7 +211,7 @@ describe('what nobody here is trained in', () => {
     const c = twoRooms();
     c.therapist.quals = [DISCIPLINES.massage.base];
     expect(untrainedAdvice(c.ctx)).toMatch(
-      /^Guests needing .+ stay away while nobody here is trained in (it|them)\. Build a Training Room and send a Massage Therapist on the course to bring them in\.$/,
+      /^Guests needing .+ and .+ stay away while nobody here is trained in them\. Build a Training Room and send Massage Therapists on the courses to bring them in\.$/,
     );
     // nothing to say once everyone is trained, or the training is under way
     c.therapist.quals = modsOf('massage');
@@ -218,9 +220,61 @@ describe('what nobody here is trained in', () => {
     const [learning] = row(c.sim.demand(), 'massage')?.untrained ?? [];
     if (!learning) throw new Error('nothing to learn');
     c.therapist.quals = modsOf('massage').filter((m) => m !== learning);
+    // an Expert, with room for every treatment of their own
+    c.therapist.skill = 5;
     expect(untrainedAdvice(c.ctx)).not.toBe('');
+    expect(untrainedAdvice(c.ctx)).toMatch(
+      /^Guests needing .+ stay away while nobody here is trained in it\. .+ on the course to/,
+    );
     c.therapist.training = { course: learning, progress: 0, seconds: 600, cost: 0 };
     expect(untrainedAdvice(c.ctx)).toBe('');
+  });
+
+  it('says a promotion would help when nobody in the role has a qualification slot free', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    // a first rank, its one slot taken by a general course
+    c.therapist.skill = 1;
+    c.therapist.general = ['smudging'];
+    expect(slotFree(c.therapist)).toBe(false);
+    expect(untrainedAdvice(c.ctx)).toMatch(
+      /stay away while nobody here is trained in them\. Every Massage Therapist's qualification slots are full: a promotion brings another\.$/,
+    );
+  });
+
+  it('counts only staff at work: someone away on a course or a house call cannot give it today', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    const [missing] = row(c.sim.demand(), 'massage')?.untrained ?? [];
+    if (!missing) throw new Error('nothing missing');
+    const colleague = hire(c.sim, 'therapist');
+    colleague.quals = [DISCIPLINES.massage.base, missing];
+    expect(row(c.sim.demand(), 'massage')?.untrained).not.toContain(missing);
+    /** The techniques of the conditions chosen over a grid of rolls. */
+    const chosen = () => {
+      const seen = new Set<Modality>();
+      for (let i = 0; i <= 30; i++)
+        for (let j = 0; j <= 30; j++) seen.add(conditionOf(chooseCondition(c.ctx, i / 30, j / 30)).modality);
+      return seen;
+    };
+    for (const [state, on, where] of [
+      ['training', 'course', 'on a course'],
+      ['away', 'call', 'out on a house call'],
+    ] as const) {
+      colleague.state = state;
+      const massage = row(c.sim.demand(), 'massage');
+      expect(massage?.untrained).toContain(missing);
+      expect(massage?.away).toContainEqual({ modality: missing, name: colleague.name, on });
+      expect(chosen()).not.toContain(missing);
+      if (massage) expect(demandAdvice(massage)).toContain(`stay away while ${colleague.name} is ${where}.`);
+      // they are coming back, so there is nothing to train
+      expect(untrainedAdvice(c.ctx)).not.toContain(modalityLabel(missing));
+    }
+    // on a break, or idle between guests, they are still here to give it
+    for (const state of ['onBreak', 'idle'] as const) {
+      colleague.state = state;
+      expect(row(c.sim.demand(), 'massage')?.untrained).not.toContain(missing);
+    }
   });
 
   it('never has a house call ask for a technique nobody here is trained in', () => {
@@ -614,6 +668,7 @@ describe('the Guests panel', () => {
     trained: 3,
     training: 1,
     untrained: [],
+    away: [],
     line: { waiting: 0, places: 1, factor: 1 },
     flavour: 1,
     pull: 1.8,
@@ -644,7 +699,9 @@ describe('the Guests panel', () => {
     expect(demandAdvice({ ...base, untrained: ['forks'], trained: 2 })).toMatch(
       /^Guests needing Tuning Forks stay away while nobody is trained in it\./,
     );
-    expect(demandAdvice({ ...base, untrained: ['sound', 'forks'], trained: 0, training: 0 })).toBe(
+    // nobody to give it comes before a long line, which a practitioner leaving can leave behind
+    const left = { waiting: 6, places: 0, factor: 0.8 };
+    expect(demandAdvice({ ...base, untrained: ['sound', 'forks'], trained: 0, training: 0, line: left })).toBe(
       'Guests come for sound healing only once someone here can give it. A Sound Healer would bring them.',
     );
     expect(demandAdvice({ ...base, following: 10 })).toMatch(/^Few have heard of sound healing here yet/);

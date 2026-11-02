@@ -1,7 +1,7 @@
 // Which discipline a guest comes for. Each discipline the center offers pulls by how popular it is, the following it
 // has built up, the finest room it has and how much of it the staff can do; the guest picks one by that pull, and then
-// a condition within it, the center's local favourites more often. Nobody comes for a condition nobody on the payroll
-// is trained to treat.
+// a condition within it, the center's local favorites more often. Nobody comes for a condition nobody at work here is
+// trained to treat.
 
 import {
   CAPACITY_ARRIVALS,
@@ -105,11 +105,13 @@ export interface DisciplineDemand {
   conditions: number;
   trained: number;
   /**
-   * How its training holds it back, as a multiplier: the share of those conditions someone is trained for, since nobody
-   * comes for the rest. And the techniques guests would come for if someone were trained in them.
+   * How its training holds it back, as a multiplier: the share of those conditions someone at work is trained for, since
+   * nobody comes for the rest. And the techniques guests would come for if someone at work were trained in them, and of
+   * those, the ones someone trained in is only away for now, on a course or a house call.
    */
   training: number;
   untrained: Modality[];
+  away: Away[];
   /** How the center's local favourites and any campaign lift it, as a multiplier. */
   flavour: number;
   /** Its line for treatment: guests waiting, how many they wait for, and how it puts new guests off, as a multiplier. */
@@ -117,6 +119,13 @@ export interface DisciplineDemand {
   /** Its pull altogether, and its share of new guests. */
   pull: number;
   share: number;
+}
+
+/** A technique guests stay away from while the one trained in it is away: who, and where. */
+export interface Away {
+  modality: Modality;
+  name: string;
+  on: 'course' | 'call';
 }
 
 /** A discipline's line for treatment, as a new guest hears of it. */
@@ -160,9 +169,10 @@ function lineFor(ctx: SimContext, d: Discipline, cap: Capacity): Line {
 }
 
 /**
- * A condition guests could come with now: how much the center's local favourites and any campaign draw them to it,
- * whether someone on the payroll is trained to treat it, and so how often they come with it against the rest of its
- * discipline: not at all while nobody is.
+ * A condition guests could come with now: how much the center's local favorites and any campaign draw them to it,
+ * whether someone at work here is trained to treat it, and so how often they come with it against the rest of its
+ * discipline: not at all while nobody is. Someone away on a course or a house call is not here to give it; someone on
+ * a break or off shift is.
  */
 export interface Weighted {
   condition: ConditionDef;
@@ -184,7 +194,7 @@ export function sentFor(ctx: SimContext, m: Modality): boolean {
 
 /** Some conditions guests could come with now, each with its weight against the others. */
 function weighed(ctx: SimContext, conditions: readonly ConditionDef[]): Weighted[] {
-  const staff = ctx.s.staff.filter((x) => x.state !== 'leaving');
+  const staff = ctx.s.staff.filter(atWork);
   const local = centerOf(ctx.s).conditions ?? {};
   return conditions
     .filter((c) => conditionHere(c, ctx.s.center) && sentFor(ctx, c.modality))
@@ -196,7 +206,7 @@ function weighed(ctx: SimContext, conditions: readonly ConditionDef[]): Weighted
 }
 
 /**
- * How training holds some conditions back, and how the local favourites and any campaign lift them, as multipliers whose
+ * How training holds some conditions back, and how the local favorites and any campaign lift them, as multipliers whose
  * product is their mean weight: the share someone is trained for, and the mean appeal of those, or of all while none is.
  */
 function trainedFor(conditions: readonly Weighted[]): { trained: number; training: number; flavour: number } {
@@ -234,6 +244,12 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
     const { trained, training, flavour } = trainedFor(mine);
     const untrained = [...new Set(mine.filter((w) => !w.trained).map((w) => w.condition.modality))];
     const line = lineFor(ctx, d, cap);
+    const away = untrained.flatMap((m): Away[] => {
+      const st = ctx.s.staff.find((x) => x.state !== 'leaving' && !atWork(x) && x.quals.includes(m));
+      return st
+        ? [{ modality: m, name: st.name, on: st.state === 'toCall' || st.state === 'away' ? 'call' : 'course' }]
+        : [];
+    });
     return [
       {
         discipline: d,
@@ -245,6 +261,7 @@ export function demand(ctx: SimContext): DisciplineDemand[] {
         trained,
         training,
         untrained,
+        away,
         flavour,
         line,
         pull: popularity * followed * room.pull * training * flavour * line.factor,
@@ -389,8 +406,8 @@ export interface MachineDemand {
   conditions: Weighted[];
   trained: number;
   /**
-   * How its training holds it back, as the share of its ailments someone is trained for (nobody comes for the rest),
-   * and how the center's local favourites and any campaign lift it, as multipliers.
+   * How its training holds it back, as the share of its ailments someone at work is trained for (nobody comes for the
+   * rest), and how the center's local favorites and any campaign lift it, as multipliers.
    */
   training: number;
   flavour: number;

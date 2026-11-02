@@ -3224,7 +3224,7 @@ export class Bot {
   /**
    * The course a good player picks for someone: the technique worth most to the center, by how often guests come
    * needing it and what they pay and how hard it is to get right, and much more where nobody else on the staff is
-   * trained in it yet (guests needing a technique nobody knows come less often, and are botched when they do).
+   * trained in it yet (guests needing a technique nobody here knows do not come at all until someone is).
    */
   private bestCourse(st: Staff) {
     const local = CENTERS[this.center].conditions ?? {};
