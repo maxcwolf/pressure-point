@@ -2,6 +2,8 @@
 
 Drafted 27 October 2026. An idea, not a plan: nothing here is decided. It is first in [the ranked list](README.md).
 
+**Built for 0.36.0** (1 November 2026), with Max's two changes to what follows: both parts ship at once, the headline and the one-page paper, skipping the gate on the headline proving itself; and the paper is **quarterly**, printed on every third payday, so its issue number is the quarter's count. The log covers the quarter and keeps 48 items. A long wait now scores at most 35, under a star, since over a quarter the longest wait runs long; the "Also" needs 15. The year's awards fall at the start of a quarter, so they lead the first issue of the year. A PA line plays with every issue rather than one in three, and Read the paper pauses the game like every dialog. The code is `sim/news.ts` and `data/headlines.ts`; the doc below is the design as drafted.
+
 Moved up after Max's review on 27 October 2026: "This is a great idea!" It is now the spine the other top ideas print into: the horoscope, the occasions, the staff's news, the guests won back and ZenMart's knock-offs.
 
 Revised the same day against [the review](review.md). The first slice is the review's: one headline on payday, in the message every player already gets. The paper Max liked comes next, once the headline proves itself, cut down to one page.

@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 41 still to record.
+43 recorded, 44 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -120,6 +120,12 @@ As its guests start to come, one of these by whether the center is ready, or has
 
 - ✅ A VIP will be visiting in five days. Look busy.
 - ✅ The health inspector is on the way. Hide the sage.
+
+## The town paper, as each issue lands (`PAPER_LINES` in `src/core/data/headlines.ts`, taking turns, one an issue)
+
+- ⬜ This quarter's paper is out. Staff named in it may not sign copies.
+- ⬜ Guests are reminded that the letters page is not a complaints procedure.
+- ⬜ Copies of the local paper are at reception. One per aura.
 
 ## Standing, as the center rises a grade (`updateStanding` in `src/core/sim/standing.ts`)
 

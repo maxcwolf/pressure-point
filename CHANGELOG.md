@@ -4,6 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **The Local Rag.** Each center has a town paper, and it prints on the payday that ends each quarter: the biggest story of the last three months as the headline on payday's message, with the real names in it, and **Read the paper** for the whole page, with two letters from the quarter's reviews, the center's own column and a classified. The latest issue is kept under a new Paper tab in the Stats menu. It only tells what already happened, and changes nothing.
 - **Continue and Restart in the campaign.** A center you have already started now shows Continue, which picks up its latest save, and Restart, which asks first and says what becomes of your game there. Restarting never loses stars, karma, achievements or unlocks.
 - **On to bigger and better things.** The third star in a campaign center now offers to move you on to the next one, keeping your game as a save of its own and picking the next center up where you left it, or starting it. Or stay and keep toiling where you are.
 - **No center left behind.** Starting a game in another center no longer pushes the last game of a center out of "Previous game": it is kept under Load game as a save of its own. An imported save now keeps the date it was saved.
