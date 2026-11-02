@@ -544,7 +544,7 @@ export class Sim {
     return demand(this.ctx);
   }
 
-  /** The specialty items in a room whose guests come though nobody working there is trained to use them. */
+  /** The specialty items in a room whose guests may be seen there untrained while those trained in them are busy elsewhere. */
   specialtyGaps(room: Room): SpecialtyGap[] {
     return specialtyGaps(this.ctx, room);
   }

@@ -31,6 +31,7 @@ import type { ConditionDef, ConditionId, Discipline, Modality, ModalityDef, Role
 import type { GameState, Guest, Item, Room, Staff } from '../state/types';
 import { at, clamp } from '../util';
 import { prestige } from './ambience';
+import { worksIn } from './assignments';
 import type { SimContext } from './context';
 import { practicable, signatureMachine } from './machines';
 import { campaignBoost } from './marketing';
@@ -204,19 +205,31 @@ export const standsIn = (ctx: SimContext, type: ItemType, room: RoomType) =>
   });
 
 /**
- * Whether the center offers a technique to guests who can come for it, given whether someone at work is trained in it:
- * only while someone is, and for one done with a specialty item, only while the item stands in a room of its discipline
- * too. A signature machine's own is offered while someone at work is trained to run it, the machine standing.
+ * What a technique done with a specialty item can be given with: the item, or a machine that does the technique itself,
+ * as the Hot Stone Kiln does hot stones. Nothing for a technique done without one.
  */
-export function onOffer(ctx: SimContext, m: Modality, trained: boolean): boolean {
+export function kitFor(m: Modality): ItemType[] {
   const kit = MODALITIES[m].equipment;
-  return trained && (!kit || standsIn(ctx, kit, DISCIPLINES[MODALITIES[m].discipline].room));
+  if (!kit) return [];
+  return [kit, ...(Object.keys(ITEMS) as ItemType[]).filter((t) => ITEMS[t].machine?.performs.includes(m))];
 }
 
 /**
- * A specialty item standing in a treatment room whose technique nobody working there is trained in, while someone at
- * work elsewhere is: the guests they draw come to the room with the item, and are botched there, or passed over for the
- * colleague who is trained. Who that is, to assign there.
+ * Whether the center offers a technique to guests who can come for it, given whether someone at work is trained in it:
+ * only while someone is, and for one done with a specialty item, only while the item, or a machine that does the
+ * technique, stands in a room of its discipline too. A signature machine's own is offered while someone at work is
+ * trained to run it, the machine standing.
+ */
+export function onOffer(ctx: SimContext, m: Modality, trained: boolean): boolean {
+  const kit = kitFor(m);
+  const room = DISCIPLINES[MODALITIES[m].discipline].room;
+  return trained && (!kit.length || kit.some((t) => standsIn(ctx, t, room)));
+}
+
+/**
+ * A specialty item standing in a treatment room whose guests may be seen there by someone untrained in it, while the
+ * colleagues who are trained may be working another room, without it: the guests are passed over for them while they
+ * are free, and seen badly while they are busy there. Who is trained, to assign to the room.
  */
 export interface SpecialtyGap {
   room: Room;
@@ -226,30 +239,30 @@ export interface SpecialtyGap {
 }
 
 /**
- * The specialty items guests come for in a finished treatment room, or in every one, that nobody working there is
- * trained to use: working there being assigned to the room, or posted at one of its stations now. A room with nobody
- * working there says nothing, since anyone may come to work it; nor does an item nobody at work is trained to use, which
- * draws nobody.
+ * The specialty items guests come for in a finished treatment room, or in every one, that someone untrained may be the
+ * one to use: someone at work untrained in it may work the room, nobody trained in it is assigned there, and someone
+ * trained may work another room of its kind without one. It goes by who may work where, not who is posted where now,
+ * so it holds steady as staff come and go. An item nobody at work is trained to use draws nobody, and says nothing.
  */
 export function specialtyGaps(ctx: SimContext, only?: Room): SpecialtyGap[] {
   const gaps: SpecialtyGap[] = [];
   for (const room of only ? [only] : ctx.s.rooms) {
     const d = DISCIPLINE_ORDER.find((x) => DISCIPLINES[x].room === room.type);
     if (!room.done || !d) continue;
-    const role = DISCIPLINES[d].role;
-    const here = ctx.s.staff.filter((st) => {
-      if (st.role !== role || !atWork(st)) return false;
-      const post = ctx.world.item(st.post);
-      return st.rooms.includes(room.id) || (!!post && ctx.world.roomOfItem(post) === room);
-    });
-    if (!here.length) continue;
+    const staff = ctx.s.staff.filter((st) => st.role === DISCIPLINES[d].role && atWork(st));
     for (const def of Object.values(MODALITIES)) {
-      const kit = def.equipment;
-      if (def.discipline !== d || !kit || !sentFor(ctx, def.id)) continue;
-      if (!ctx.s.items.some((it) => it.type === kit && ctx.world.roomOfItem(it) === room)) continue;
-      if (here.some((st) => st.quals.includes(def.id))) continue;
-      const trained = ctx.s.staff.filter((st) => st.role === role && atWork(st) && st.quals.includes(def.id));
-      if (trained.length) gaps.push({ room, modality: def.id, item: kit, trained });
+      if (def.discipline !== d || !def.equipment || !sentFor(ctx, def.id)) continue;
+      const kit = kitFor(def.id);
+      /** The item, or a machine doing the technique, in a room. */
+      const kitIn = (r: Room) => ctx.s.items.find((it) => kit.includes(it.type) && ctx.world.roomOfItem(it) === r);
+      const item = kitIn(room);
+      const trained = staff.filter((st) => st.quals.includes(def.id));
+      if (!item || !trained.length || trained.some((st) => st.rooms.includes(room.id))) continue;
+      if (!staff.some((st) => !st.quals.includes(def.id) && worksIn(st.rooms, room.id))) continue;
+      /** Whether someone may work another room of its kind, without the item, where they cannot give it. */
+      const elsewhere = (st: Staff) =>
+        ctx.s.rooms.some((r) => r !== room && r.done && r.type === room.type && worksIn(st.rooms, r.id) && !kitIn(r));
+      if (trained.some(elsewhere)) gaps.push({ room, modality: def.id, item: item.type, trained });
     }
   }
   return gaps;

@@ -139,13 +139,14 @@ function unequippedWord(row: DisciplineDemand): string {
 }
 
 /**
- * A specialty item whose guests come to a room where nobody working is trained to use it, and what puts it right:
- * someone at work who is, assigned to the room.
+ * A specialty item whose guests may be seen untrained in a room while those trained in it are busy in another, and what
+ * puts it right: one of them assigned to the room.
  */
 export function gapNote(g: SpecialtyGap): string {
-  const why = `${modalityLabel(g.modality)} guests come for the ${ITEMS[g.item].name}, but nobody working here is trained in it, so it goes badly for them.`;
+  const one = g.trained.length === 1;
+  const names = listed(g.trained.map((st) => st.name));
   const who = g.trained[0]?.name ?? '';
-  return `${why} ${listed(g.trained.map((st) => st.name))} ${g.trained.length === 1 ? 'is' : 'are'}: assign ${who} to this room from their inspector.`;
+  return `${modalityLabel(g.modality)} guests come for the ${ITEMS[g.item].name} here, and while ${names}, who ${one ? 'is' : 'are'} trained in it, ${one ? 'is busy in another room' : 'are busy in other rooms'}, whoever works here sees them untrained, and it goes badly. Assign ${who} to this room from their inspector.`;
 }
 
 /** A count of things as it reads: "1 station", "6 stations". */

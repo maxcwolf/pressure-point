@@ -542,40 +542,43 @@ export function comfortAdvice(ctx: SimContext): string | Advice {
 
 /**
  * Nudge about techniques guests would come for if anyone here were trained in them, and nobody is learning yet: they
- * stay away until someone is. One that someone trained in is only away from for now is left out, as is a discipline
- * with nobody in its role at all, which is for the guests panel to say.
+ * stay away until someone is. One that someone trained in is only away from for now is left out, as is one nobody in
+ * the role has a qualification slot free for, and a discipline with nobody in its role at all, which is for the guests
+ * panel to say.
  */
 export function untrainedAdvice(ctx: SimContext): string {
   const s = ctx.s;
   /** Whether someone is on the course for a technique, or knows it and is only away for now. */
   const coming = (m: Modality) =>
     s.staff.some((st) => st.training?.course === m || (st.state !== 'leaving' && st.quals.includes(m)));
+  /** Whether someone in a discipline's role has a qualification slot free for a technique, to go on its course. */
+  const learnable = (d: Discipline, m: Modality) =>
+    s.staff.some((st) => st.role === DISCIPLINES[d].role && st.state !== 'leaving' && roomFor(st, m));
   for (const row of demand(ctx)) {
-    const wanted = row.untrained.filter((m) => !coming(m));
+    const wanted = row.untrained.filter((m) => !coming(m) && learnable(row.discipline, m));
     if (!row.offered || !wanted.length) continue;
     const them = wanted.length === 1 ? 'it' : 'them';
     const why = `Guests needing ${listed(wanted.map(modalityLabel))} stay away while nobody here is trained in ${them}.`;
     return trainingTip(ctx, row.discipline, wanted, why);
   }
   for (const m of machineDemand(ctx)) {
-    const wanted = [...new Set(m.conditions.map((w) => w.condition.modality))].filter((x) => !coming(x));
+    const d = ITEMS[m.machine].station?.discipline ?? 'massage';
+    const wanted = [...new Set(m.conditions.map((w) => w.condition.modality))].filter(
+      (x) => !coming(x) && learnable(d, x),
+    );
     if (!m.fed || m.trained || !wanted.length) continue;
     const why = `The ${ITEMS[m.machine].name} draws no guests while nobody here is trained to run it.`;
-    return trainingTip(ctx, ITEMS[m.machine].station?.discipline ?? 'massage', wanted, why);
+    return trainingTip(ctx, d, wanted, why);
   }
   return '';
 }
 
 /**
  * What to do about techniques of a discipline nobody here is trained in, after why it matters: send someone on the
- * courses, with a Training Room first if there is none, or, with every qualification slot in the role full, wait for a
- * promotion.
+ * courses, with a Training Room first if there is none.
  */
 function trainingTip(ctx: SimContext, d: Discipline, wanted: Modality[], why: string): string {
   const role = ROLES[DISCIPLINES[d].role];
-  const staff = ctx.s.staff.filter((st) => st.role === role.role && st.state !== 'leaving');
-  if (!staff.some((st) => wanted.some((m) => roomFor(st, m))))
-    return `${why} Every ${role.name}'s qualification slots are full: a promotion brings another.`;
   const send = wanted.length === 1 ? `send ${an(role.name)} on the course` : `send ${role.name}s on the courses`;
   return hasRoom(ctx, 'training')
     ? `${why} ${send.charAt(0).toUpperCase()}${send.slice(1)} to bring them in.`
@@ -583,16 +586,16 @@ function trainingTip(ctx: SimContext, d: Discipline, wanted: Modality[], why: st
 }
 
 /**
- * Nudge about a specialty item whose guests come to a room where nobody working is trained to use it, while someone at
- * work elsewhere is: assign them there. With nobody trained at all, the nudge about guests needing it says so.
+ * Nudge about a specialty item whose guests may be seen untrained in a room while someone trained in it is busy in
+ * another: assign them there. With nobody trained at all, the nudge about guests needing it says so.
  */
 export function postingAdvice(ctx: SimContext): string | Advice {
-  const gap = specialtyGaps(ctx).find((g) => g.trained.length);
+  const gap = specialtyGaps(ctx)[0];
   const who = gap?.trained[0];
   if (!gap || !who) return '';
   const room = roomLabels(ctx.s.rooms).get(gap.room.id) ?? ROOMS[gap.room.type].name;
   return {
-    text: `${modalityLabel(gap.modality)} guests come for the ${ITEMS[gap.item].name} in the ${room}, but nobody working there is trained in it. ${who.name} is: assign them to that room from their inspector.`,
+    text: `${modalityLabel(gap.modality)} guests come for the ${ITEMS[gap.item].name} in the ${room}, and while ${who.name}, who is trained in it, is busy in another room, whoever works there sees them untrained, and it goes badly. Assign them to that room from their inspector.`,
     about: { kind: 'staff', id: who.id },
   };
 }

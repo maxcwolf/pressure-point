@@ -31,13 +31,15 @@ import {
   followVisit,
   lineArrivals,
   lineFactor,
+  onOffer,
   unfedStations,
 } from '../../src/core/sim/demand';
 import { admitGuests, type ArrivalPace, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
-import { nextInLine, pickStation } from '../../src/core/sim/stations';
+import { leftForSpecialist, nextInLine, pickStation } from '../../src/core/sim/stations';
 import { newGame } from '../../src/core/state/game';
 import type { GameState, Guest, Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
+import { must } from '../../src/core/util';
 import {
   capacityNote,
   demandAdvice,
@@ -287,16 +289,103 @@ describe('a specialty item', () => {
     expect(gap).toMatchObject({ modality: 'sports', item: 'stretch_rack', trained: [c.therapist] });
     if (gap)
       expect(gapNote(gap)).toBe(
-        `Sports massage guests come for the Stretch Rack, but nobody working here is trained in it, so it goes badly for them. ${c.therapist.name} is: assign ${c.therapist.name} to this room from their inspector.`,
+        `Sports massage guests come for the Stretch Rack here, and while ${c.therapist.name}, who is trained in it, is busy in another room, whoever works here sees them untrained, and it goes badly. Assign ${c.therapist.name} to this room from their inspector.`,
       );
     expect(postingAdvice(c.ctx)).toMatchObject({
-      text: `Sports massage guests come for the Stretch Rack in the Massage Suite 2, but nobody working there is trained in it. ${c.therapist.name} is: assign them to that room from their inspector.`,
+      text: `Sports massage guests come for the Stretch Rack in the Massage Suite 2, and while ${c.therapist.name}, who is trained in it, is busy in another room, whoever works there sees them untrained, and it goes badly. Assign them to that room from their inspector.`,
       about: { kind: 'staff', id: c.therapist.id },
     });
     // assigned there too, and there is nothing to say
     c.therapist.rooms = [c.massage.id, suite.id];
     expect(c.sim.specialtyGaps(suite)).toEqual([]);
     expect(postingAdvice(c.ctx)).toBe('');
+  });
+
+  it('has a guest passed over for a colleague seen all the same once that colleague is busy in a room without it', () => {
+    const c = twoRooms();
+    c.therapist.quals = [DISCIPLINES.massage.base];
+    // a second suite with the Stretch Rack, the first without, and nobody kept to either
+    const suite = buildRoom(c.sim, 'massage', LAYOUT.assess.rect, LAYOUT.assess.door, [
+      ['massage_table', 20, 11],
+      ['oil_trolley', 22, 11],
+      ['stretch_rack', 22, 12],
+    ]);
+    const rackTable = must(
+      c.s.items.find((it) => it.type === 'massage_table' && c.sim.world.roomOfItem(it) === suite),
+      'a table in the second suite',
+    );
+    const plainTable = must(
+      c.s.items.find((it) => it.type === 'massage_table' && c.sim.world.roomOfItem(it) === c.massage),
+      'a table in the first suite',
+    );
+    const untrained = hire(c.sim, 'therapist');
+    untrained.quals = [DISCIPLINES.massage.base];
+    c.therapist.quals.push('sports');
+    // each walked to a table, then free to work anywhere
+    untrained.rooms = [suite.id];
+    c.therapist.rooms = [c.massage.id];
+    runUntil(c.sim, () => rackTable.staffId === untrained.id && plainTable.staffId === c.therapist.id, 120);
+    untrained.rooms = [];
+    c.therapist.rooms = [];
+    const g = must(
+      spawnGuest(
+        c.ctx,
+        must(
+          CONDITIONS.find((x) => x.modality === 'sports'),
+          'a sports ailment',
+        ).id,
+      ),
+      'a guest',
+    );
+    Object.assign(g, { goal: 'treat', diagnosis: 1, patience: 100, health: 100 });
+    lineUpAt(rackTable, g);
+    // the one trained is busy at a table that cannot give it, so the line is not held for them, and the guest is seen
+    expect(leftForSpecialist(c.ctx, untrained, g)).toBe(false);
+    expect(nextInLine(c.ctx, rackTable)).toBe(g);
+    runUntil(c.sim, () => g.state === 'served', 30);
+    // free, they are waited for, and come to the table
+    c.therapist.state = 'idle';
+    c.therapist.post = 0;
+    plainTable.staffId = 0;
+    expect(leftForSpecialist(c.ctx, untrained, g)).toBe(true);
+    // and the room says who to assign there, since either may work it
+    expect(c.sim.specialtyGaps(suite)).toMatchObject([{ modality: 'sports', trained: [c.therapist] }]);
+  });
+
+  it('counts a machine that does the technique as its item', () => {
+    for (const [machine, mod, room] of [
+      ['stone_kiln', 'stone', 'massage'],
+      ['octopus', 'cupping', 'acupuncture'],
+      ['geode', 'crystal', 'reiki'],
+    ] as const) {
+      const c = twoRooms();
+      c.s.stars = 3;
+      const d = MODALITIES[mod].discipline;
+      const role = DISCIPLINES[d].role;
+      const trained = d === 'massage' ? c.therapist : hire(c.sim, role);
+      trained.quals = [DISCIPLINES[d].base, mod];
+      // the machine standing, and not the item: on offer, and nobody is asked to buy the item
+      buildRoom(c.sim, room, { x: 22, y: 10, w: 4, h: 4 }, { x: 22, y: 12, dx: -1, dy: 0 }, [[machine, 24, 10]]);
+      const kit = must(
+        c.s.items.find((it) => it.type === machine),
+        machine,
+      );
+      expect(onOffer(c.ctx, mod, true)).toBe(true);
+      expect(row(c.sim.demand(), d)?.unequipped).not.toContain(mod);
+      // and a guest for it waits for the one trained, who is free to run the machine
+      const other = hire(c.sim, role);
+      other.quals = [DISCIPLINES[d].base];
+      const ailment = must(
+        CONDITIONS.find((x) => x.modality === mod),
+        mod,
+      );
+      const g = must(spawnGuest(c.ctx, ailment.id), 'a guest');
+      expect(leftForSpecialist(c.ctx, other, g)).toBe(true);
+      // sold, and with neither, the panel asks for the item
+      c.sim.sellItem(kit.id);
+      expect(onOffer(c.ctx, mod, true)).toBe(false);
+      expect(row(c.sim.demand(), d)?.unequipped).toContain(mod);
+    }
   });
 
   it('says nothing about a room while nobody at work is trained to use its item', () => {
@@ -332,16 +421,14 @@ describe('what nobody here is trained in', () => {
     expect(untrainedAdvice(c.ctx)).toBe('');
   });
 
-  it('says a promotion would help when nobody in the role has a qualification slot free', () => {
+  it('says nothing while nobody in the role has a qualification slot free to learn it', () => {
     const c = twoRooms();
     c.therapist.quals = [DISCIPLINES.massage.base];
     // a first rank, its one slot taken by a general course
     c.therapist.skill = 1;
     c.therapist.general = ['smudging'];
     expect(slotFree(c.therapist)).toBe(false);
-    expect(untrainedAdvice(c.ctx)).toMatch(
-      /stay away while nobody here is trained in them\. Every Massage Therapist's qualification slots are full: a promotion brings another\.$/,
-    );
+    expect(untrainedAdvice(c.ctx)).toBe('');
   });
 
   it('counts only staff at work: someone away on a course or a house call cannot give it today', () => {
