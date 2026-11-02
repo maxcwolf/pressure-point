@@ -19,7 +19,7 @@ import {
 } from '../storage/settings';
 import { welcomeSeen } from '../storage/welcome';
 import { showTitle } from '../ui';
-import { makeRoom, PROFILE_GONE } from '../ui/lib/profiles';
+import { makeRoom, PROFILE_GONE_TITLE } from '../ui/lib/profiles';
 import { track } from './analytics';
 import { automated } from './automation';
 import { desktop } from './desktop';
@@ -87,7 +87,7 @@ export async function boot() {
  */
 const noRoom = () =>
   profileGone()
-    ? PROFILE_GONE
+    ? PROFILE_GONE_TITLE
     : `There is no room to keep your current game as "Previous game", or the one there now as a save of its own, so the new one has not started. ${makeRoom()}, then try again.`;
 
 /**

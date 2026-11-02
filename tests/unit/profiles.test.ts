@@ -590,6 +590,36 @@ describe('a profile deleted in another tab', () => {
     expect([...store.keys()].sort()).toEqual(kept);
   });
 
+  it('is never swept for when part of the list will not read, and a profile lost from it is listed again', () => {
+    const sam = made(addProfile('Sam'));
+    const robin = made(addProfile('Robin'));
+    switchTo(robin.id);
+    autosave(at('willow', 2), 2000);
+    // Robin's entry damaged, beside one with an id from a later version
+    store.set(
+      'pressure-point-profiles',
+      JSON.stringify({
+        profiles: [{ id: FIRST_PROFILE, name: FIRST_NAME }, sam, null, { id: 'later_id-1', name: 'Kim' }],
+        current: sam.id,
+      }),
+    );
+    const before = snapshot();
+    newPage();
+    sweepProfiles();
+    expect(store).toEqual(before);
+    expect(loadProfiles().profiles).toEqual([
+      { id: FIRST_PROFILE, name: FIRST_NAME },
+      sam,
+      { id: robin.id, name: 'Player 3' },
+    ]);
+    // so the next change to the list keeps Robin, and the sweep after it leaves Robin's games
+    made(addProfile('Lee'));
+    newPage();
+    sweepProfiles();
+    switchTo(robin.id);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(2);
+  });
+
   it('is never swept for when the list is missing or will not read, as nothing says which profiles there are', () => {
     const sam = made(addProfile('Sam'));
     switchTo(sam.id);
@@ -755,6 +785,35 @@ describe('the desktop app’s copies', () => {
     expect(await startBackup(b)).toBe(false);
     expect(loadProfiles().profiles).toEqual([{ id: FIRST_PROFILE, name: FIRST_NAME }, sam]);
     expect(readSave(AUTOSAVE_ID)!.money).toBe(111);
+  });
+
+  it('keep a profile the copy missed when putting it back over a list that will not read', async () => {
+    const b = fakeBackup();
+    await startBackup(b);
+    autosave(at('willow', 111), 1000);
+    const sam = made(addProfile('Sam'));
+    const stale = b.profiles;
+    const robin = made(addProfile('Robin'));
+    switchTo(robin.id);
+    autosave(at('exchange', 333), 3000);
+    // the copy of the list misses Robin, as when writing its file failed
+    b.profiles = stale;
+    store.set('pressure-point-profiles', '{not json');
+    newPage();
+    await startBackup(b);
+    sweepProfiles();
+    expect(loadProfiles().profiles).toEqual([
+      { id: FIRST_PROFILE, name: FIRST_NAME },
+      sam,
+      { id: robin.id, name: 'Player 3' },
+    ]);
+    // and the copy is brought up to date
+    expect(JSON.parse(b.profiles!)).toEqual(loadProfiles());
+    newPage();
+    await startBackup(b);
+    sweepProfiles();
+    switchTo(robin.id);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(333);
   });
 
   it('never copy a list that will not read over a good copy, and replace a copy that will not read', async () => {

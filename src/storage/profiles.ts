@@ -13,7 +13,8 @@
 //
 // A list that will not read is never taken for the first profile alone, which the next change to the list would make
 // final: the profiles are worked out from the keys in storage instead (`rebuildProfiles`), or put back from the desktop
-// app's copy.
+// app's copy. A list that reads only in part, or one put back, gains a profile for every one still keeping anything in
+// storage (`withKept`), and only a list that reads whole is trusted to sweep by.
 import type { DesktopApi } from '../../electron/api';
 import { isRecord } from './json';
 
@@ -81,26 +82,38 @@ const firstAlone = (): ProfileList => ({
 
 /** A list of profiles read back from storage, dropping anything malformed, or the first alone if nothing is left. */
 export function readProfiles(raw: unknown): ProfileList {
-  return parseProfiles(raw) ?? firstAlone();
+  return parseProfiles(raw)?.list ?? firstAlone();
+}
+
+/** A list of profiles read back, and whether every profile in it read: one that did not was dropped. */
+interface ReadList {
+  list: ProfileList;
+  whole: boolean;
 }
 
 /** A list of profiles read back from storage, dropping anything malformed, or null if no profile is left in it. */
-function parseProfiles(raw: unknown): ProfileList | null {
+function parseProfiles(raw: unknown): ReadList | null {
   if (!isRecord(raw) || !Array.isArray(raw.profiles)) return null;
   const profiles: Profile[] = [];
+  let whole = true;
   for (const p of raw.profiles as unknown[]) {
-    if (!isRecord(p) || !isProfileId(p.id) || profiles.some((q) => q.id === p.id)) continue;
+    // a profile damaged, or with an id from a later version, is dropped; one listed twice is still the one profile
+    if (!isRecord(p) || !isProfileId(p.id)) {
+      whole = false;
+      continue;
+    }
+    if (profiles.some((q) => q.id === p.id)) continue;
     const name = typeof p.name === 'string' ? cleanName(p.name) : '';
     profiles.push({ id: p.id, name: name || `Player ${profiles.length + 1}` });
   }
   const first = profiles[0];
   if (!first) return null;
   const current = profiles.find((p) => p.id === raw.current)?.id ?? first.id;
-  return { profiles, current };
+  return { list: { profiles, current }, whole };
 }
 
 /** A stored list's text read back, or null if there is none or it will not read. */
-function storedList(text: string | null): ProfileList | null {
+function storedList(text: string | null): ReadList | null {
   if (text === null) return null;
   try {
     return parseProfiles(JSON.parse(text));
@@ -127,12 +140,8 @@ function allKeys(): string[] {
   return keys;
 }
 
-/**
- * The profiles worked out from the keys in storage, for when the list is missing or will not read: the first if
- * anything of its is there or nothing else is, and one for every other id with keys, named by its place, so the next
- * change to the list keeps every profile's games within reach.
- */
-export function rebuildProfiles(): ProfileList {
+/** The profiles keeping anything in storage: the first, if any key of its is there, then the rest in order of id. */
+function keptIds(): string[] {
   const ids = new Set<string>();
   let first = false;
   for (const key of allKeys()) {
@@ -140,13 +149,34 @@ export function rebuildProfiles(): ProfileList {
     if (id) ids.add(id);
     else if (ownedBy(FIRST_PROFILE, key)) first = true;
   }
-  if (!ids.size) return firstAlone();
-  const order = [...(first ? [FIRST_PROFILE] : []), ...[...ids].sort()];
-  const profiles = order.map((id, i) => ({ id, name: id === FIRST_PROFILE ? FIRST_NAME : `Player ${i + 1}` }));
-  return { profiles, current: order[0] ?? FIRST_PROFILE };
+  return [...(first ? [FIRST_PROFILE] : []), ...[...ids].sort()];
 }
 
-/** The profiles on this computer. */
+/**
+ * A list with a profile added for every one keeping anything in storage that it lacks, named as a new one would be, so
+ * the next change to the list leaves none of their games out of reach, nor to be swept away.
+ */
+function withKept(list: ProfileList): ProfileList {
+  let out = list;
+  for (const id of keptIds()) {
+    if (out.profiles.some((p) => p.id === id)) continue;
+    const name = id === FIRST_PROFILE && !nameTaken(out, FIRST_NAME) ? FIRST_NAME : nextName(out);
+    out = { ...out, profiles: [...out.profiles, { id, name }] };
+  }
+  return out;
+}
+
+/**
+ * The profiles worked out from the keys in storage, for when the list is missing or will not read: the first if
+ * anything of its is there or nothing else is, and one for every other id with keys, named by its place.
+ */
+export function rebuildProfiles(): ProfileList {
+  const { profiles } = withKept({ profiles: [], current: FIRST_PROFILE });
+  const first = profiles[0];
+  return first ? { profiles, current: first.id } : firstAlone();
+}
+
+/** The profiles on this computer: the stored list, with any profile it lost a part of, or worked out without one. */
 export function loadProfiles(): ProfileList {
   let text: string | null;
   try {
@@ -154,7 +184,9 @@ export function loadProfiles(): ProfileList {
   } catch {
     return firstAlone();
   }
-  return storedList(text) ?? rebuildProfiles();
+  const read = storedList(text);
+  if (!read) return rebuildProfiles();
+  return read.whole ? read.list : withKept(read.list);
 }
 
 /** Store the list of profiles, with a copy for the desktop app. False if storage would not take it. */
@@ -217,7 +249,8 @@ export function profileGone(): boolean {
 
 /**
  * Remove whatever is kept under a profile the list no longer has, as a tab still playing a profile deleted in another
- * may have left behind. With no list that reads there is nothing to go by, and nothing is removed.
+ * may have left behind. Without a list that reads whole there is nothing sure to go by, and nothing is removed: a
+ * profile dropped from a damaged list, or one a later version made, may still be played.
  */
 export function sweepProfiles() {
   let text: string | null;
@@ -226,9 +259,9 @@ export function sweepProfiles() {
   } catch {
     return;
   }
-  const list = storedList(text);
-  if (!list) return;
-  const live = new Set(list.profiles.map((p) => p.id));
+  const read = storedList(text);
+  if (!read?.whole) return;
+  const live = new Set(read.list.profiles.map((p) => p.id));
   const gone = allKeys().filter((key) => {
     const id = ownerOf(key) ?? (ownedBy(FIRST_PROFILE, key) ? FIRST_PROFILE : null);
     return id !== null && !live.has(id);
@@ -394,18 +427,21 @@ export function backupProfiles(b: ProfileBackup, copy: string | null) {
 
 /**
  * Put back the list of profiles the desktop app kept, when the page's storage has lost its own or holds one that will
- * not read. The profile this page plays is then this tab's, if it says and the list has it, or the one played last:
- * the profile noted for the tab as the page opened came from no list, so it is noted again. True if it did.
+ * not read. A copy that missed a change to the list leaves out a profile whose games are still here, so every profile
+ * keeping anything is added back, and the copy brought up to date. The profile this page plays is then this tab's, if
+ * it says and the list has it, or the one played last: the profile noted for the tab as the page opened came from no
+ * list, so it is noted again. True if it did.
  */
 export function restoreProfiles(text: string | null): boolean {
-  const list = storedList(text);
-  if (!list) return false;
+  const copy = storedList(text);
+  if (!copy) return false;
   try {
     if (storedList(localStorage.getItem(KEY))) return false;
-    localStorage.setItem(KEY, JSON.stringify(list));
   } catch {
     return false;
   }
+  const list = withKept(copy.list);
+  if (!storeProfiles(list)) return false;
   const pinned = tabProfile();
   current = list.profiles.find((p) => p.id === pinned)?.id ?? list.current;
   pinTab(current);

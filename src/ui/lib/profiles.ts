@@ -57,6 +57,10 @@ export function deleteWarning(c: ProfileContents): string {
 export const PROFILE_GONE =
   'This profile was deleted in another tab or window, so this game is no longer being saved. Go back to the main menu to carry on as another profile.';
 
+/** The same, said on the title screen, where a game started or imported for the deleted profile could not be kept. */
+export const PROFILE_GONE_TITLE =
+  'This profile was deleted in another tab or window, so no game can be kept for it. Pick another profile with the button at the top left.';
+
 /** Whose saved games take up the storage every profile on the computer shares: this profile's, and other profiles'. */
 export function whoseSaves(): { mine: boolean; others: boolean } {
   const playing = currentProfile();
