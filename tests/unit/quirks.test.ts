@@ -8,8 +8,6 @@ import {
   CLASHES,
   clashes,
   COMMON_TRAITS,
-  MISERABLE_MORALE,
-  POACH_MORALE,
   QUIRKS_MAX,
   QUIRKS_MIN,
   RARE_CHANCE,
@@ -27,12 +25,11 @@ import { fairSalary, makeCandidate, rollQuirks, scalePay } from '../../src/core/
 import { heldSpace, holdingSpaceFor, spaceHolder } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
-import { moraleFloor } from '../../src/core/sim/staffing';
 import { postAboutIt, serviceSeconds, worksAnyway } from '../../src/core/sim/stations';
 import type { Candidate, GameState, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { quirkNotes, quirksSaid, rareFirst } from '../../src/ui/lib/quirks';
-import { freshSim, hire, openCenter, run, runUntil } from './helpers';
+import { freshSim, hire, openCenter, runUntil } from './helpers';
 
 /** The simulation's own context, which the hooks are given. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
@@ -100,7 +97,7 @@ describe('the rare quirks for each role', () => {
         .filter((t) => traitOf(t).rare),
     );
 
-  it('gives Former Influencer and Healing Hands only to those who treat guests, Holds Space to anyone who takes a post, and Burnout Survivor to anyone', () => {
+  it('gives Former Influencer and Healing Hands only to those who treat guests, and Holds Space to anyone who takes a post', () => {
     // the roles whose work goes through a treatment: the Qi Gong Instructor's classes do not, and the Sound Healer's
     // baths do
     expect(ROLE_ORDER.filter((r) => ROLES[r].discipline).sort()).toEqual([
@@ -115,8 +112,28 @@ describe('the rare quirks for each role', () => {
       const treats = !!ROLES[role].discipline;
       expect(rare.has('influencer')).toBe(treats);
       expect(rare.has('hands')).toBe(treats);
-      expect(rare.has('survivor')).toBe(true);
       expect(rare.has('space')).toBe(role !== 'caretaker');
+    }
+  });
+
+  it('gives a Caretaker no rare quirk, as none fits, and anyone else one about one time in seven', () => {
+    expect(rareFor('caretaker').size).toBe(0);
+    for (const role of ROLE_ORDER.filter((r) => r !== 'caretaker')) {
+      const rolls = Array.from({ length: 4000 }, (_, i) => rollQuirks({ rng: i * 104729 + 3 }, role));
+      const rare = rolls.filter((q) => q.some((t) => traitOf(t).rare)).length / rolls.length;
+      // a Former Influencer, a flaw, is held back from someone who already has one
+      expect(rare, role).toBeGreaterThan(0.11);
+      expect(rare, role).toBeLessThan(0.16);
+    }
+  });
+
+  it('draws as many random numbers for a Caretaker, with no rare quirk to pick, as for anyone', () => {
+    for (let i = 0; i < 2000; i++) {
+      const caretaker = { rng: i * 7907 + 11 };
+      const receptionist = { rng: i * 7907 + 11 };
+      rollQuirks(caretaker, 'caretaker');
+      rollQuirks(receptionist, 'receptionist');
+      expect(caretaker.rng, `roll ${i}`).toBe(receptionist.rng);
     }
   });
 
@@ -155,7 +172,7 @@ describe('a save from before rare quirks fit the role', () => {
     apply('receptionist', ['brisk', 'hands']);
     apply('caretaker', ['sleepy', 'influencer']);
     apply('therapist', ['quick', 'hands']);
-    apply('consultant', ['tireless', 'survivor']);
+    apply('consultant', ['tireless', 'space']);
     const old = JSON.parse(JSON.stringify(s)) as GameState;
     old.version = 42;
     upgradeSave(old);
@@ -178,7 +195,7 @@ describe('a save from before rare quirks fit the role', () => {
     // and one whose rare quirk fits keeps it, and their asking pay
     expect(applicant('therapist').traits).toEqual(['quick', 'hands']);
     expect(applicant('therapist').salary).toBe(9999);
-    expect(applicant('consultant').traits).toEqual(['tireless', 'survivor']);
+    expect(applicant('consultant').traits).toEqual(['tireless', 'space']);
     expect(applicant('consultant').salary).toBe(9999);
   });
 });
@@ -240,6 +257,60 @@ describe('a save from before Amanda Jablonsky had her own quirks', () => {
     const { amanda } = oldSave(true);
     expect(amanda.traits).toEqual(AMANDA.traits);
     expect(amanda.salary).toBe(9999);
+  });
+});
+
+describe('a save from before Burnout Survivor was taken out', () => {
+  /** A save at this version with a Burnout Survivor on the staff and among the applicants, on a pay no rule gives. */
+  const oldSave = (version: number) => {
+    const { s, receptionist, therapist } = openCenter(3);
+    // the therapist hired here may be Amanda Jablonsky, whose quirks a step of their own sets
+    therapist.name = 'Greta Pummell';
+    Object.assign(receptionist, { traits: ['brisk', 'survivor'], salary: 9999 });
+    therapist.traits = ['tireless', 'hands'];
+    const survivor = Object.assign(
+      s.candidates.find((c) => c.role === 'consultant')!,
+      {
+        traits: ['bargain', 'survivor'],
+        salary: 9999,
+      },
+    );
+    const other = s.candidates.find((c) => c.role === 'caretaker')!;
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    old.version = version;
+    upgradeSave(old);
+    /** A member of staff in the upgraded save. */
+    const staff = (id: number) => old.staff.find((st) => st.id === id)!;
+    /** An applicant in the upgraded save. */
+    const applicant = (id: number) => old.candidates.find((c) => c.id === id)!;
+    return {
+      old,
+      staff,
+      applicant,
+      receptionist,
+      therapist,
+      survivor,
+      other,
+    };
+  };
+
+  it('takes it from staff, who keep their pay, and from applicants, who ask what they are worth without it', () => {
+    const { old, staff, applicant, receptionist, therapist, survivor, other } = oldSave(46);
+    expect(staff(receptionist.id).traits).toEqual(['brisk']);
+    expect(staff(receptionist.id).salary).toBe(9999);
+    expect(staff(therapist.id).traits).toEqual(['tireless', 'hands']);
+    const c = applicant(survivor.id);
+    expect(c.traits).toEqual(['bargain']);
+    expect(c.salary).toBe(scalePay(fairSalary('consultant', c.skill, ['bargain'], c.quals), tuning(old, 'salaries')));
+    // nobody else is touched
+    expect(applicant(other.id).traits).toEqual(other.traits);
+    expect(applicant(other.id).salary).toBe(other.salary);
+  });
+
+  it('takes it before the older steps that read quirks, which no longer know it', () => {
+    const { staff, applicant, receptionist, survivor } = oldSave(42);
+    expect(staff(receptionist.id).traits).toEqual(['brisk']);
+    expect(applicant(survivor.id).traits).toEqual(['bargain']);
   });
 });
 
@@ -310,34 +381,6 @@ describe('the rare quirks', () => {
       { type: 'float', text: 'Posted it: +1 reputation', x: therapist.x, y: therapist.y, kind: 'good' },
     ]);
     expect(quirkNotes(therapist, [], undefined)).toEqual(['Posted about 2 heals: +2 reputation']);
-  });
-
-  it('a Burnout Survivor never falls below 35, however badly paid', () => {
-    /** The lowest a badly paid therapist with these quirks sinks to over a few minutes of play. */
-    const lowest = (traits: TraitId[]) => {
-      const { sim, therapist } = openCenter(1);
-      therapist.traits = traits;
-      therapist.salary = 10;
-      let low = 100;
-      for (let i = 0; i < 40; i++) {
-        run(sim, 5);
-        low = Math.min(low, therapist.morale);
-      }
-      return low;
-    };
-    expect(moraleFloor({ traits: ['survivor'] } as never)).toBe(35);
-    expect(lowest(['survivor'])).toBeGreaterThanOrEqual(35);
-    expect(lowest([])).toBeLessThan(35);
-  });
-
-  it('a Burnout Survivor never quits and is never poached, as their description says', () => {
-    const floor = traitMost(['survivor'], 'floor');
-    // quitting starts below miserable, and a rival's offer only goes to someone below the poaching line
-    expect(floor).toBeGreaterThan(MISERABLE_MORALE);
-    expect(floor).toBeGreaterThanOrEqual(POACH_MORALE);
-    expect(traitOf('survivor').desc).toContain(`below ${floor}`);
-    expect(traitOf('survivor').desc).toContain('never quit');
-    expect(traitOf('survivor').desc).toContain('poach');
   });
 
   it('Healing Hands saves one failed treatment in three, and nobody else rolls the dice', () => {

@@ -855,6 +855,56 @@ test.describe('staff', () => {
     await expect(rows).toHaveCount(3);
   });
 
+  test("narrow the Staff menu to one job, with each job's headcount, kept while the menu is open", async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+    });
+    await game.menu('Staff');
+    const rows = page.locator('#menu .row:not(.head)');
+    const job = page.locator('#menu .job-filter select');
+    await expect(rows).toHaveCount(3);
+    await expect(job.locator('option')).toHaveText([
+      'All (3)',
+      'Receptionist (1)',
+      'Wellness Consultant (1)',
+      'Massage Therapist (1)',
+    ]);
+    await job.selectOption({ label: 'Massage Therapist (1)' });
+    await expect(rows).toHaveCount(1);
+    await expect(rows.locator('.knows')).toContainText('Swedish');
+    // picking a job lets go of the keyboard, as the Sort by list does
+    await expect(job).not.toBeFocused();
+    // the list keeps to the job as the menu redraws, and through the menu being shut and opened again
+    await game.menu('Staff');
+    await game.menu('Staff');
+    await expect(job).toHaveValue('therapist');
+    await expect(rows).toHaveCount(1);
+    await job.selectOption({ label: 'All (3)' });
+    await expect(rows).toHaveCount(3);
+
+    // with nobody left in the job the list shows everyone, and keeps to everyone once someone is in it again
+    await job.selectOption({ label: 'Massage Therapist (1)' });
+    await expect(rows).toHaveCount(1);
+    const id = await game.eval((pp) => {
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      st.role = 'caretaker';
+      return st.id;
+    });
+    await expect(job).toHaveValue('all');
+    await expect(rows).toHaveCount(3);
+    await game.eval((pp, back) => {
+      pp.state.staff.find((x) => x.id === back)!.role = 'therapist';
+    }, id);
+    await expect(job.locator('option')).toContainText(['Massage Therapist (1)']);
+    await expect(job).toHaveValue('all');
+    await expect(rows).toHaveCount(3);
+  });
+
   test('can be put in order in the Staff menu, as items can in the Items menu', async ({ game, page }) => {
     await game.start();
     await game.buildCenter();
@@ -1160,11 +1210,7 @@ test.describe('running a center', () => {
       pp.state.rival.opened = pp.state.day;
       pp.state.rival.nextSale = 1e9;
       pp.state.rival.nextPoach = pp.state.day;
-      for (const st of pp.state.staff) {
-        // a Burnout Survivor's morale never falls low enough to be poached, so the therapist must not be one
-        st.traits = st.traits.filter((t) => t !== 'survivor');
-        st.morale = st.role === 'therapist' ? 20 : 90;
-      }
+      for (const st of pp.state.staff) st.morale = st.role === 'therapist' ? 20 : 90;
     });
     await game.fastForward(2);
     await expect(page.locator('#toasts')).toContainText('ZenMart has offered');

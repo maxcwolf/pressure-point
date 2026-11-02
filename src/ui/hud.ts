@@ -134,6 +134,8 @@ export class HudState {
   itemKind: ItemKind | 'all' = 'all';
   /** The treatment the Staff menu is narrowed to, showing only those who know it or are learning it. */
   staffKnows: Modality | null = null;
+  /** The role the Staff menu is narrowed to, showing only those in that job, or null for everyone. */
+  staffRole: Role | null = null;
   /** The order picked for each list that can be sorted, by its id; a list with none picked is in its usual order. */
   sorts: Partial<Record<SortList, string>> = {};
   /**

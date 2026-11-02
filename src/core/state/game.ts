@@ -144,8 +144,9 @@ export const defaultPolicy = (): Policy => ({
  * 44: Holds Space only for those who work at a post, taken from any Caretaker who has it.
  * 45: Amanda Jablonsky's own quirks, Healing Hands, Quick Study and Dawdler, in place of any she rolled.
  * 46: the first failed inspection let go with a warning, and a few offers to make a failed one go away in place of one.
+ * 47: the Burnout Survivor quirk taken out of the game, and from anyone who has it.
  */
-export const SAVE_VERSION = 46;
+export const SAVE_VERSION = 47;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

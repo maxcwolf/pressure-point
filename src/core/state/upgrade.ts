@@ -20,6 +20,7 @@ import {
   type Role,
   ROLES,
   ROOMS,
+  TRAITS,
 } from '../data';
 import { tuning } from '../difficulty';
 import { type LandSide, stripsBought } from '../land';
@@ -355,10 +356,29 @@ export function upgradeSave(save: GameState) {
   // rooms were first pencilled in with version 40, and one of a kind of room from a newer version means nothing here
   save.sketches = save.sketches.filter((sk) => Object.hasOwn(ROOMS, sk.type));
   for (const sk of save.sketches) rememberedRoom(sk);
+  // before the other steps that read quirks, as the game no longer knows the one this takes out
+  if (s.version < 47) dropSurvivor(save);
   if (s.version < 44) fitQuirks(save);
   if (s.version < 45) fixAmanda(save);
   if (s.version < 46) offerBribes(save);
   s.version = SAVE_VERSION;
+}
+
+/** Whether the game still knows a quirk a save holds. */
+const knownQuirk = (id: string) => TRAITS.some((t) => t.id === id);
+
+/**
+ * Up to version 46 there was a fifth rare quirk, Burnout Survivor, whose morale never fell below 35: it is taken from
+ * staff and applicants alike, as is any other quirk the game no longer knows. Staff keep the pay they were hired at;
+ * an applicant asks what they are worth without it.
+ */
+function dropSurvivor(s: GameState) {
+  for (const st of s.staff) st.traits = st.traits.filter(knownQuirk);
+  for (const c of s.candidates) {
+    if (c.traits.every(knownQuirk)) continue;
+    c.traits = c.traits.filter(knownQuirk);
+    c.salary = scalePay(fairSalary(c.role, c.skill, c.traits, c.quals), tuning(s, 'salaries'));
+  }
 }
 
 /**

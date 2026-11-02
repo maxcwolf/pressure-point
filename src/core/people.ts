@@ -276,7 +276,9 @@ export function rollQuirks(r: Rng, role: Role): TraitId[] {
   }
   if (random(r) < RARE_CHANCE) {
     const rare = RARE_TRAITS.filter((t) => quirkFits(t.id, role) && free(t));
+    // a draw all the same with none to pick, as a Caretaker has, so the random numbers after it come as they always did
     if (rare.length) quirks.push(pick(r, rare).id);
+    else random(r);
   }
   return quirks;
 }
