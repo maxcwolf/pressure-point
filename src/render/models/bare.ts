@@ -149,14 +149,14 @@ function censor(torso: THREE.Object3D, at: typeof GROIN, chest: boolean) {
 /**
  * What a part of someone is with nothing on: the shirt the body under it, with no collar; the sleeve on the upper arm
  * the arm, and the one on the forearm gone, the hand below it taking the bare forearm, unless a symptom has the hand;
- * the trousers and shoes the legs and feet, as they are. Undefined for a part that does not change.
+ * the trousers and shoes the legs and feet, and biceps bulging through the sleeves bare biceps, as they are. Undefined for a part that does not change.
  */
 function bareShape(mesh: THREE.Mesh, torso: THREE.Object3D): THREE.BufferGeometry | null | undefined {
   const fore = mesh.parent;
   const side = Math.sign(fore?.parent?.position.x ?? 1);
   const handShown = fore?.getObjectByName('hand')?.visible ?? false;
   if (mesh.name === 'shirt') return bareTorso();
-  if (mesh.name === 'trousers' || mesh.name === 'shoe') return mesh.geometry;
+  if (mesh.name === 'trousers' || mesh.name === 'shoe' || mesh.name === 'muscle') return mesh.geometry;
   if (mesh.name === 'sleeve') return fore?.parent === torso ? bareUpperArm() : handShown ? null : mesh.geometry;
   if (mesh.name === 'hand' && mesh.visible) return bareForearm(side);
   return undefined;

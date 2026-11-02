@@ -67,6 +67,17 @@ describe('a guest with nothing on', () => {
     for (const c of rig.bare?.censors ?? []) expect(c.visible).toBe(false);
   });
 
+  it('bares the biceps that bulge through the sleeves of someone flexing, and puts their shirt back on them', () => {
+    const rig = buildCharacter(LAB_LOOK, undefined, 'flex');
+    const muscles = parts(rig, 'muscle');
+    const shirt = muscles[0]?.material;
+    expect(muscles).toHaveLength(2);
+    showBare(rig, true, true);
+    for (const m of muscles) expect(m.material).toBe(parts(rig, 'hand')[0]?.material);
+    showBare(rig, false, true);
+    for (const m of muscles) expect(m.material).toBe(shirt);
+  });
+
   it('builds nothing for someone who never strips', () => {
     const rig = buildCharacter(LAB_LOOK);
     showBare(rig, false, true);
