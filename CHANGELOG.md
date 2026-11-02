@@ -4,6 +4,8 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Continue and Restart in the campaign.** A center you have already started now shows Continue, which picks up its latest save, and Restart, which asks first and says what becomes of your game there. Restarting never loses stars, karma, achievements or unlocks.
+- **On to bigger and better things.** The third star in a campaign center now offers to move you on to the next one, keeping your game as a save of its own and picking the next center up where you left it, or starting it. Or stay and keep toiling where you are.
 - **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
 
 ## v0.35.0

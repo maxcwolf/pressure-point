@@ -7,9 +7,12 @@ import { CAMPAIGN, centerOf, CENTERS, FOUNDATION_KARMA, STAR_KARMA } from '../..
 import { money } from '../../../core/format';
 import { giftsToCome } from '../../../core/sim/foundation';
 import { loadCampaign } from '../../../storage/campaign';
+import { listSaves, writeSave } from '../../../storage/saves';
+import { storeThumb } from '../../../storage/thumbnails';
 import { css } from '../../../styled-system/css';
-import { goButton } from '../../../styled-system/recipes';
+import { buttonRow, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { nextCenterChoice } from '../../lib/campaign';
 import { giftList } from '../../lib/foundation';
 import { karmaText } from '../../lib/karma';
 import { newRoomsText, treatmentsUnlockedAt } from '../../lib/unlocks';
@@ -41,7 +44,7 @@ const unlock = css({
 /** The new star, the grant that comes with it, and what it unlocks. */
 export function StarDialog() {
   const hud = useHud();
-  const { sim } = useGame();
+  const { sim, view, loadGame } = useGame();
   const n = hud.star;
   const goals = centerOf(sim.s).goals;
   // a game the cheat console has been used in earns the campaign nothing: no karma, and no center opened
@@ -58,6 +61,15 @@ export function StarDialog() {
   const [karma] = useState(
     () => counts && CAMPAIGN.includes(sim.s.center) && n > (loadCampaign().stars[sim.s.center] ?? 0),
   );
+  // the last star in a campaign center offers to move on to the next one (worked out once, since it reads every save)
+  const [next] = useState(() => nextCenterChoice(sim.s.center, n, sim.s.cheated, loadCampaign().stars, listSaves()));
+  /** Keep this game as a save of its own, so no later new game moves it out of "Previous game", and go on to the next. */
+  const goNext = (to: string) => {
+    const saved = writeSave(sim.s, `${centerOf(sim.s).name}, three stars`);
+    if (typeof saved !== 'string') storeThumb(saved.id, view.snapshot());
+    // leaving saves the autosave too, so even with no room for a save of its own the game is kept as "Previous game"
+    loadGame(to);
+  };
   // every star in a campaign center opens the Foundation, for the gifts not made here already
   const gifts = n >= goals.length && counts && CAMPAIGN.includes(sim.s.center) ? giftsToCome(sim.s) : [];
   return (
@@ -126,14 +138,41 @@ export function StarDialog() {
               ? `${centerOf(sim.s).name} is complete. Every star there is yours.`
               : 'Cheats were used in this game, so the campaign keeps none of its stars.'}
       </p>{' '}
-      <Button
-        class={goButton()}
-        onPress={() => {
-          hud.close();
-        }}
-      >
-        Keep healing
-      </Button>
+      {next && (
+        <p class={unlock}>
+          <b>{`${next.name} awaits.`}</b>
+          {next.started ? ' Your game there picks up where you left it' : ' A new game starts there'}
+          {`, and this one is kept under Load game as "${centerOf(sim.s).name}, three stars".`}
+        </p>
+      )}{' '}
+      {next ? (
+        <div class={buttonRow()}>
+          <Button
+            class={goButton()}
+            onPress={() => {
+              goNext(next.what);
+            }}
+          >
+            On to bigger and better things
+          </Button>
+          <Button
+            onPress={() => {
+              hud.close();
+            }}
+          >
+            Stay and keep toiling here
+          </Button>
+        </div>
+      ) : (
+        <Button
+          class={goButton()}
+          onPress={() => {
+            hud.close();
+          }}
+        >
+          Keep healing
+        </Button>
+      )}
     </Dialog>
   );
 }
