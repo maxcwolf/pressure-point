@@ -97,7 +97,6 @@ export function demandAdvice(row: DisciplineDemand): string | null {
     return `Guests come for ${name.toLowerCase()} only once someone here can give it. ${an(ROLES[DISCIPLINES[row.discipline].role].name, true)} would bring them.`;
   if (row.line.factor < 0.99)
     return `The line for ${name.toLowerCase()} is putting new guests off: ${lineWord(row)}. Nobody minds until more than three wait for each, and those put off do not come at all. Another room and practitioner, or quicker treatment, would bring them back.`;
-  if (row.unskilled.length) return unskilledWord(row.unskilled);
   if (row.untrained.length) return untrainedWord(row);
   if (row.unequipped.length) return unequippedWord(row);
 
@@ -132,29 +131,21 @@ const kitName = (m: Modality) => {
   return kit ? ITEMS[kit].name : 'its equipment';
 };
 
-/** Which guests come for a specialty item nobody at work is trained to use, and are botched for it. */
-function unskilledWord(unskilled: readonly Modality[]): string {
-  const one = unskilled.length === 1;
-  const what = listed(unskilled.map((m) => `${modalityLabel(m)} for the ${kitName(m)}`));
-  return `Guests come for ${what}, but nobody at work is trained in ${one ? 'it' : 'them'}, so ${one ? 'it goes' : 'they go'} badly. ${one ? 'A course' : 'Courses'} in a Training Room, or a trained practitioner posted with the ${one ? 'item' : 'items'}, put${one ? 's' : ''} that right.`;
-}
-
 /** Which guests would come if a room of the discipline had the specialty item their technique needs. */
 function unequippedWord(row: DisciplineDemand): string {
   const room = ROOMS[DISCIPLINES[row.discipline].room].name;
   const kit = listed(row.unequipped.map((m) => an(kitName(m))));
-  return `${kit.charAt(0).toUpperCase()}${kit.slice(1)} in ${an(room)} would bring guests needing ${listed(row.unequipped.map(modalityLabel))}.`;
+  return `${kit.charAt(0).toUpperCase()}${kit.slice(1)} in ${an(room)} would bring guests needing ${listed(row.unequipped.map(modalityLabel))}, which your staff are trained in.`;
 }
 
 /**
  * A specialty item whose guests come to a room where nobody working is trained to use it, and what puts it right:
- * someone at work who is, assigned to the room, or a course.
+ * someone at work who is, assigned to the room.
  */
 export function gapNote(g: SpecialtyGap): string {
-  const why = `${modalityLabel(g.modality)} guests come for the ${ITEMS[g.item].name}, but nobody working here is trained in it, so it goes badly.`;
-  const who = g.trained[0];
-  if (!who) return `${why} A course in a Training Room puts that right.`;
-  return `${why} ${listed(g.trained.map((st) => st.name))} ${g.trained.length === 1 ? 'is' : 'are'}: assign ${who.name} to this room from their inspector.`;
+  const why = `${modalityLabel(g.modality)} guests come for the ${ITEMS[g.item].name}, but nobody working here is trained in it, so it goes badly for them.`;
+  const who = g.trained[0]?.name ?? '';
+  return `${why} ${listed(g.trained.map((st) => st.name))} ${g.trained.length === 1 ? 'is' : 'are'}: assign ${who} to this room from their inspector.`;
 }
 
 /** A count of things as it reads: "1 station", "6 stations". */
@@ -198,7 +189,7 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
   const drawing = p.machines.filter((m) => m.perMonth > 0);
   const unready = p.machines
     .filter((m) => m.demand.fed && !m.demand.trained)
-    .map((m) => unskilledMachineNote(m.demand));
+    .map((m) => untrainedMachineNote(m.demand));
   if (!drawing.length)
     return [`About ${Math.round(p.perMonth)} new guests a month: ${parts.join(', ')}.`, ...unready].join(' ');
   const tables = `${Math.round(p.tables)} come for the treatment stations: ${parts.join(', ')}.`;
@@ -206,9 +197,9 @@ export function paceNote(p: ArrivalPace, reputation: number, center: CenterDef):
   return [`About ${Math.round(p.perMonth)} new guests a month.`, tables, ...machines, ...unready].join(' ');
 }
 
-/** A signature machine whose guests come while nobody at work is trained to run it, and are botched for it. */
-export function unskilledMachineNote(m: MachineDemand): string {
-  return `The ${ITEMS[m.machine].name}'s guests come all the same while nobody at work is trained to run it, and it goes badly for them: a course in a Training Room puts that right.`;
+/** Why a signature machine with someone to run it draws nobody: nobody at work is trained in what it does. */
+export function untrainedMachineNote(m: MachineDemand): string {
+  return `The ${ITEMS[m.machine].name} draws nobody for its own ailments while nobody at work is trained to run it: a course in a Training Room would bring them.`;
 }
 
 /** Who runs a machine, as a phrase: "a Massage Therapist". */
@@ -317,4 +308,4 @@ export function limitNote(l: Limit, c: Capacity): string {
 
 /** How the shares are made, for the top of the panel. */
 export const DEMAND_INTRO =
-  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room, how much of it your staff are trained for, and how long its line is. Guests come for a technique done with a specialty item while the item stands in one of your rooms, trained or not, and for any other only while someone at work is trained in it. A following grows with every guest healed, shrinks with every one let down, and fades slowly while nobody is treated. A discipline new to the center starts with a little; one that heals more guests than it fails grows.';
+  'Each new guest picks a discipline by its pull, then a condition within it. Its pull is how popular it is, times its following, its finest room, how much of it your staff are trained for, and how long its line is. Guests come only for a technique someone at work is trained in, and for one done with a specialty item, only while the item stands in one of your rooms too. They go to the rooms with the item, so post your trained staff there. A following grows with every guest healed, shrinks with every one let down, and fades slowly while nobody is treated. A discipline new to the center starts with a little; one that heals more guests than it fails grows.';
