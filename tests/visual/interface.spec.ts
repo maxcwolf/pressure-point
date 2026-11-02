@@ -179,6 +179,7 @@ test.describe('in a game', () => {
             { cause: 'prestige', text: 'The Massage Suite has 2 stars of prestige, not 5', amount: 0.02 },
           ],
           hands: true,
+          fix: `Send ${st.name} on the Swedish massage course in a Training Room, or post a Massage Therapist trained in it to the Massage Suite.`,
         },
       ];
       pp.tools.select({ kind: 'guest', id: g.id });
@@ -481,6 +482,9 @@ test.describe('in a game', () => {
         chance,
         cause,
         reasons: [{ cause: cause === 'odds' ? 'prestige' : cause, text, amount }],
+        ...(cause === 'unqualified' && {
+          fix: 'Send Staff on the Deep Tissue massage course in a Training Room, or post a Massage Therapist trained in it to the Massage Suite.',
+        }),
       });
       pp.state.failures = [
         failed('deep', 'unqualified', 'Not trained', 0.42, 0.22),

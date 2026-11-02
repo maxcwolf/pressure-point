@@ -1097,6 +1097,8 @@ export interface FailedTreatment {
   reasons: FailureReason[];
   /** Healing Hands rolled to save it, and missed. */
   hands?: boolean;
+  /** What to do about it, naming who and where, for a cause that has a fix of its own here. */
+  fix?: string;
 }
 
 /** A grid of figures, one for each tile, row by row, as the bytes of 32-bit floats in base64. */

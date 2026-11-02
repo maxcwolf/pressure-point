@@ -2,9 +2,11 @@
 // used (`successChance` in stations.ts), not worked out again afterwards, and the latest failures are kept for the
 // casebook.
 
-import { conditionOf, IDEAL_TEMP, ITEMS, MODALITIES, modalityLabel, ROOMS, traitMost, UPGRADE_LEVELS } from '../data';
-import type { FailedTreatment, FailureReason, Guest, Item, Staff } from '../state/types';
+import { conditionOf, IDEAL_TEMP, ITEMS, MODALITIES, modalityLabel, ROLES, traitMost, UPGRADE_LEVELS } from '../data';
+import { an } from '../format';
+import type { FailedTreatment, FailureReason, Guest, Item, Room, Staff } from '../state/types';
 import { prestige } from './ambience';
+import { roomLabels } from './assignments';
 import { rankName } from './careers';
 import type { SimContext } from './context';
 import { toast } from './events';
@@ -13,7 +15,7 @@ import type { DeliveryProblem } from './treatments';
 import { warmthAt } from './warmth';
 
 /** How many failed treatments are kept. */
-export const FAILURES_KEPT = 40;
+export const FAILURES_KEPT = 30;
 
 /** Below this, something that took off a treatment's chance is too small to name as the reason it failed. */
 export const NAMED_COST = 0.05;
@@ -76,7 +78,32 @@ export function failureText(f: FailedTreatment): string {
   const why = named.length
     ? named.map(reasonText).join('; ')
     : `bad luck, which comes ${pct(1 - f.chance)} of the time${f.reasons[0] ? `. Biggest shortfall: ${reasonText(f.reasons[0])}` : ''}`;
-  return `${head}: ${why}.${f.hands ? ` ${f.staff}’s Healing Hands could not save it.` : ''}`;
+  return `${head}: ${why}.${f.hands ? ` ${f.staff}’s Healing Hands could not save it.` : ''}${f.fix ? ` ${f.fix}` : ''}`;
+}
+
+/** A room's name as the Staff menu has it, numbered where there is more than one of its kind: "Massage Suite 2". */
+const roomLabel = (ctx: SimContext, room: Room) => roomLabels(ctx.s.rooms).get(room.id) ?? room.type;
+
+/**
+ * What to do about a treatment that failed in untrained hands, naming the room: a specialty item or machine there
+ * brings guests for its technique, so post someone trained in it there (a colleague by name, if there is one), or send
+ * whoever gave it on the course. Without one, the course comes first.
+ */
+export function untrainedFix(ctx: SimContext, it: Item, staff: Staff, g: Guest): string | undefined {
+  const room = ctx.world.roomOfItem(it);
+  if (!room) return undefined;
+  const mod = MODALITIES[conditionOf(g.condition).modality];
+  const where = `the ${roomLabel(ctx, room)}`;
+  const technique = modalityLabel(mod.id);
+  const colleague = ctx.s.staff.find(
+    (t) => t.id !== staff.id && t.role === staff.role && t.state !== 'leaving' && t.quals.includes(mod.id),
+  );
+  const who = colleague ? `${colleague.name}, who is trained in it,` : `${an(ROLES[staff.role].name)} trained in it`;
+  const machine = ITEMS[it.type].machine?.performs.includes(mod.id);
+  const kit = machine ? ITEMS[it.type].name : mod.equipment ? ITEMS[mod.equipment].name : '';
+  return kit
+    ? `The ${kit} in ${where} brings ${technique} guests, so post ${who} to ${where}, or send ${staff.name} on the course.`
+    : `Send ${staff.name} on the ${technique} course in a Training Room, or post ${who} to ${where}.`;
 }
 
 /**
@@ -94,6 +121,8 @@ export function recordFailure(
   const reasons = failureReasons(ctx, it, staff, g, c);
   const room = ctx.world.roomOfItem(it);
   const modality = conditionOf(g.condition).modality;
+  const cause = failureCause(c.problem, reasons);
+  const fix = cause === 'unqualified' ? untrainedFix(ctx, it, staff, g) : undefined;
   const f: FailedTreatment = {
     day: ctx.s.day,
     guestId: g.id,
@@ -102,11 +131,12 @@ export function recordFailure(
     modality,
     staffId: staff.id,
     staff: staff.name,
-    place: room ? `in the ${ROOMS[room.type].name}` : `at the ${ITEMS[it.type].name}`,
+    place: room ? `in the ${roomLabel(ctx, room)}` : `at the ${ITEMS[it.type].name}`,
     chance: c.chance,
-    cause: failureCause(c.problem, reasons),
+    cause,
     reasons,
     ...(hands && { hands }),
+    ...(fix && { fix }),
   };
   const kept = (ctx.s.failures ??= []);
   kept.push(f);
@@ -128,7 +158,7 @@ export function failureOf(failures: readonly FailedTreatment[] | undefined, gues
 function wordsFor(ctx: SimContext, it: Item, staff: Staff, g: Guest): (cause: ChanceCause | DeliveryProblem) => string {
   const mod = MODALITIES[conditionOf(g.condition).modality];
   const room = ctx.world.roomOfItem(it);
-  const roomName = room ? ROOMS[room.type].name : ITEMS[it.type].name;
+  const roomName = room ? roomLabel(ctx, room) : ITEMS[it.type].name;
   const item = ITEMS[it.type].name;
   const technique = modalityLabel(mod.id);
   const equipment = mod.equipment ? ITEMS[mod.equipment].name : 'equipment';

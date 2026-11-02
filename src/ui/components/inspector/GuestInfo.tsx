@@ -99,6 +99,7 @@ function FailedWhy({ guest: g }: { guest: Guest }) {
         ))}
       </ul>
       {f.hands && <p class="sub">{`${f.staff}’s Healing Hands could not save it.`}</p>}
+      {f.fix && <p class="sub fix">{f.fix}</p>}
     </div>
   );
 }

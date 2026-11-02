@@ -90,7 +90,8 @@ export interface TechniqueFailures {
 /**
  * The latest failed treatments, technique by technique, those that failed most first: each with its causes, the most
  * common first, and the fix for the commonest. The size of a cause is what it took off on average when it was the
- * reason; for bad luck it is the chance that was missed. A run of bad luck points to the biggest shortfall instead.
+ * reason; for bad luck it is the chance that was missed. A run of bad luck points to the biggest shortfall instead, and
+ * untrained hands to the room and the colleague to post there, as the latest such failure put it.
  */
 export function failureBreakdown(failures: readonly FailedTreatment[]): TechniqueFailures[] {
   const by = new Map<Modality, FailedTreatment[]>();
@@ -107,7 +108,14 @@ export function failureBreakdown(failures: readonly FailedTreatment[]): Techniqu
       .map(([cause, c]) => ({ cause, count: c.count, amount: c.total / c.count }))
       .sort((a, b) => b.count - a.count || b.amount - a.amount);
     const top = ranked[0]?.cause ?? 'odds';
-    return { modality, count: list.length, causes: ranked, fix: fixFor(top === 'odds' ? biggestShortfall(list) : top) };
+    // the latest failure for that cause that says what to do here, naming who and where, says it best
+    const own = list.filter((f) => f.cause === top && f.fix).at(-1)?.fix;
+    return {
+      modality,
+      count: list.length,
+      causes: ranked,
+      fix: own ?? fixFor(top === 'odds' ? biggestShortfall(list) : top),
+    };
   });
   return rows.sort((a, b) => b.count - a.count);
 }

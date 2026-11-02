@@ -2,7 +2,7 @@
 // it is noticed and kept for the casebook.
 import { describe, expect, it } from 'vitest';
 
-import { BOTCH_FACTOR, GUESS_PENALTY, UPGRADE_LEVELS, UPGRADE_SUCCESS } from '../../src/core/data';
+import { BOTCH_FACTOR, GUESS_PENALTY, ROLES, UPGRADE_LEVELS, UPGRADE_SUCCESS } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import {
   failureCause,
@@ -24,7 +24,7 @@ import {
 } from '../../src/core/sim/stations';
 import type { FailedTreatment } from '../../src/core/state/types';
 import { causeText, failureBreakdown, failureHead, failureLines } from '../../src/ui/lib/failures';
-import { openCenter, runUntil } from './helpers';
+import { hire, openCenter, runUntil } from './helpers';
 
 /** The simulation's own context, for the functions that take it. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
@@ -201,6 +201,46 @@ describe('a failed treatment', () => {
     expect(f.cause).toBe('odds');
     expect(failureText(f)).toMatch(/: bad luck, which comes \d+% of the time\. Biggest shortfall: /);
     expect(failureText(f)).toMatch(new RegExp(`${therapist.name}’s Healing Hands could not save it\\.$`));
+  });
+
+  it('puts an untrained hand at a specialty item down to the room it is in, and says who to post there', () => {
+    const { ctx, s, sim, table, therapist, g, odds } = atTable();
+    s.stars = 3;
+    expect(sim.placeItem('stretch_rack', 14, 7, 0)).not.toBeNull();
+    g.condition = 'stiff';
+    therapist.quals = ['swedish'];
+    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+    expect(f.cause).toBe('unqualified');
+    expect(f.fix).toBe(
+      `The Stretch Rack in the Massage Suite brings Sports massage guests, so post a ${ROLES.therapist.name} trained in it to the Massage Suite, or send ${therapist.name} on the course.`,
+    );
+    expect(failureText(f)).toContain('is not trained in Sports massage (−');
+    expect(failureText(f).endsWith(` ${f.fix}`)).toBe(true);
+    // and the casebook's fix for that technique says the same
+    expect(failureBreakdown([f])[0]?.fix).toBe(f.fix);
+  });
+
+  it('names a colleague who is trained in it, to post there instead', () => {
+    const { ctx, s, sim, table, therapist, g, odds } = atTable();
+    s.stars = 3;
+    expect(sim.placeItem('stretch_rack', 14, 7, 0)).not.toBeNull();
+    g.condition = 'stiff';
+    therapist.quals = ['swedish'];
+    const sam = hire(sim, 'therapist');
+    sam.quals = ['swedish', 'sports'];
+    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+    expect(f.fix).toBe(
+      `The Stretch Rack in the Massage Suite brings Sports massage guests, so post ${sam.name}, who is trained in it, to the Massage Suite, or send ${therapist.name} on the course.`,
+    );
+  });
+
+  it('says to train an untrained hand where no specialty item draws the guests', () => {
+    const { ctx, table, therapist, g, odds } = atTable();
+    therapist.quals = [];
+    const f = recordFailure(ctx, table, therapist, g, odds(), false);
+    expect(f.fix).toBe(
+      `Send ${therapist.name} on the Swedish massage course in a Training Room, or post a ${ROLES.therapist.name} trained in it to the Massage Suite.`,
+    );
   });
 
   it(`keeps only the latest ${FAILURES_KEPT}`, () => {
