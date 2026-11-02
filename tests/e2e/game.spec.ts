@@ -98,6 +98,10 @@ test.describe('starting out', () => {
     await page.keyboard.press('Escape');
     // kept for the next visit, and ~ opens the console with its switch in the settings still off
     await game.start();
+    // she may have turned up among the applicants by herself, and then amanda only says where she is
+    await game.eval((pp) => {
+      pp.state.candidates = pp.state.candidates.filter((c) => c.name !== 'Amanda Jablonsky');
+    });
     await page.keyboard.press('Backquote');
     const box = page.getByRole('textbox', { name: 'Cheat command' });
     await expect(box).toBeFocused();
@@ -1265,21 +1269,20 @@ test.describe('running a center', () => {
     // the calming button is not offered to a guest who is going home, and after a minute some are
     const spot = await game.clickGuest({ staying: true });
     await expect(page.locator('#inspector')).toContainText('Condition');
-    const calms = await game.eval((pp, name) => {
-      const g = pp.state.guests.find((x) => x.name === name)!;
+    // by id, as two guests may share a name
+    const calms = await game.eval((pp, id) => {
+      const g = pp.state.guests.find((x) => x.id === id)!;
       g.stressed = true;
       g.calmed = false;
       return pp.state.outbreak!.calms;
-    }, spot.name);
+    }, spot.id);
     await page
       .locator('#inspector')
       .getByRole('button', { name: /Calm them/ })
       .click();
     await expect(page.locator('#inspector')).toContainText('Has had a calming session');
     await expect(page.locator('#objectives .outbreak')).toContainText(`${calms - 1} calming session`);
-    expect(await game.eval((pp, name) => pp.state.guests.find((x) => x.name === name)!.stressed, spot.name)).toBe(
-      false,
-    );
+    expect(await game.eval((pp, id) => pp.state.guests.find((x) => x.id === id)!.stressed, spot.id)).toBe(false);
   });
 
   test('a guest on a really bad trip is named in a toast and a pill, and calmed down by someone sent from the pill', async ({
