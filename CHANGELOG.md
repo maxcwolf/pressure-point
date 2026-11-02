@@ -4,6 +4,9 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Continue and Restart in the campaign.** A center you have already started now shows Continue, which picks up its latest save, and Restart, which asks first and says what becomes of your game there. Restarting never loses stars, karma, achievements or unlocks.
+- **On to bigger and better things.** The third star in a campaign center now offers to move you on to the next one, keeping your game as a save of its own and picking the next center up where you left it, or starting it. Or stay and keep toiling where you are.
+- **No center left behind.** Starting a game in another center no longer pushes the last game of a center out of "Previous game": it is kept under Load game as a save of its own. An imported save now keeps the date it was saved.
 - **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
 - **House calls wait for the treatment in hand.** Someone sent on a house call in the middle of a treatment now finishes it first, and the guest pays as usual, then sets off without calling anyone new. The offer card says who would finish first, their inspector says they are finishing up, and the days away count from when they leave.
 - **Therapists sharing a suite no longer hold up its line.** When a therapist at a table passed over guests who were waiting for a colleague trained in their treatment, and that colleague had nowhere to work, the line could stand still until the first one took a break. They now hand the table over.

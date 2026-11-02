@@ -584,7 +584,9 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
             )}
           </div>
           <div id="title-campaign" class={cx('title-sub', sub)} hidden={showing !== 'campaign'}>
-            {opened.includes('campaign') && <CampaignPanel onStart={onPick} audio={audio} />}
+            {opened.includes('campaign') && (
+              <CampaignPanel onStart={onPick} audio={audio} shown={showing === 'campaign'} />
+            )}
             <ScrollTab />
           </div>
           <div id="title-sandbox" class={cx('title-sub', sub)} hidden={showing !== 'sandbox'}>

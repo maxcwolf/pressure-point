@@ -117,8 +117,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     save,
     /** Leave for a fresh game. */
     newGame: () => leaveFor(state.center === 'sandbox' ? 'new' : `new:${state.center}`),
-    /** Leave for a saved game. */
-    loadGame: (id) => leaveFor(id),
+    /** Leave for a saved game, or a new one in a center. */
+    loadGame: (what) => leaveFor(what),
     /** Go back to the title screen. The game is in the autosave, so Continue picks it straight up. */
     mainMenu: () => {
       saveAndStop();

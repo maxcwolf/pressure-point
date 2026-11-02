@@ -15,8 +15,8 @@ export interface GameHost {
   save: () => string | null;
   /** Leave for a fresh game in the same center. */
   newGame: () => void;
-  /** Leave for a saved game. */
-  loadGame: (id: string) => void;
+  /** Leave for a saved game by its id, or a new one in a center ('new:<center>'). */
+  loadGame: (what: string) => void;
   /** Leave for the title screen, keeping the game in the autosave. */
   mainMenu: () => void;
   /** Quit the desktop app. Undefined in a browser, where there is nothing to quit. */

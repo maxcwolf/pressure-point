@@ -25,7 +25,15 @@ import {
 import { addWear } from '../../src/core/sim/upkeep';
 import { disciplineHere, disciplineOn, newGame, offeringHere, offeringOn } from '../../src/core/state/game';
 import { loadCampaign, recordGame, recordLesson } from '../../src/storage/campaign';
-import { campaignCards } from '../../src/ui/lib/campaign';
+import { AUTOSAVE_ID, MAX_SAVES, PREVIOUS_ID, type SaveInfo } from '../../src/storage/saves';
+import {
+  campaignCards,
+  cannotKeepText,
+  nextCenterChoice,
+  restartWarning,
+  threeStarName,
+  threeStarSlot,
+} from '../../src/ui/lib/campaign';
 import { hireableRoles } from '../../src/ui/lib/catalog';
 import { newRoomsText } from '../../src/ui/lib/unlocks';
 import { openCenter, runUntil } from './helpers';
@@ -88,6 +96,100 @@ describe('the campaign trail', () => {
     expect(newGameCenter('new:exchange')).toBe('exchange');
     expect(newGameCenter('new:atlantis')).toBeNull();
     expect(newGameCenter('auto')).toBeNull();
+  });
+});
+
+/** A saved game's entry in the list, in a center, saved `ago` minutes before the others. */
+const saved = (id: string, center: CenterId, name = 'Autosave', ago = 0): SaveInfo => ({
+  id,
+  name,
+  savedAt: 1_000_000 - ago * 60_000,
+  day: 40,
+  money: 5000,
+  stars: 1,
+  healed: 30,
+  center,
+  startMonth: 2,
+});
+
+describe('continuing and restarting a center', () => {
+  it('picks up the latest save in each center, and none in a center never saved', () => {
+    // newest first, as the list of saves comes
+    const saves = [
+      saved(AUTOSAVE_ID, 'exchange'),
+      saved('a1', 'willow', 'Spring'),
+      saved(PREVIOUS_ID, 'willow', '', 5),
+    ];
+    const [willow, exchange, boardwalk] = campaignCards({ willow: 1 }, saves);
+    expect(willow?.save?.id).toBe('a1');
+    expect(exchange?.save?.id).toBe(AUTOSAVE_ID);
+    expect(boardwalk?.save).toBeUndefined();
+    // a sandbox game is no center's
+    expect(campaignCards({}, [saved('s', 'sandbox')]).every((c) => !c.save)).toBe(true);
+  });
+
+  it('says what becomes of the game there, and keeps the campaign', () => {
+    /** Willow Lane's card, with two stars and these saves. */
+    const cards = (saves: SaveInfo[]) => campaignCards({ willow: 2 }, saves)[0]!;
+    const auto = [saved(AUTOSAVE_ID, 'willow')];
+    const warning = restartWarning(cards(auto), auto);
+    expect(warning.title).toBe('Restart Willow Lane?');
+    expect(warning.game).toContain('moves to "Previous game"');
+    expect(warning.game).toContain('Your game there, on Day 11, Month 4, Year 1, moves');
+    expect(warning.kept).toBe(
+      'You keep its 2 stars, your karma, achievements and everything unlocked: the campaign never takes back what it has earned.',
+    );
+    // the game there is the previous game, and the autosave, another center's, would take its place
+    const previous = [saved(AUTOSAVE_ID, 'exchange'), saved(PREVIOUS_ID, 'willow', 'Previous game', 5)];
+    // ...and it is the last game there, so it is kept as a save of its own
+    expect(restartWarning(cards(previous), previous).game).toContain('is kept under Load game as a save of its own');
+    // ...or the center has another, such as the one kept as it moved on, so it is not overstated as lost
+    const moved = [...previous, saved('t3', 'willow', 'Willow Lane, three stars', 6)];
+    expect(restartWarning(cards(moved), moved).game).toContain('your other saves there stay under Load game');
+    const alone = [saved(PREVIOUS_ID, 'willow', 'Previous game')];
+    expect(restartWarning(cards(alone), alone).game).toContain('stays under Load game');
+    const named = [saved('a1', 'willow', 'Spring')];
+    expect(restartWarning(cards(named), named).game).toContain('Your save "Spring" stays under Load game');
+    // with no star yet, there are none to keep
+    const fresh = campaignCards({}, auto)[0]!;
+    expect(restartWarning(fresh, auto).kept).toMatch(/^You keep your karma/);
+    expect(restartWarning({ ...fresh, earned: 1 }, auto).kept).toMatch(/^You keep its star, /);
+  });
+
+  it('leads the third star on to the next center, started or not', () => {
+    // not started: a new game there, even before the autosave records the star that opened it
+    expect(nextCenterChoice('willow', 3, false, {}, [])).toEqual({
+      id: 'exchange',
+      name: 'The Exchange',
+      what: 'new:exchange',
+      started: false,
+    });
+    // started: its latest save
+    const saves = [saved(AUTOSAVE_ID, 'willow'), saved('b2', 'exchange', 'Busy', 1), saved('b1', 'exchange', 'Old', 9)];
+    expect(nextCenterChoice('willow', 3, false, { willow: 3 }, saves)).toMatchObject({ what: 'b2', started: true });
+  });
+
+  it("keeps a game moving on in its center's one three-star save, and says why when it cannot", () => {
+    expect(threeStarName('willow')).toBe('Willow Lane, three stars');
+    const saves = [saved(AUTOSAVE_ID, 'willow'), saved('t1', 'exchange', 'The Exchange, three stars')];
+    expect(threeStarSlot('willow', saves)).toBeUndefined();
+    expect(threeStarSlot('willow', [...saves, saved('t2', 'willow', 'Willow Lane, three stars')])).toBe('t2');
+    // a save of that name from another center is not this one's
+    expect(threeStarSlot('exchange', [saved('t3', 'willow', 'The Exchange, three stars')])).toBeUndefined();
+    const full = Array.from({ length: MAX_SAVES }, (_, i) => saved(`s${i}`, 'sandbox', `Save ${i}`));
+    expect(cannotKeepText([saved(PREVIOUS_ID, 'willow'), ...full])).toBe(
+      `All ${MAX_SAVES} named saves are in use, so this game could not be kept as one.`,
+    );
+    expect(cannotKeepText(saves)).toContain('no room left in storage');
+  });
+
+  it('leads nowhere before the last star, after the last center, in the sandbox, or to a center a cheat would open', () => {
+    expect(nextCenterChoice('willow', 2, false, { willow: 2 }, [])).toBeUndefined();
+    expect(nextCenterChoice('orchard', 3, false, { orchard: 3 }, [])).toBeUndefined();
+    expect(nextCenterChoice('sandbox', 3, false, {}, [])).toBeUndefined();
+    // the campaign keeps nothing from a cheated game, so the next center is offered only if another game opened it
+    expect(nextCenterChoice('willow', 3, true, {}, [])).toBeUndefined();
+    expect(nextCenterChoice('willow', 3, true, { willow: 1 }, [])?.what).toBe('new:exchange');
   });
 });
 

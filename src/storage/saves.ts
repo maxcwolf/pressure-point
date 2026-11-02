@@ -312,11 +312,13 @@ export function deleteSave(id: string) {
 /**
  * Called when a new game starts: the autosave of the game being left moves into
  * the single "Previous game" slot instead of being overwritten. False if there is no room to keep it, when the
- * new game must not start, or its first autosave would overwrite the old one.
+ * new game must not start, or its first autosave would overwrite the old one. `from` is the save being opened, if any:
+ * the previous game itself, when it is, goes on in the autosave and need not be kept.
  */
-export function archiveAutosave(now = Date.now()): boolean {
+export function archiveAutosave(now = Date.now(), from = ''): boolean {
   const old = readSave(AUTOSAVE_ID);
   if (!old) return keepUnreadable(now);
+  if (from !== PREVIOUS_ID && !keepLastInCenter(old.center, now)) return false;
   if (typeof writeSave(old, `Previous game (${gameDate(old.day, old.startMonth)})`, PREVIOUS_ID, now) === 'string')
     return false;
   copyThumb(AUTOSAVE_ID, PREVIOUS_ID);
@@ -325,12 +327,38 @@ export function archiveAutosave(now = Date.now()): boolean {
 }
 
 /**
- * Called when a game opens that is not the one in the autosave: that one moves to "Previous game", and the game opened
- * takes its place straight away, so it is kept from the start even when it was the previous game itself. False if
- * there is no room to keep the old autosave, when the game must not open.
+ * Before the autosave of a game in `incoming` takes over "Previous game", keep the game there as a save of its own if
+ * it is the last one left in its center, so moving between centers never drops a center's only game. False if there is
+ * no room to keep it.
  */
-export function openInAutosave(s: GameState, now = Date.now()): boolean {
-  if (!archiveAutosave(now)) return false;
+function keepLastInCenter(incoming: CenterId, now: number): boolean {
+  const list = listSaves();
+  const prev = list.find((i) => i.id === PREVIOUS_ID);
+  if (!prev) return true;
+  const center = prev.center ?? 'sandbox';
+  if (center === incoming || list.some((i) => i.id !== PREVIOUS_ID && (i.center ?? 'sandbox') === center)) return true;
+  const state = readSave(PREVIOUS_ID);
+  if (!state) return true;
+  // kept with the time it was saved, so it does not jump ahead of the center's newer games
+  const kept = writeSave(
+    state,
+    `${CENTERS[center].name} (${gameDate(state.day, state.startMonth)})`,
+    undefined,
+    prev.savedAt || now,
+  );
+  if (typeof kept === 'string') return false;
+  copyThumb(PREVIOUS_ID, kept.id);
+  return true;
+}
+
+/**
+ * Called when a game opens that is not the one in the autosave: that one moves to "Previous game", and the game opened
+ * takes its place straight away, so it is kept from the start even when it was the previous game itself. `from` says
+ * what was opened: a save's id, or 'new:<center>' for a new game. False if there is no room to keep the old autosave,
+ * when the game must not open.
+ */
+export function openInAutosave(s: GameState, from = '', now = Date.now()): boolean {
+  if (!archiveAutosave(now, from)) return false;
   // with no room for it, the game is saved at its first autosave, which says so
   autosave(s, now);
   return true;
@@ -385,11 +413,13 @@ export function importSave(text: string, now = Date.now()): SaveInfo | SaveError
   const state = parseState(JSON.stringify(file.state ?? null));
   if (!state) return 'invalid';
   const name = typeof file.name === 'string' && file.name.trim() ? file.name : defaultSaveName(state);
+  // kept with the time it was saved, so an old backup does not pass for the latest game in its center
+  const savedAt = isNumber(file.savedAt) && file.savedAt > 0 && file.savedAt <= now ? file.savedAt : now;
   return writeSave(
     state,
     name === 'Autosave' ? `Imported (${gameDate(state.day, state.startMonth)})` : name,
     undefined,
-    now,
+    savedAt,
   );
 }
 

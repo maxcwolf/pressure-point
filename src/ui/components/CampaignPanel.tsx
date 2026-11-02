@@ -1,27 +1,30 @@
 // The campaign on the title screen: the trail of centers, the karma shop, and the achievements that earn karma.
 
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 
 import { track } from '../../app/analytics';
 import type { Audio } from '../../audio/audio';
 import { karmaLeft } from '../../core/campaign';
 import { CAMPAIGN } from '../../core/data';
 import { buyDecorWithKarma, buyWithKarma, loadCampaign } from '../../storage/campaign';
+import { gameDate, listSaves, readSave, type SaveInfo, timeAgo } from '../../storage/saves';
 import { loadTutorialPref, saveTutorialPref } from '../../storage/settings';
 import { css } from '../../styled-system/css';
-import { goButton, tabButton, tabStrip, toggleSwitch } from '../../styled-system/recipes';
+import { dangerButton, goButton, tabButton, tabStrip, toggleSwitch } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
-import { campaignCards } from '../lib/campaign';
+import { type CampaignCard, campaignCards, restartWarning } from '../lib/campaign';
 import { cx } from '../lib/cx';
 import { achievementCards, decorCards, karmaText, shopCards } from '../lib/karma';
 import { Icon, IconText } from './common/Icon';
 import { StarRow } from './common/Stars';
 
 export interface CampaignPanelProps {
-  /** Start a new game in a center. */
-  onStart: (center: string) => void;
+  /** Start a new game in a center ('new:<center>'), or pick up a saved game there by its id. */
+  onStart: (what: string) => void;
   /** For the click of a switch. */
   audio: Audio;
+  /** Whether the panel is showing: the saves are read again each time it is, as Load game may have changed them. */
+  shown: boolean;
 }
 
 type Tab = 'centers' | 'shop' | 'achievements';
@@ -102,8 +105,20 @@ const why = css(line, { fontWeight: 'bold', mb: '0' });
 /** Play, and Willow Lane's switch for the tutorial beside it. */
 const play = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', rowGap: '8', columnGap: '14' });
 
-/** Play, without the room the go buttons usually leave above them. */
+/** Play, Continue and Restart, without the room the worded buttons usually leave above them. */
 const playButton = css({ mt: '0' });
+
+/** Restart, a quieter button beside Continue. */
+const restartButton = css({ mt: '0', bg: 'control', color: 'fg' });
+
+/** Where the game Continue picks up has got to, and when it was saved. */
+const savedLine = css({ flexBasis: 'full', fontSize: '12', opacity: 'soft' });
+
+/** Why the game Continue was to pick up would not open. */
+const goneLine = css({ flexBasis: 'full', fontSize: '13', fontWeight: 'bold', color: 'bad' });
+
+/** The question before a center starts over, on the card in place of its buttons. */
+const asking = css({ fontSize: '13', m: '0', mt: '2', mb: '6' });
 
 /** The switch for the tutorial, with its words. */
 const tutorialSwitch = css({ display: 'flex', alignItems: 'center', gap: '8', fontSize: '13', cursor: 'pointer' });
@@ -154,7 +169,7 @@ const shopHead = css({ m: '0', mt: '14', textAlign: 'left', fontSize: '15' });
 const swatch = css({ w: '24', h: '24', borderRadius: '6', border: 'card' });
 
 /** The campaign's tabs, under the karma there is to spend. */
-export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
+export function CampaignPanel({ onStart, audio, shown }: CampaignPanelProps) {
   const [tab, setTab] = useState<Tab>('centers');
   const redraw = useRedraw();
   const progress = loadCampaign();
@@ -179,7 +194,7 @@ export function CampaignPanel({ onStart, audio }: CampaignPanelProps) {
           </button>
         ))}
       </div>
-      {tab === 'centers' && <Centers onStart={onStart} audio={audio} />}
+      {tab === 'centers' && <Centers onStart={onStart} audio={audio} shown={shown} />}
       {tab === 'shop' && <Shop onBuy={redraw} />}
       {tab === 'achievements' && <Achievements />}
     </div>
@@ -212,9 +227,32 @@ function TutorialSwitch({ audio }: { audio: Audio }) {
   );
 }
 
-/** A card per campaign center, joined by a trail, with Play on the ones that are open. */
-function Centers({ onStart, audio }: CampaignPanelProps) {
-  const cards = campaignCards(loadCampaign().stars);
+/** A card per campaign center, joined by a trail, with Play on the ones that are open, or Continue and Restart. */
+function Centers({ onStart, audio, shown }: CampaignPanelProps) {
+  /** The center whose save would not open, and why. */
+  const [gone, setGone] = useState<{ id: CampaignCard['id']; text: string } | null>(null);
+  // read as the panel shows, not on every redraw: a save deleted or imported under Load game shows here next time
+  const [saves, setSaves] = useState(listSaves);
+  useEffect(() => {
+    if (!shown) return;
+    setSaves(listSaves());
+    setGone(null);
+  }, [shown]);
+  /** Pick up a center's latest game, or say why it cannot be and read the saves again. */
+  const resume = (c: CampaignCard, save: SaveInfo) => {
+    if (readSave(save.id)) {
+      onStart(save.id);
+      return;
+    }
+    setGone({
+      id: c.id,
+      text: `"${save.name}" could not be opened: it may have been deleted, or be from a newer version.`,
+    });
+    setSaves(listSaves());
+  };
+  /** The center whose Restart has been pressed, waiting for the player to say they mean it. */
+  const [restarting, setRestarting] = useState<CampaignCard['id'] | ''>('');
+  const cards = campaignCards(loadCampaign().stars, saves);
   return (
     <>
       <ol class={trail}>
@@ -229,20 +267,61 @@ function Centers({ onStart, audio }: CampaignPanelProps) {
               <small class={small}>{c.place}</small>
               <p class={blurb}>{c.blurb}</p>
               <p class={opening}>{c.opening}</p>
-              {c.open ? (
-                <div class={play}>
-                  <button
-                    class={cx(goButton(), playButton)}
-                    onClick={() => {
-                      onStart(`new:${c.id}`);
-                    }}
-                  >
-                    {c.earned ? `Play ${c.name} again` : `Play ${c.name}`}
-                  </button>
-                  {c.id === CAMPAIGN[0] && <TutorialSwitch audio={audio} />}
-                </div>
-              ) : (
+              {!c.open ? (
                 <p class={why}>{c.locked}</p>
+              ) : restarting === c.id ? (
+                <Restart
+                  card={c}
+                  saves={saves}
+                  onStart={onStart}
+                  onCancel={() => {
+                    setRestarting('');
+                  }}
+                />
+              ) : (
+                <div class={play}>
+                  {c.save ? (
+                    <>
+                      <button
+                        class={cx(goButton(), playButton)}
+                        onClick={() => {
+                          if (c.save) resume(c, c.save);
+                        }}
+                      >
+                        Continue
+                      </button>
+                      <button
+                        class={cx(goButton(), restartButton)}
+                        onClick={() => {
+                          setRestarting(c.id);
+                        }}
+                      >
+                        Restart
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      class={cx(goButton(), playButton)}
+                      onClick={() => {
+                        onStart(`new:${c.id}`);
+                      }}
+                    >
+                      {c.earned ? `Play ${c.name} again` : `Play ${c.name}`}
+                    </button>
+                  )}
+                  {c.id === CAMPAIGN[0] && <TutorialSwitch audio={audio} />}
+                  {c.save && (
+                    <small class={savedLine}>
+                      {`${gameDate(c.save.day, c.save.startMonth)}, saved ${timeAgo(c.save.savedAt)}`}
+                    </small>
+                  )}
+                  {/* `gone` is for the tests */}
+                  {gone?.id === c.id && (
+                    <small class={cx('gone', goneLine)} role="alert">
+                      {gone.text}
+                    </small>
+                  )}
+                </div>
               )}
             </div>
           </li>
@@ -250,6 +329,42 @@ function Centers({ onStart, audio }: CampaignPanelProps) {
       </ol>
       <p class="sub">Earn a center's first star to open the next. More centers are on the way.</p>
     </>
+  );
+}
+
+/** The question on a card before its center starts over: what becomes of the game there, and what is kept. */
+function Restart({
+  card,
+  saves,
+  onStart,
+  onCancel,
+}: {
+  card: CampaignCard;
+  saves: readonly SaveInfo[];
+  onStart: (what: string) => void;
+  onCancel: () => void;
+}) {
+  const warning = restartWarning(card, saves);
+  // `restart` is for the tests
+  return (
+    <div class="restart" role="alertdialog" aria-label={warning.title}>
+      <p class={why}>{warning.title}</p>
+      <p class={asking}>{warning.game}</p>
+      <p class={asking}>{warning.kept}</p>
+      <div class={play}>
+        <button
+          class={cx(dangerButton(), playButton)}
+          onClick={() => {
+            onStart(`new:${card.id}`);
+          }}
+        >
+          Start over
+        </button>
+        <button class={cx(goButton(), restartButton)} onClick={onCancel}>
+          Keep my game
+        </button>
+      </div>
+    </div>
   );
 }
 
