@@ -1,0 +1,1140 @@
+<meta charset="utf-8" />
+<title>Accidents on the Floor</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap"
+/>
+<style>
+  /* Layout: the six models close up and beside what they must not be mistaken for, then one section per option, each
+   opening on its pictures in the real game, then a short spec sheet; a table and the recommendation close the page.
+   The recommended options' pictures wear an amber frame. Picture crops are at the game's own pixel size. */
+  :root {
+    --bg: #eef3f2;
+    --panel: #ffffff;
+    --fg: #182628;
+    --muted: #566a6c;
+    --line: #d3dedd;
+    --accent: #0f7a73;
+    --rec: #e09a12;
+    --rec-ink: #2a1c00;
+    --bad: #b5432f;
+    --display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+    --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #101819;
+      --panel: #172223;
+      --fg: #e3eceb;
+      --muted: #9db0b1;
+      --line: #2a3a3c;
+      --accent: #43c3b8;
+      --rec: #f2b33d;
+      --rec-ink: #241700;
+      --bad: #ef8a74;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #101819;
+    --panel: #172223;
+    --fg: #e3eceb;
+    --muted: #9db0b1;
+    --line: #2a3a3c;
+    --accent: #43c3b8;
+    --rec: #f2b33d;
+    --rec-ink: #241700;
+    --bad: #ef8a74;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+  }
+  main {
+    max-width: 1360px;
+    margin: 0 auto;
+    display: grid;
+    gap: 56px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    text-wrap: balance;
+    line-height: 1.15;
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(2rem, 4vw, 2.9rem);
+  }
+  h2 {
+    font-size: 1.7rem;
+  }
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  p {
+    margin: 0;
+    max-width: 68ch;
+  }
+  .eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  header {
+    display: grid;
+    gap: 14px;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .opt {
+    display: grid;
+    gap: 18px;
+    padding-top: 28px;
+    border-top: 2px solid var(--line);
+  }
+  .opt-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 14px;
+  }
+  .opt-head .letter {
+    font-family: var(--display);
+    font-size: 1.7rem;
+    color: var(--accent);
+  }
+  .chip {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--rec);
+    color: var(--rec-ink);
+  }
+  .pitch {
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  figcaption b {
+    color: var(--fg);
+  }
+  .shot {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+    max-width: 100%;
+    line-height: 0;
+    border-radius: 6px;
+  }
+  .shot img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+  }
+  .shot:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  /* the recommended option's pictures: a heavy amber frame and a tag on the picture itself */
+  .rec .shot img {
+    border: 5px solid var(--rec);
+  }
+  .rec .shot::after {
+    content: 'Recommended';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    line-height: 1;
+    font: 700 0.8rem/1 var(--body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--rec);
+    color: var(--rec-ink);
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px 28px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .spec div {
+    min-width: 0;
+  }
+  .spec dt {
+    font-size: 0.78rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .spec dd {
+    margin: 0;
+  }
+  .risk dd {
+    color: var(--fg);
+  }
+  .risk dt {
+    color: var(--bad);
+  }
+  .days {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 760px;
+    font-variant-numeric: tabular-nums;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  tr.rec-row td {
+    background: color-mix(in srgb, var(--rec) 16%, transparent);
+  }
+  tr.rec-row td:first-child {
+    box-shadow: inset 5px 0 0 var(--rec);
+    font-weight: 700;
+  }
+  .verdict {
+    display: grid;
+    gap: 14px;
+    padding: 22px 24px;
+    border-radius: 10px;
+    border: 3px solid var(--rec);
+    background: var(--panel);
+  }
+  ol.ten {
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 4px;
+    max-width: 80ch;
+  }
+  ol.ten b {
+    font-weight: 700;
+  }
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    background: rgb(8 14 15 / 0.88);
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox .frame {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    line-height: 0;
+  }
+  .lightbox img {
+    max-width: min(1440px, 100%);
+    max-height: calc(100vh - 80px);
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  .lightbox .frame.rec img {
+    border: 6px solid var(--rec);
+  }
+  .lightbox .frame.rec::after {
+    content: 'Recommended';
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font: 700 0.85rem/1 var(--body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--rec);
+    color: var(--rec-ink);
+    padding: 7px 11px;
+    border-radius: 4px;
+  }
+  .lightbox .cap {
+    color: #e3eceb;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .lightbox button {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    font: 700 1rem var(--body);
+    background: #e3eceb;
+    color: #101819;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    body {
+      padding-block: 24px 48px;
+    }
+    main {
+      gap: 40px;
+    }
+  }
+  .trio {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: start;
+  }
+  .pair figure {
+    flex: 1 1 520px;
+  }
+  .pair .shot img {
+    width: 100%;
+  }
+  .part {
+    display: grid;
+    gap: 10px;
+    padding-top: 12px;
+  }
+  .part > p {
+    font-size: 1.05rem;
+  }
+  .question {
+    display: grid;
+    gap: 12px;
+    padding: 20px 22px;
+    border-radius: 10px;
+    border: 2px dashed var(--accent);
+    background: var(--panel);
+  }
+  .question ol {
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 6px;
+    max-width: 80ch;
+  }
+  ul.plan {
+    margin: 0;
+    padding-left: 1.2em;
+    display: grid;
+    gap: 6px;
+    max-width: 80ch;
+  }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Pressure Point Institute &#183; 0.36.0 stream L &#183; 1 November 2026</span>
+    <h1>Accidents on the floor</h1>
+    <p>
+      No restroom means pee and poop on the ground. Before any of it is built, here are three poops and three puddles of
+      pee, each drawn in the game&#8217;s soft clay-toy style and photographed in the real game, so you can pick one of
+      each. The poops are A, B and C; the puddles are D, E and F. The recommendation is <b>C</b> and <b>D</b>, and their
+      pictures wear an amber frame.
+    </p>
+    <p class="note">
+      How the pictures were made: a new sandbox game in the browser at 1440&#215;900 at noon, with three rooms floored
+      in oak, checkerboard and bamboo off the corridor, each model laid on all four floors and guests standing beside
+      three of them. Each option is shot as near as the game lets you zoom, at the default zoom every game starts at,
+      and zoomed right out, both as it is and grown half as big again. Crops are at the game&#8217;s own pixel size;
+      click any picture to see it whole. Nothing in the simulation has changed yet: the models are on the branch, in the
+      model lab at <code>/lab.html?model=scenery:accidents</code> (pick a look from its settings), and the game pictures
+      were taken by laying them straight into the scene.
+    </p>
+  </header>
+
+  <section class="part" aria-labelledby="all">
+    <h2 id="all">All six, and what they must not be mistaken for</h2>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/lab-all.webp"
+            alt="The three poops along the back and the three puddles along the front, in the model lab"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>In the model lab.</b> Back row: A swirl, B lumps, C swirl with flies. Front row: D glossy, E sparkling, F
+          rimmed.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/line-up.webp"
+            alt="Along the corridor: the three puddles of pee beside kombucha and flood water, and the three poops beside litter and soot"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Beside what is already on the floor.</b> Top row: D, E, F, then kombucha (amber) and flood water (blue).
+          Bottom row: A, B, C, then litter and soot.
+        </figcaption>
+      </figure>
+    </div>
+    <p>
+      Pee is lemon yellow, well clear of kombucha&#8217;s amber, and lies as one round pool with a smaller one run into
+      it and a few splashes, where kombucha is three round pools of the same size. Poop stands up off the floor in
+      brown, where litter is three bright wrappers and soot a flat black smudge. A poop is 33&#160;cm tall, about up to
+      a guest&#8217;s knee, and a puddle 60&#160;cm across, as big as a puddle of kombucha. At the default zoom a poop
+      is about 14 pixels across and a puddle 25; zoomed right out, 7 and 13.
+    </p>
+  </section>
+
+  <section class="part" aria-labelledby="poops">
+    <h2 id="poops">The poop</h2>
+  </section>
+  <section class="opt" id="poop-a">
+    <div class="opt-head">
+      <span class="letter">A</span>
+      <h2>Soft-serve swirl</h2>
+      <h3>Poop</h3>
+    </div>
+    <p class="pitch">
+      The cartoon one: three shiny chocolate tiers, each a little off the one under it so it twists, and a curl on top.
+    </p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-swirl-close.webp"
+            alt="Soft-serve swirl, close up, in the corridor beside a guest and on an oak floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Close up</b>, as near as the game zooms: the corridor, with a guest beside it, and an oak floor.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-swirl-close-rooms.webp"
+            alt="Soft-serve swirl, close up, on a checkerboard floor and a bamboo floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Close up</b>: checkerboard and bamboo, the yellowest floor there is.</figcaption>
+      </figure>
+    </div>
+    <div class="trio">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-swirl-default.webp"
+            alt="Soft-serve swirl at the default zoom, on four floors"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Default zoom</b>, where every game starts.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/poop-swirl-far.webp" alt="Soft-serve swirl zoomed right out" loading="lazy" />
+        </button>
+        <figcaption><b>Zoomed right out</b>, as it is.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-swirl-far-grown.webp"
+            alt="Soft-serve swirl zoomed right out, drawn half as big again"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Zoomed right out, grown</b> half as big again, as a speech bubble grows.</figcaption>
+      </figure>
+    </div>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          The outline alone says what it is, from every side and on every floor, even zoomed right out. Brown on oak is
+          the weakest of the four floors, and still reads by its shape and shine.
+        </dd>
+      </div>
+      <div>
+        <dt>Funny, not gross</dt>
+        <dd>It is the emoji everyone knows, with no face on it. Nothing is wet, squashed or smeared.</dd>
+      </div>
+      <div>
+        <dt>Cost</dt>
+        <dd>One part to draw, one material. Nothing moves.</dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>Nothing much. It lies still, so a fresh one and one left for an hour look the same.</dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt" id="poop-b">
+    <div class="opt-head">
+      <span class="letter">B</span>
+      <h2>Lumpy heap</h2>
+      <h3>Poop</h3>
+    </div>
+    <p class="pitch">Five plump lumps of different sizes piled up, a deeper, matt brown, like clay.</p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-lumps-close.webp"
+            alt="Lumpy heap, close up, in the corridor beside a guest and on an oak floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Close up</b>, as near as the game zooms: the corridor, with a guest beside it, and an oak floor.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-lumps-close-rooms.webp"
+            alt="Lumpy heap, close up, on a checkerboard floor and a bamboo floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Close up</b>: checkerboard and bamboo, the yellowest floor there is.</figcaption>
+      </figure>
+    </div>
+    <div class="trio">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-lumps-default.webp"
+            alt="Lumpy heap at the default zoom, on four floors"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Default zoom</b>, where every game starts.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/poop-lumps-far.webp" alt="Lumpy heap zoomed right out" loading="lazy" />
+        </button>
+        <figcaption><b>Zoomed right out</b>, as it is.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-lumps-far-grown.webp"
+            alt="Lumpy heap zoomed right out, drawn half as big again"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Zoomed right out, grown</b> half as big again, as a speech bubble grows.</figcaption>
+      </figure>
+    </div>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          Close up it is a pile of something; at the default zoom it is a dark blob, and on oak it sinks into the floor.
+          Zoomed out it could be anything.
+        </dd>
+      </div>
+      <div>
+        <dt>Funny, not gross</dt>
+        <dd>The nearest of the three to the real thing, so the least funny and the most likely to put someone off.</dd>
+      </div>
+      <div>
+        <dt>Cost</dt>
+        <dd>One part to draw, one material. Nothing moves.</dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>It can be read as pebbles, conkers or a dropped snack, which is worse than not seeing it at all.</dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt rec" id="poop-c">
+    <div class="opt-head">
+      <span class="letter">C</span>
+      <h2>Swirl with flies</h2>
+      <span class="chip">Recommended</span>
+      <h3>Poop</h3>
+    </div>
+    <p class="pitch">
+      The swirl from A, with two cartoon flies looping round it, wings up in a V, bobbing as they go, one each way
+      round.
+    </p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-flies-close.webp"
+            alt="Swirl with flies, close up, in the corridor beside a guest and on an oak floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Close up</b>, as near as the game zooms: the corridor, with a guest beside it, and an oak floor.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-flies-close-rooms.webp"
+            alt="Swirl with flies, close up, on a checkerboard floor and a bamboo floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Close up</b>: checkerboard and bamboo, the yellowest floor there is.</figcaption>
+      </figure>
+    </div>
+    <div class="trio">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-flies-default.webp"
+            alt="Swirl with flies at the default zoom, on four floors"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Default zoom</b>, where every game starts.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/poop-flies-far.webp" alt="Swirl with flies zoomed right out" loading="lazy" />
+        </button>
+        <figcaption><b>Zoomed right out</b>, as it is.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/poop-flies-far-grown.webp"
+            alt="Swirl with flies zoomed right out, drawn half as big again"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Zoomed right out, grown</b> half as big again, as a speech bubble grows.</figcaption>
+      </figure>
+    </div>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          Everything A has, and the only accident that moves: two dark specks circling catch the eye at the default zoom
+          before the poop does, which is what a mess you should send someone to needs.
+        </dd>
+      </div>
+      <div>
+        <dt>Funny, not gross</dt>
+        <dd>The flies say it smells without showing anything more. Big round cartoon flies, not real ones.</dd>
+      </div>
+      <div>
+        <dt>Cost</dt>
+        <dd>
+          Four more small parts, two materials, no shadows; a few sums a frame to fly them, only while there is a poop,
+          which is rarely.
+        </dd>
+      </div>
+      <div>
+        <dt>A good use of the flies</dt>
+        <dd>
+          They could arrive only once a poop has been left a while, say half a minute, so you can tell a fresh one from
+          one nobody is seeing to. Your call; it changes nothing in the picture.
+        </dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>Zoomed right out the flies are a pixel or two; the swirl still shows, more so grown.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="part" aria-labelledby="pees">
+    <h2 id="pees">The puddle of pee</h2>
+  </section>
+  <section class="opt rec" id="pee-d">
+    <div class="opt-head">
+      <span class="letter">D</span>
+      <h2>Glossy puddle</h2>
+      <span class="chip">Recommended</span>
+      <h3>Pee</h3>
+    </div>
+    <p class="pitch">
+      A round pool with a smaller one run into it and three splashes, lemon yellow, with a cartoon shine: a thin white
+      curve along its edge and a dot past the end of it.
+    </p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-gloss-close.webp"
+            alt="Glossy puddle, close up, in the corridor beside a guest and on an oak floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Close up</b>, as near as the game zooms: the corridor, with a guest beside it, and an oak floor.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-gloss-close-rooms.webp"
+            alt="Glossy puddle, close up, on a checkerboard floor and a bamboo floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Close up</b>: checkerboard and bamboo, the yellowest floor there is.</figcaption>
+      </figure>
+    </div>
+    <div class="trio">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-gloss-default.webp"
+            alt="Glossy puddle at the default zoom, on four floors"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Default zoom</b>, where every game starts.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/pee-gloss-far.webp" alt="Glossy puddle zoomed right out" loading="lazy" />
+        </button>
+        <figcaption><b>Zoomed right out</b>, as it is.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-gloss-far-grown.webp"
+            alt="Glossy puddle zoomed right out, drawn half as big again"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Zoomed right out, grown</b> half as big again, as a speech bubble grows.</figcaption>
+      </figure>
+    </div>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>
+          Lemon yellow on every floor, and its shape, a splash with drops thrown off it, is nothing like
+          kombucha&#8217;s three even pools. Bamboo is the weakest floor, and it still reads.
+        </dd>
+      </div>
+      <div>
+        <dt>Funny, not gross</dt>
+        <dd>A cartoon spill with a shine on it, as a comic draws one. No steam, no drips, nothing more.</dd>
+      </div>
+      <div>
+        <dt>Cost</dt>
+        <dd>Two materials, flat on the floor, no shadows. Nothing moves.</dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>
+          It lies still, so a puddle by itself draws the eye less than a poop with flies; it does not need to, since the
+          guest who made it says so.
+        </dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt" id="pee-e">
+    <div class="opt-head">
+      <span class="letter">E</span>
+      <h2>Puddle with sparkles</h2>
+      <h3>Pee</h3>
+    </div>
+    <p class="pitch">D, with three white sparkles over it that swell and fade one after another.</p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-sparkle-close.webp"
+            alt="Puddle with sparkles, close up, in the corridor beside a guest and on an oak floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Close up</b>, as near as the game zooms: the corridor, with a guest beside it, and an oak floor.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-sparkle-close-rooms.webp"
+            alt="Puddle with sparkles, close up, on a checkerboard floor and a bamboo floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Close up</b>: checkerboard and bamboo, the yellowest floor there is.</figcaption>
+      </figure>
+    </div>
+    <div class="trio">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-sparkle-default.webp"
+            alt="Puddle with sparkles at the default zoom, on four floors"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Default zoom</b>, where every game starts.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/pee-sparkle-far.webp" alt="Puddle with sparkles zoomed right out" loading="lazy" />
+        </button>
+        <figcaption><b>Zoomed right out</b>, as it is.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-sparkle-far-grown.webp"
+            alt="Puddle with sparkles zoomed right out, drawn half as big again"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Zoomed right out, grown</b> half as big again, as a speech bubble grows.</figcaption>
+      </figure>
+    </div>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>The glints show at every zoom, on every floor, and move.</dd>
+      </div>
+      <div>
+        <dt>Funny, not gross</dt>
+        <dd>
+          Funny enough, but a sparkle over a floor is how a cartoon says &#8220;just cleaned&#8221;, the opposite of
+          what this is.
+        </dd>
+      </div>
+      <div>
+        <dt>Cost</dt>
+        <dd>Three parts more, one glowing material, a few sums a frame.</dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>Read as a clean, shiny spot, or as something to pick up, like a coin.</dd>
+      </div>
+    </dl>
+  </section>
+  <section class="opt" id="pee-f">
+    <div class="opt-head">
+      <span class="letter">F</span>
+      <h2>Puddle with a rim</h2>
+      <h3>Pee</h3>
+    </div>
+    <p class="pitch">D, with a deeper yellow rim round every pool, like the ink line round a cartoon.</p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-rim-close.webp"
+            alt="Puddle with a rim, close up, in the corridor beside a guest and on an oak floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Close up</b>, as near as the game zooms: the corridor, with a guest beside it, and an oak floor.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-rim-close-rooms.webp"
+            alt="Puddle with a rim, close up, on a checkerboard floor and a bamboo floor"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Close up</b>: checkerboard and bamboo, the yellowest floor there is.</figcaption>
+      </figure>
+    </div>
+    <div class="trio">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-rim-default.webp"
+            alt="Puddle with a rim at the default zoom, on four floors"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Default zoom</b>, where every game starts.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/pee-rim-far.webp" alt="Puddle with a rim zoomed right out" loading="lazy" />
+        </button>
+        <figcaption><b>Zoomed right out</b>, as it is.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/pee-rim-far-grown.webp"
+            alt="Puddle with a rim zoomed right out, drawn half as big again"
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Zoomed right out, grown</b> half as big again, as a speech bubble grows.</figcaption>
+      </figure>
+    </div>
+    <dl class="spec">
+      <div>
+        <dt>On the floor</dt>
+        <dd>The rim gives it an edge on any floor, bamboo most of all.</dd>
+      </div>
+      <div>
+        <dt>Funny, not gross</dt>
+        <dd>Neater than D: more like a sticker on the floor than something spilled.</dd>
+      </div>
+      <div>
+        <dt>Cost</dt>
+        <dd>Three materials, flat on the floor. Nothing moves.</dd>
+      </div>
+      <div class="risk">
+        <dt>What could go wrong</dt>
+        <dd>
+          The rim is the color nearest kombucha&#8217;s amber, so the two are closer than with D, and from afar the rim
+          muddies it toward orange.
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="part" aria-labelledby="glance">
+    <h2 id="glance">Side by side</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Reads at the default zoom</th>
+            <th>Not mistaken for</th>
+            <th>Funny</th>
+            <th>Moves</th>
+            <th>Parts</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>A &#183; Soft-serve swirl</td>
+            <td>Yes, by its outline</td>
+            <td>Litter, soot: yes</td>
+            <td>Yes</td>
+            <td>No</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>B &#183; Lumpy heap</td>
+            <td>As a dark blob</td>
+            <td>Pebbles, a snack: not always</td>
+            <td>Least</td>
+            <td>No</td>
+            <td>1</td>
+          </tr>
+          <tr class="rec-row">
+            <td>C &#183; Swirl with flies</td>
+            <td>Yes, and the flies catch the eye</td>
+            <td>Litter, soot: yes</td>
+            <td>Most</td>
+            <td>Flies</td>
+            <td>5</td>
+          </tr>
+          <tr class="rec-row">
+            <td>D &#183; Glossy puddle</td>
+            <td>Yes, by its color</td>
+            <td>Kombucha, flood water: yes</td>
+            <td>Yes</td>
+            <td>No</td>
+            <td>7 flat pieces, 2 materials</td>
+          </tr>
+          <tr>
+            <td>E &#183; Puddle with sparkles</td>
+            <td>Yes, and the glints catch the eye</td>
+            <td>Kombucha: yes; a clean floor: no</td>
+            <td>Yes</td>
+            <td>Sparkles</td>
+            <td>10, 3 materials</td>
+          </tr>
+          <tr>
+            <td>F &#183; Puddle with a rim</td>
+            <td>Yes, best on bamboo</td>
+            <td>Kombucha: closer than D</td>
+            <td>Less</td>
+            <td>No</td>
+            <td>12 flat pieces, 3 materials</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="verdict" id="recommendation">
+    <span class="eyebrow">Recommendation</span>
+    <h2>C, the swirl with flies, and D, the glossy puddle</h2>
+    <p>
+      The swirl&#8217;s outline says what it is on every floor and at every zoom, and the flies make it the funniest of
+      the three and the one that catches the eye, without anything gross. The glossy puddle is the clearest of the three
+      puddles: lemon yellow well away from kombucha&#8217;s amber, a splash shape unlike kombucha&#8217;s pools, and a
+      shine that says wet. E&#8217;s sparkles say the floor has just been cleaned, and F&#8217;s rim pulls it toward
+      amber.
+    </p>
+    <p>
+      <b>Whichever you pick, grow it when zoomed out</b>, as speech bubbles and the censor mosaic do: drawn at its own
+      size close up and at the default zoom, and up to half as big again as the camera pulls right back, so a mess in a
+      big center still shows. The <i>grown</i> pictures above show the most it grows.
+    </p>
+  </section>
+
+  <section class="question" id="question">
+    <span class="eyebrow">One rule to settle while you pick</span>
+    <h2>Does a long wait for the restroom count as having none?</h2>
+    <p>
+      An accident happens when a guest&#8217;s bladder is full and there is no restroom they can use: none built, none
+      finished, every one flooded, or none they can reach. Today toilets have no line: a bursting guest goes when a
+      toilet is free and loses patience faster until then. So the question is what happens when there are restrooms, but
+      too few toilets for the crowd.
+    </p>
+    <ol>
+      <li>
+        <b>Only when there is no restroom to use at all.</b> A center with too few toilets never has an accident; its
+        guests just get cross, as now.
+      </li>
+      <li>
+        <b>Recommended: also when every toilet is taken and they have been bursting a long while</b>, about 40 seconds
+        at full, against 3&#189; seconds for a visit. Too few toilets for the crowd then shows on the floor, warned
+        first by the bursting bubble, and fixed by building another restroom. A center with enough toilets never sees
+        it.
+      </li>
+    </ol>
+  </section>
+
+  <section class="part" aria-labelledby="then">
+    <h2 id="then">What I will build once you pick</h2>
+    <ul class="plan">
+      <li>
+        The guest leaves the poop or puddle where they stand, and is embarrassed: a big hit to their mood, and often
+        they go home.
+      </li>
+      <li>Guests near it think less of the place, as with litter but more so.</li>
+      <li>
+        It stays until a Caretaker cleans it, through the same job list as litter, ahead of litter and behind flood
+        water. A puddle slows walkers, as kombucha does.
+      </li>
+      <li>
+        Warned first: the bursting bubble, then the first time, an advisor line and an announcement. The guest&#8217;s
+        and the room&#8217;s inspector say why, and the fix is a restroom and a Caretaker.
+      </li>
+      <li>None before the tutorial has asked for a restroom, and a sandbox switch to turn them off.</li>
+    </ul>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <div>
+    <div class="frame" id="lb-frame"><img id="lb-img" alt="" /></div>
+    <p class="cap" id="lb-cap"></p>
+  </div>
+  <button type="button" id="lb-close">Close</button>
+</div>
+
+<script>
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  const lbFrame = document.getElementById('lb-frame');
+  const lbCap = document.getElementById('lb-cap');
+  document.querySelectorAll('.shot').forEach((b) =>
+    b.addEventListener('click', () => {
+      lbImg.src = b.dataset.full || b.querySelector('img').src;
+      lbImg.alt = b.querySelector('img').alt;
+      lbFrame.classList.toggle('rec', !!b.closest('.rec'));
+      lbCap.textContent = b.closest('figure').querySelector('figcaption')?.textContent ?? '';
+      lb.hidden = false;
+      document.getElementById('lb-close').focus();
+    }),
+  );
+  const close = () => {
+    lb.hidden = true;
+    lbImg.removeAttribute('src');
+  };
+  document.getElementById('lb-close').addEventListener('click', close);
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !lb.hidden) close();
+  });
+</script>
