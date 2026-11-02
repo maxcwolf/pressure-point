@@ -171,6 +171,15 @@ describe('a Caretaker with a Fire Extinguisher near the door', () => {
     expect(s.litter.filter((l) => l.soot)).toHaveLength(1);
     expect(s.fire).toMatchObject({ item: 'stone_kiln', burnt: 1, how: 'extinguisher', fee: 0, out: true });
     expect(sim.world.usable(table)).toBe(true);
+    // the paper hears of it: put out by name, before the brigade got there
+    expect(s.news?.find((n) => n.kind === 'fire')).toMatchObject({
+      item: 'stone_kiln',
+      n: 1,
+      how: 'extinguisher',
+      by: caretaker.name,
+      early: true,
+      room: 'massage',
+    });
     // the brigade comes all the same, finds it out, and leaves without charging
     runUntil(sim, () => s.brigade?.state === 'parked', 60);
     expect(crew(c)).toHaveLength(2);
@@ -247,6 +256,9 @@ describe('the fire brigade, with no Caretaker', () => {
     expect(seconds(from, s.day)).toBeLessThan(60);
     expect(s.ledger.upkeep - upkeep).toBe(600 + BRIGADE_FEE);
     expect(s.fire).toMatchObject({ how: 'brigade', fee: BRIGADE_FEE, out: true });
+    expect(s.news?.filter((n) => n.kind === 'fire')).toEqual([
+      expect.objectContaining({ how: 'brigade', fee: BRIGADE_FEE }),
+    ]);
     // back to the truck, and off down the street
     runUntil(sim, () => s.brigade?.state === 'leaving', 60);
     expect(crew(c)).toEqual([]);

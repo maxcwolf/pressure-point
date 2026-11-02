@@ -55,6 +55,17 @@ describe('play events', () => {
     expect(month?.props).toMatchObject({ month: 1, money: sim.s.months.at(-1)?.money, loan: 0 });
     // the next look, a moment later, counts it no more
     expect(names(playEvents(markOf(sim.s), sim.s))).not.toContain('month_ended');
+    expect(month?.props, 'no paper on an ordinary payday').not.toHaveProperty('headline');
+  });
+
+  it('count the town paper’s lead with the month whose payday printed it', () => {
+    const sim = freshSim();
+    sim.fastForward(2 * DAYS_PER_MONTH + 1);
+    const mark = markOf(sim.s);
+    sim.fastForward(DAYS_PER_MONTH);
+    const month = playEvents(mark, sim.s).find((e) => e.name === 'month_ended');
+    expect(sim.s.paper?.issue).toBe(1);
+    expect(month?.props.headline).toBe(sim.s.paper?.lead.kind);
   });
 
   it("count a new player's firsts, and each kind of item the first time it goes down", () => {

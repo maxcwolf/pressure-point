@@ -77,6 +77,9 @@ interface Handle {
     tickToasts(dt: number): void;
     /** Clear every message on the right. */
     dismissAllToasts(): void;
+    /** The dialog open, if any, and closing it, which opens the next waiting. */
+    dialog: string | null;
+    close(): void;
   };
   loop: { saveSoon(): void };
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
