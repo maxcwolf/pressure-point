@@ -55,6 +55,12 @@ export const RUNAWAY_LINES = [
 export const running = (g: Guest) => g.state === 'running';
 
 /**
+ * Whether a guest has nothing on: all the while they run round on a really bad trip, and on their way out if they find
+ * the door still tripping. Calmed down, they are dressed again.
+ */
+export const stripped = (g: Guest) => running(g) || (g.state === 'leaving' && g.feelings.includes('ran-out'));
+
+/**
  * A guest whose ceremony failed may have a really bad trip: a small chance, rolled as it fails. The roll is drawn
  * aside from the game's own stream, from where the stream stands and who the guest is, so a game in which nobody runs
  * plays out exactly as it did before there were runaways.

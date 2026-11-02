@@ -8,6 +8,7 @@ import { BUBBLE_CLEAR, BUBBLE_SIZE, BUBBLE_STANDING } from '../bubbles';
 import { owned } from '../disposal';
 import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
+import type { Bare } from './bare';
 import type { Burst } from './burst';
 import { bodySymptom } from './character-bodies';
 import {
@@ -131,6 +132,8 @@ export interface CharRig {
   flash?: { bolts: THREE.Object3D[]; glow: THREE.MeshStandardMaterial[] };
   /** Symptom parts that turn, rattle, pulse or drift up and down: by `userData.spin`, `rattle`, `pulse` and `drift`. */
   spin?: THREE.Object3D[];
+  /** Their clothes swapped for skin and the censors over them, made the first time they strip on a really bad trip. */
+  bare?: Bare;
   /** Pale soles turned up, shown while they lie face down, made the first time they do. */
   soles?: THREE.Mesh[];
   scale: number;

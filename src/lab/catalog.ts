@@ -43,6 +43,7 @@ import type { GagStage } from '../render/gags/types';
 import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
+import { MOSAIC, type MosaicName, MOSAICS, showBare } from '../render/models/bare';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig, cureRig } from '../render/models/character';
 import { type Expression, showEyes } from '../render/models/character-detail';
@@ -754,24 +755,37 @@ function curedSpecimen(): Specimen {
   };
 }
 
-/** A guest on a really bad trip, running on the spot with their arms waving over their head. */
-function runawaySpecimen(): Specimen {
+/** A guest on a really bad trip, running on the spot with nothing on and their arms waving over their head. */
+function runawaySpecimen(man: boolean): Specimen {
+  const look: Look = man
+    ? { ...LAB_LOOK, sex: 'male', hairStyle: HAIR.short, build: 2, skin: 0xb97a55, hair: 0x2b1d16 }
+    : LAB_LOOK;
+  const st = { mosaic: MOSAIC as string, calmed: false };
   return {
-    id: 'mood:runaway',
+    id: man ? 'mood:runaway-man' : 'mood:runaway',
     group: 'Moods',
-    name: 'On a really bad trip, running round',
+    name: man ? 'On a really bad trip, running round (a man)' : 'On a really bad trip, running round',
     footprint: [1, 1],
     /** Build the guest, running. */
     build() {
-      const rig = buildCharacter(LAB_LOOK);
-      const c = demoGuest(LAB_LOOK, must(CONDITIONS[0], 'a condition').id);
+      const rig = buildCharacter(look);
+      const c = demoGuest(look, must(CONDITIONS[0], 'a condition').id);
       Object.assign(c, { state: 'running', pose: 'walk', outcome: 'failed', bubble: 'bubble-stressed', bubbleT: 1e9 });
-      /** Pose them, running on the spot as fast as a runner goes. */
+      const mosaic = MOSAICS[st.mosaic as MosaicName];
+      /** Pose them, running on the spot as fast as a runner goes, or standing calmed down and dressed again. */
       const animate = (t: number, dt: number) => {
-        walkOnTheSpot(rig, t, RUNAWAY_SPEED);
+        c.state = st.calmed ? 'waiting' : 'running';
+        c.pose = st.calmed ? 'stand' : 'walk';
+        showBare(rig, !st.calmed, look.sex === 'female', mosaic);
+        if (!st.calmed) walkOnTheSpot(rig, t, RUNAWAY_SPEED);
         poseChar(rig, c, t, dt, { style: null });
       };
-      return { root: rig.group, controls: [], animate };
+      const options = Object.keys(MOSAICS).map((m): Option => [m, m.charAt(0).toUpperCase() + m.slice(1)]);
+      return {
+        root: rig.group,
+        controls: [choice('Censor', st, 'mosaic', options, true), toggle('Calmed down', st, 'calmed')],
+        animate,
+      };
     },
   };
 }
@@ -786,7 +800,8 @@ const CROWD_GAP = 0.9;
 function crowdSpecimen(): Specimen {
   return {
     id: 'crowd',
-    group: 'Guests',
+    // everyone in it is counted on their own already, so it costs nothing more than they do
+    group: 'Moods',
     name: 'A crowd: every guest top among the staff',
     footprint: [5, 4],
     /** Build everyone, a guest and a member of staff by turns, in rows. */
@@ -1328,7 +1343,8 @@ export const CATALOG: readonly Specimen[] = [
   ]),
   ...FACES.map(faceSpecimen),
   ...IDLE_ACTS.map(([act, label]) => idleSpecimen(act, label)),
-  runawaySpecimen(),
+  runawaySpecimen(false),
+  runawaySpecimen(true),
   crowdSpecimen(),
   moppingSpecimen(),
   curedSpecimen(),

@@ -4,6 +4,7 @@ import type * as THREE from 'three';
 
 import { conditionOf, type ItemDef, ITEMS, ROLES, SIDEWALK_Y } from '../core/data';
 import { streetEnds } from '../core/sim/chars';
+import { stripped } from '../core/sim/runaways';
 import type { Sim } from '../core/sim/sim';
 import type { Char, Guest } from '../core/state/types';
 import { type Act, actOf, itemIdAt, lyingAt } from './acts';
@@ -14,6 +15,7 @@ import { applyGuestGag } from './gags/apply';
 import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
+import { showBare } from './models/bare';
 import { bubbleHeight, buildCharacter, type CharRig } from './models/character';
 import { keepApart, type Placed, showMotion, type Shown } from './motion';
 import { poseChar, type WorkStyle } from './pose';
@@ -131,7 +133,11 @@ export class PeopleLayer {
         rattled: rattled.size > 0 && rattled.has(this.sim.world.zoneAt(c.tx, c.ty)),
       });
       rig.group.scale.setScalar(size);
-      if (c.kind === 'guest') this.inMachine(rig, c, t);
+      if (c.kind === 'guest') {
+        this.inMachine(rig, c, t);
+        // stripped off on a really bad trip, the chest hidden too on a woman
+        showBare(rig, stripped(c), c.look.sex === 'female');
+      }
       const { x, y, z } = rig.group.position;
       drawnAt.set(c.id, {
         x,

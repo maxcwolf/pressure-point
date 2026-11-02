@@ -1,7 +1,7 @@
 // A picture of every model on its own, from the model lab: each item, a guest with each condition, each role of
 // staff, each kind of visitor, how people look as they feel (a waiting guest's patience, a face, staff with nothing to
-// do, a guest on a really bad trip), a room's doorway and sign, and the scenery, puddles of kombucha and flood water
-// among it. A change to a shared part shows up in every model that uses it.
+// do, a guest on a really bad trip), a crowd, a room's doorway and sign, and the scenery, puddles of kombucha and flood
+// water among it. A change to a shared part shows up in every model that uses it.
 import { expect, type Page, test } from '@playwright/test';
 
 import { CENTERS, CONDITIONS, ITEMS, ROLE_ORDER } from '../../src/core/data';
@@ -21,6 +21,8 @@ const IDS = [
   ...CONDITIONS.map((c) => `guest:${c.id}`),
   ...ROLE_ORDER.map((role) => `staff:${role}`),
   'staff:amanda',
+  // a crowd of every guest's top among one of each role of staff, none of them dressed alike
+  'crowd',
   ...[
     'long',
     'bob',
@@ -53,8 +55,10 @@ const IDS = [
   ...['restless', 'impatient', 'fed-up'].flatMap((mood) => [`mood:${mood}`, `mood:${mood}-seated`]),
   ...FACES,
   ...['stretch', 'look', 'watch'].map((act) => `idle:${act}`),
-  // a guest on a really bad trip, running round, and one healed, their symptom going in a puff
+  // a guest on a really bad trip, running round with nothing on, a woman and a man, and one healed, their symptom going
+  // in a puff
   'mood:runaway',
+  'mood:runaway-man',
   // a Caretaker mopping up a flooded restroom
   'mood:mopping',
   'mood:cured',
@@ -164,6 +168,11 @@ const SIGNS = [
   ['unfinished', '&lamp=unfinished'],
   ['low', '&low=1'],
 ] as const;
+
+test('a guest calmed down after a really bad trip, dressed again', async ({ page }) => {
+  await openLab(page, 'mood:runaway', '&calmed=1');
+  await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', 'mood-runaway-calmed.png']);
+});
 
 test.describe("a room's sign showing how the room is doing", () => {
   for (const [state, settings] of SIGNS) {
