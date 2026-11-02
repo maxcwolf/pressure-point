@@ -1155,8 +1155,10 @@ export interface NewsItem {
   role?: Role;
   room?: RoomType;
   item?: ItemType;
-  /** A count or a sum: things burnt, rooms toured, problems found, cases healed, days waited, the star or the year. */
+  /** A count: things burnt, problems found, cases healed, guests still stressed, days waited, the star or the year. */
   n?: number;
+  /** How many rooms a visitor looked round. */
+  rooms?: number;
   /** What `n` was out of: an emergency's target. */
   of?: number;
   /** What it cost, where that was told: the fire brigade's fee, or an offer the inspector turned down. */

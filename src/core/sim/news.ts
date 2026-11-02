@@ -365,7 +365,7 @@ function knownOf(s: GameState, n: NewsItem): Record<string, string | undefined> 
     grade: n.kind === 'grade' && n.what ? an(n.what) : undefined,
     verdict: n.kind === 'vip' ? n.what : undefined,
     note: n.kind === 'vip' && n.what ? noteOf(n.what, n.how !== 'disappointed') : undefined,
-    rooms: n.kind === 'vip' || n.kind === 'inspection' ? counted(n.n ?? 0, 'room') : undefined,
+    rooms: n.rooms === undefined ? undefined : counted(n.rooms, 'room'),
     mess: n.item && ITEMS[n.item].machine?.overload?.mess,
     mishap: mishap?.name.toLowerCase(),
     lasted: mishap && lasting(mishap.days),
@@ -410,6 +410,9 @@ export function headlineOf(s: GameState, n: NewsItem, issue: number): { text: st
   return null;
 }
 
+/** A story's words under its headline, filled from the news, or null if it asks for anything the news does not have. */
+export const storyOf = (s: GameState, n: NewsItem, c: HeadlineCase) => fill(STORIES[c], knownOf(s, n));
+
 /** The headline of a quiet quarter. */
 function quietHeadline(s: GameState, issue: number): string {
   const options = HEADLINES.quiet.map((t) => fill(t, { center: centerName(s) })).filter((t) => t !== null);
@@ -435,17 +438,17 @@ export function signOf(s: GameState, r: Review): string {
   const regular = s.regulars.find((o) => o.name === r.name);
   // the visit count is theirs only while this review was their last visit, and they are not back for another
   const back = regular && s.guests.some((g) => g.regular === regular.id);
-  if (regular && !back && regularReviewed(regular, r))
+  if (regular && !back && regularReviewed(s, regular, r))
     return fill(LETTER_SIGNS.regular, { name: r.name, nth: ordinal(regular.visits) }) ?? r.name;
   return fill(r.stars >= 4 ? LETTER_SIGNS.good : LETTER_SIGNS.middling, { name: r.name }) ?? r.name;
 }
 
 /**
  * Whether a review is the one written at the end of a regular's latest visit: the one that set the day they are due
- * back, which is worked out from that very day.
+ * back, which is worked out from that very day, with that day still to come, so they have not been back since.
  */
-function regularReviewed(regular: GameState['regulars'][number], r: Review): boolean {
-  return Math.abs(regular.due - (r.day + returnGap(regular))) < 1e-6;
+function regularReviewed(s: GameState, regular: GameState['regulars'][number], r: Review): boolean {
+  return s.day < regular.due && Math.abs(regular.due - (r.day + returnGap(regular))) < 1e-6;
 }
 
 /**
@@ -537,7 +540,7 @@ export function classifiedOf(s: GameState, issue: number, log: readonly NewsItem
 function frontPage(s: GameState, lead: NewsItem | null, issue: number): Paper['lead'] & { links: PaperLink[] } {
   const head = lead ? headlineOf(s, lead, issue) : null;
   if (lead && head) {
-    const story = fill(STORIES[head.case], knownOf(s, lead)) ?? '';
+    const story = storyOf(s, lead, head.case) ?? '';
     return { kind: lead.kind, headline: head.text.toUpperCase(), story: capital(story), links: linksOf(s, lead) };
   }
   const story = fill(STORIES.quiet, knownOf(s, quietItem(s))) ?? '';
@@ -651,7 +654,7 @@ export function visitNews(s: GameState, r: VisitReport): News {
       day: r.day,
       how,
       who: r.title,
-      n: rooms.length,
+      rooms: rooms.length,
       ...(seen && { what: seen.note }),
       ...(room && { room: room.type, ids: { room: room.id } }),
       ...(how === 'delighted' && r.money > 0 && { fee: r.money }),
@@ -672,7 +675,7 @@ export function visitNews(s: GameState, r: VisitReport): News {
             : r.score
               ? 'passed'
               : 'clean';
-  return { kind: 'inspection', day: r.day, how, n: rooms.length, ...(r.refused && { fee: r.refused }) };
+  return { kind: 'inspection', day: r.day, how, n: r.score, rooms: rooms.length, ...(r.refused && { fee: r.refused }) };
 }
 
 /** A mishap as it starts: warded off, ready for, kept at bay by something here, or not. */
