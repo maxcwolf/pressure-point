@@ -1,6 +1,7 @@
 // The model lab: a page for the dev server only, to look at any of the game's models on its own.
 // Open /lab.html, or /lab.html?model=item:bench for one model. Add &still to stop everything moving, for pictures,
-// and &view=head (or front, side, top) to start from another angle. Any of the model's settings can be given too, by
+// and &view=head (or front, side, top) to start from another angle, and &dist=41 to look from as far off as the game's
+// camera starts. Any of the model's settings can be given too, by
 // the name it is kept under, such as &wear=85 or &inUse=1, a guest's &pose=sit or &healed=1, or the &ailment of the
 // guest lying on a table.
 import '@fontsource/fredoka/latin-400.css';
@@ -33,6 +34,8 @@ const params = new URLSearchParams(location.search);
 const still = params.has('still');
 /** The camera angle each model is framed from to begin with: the game's, unless the address asks for another. */
 const startView = (Object.keys(VIEWS) as ViewName[]).find((v) => v === params.get('view')) ?? 'game';
+/** How far off the camera starts, in meters, if the address says: otherwise close enough for the model to fill the view. */
+const startDist = Number(params.get('dist')) || undefined;
 
 /** The lab-wide settings, kept as the model on show changes. */
 const view = {
@@ -336,7 +339,7 @@ function rebuild(reframe: boolean) {
   fillPanel(modelPanel, model.controls, (again) => {
     if (again) rebuild(false);
   });
-  if (reframe) stage.frame(startView);
+  if (reframe) stage.frame(startView, startDist);
   settling = SETTLE_FRAMES;
 }
 
@@ -401,7 +404,7 @@ function viewChanged() {
   if (view.person !== showingPerson) {
     showingPerson = view.person;
     stage.setPerson(view.person ? scalePerson() : null, current.footprint);
-    stage.frame(startView);
+    stage.frame(startView, startDist);
   }
 }
 

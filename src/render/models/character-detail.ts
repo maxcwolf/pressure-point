@@ -560,6 +560,10 @@ function radiusAt(profile: readonly (readonly [number, number])[], y: number) {
 /** The shirt's radius at a height on the torso, before it is made wider and shallower. */
 const shirtRadius = (y: number) => radiusAt(SHIRT, y);
 
+/** Round shoulders over the arms' hinges, so an arm swinging any way stays joined to the body. */
+const shoulders = (n: Sides) =>
+  [-1, 1].map((s) => smooth(place(ball(0.066, n(18)), [s * 0.232, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95])));
+
 /** The shirt, from the hem to the collar, shaped to the chest and waist, as wide and deep as the uniforms are cut. */
 const shirt = () =>
   fuse('shirt', (n) => [
@@ -570,9 +574,11 @@ const shirt = () =>
       [Math.PI / 2 - 0.15, 0, 0],
       [1.05, 0.95, 1],
     ),
-    // round shoulders over the arms' hinges, so an arm swinging any way stays joined to the body
-    ...[-1, 1].map((s) => smooth(place(ball(0.066, n(18)), [s * 0.232, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95]))),
+    ...shoulders(n),
   ]);
+
+/** The body under the shirt, shaped as it is but with no collar: someone with nothing on, smooth as a doll. */
+export const bareTorso = () => fuse('bare torso', (n) => [lathe(n, SHIRT, SHIRT_WIDE, SHIRT_DEEP), ...shoulders(n)]);
 
 /** The trousers over the hips, under the shirt, rounding in to meet the legs. */
 const hips = () =>
@@ -1150,7 +1156,7 @@ const rolledSleeve = () =>
   ]);
 
 /** The bare upper arm below a rolled-up sleeve, rounding off into the point of the elbow when the arm bends. */
-const bareUpperArm = () =>
+export const bareUpperArm = () =>
   fuse('bare upper arm', (n) => [
     lathe(
       n,
@@ -1204,6 +1210,9 @@ const hand = (side: number, forearm: boolean) =>
       );
     return parts;
   });
+
+/** A hand on one side with the bare forearm above it, for someone in a rolled-up sleeve or no sleeve at all. */
+export const bareForearm = (side: number) => hand(side, true);
 
 /** Build an arm hinged at the shoulder, with a forearm and hand hinged at the elbow: in a sleeve to the wrist, or rolled
  * up above the elbow. Returns the forearm. */

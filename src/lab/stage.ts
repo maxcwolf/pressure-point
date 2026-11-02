@@ -132,8 +132,8 @@ export class Stage {
     });
   }
 
-  /** Point the camera at the whole model from one side, close enough to fill the view. */
-  frame(view: ViewName) {
+  /** Point the camera at the whole model from one side, close enough to fill the view or from as far off as asked. */
+  frame(view: ViewName, far?: number) {
     // a close-up is of what can be seen of the model alone, not the tiles under it or a hidden speech bubble
     const box =
       view === 'head' ? visibleBox(this.pivot, this.footprint) : new THREE.Box3().setFromObject(this.pivot, true);
@@ -142,7 +142,7 @@ export class Stage {
     const fov = (this.camera.fov * Math.PI) / 180;
     const fit = Math.max(sphere.radius, view === 'head' ? 0.25 : 0.6) / Math.sin(fov / 2);
     // a wide window fits by height, a tall one by width
-    const dist = fit * (this.camera.aspect < 1 ? 1 / this.camera.aspect : 1) * 1.3;
+    const dist = far ?? fit * (this.camera.aspect < 1 ? 1 / this.camera.aspect : 1) * 1.3;
     this.orbit.target.copy(sphere.center);
     this.camera.position.copy(sphere.center).addScaledVector(VIEWS[view], dist);
     this.camera.near = dist / 100;

@@ -90,6 +90,7 @@ export const ROLES: Readonly<Record<Role, RoleDef>> = {
     baseSalary: 600,
     uniform: 0x7d8f45,
     accent: 0xe8c65a,
+    bottom: 0x5c6b33,
   },
 };
 

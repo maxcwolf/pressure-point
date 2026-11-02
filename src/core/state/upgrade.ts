@@ -24,7 +24,7 @@ import {
 } from '../data';
 import { tuning } from '../difficulty';
 import { type LandSide, stripsBought } from '../land';
-import { fairSalary, makeCandidate, scalePay, settleLook, settleSex, settleTop } from '../people';
+import { fairSalary, makeCandidate, scalePay, settleClothes, settleLook, settleSex } from '../people';
 import { newSeed } from '../random';
 import { readLayout } from '../templates';
 import {
@@ -293,8 +293,8 @@ export function upgradeSave(save: GameState) {
   for (const p of [...s.staff, ...s.candidates, ...s.guests, ...s.visitors]) settleSex(p);
   // nor builds: each is given one from their id, a regular's look kept for their next visit as well
   for (const p of [...s.staff, ...s.candidates, ...s.guests, ...s.visitors, ...s.regulars]) settleLook(p);
-  // and guests once wore tops in the staff's uniform colors
-  for (const p of [...s.guests, ...s.regulars]) settleTop(p.look);
+  // and guests once wore clothes in the staff's uniform colors, and staff the same trousers as guests
+  for (const p of [...s.guests, ...s.regulars, ...s.staff, ...s.candidates]) settleClothes(p.look);
   for (const it of s.items) {
     // the Recliner was renamed the Lounger in version 38
     it.type = renamedItem(it.type) as ItemType;

@@ -341,6 +341,8 @@ export interface RoleDef {
   baseSalary: number;
   uniform: number;
   accent: number;
+  /** The color of their trousers, if the uniform has its own: otherwise they wear their own, from those guests wear. */
+  bottom?: number;
   /** The discipline this role practices, if any. They hold qualifications in its modalities. */
   discipline?: Discipline;
   /** The room a role with no discipline works in, if only one: they can be hired once it can be built. */

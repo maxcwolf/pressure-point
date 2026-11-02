@@ -20,6 +20,8 @@ Each release's notes are taken from its section here. Keep them short.
 - **Filter the Staff menu by job.** A Job dropdown beside Sort by narrows the list to one role, each listed with how many you have in it. It keeps to the job you picked until you pick another.
 - **Burnout Survivor is gone, for now.** The rare quirk that kept morale from falling below 35 has been taken out. Anyone on your staff or among the applicants who had it loses it; staff keep the pay they were hired at, and applicants ask what they are worth without it. About one applicant in seven still has a rare quirk, but never a Caretaker now, as none of the others fits their work.
 - **Amanda on demand.** A new console command, amanda, has Amanda Jablonsky apply straight away, as the newest Massage Therapist applicant, unless she already works for you or is applying. Tab now finishes a command as you type it in the console.
+- **Guests never dress like staff.** No guest now wears a top or trousers anywhere near the colors of a uniform, so staff stand out in a crowd at a glance. Guests and staff in an older save change into the nearest new colors, and a guest with Wet Blanket wears a deeper blue than the Sound Healer's.
+- **A really bad trip, with nothing on.** A guest on a really bad trip now runs round naked, in a cartoon way, with pixel censoring over the groin (and the chest on a woman) that faces the camera from every side and stays readable when zoomed out. Their clothes come back once someone calms them down; a guest who finds the door leaves as they are.
 
 ## v0.35.0
 

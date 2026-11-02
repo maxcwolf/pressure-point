@@ -8,6 +8,7 @@ import { BUBBLE_CLEAR, BUBBLE_SIZE, BUBBLE_STANDING } from '../bubbles';
 import { owned } from '../disposal';
 import { type Motion, newMotion } from '../motion';
 import { BUBBLE_PX, readable } from '../readable';
+import type { Bare } from './bare';
 import type { Burst } from './burst';
 import { bodySymptom } from './character-bodies';
 import {
@@ -131,6 +132,8 @@ export interface CharRig {
   flash?: { bolts: THREE.Object3D[]; glow: THREE.MeshStandardMaterial[] };
   /** Symptom parts that turn, rattle, pulse or drift up and down: by `userData.spin`, `rattle`, `pulse` and `drift`. */
   spin?: THREE.Object3D[];
+  /** Their clothes swapped for skin and the censors over them, made the first time they strip on a really bad trip. */
+  bare?: Bare;
   /** Pale soles turned up, shown while they lie face down, made the first time they do. */
   soles?: THREE.Mesh[];
   scale: number;
@@ -201,6 +204,29 @@ const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: numbe
   firefighter: { top: 0x2c3f6e, bottom: 0x23262e },
 };
 
+/** The band of rust woven round a Shaman's poncho. */
+const PONCHO_BAND = 0x8a3b24;
+
+/**
+ * The roles whose accent is worn big enough to see at the game's distance, over the uniform: a scarf, the Caretaker's
+ * bib and cap, a shawl, a poncho. The rest wear theirs on a pocket or a medallion, or not at all.
+ */
+const WORN_ACCENTS: ReadonlySet<Role> = new Set(['receptionist', 'acupuncturist', 'caretaker', 'healer', 'shaman']);
+
+/** Every color of a role's uniform big enough to see at the game's distance, which no guest's clothes may come near. */
+export function uniformColors(role: Role): number[] {
+  const def = ROLES[role];
+  return [
+    def.uniform,
+    ...(def.bottom === undefined ? [] : [def.bottom]),
+    ...(WORN_ACCENTS.has(role) ? [def.accent] : []),
+    ...(role === 'shaman' ? [PONCHO_BAND] : []),
+  ];
+}
+
+/** The blue of a sodden wool blanket, a deeper blue than the Sound Healer's teal, so its wearer is not taken for one. */
+export const BLANKET = 0x2d4a9a;
+
 /** A firefighter's yellow, on their helmet and the reflective bands on their coat, cuffs and trousers. */
 const HI_VIS = 0xf2c418;
 
@@ -250,7 +276,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const clothes = visitor && VISITOR_CLOTHES[visitor];
   const topColor = role ? ROLES[role].uniform : (clothes?.top ?? look.top);
   const top = mat(topColor, 0.7);
-  const bottom = mat(role === 'caretaker' ? 0x5c6b33 : (clothes?.bottom ?? look.bottom), 0.8);
+  const bottom = mat((role && ROLES[role].bottom) ?? clothes?.bottom ?? look.bottom, 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
   // a firefighter's boots are black whatever shoes they would wear
@@ -289,7 +315,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
     put(torso, pump, mat(0xf4f1ea, 0.4), 0.15, 0.13, 0.135);
   }
   // a woven poncho over the shoulders
-  if (role === 'shaman') detailPoncho(torso, accent, mat(0x8a3b24, 0.85));
+  if (role === 'shaman') detailPoncho(torso, accent, mat(PONCHO_BAND, 0.85));
   // a gold chain round the neck to a medallion
   if (role === 'practitioner') detailMedallion(torso, mat(0xc9963f, 0.3), accent);
 
@@ -417,7 +443,12 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   } else if (visual === 'band') {
     headSymptom(rig, visual);
   } else if (visual === 'flex') {
-    for (const arm of [armL, armR]) rig.props.push(put(arm, sph(0.092, 12), top, 0, -0.1, 0.02));
+    // biceps bulging through the sleeves, in the shirt, and bare with it on a really bad trip
+    for (const arm of [armL, armR]) {
+      const muscle = put(arm, sph(0.092, 12), top, 0, -0.1, 0.02);
+      muscle.name = 'muscle';
+      rig.props.push(muscle);
+    }
   } else if (visual === 'frost') {
     const ice = mat(0xcdeeff, 0.15, 0.25);
     rig.props.push(put(torso, ico(0.135), ice, 0.21, 0.4, 0));
@@ -469,7 +500,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
       rig.props.push(put(leg, rbox(0.21, 0.15, 0.3, 0.03), ice, 0, -0.36 + kneeUp, 0.035));
   } else if (visual === 'blanket') {
     // a sodden wool blanket over the shoulders and down the back, striped and fringed at its hem, sagging, and dripping
-    const wool = mat(0x3c6a93, 0.35);
+    const wool = mat(BLANKET, 0.35);
     const stripe = mat(0xd9e4ec, 0.4);
     // the wool in one shape and its stripes and fringe in another, so it costs a part or two to draw
     const sheet: Piece[] = [];
