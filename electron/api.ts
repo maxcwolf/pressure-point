@@ -1,10 +1,14 @@
 // The contract between the desktop shell and the game.
 // The preload script implements it; the game finds it at `window.desktop`.
 
-/** The copies of the saved games kept in files: the list as last written, and each game's text by save id. */
+/**
+ * The copies of a profile's saved games kept in files: the list as last written, and each game's text by save id; with
+ * the list of profiles as last written.
+ */
 export interface SaveCopy {
   index: string | null;
   saves: Record<string, string>;
+  profiles: string | null;
 }
 
 /** How far the desktop app has got with looking for an update. */
@@ -35,12 +39,19 @@ export interface DesktopApi {
   onFullScreen: (listener: (on: boolean) => void) => void;
   /** Fill the screen with the window, or give it back its own window. Remembered for the next launch. */
   setFullScreen: (on: boolean) => void;
-  /** Keep a copy of a saved game in a file, with the list of saves as it now stands. */
-  backupSave: (id: string, text: string, index: string) => void;
+  /**
+   * Keep a copy of a saved game in a file, with the list of saves as it now stands. `profile` is the id of the profile
+   * it is in, left out for the first profile, whose copies are where they were before there were profiles.
+   */
+  backupSave: (id: string, text: string, index: string, profile?: string) => void;
   /** Delete the file copy of a deleted save, and keep the list of saves as it now stands. */
-  dropBackup: (id: string, index: string) => void;
-  /** Every copy kept in files, for putting back saves the page's storage has lost. */
-  readBackup: () => Promise<SaveCopy>;
+  dropBackup: (id: string, index: string, profile?: string) => void;
+  /** Every copy kept in files for a profile, and the list of profiles, for putting back what the page's storage lost. */
+  readBackup: (profile?: string) => Promise<SaveCopy>;
+  /** Keep a copy of the list of profiles in a file. */
+  backupProfiles: (text: string) => void;
+  /** Delete the copies of a deleted profile's saves. Always named, the first profile as 'first'. */
+  dropProfileBackup: (profile: string) => void;
 }
 
 /** The message the game sends to the main process to quit. */
@@ -65,3 +76,7 @@ export const BACKUP_SAVE_CHANNEL = 'saves:backup';
 export const BACKUP_DROP_CHANNEL = 'saves:drop-backup';
 /** The game asks the main process for every copy it keeps. */
 export const BACKUP_READ_CHANNEL = 'saves:read-backup';
+/** The game hands the main process the list of profiles to keep a copy of. */
+export const BACKUP_PROFILES_CHANNEL = 'saves:backup-profiles';
+/** The game tells the main process a profile was deleted. */
+export const BACKUP_DROP_PROFILE_CHANNEL = 'saves:drop-profile';

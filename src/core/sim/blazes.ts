@@ -40,6 +40,7 @@ import { feel } from './feelings';
 import { smoking } from './machines';
 import { floodTiles } from './mishaps';
 import { goTo, halt, moveAlong } from './movement';
+import { fireNews, logNews } from './news';
 import { caretakerSpeed, standBeside } from './staffing';
 import { extinguisherNear } from './visits';
 
@@ -91,7 +92,10 @@ function catchFire(ctx: SimContext, it: Item) {
   const s = ctx.s;
   const room = ctx.world.roomOfItem(it);
   // a fire with nothing burning before it is a fire of its own, to be counted when it is out
-  if (!s.blazes.length || !s.fire || s.fire.out) s.fire = { item: it.type, burnt: 0, fee: 0, out: false };
+  if (!s.blazes.length || !s.fire || s.fire.out)
+    s.fire = { item: it.type, burnt: 0, fee: 0, out: false, ...(room && { room: room.id }) };
+  // one in another room meanwhile makes it fires in more than one place
+  else if (s.fire.room !== room?.id) delete s.fire.room;
   s.fire.burnt++;
   s.blazes.push({ item: it.id, room: room?.id ?? 0, t: 0, spread: 0 });
   it.wear = 100;
@@ -185,7 +189,7 @@ export function douse(ctx: SimContext, st: Staff, it: Item) {
 }
 
 /**
- * A fire on one item goes out: what burnt stays broken until a Caretaker repairs it, with soot on the floor beside it.
+ * A fire on one item goes out: what burned stays broken until a Caretaker repairs it, with soot on the floor beside it.
  * Once the last of a room's fire is out, the toast says so, how, and what is left to see to.
  */
 export function putOut(ctx: SimContext, b: Blaze, how: PutOut, by?: Staff) {
@@ -194,6 +198,7 @@ export function putOut(ctx: SimContext, b: Blaze, how: PutOut, by?: Staff) {
   const it = ctx.world.item(b.item);
   if (s.fire) s.fire.how = how;
   if (!s.blazes.length && s.fire) s.fire = { ...s.fire, out: true };
+  if (!s.blazes.length) logNews(ctx, fireNews(ctx, how, by));
   if (!it) return;
   it.burnt = true;
   it.wear = 100;
@@ -206,7 +211,7 @@ export function putOut(ctx: SimContext, b: Blaze, how: PutOut, by?: Staff) {
   // the sprinklers say what they did themselves, and a room with more still burning is not done yet
   if (how === 'sprinklers' || (room && ctx.world.burning(room))) return;
   const burnt = room ? s.items.filter((o) => o.burnt && ctx.world.zoneAt(o.x, o.y) === room.id).length : 1;
-  const left = `${burnt === 1 ? 'What burnt is' : `${burnt} things burnt are`} broken until a Caretaker repairs ${burnt === 1 ? 'it' : 'them'}.`;
+  const left = `${burnt === 1 ? 'What burned is' : `${burnt} things that burned are`} broken until a Caretaker repairs ${burnt === 1 ? 'it' : 'them'}.`;
   const what = room ? `The fire${where(room)}` : `The fire on the ${ITEMS[it.type].name}`;
   const done: Record<PutOut, string> = {
     extinguisher: `${what} is out: ${by?.name ?? 'a Caretaker'} put it out with the Fire Extinguisher by the door.`,

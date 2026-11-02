@@ -40,6 +40,7 @@ import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
 import { decide, leave } from './guests';
 import { goTo, halt } from './movement';
+import { logNews, runnerNews } from './news';
 import { catchable } from './outbreaks';
 import { within } from './souls';
 import { staffIdle } from './staffing';
@@ -157,6 +158,7 @@ function foundDoor(ctx: SimContext, g: Guest) {
   feel(g, 'ran-out');
   say(g, 'bubble-going-home', 4);
   toast(ctx, `${g.name} found the door, and has gone home still tripping.`, 'bad', undefined, 'feeling-bad-trip');
+  logNews(ctx, runnerNews(g));
   leave(ctx, g);
 }
 
@@ -278,6 +280,7 @@ function calmedDown(ctx: SimContext, st: Staff, g: Guest) {
   st.yearServed++;
   gainXp(ctx, st, XP_PER_JOB);
   emit(ctx, { type: 'float', text: saved ? 'Calmed in time' : 'Calmed', x: g.x, y: g.y, kind: 'good' });
+  logNews(ctx, runnerNews(g, st));
   emit(ctx, { type: 'sfx', name: 'heal' });
   decide(ctx, g);
 }

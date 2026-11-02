@@ -134,6 +134,17 @@ import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } fr
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
 import { currentFix } from './failures';
+import {
+  doorCovered,
+  type DoorCoverOptions,
+  extinguisherSpots,
+  fireCover,
+  type HeldExtinguisher,
+  type RoomCover,
+  roomCovered,
+  type Works,
+  worksAt,
+} from './fire-cover';
 import { flurrying } from './flurries';
 import { endow, foundationOpen, giftBlocker, nextGift } from './foundation';
 import { objectiveDetail } from './goals';
@@ -158,7 +169,7 @@ import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, 
 import { updateOutdoors } from './outdoors';
 import { pausedToPlace, type PlacingNow, setSpeed, watchPlacing } from './placing';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
-import { type PlacePreview, previewItem } from './preview';
+import { type PlacePreview, previewItem, previewMove } from './preview';
 import { type PrimerLine, primerLines } from './primer';
 import type { Objective } from './progress';
 import { checkOpening, checkStars, hasRoom, objectives } from './progress';
@@ -191,7 +202,7 @@ import {
   updateStaff,
 } from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
-import { type Chance, successChance, updateStations } from './stations';
+import { callOrder, type Chance, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
 import { checkSurroundings, restoreSurroundings } from './surroundings';
 import type { Course } from './training';
@@ -524,6 +535,31 @@ export class Sim {
   previewItem(placed: Placed): PlacePreview {
     this.refreshAmbience();
     return previewItem(this.ctx, placed);
+  }
+  /** What moving an item to a spot would change, with the surroundings worked out afresh first. */
+  previewMove(it: Item, placed: Placed): PlacePreview {
+    this.refreshAmbience();
+    return previewMove(this.ctx, it, placed);
+  }
+  /** Every room's fire cover, finished or a blueprint, now and with an extinguisher in hand put down where it is held. */
+  fireCover(held?: HeldExtinguisher): RoomCover[] {
+    return fireCover(this.ctx, held);
+  }
+  /** Where every working Fire Extinguisher stands, with one in hand counted where it is held, if one is. */
+  extinguisherSpots(held?: HeldExtinguisher): { x: number; y: number }[] {
+    return extinguisherSpots(this.ctx, held);
+  }
+  /** Whether a door being placed would have sprinklers or a Fire Extinguisher near it. */
+  doorCovered(door: { x: number; y: number }, opts?: DoorCoverOptions): boolean {
+    return doorCovered(this.ctx, door, opts);
+  }
+  /** Whether a room's door, or the spot it is moving to, has fire cover: for a blueprint, once it is built. */
+  roomCovered(room: Room, door?: { x: number; y: number }): boolean {
+    return roomCovered(this.ctx, room, door);
+  }
+  /** When a Fire Extinguisher put down on a tile would work: now, once the blueprint there is built, or never. */
+  extinguisherWorks(x: number, y: number): Works {
+    return worksAt(this.ctx, x, y);
   }
   /** How noisy it is at an item, such as a treatment table. */
   itemNoise(it: Item): number {
@@ -1149,6 +1185,13 @@ export class Sim {
     if (this.s.visitReport) delete this.s.visitReport.unread;
   }
 
+  /** The player has opened the latest issue of the town paper, if there has been one: it is marked read. */
+  readPaper() {
+    const paper = this.s.paper;
+    if (paper) paper.read = true;
+    return paper;
+  }
+
   /** What the health inspector would find wrong in a room now. */
   inspectionProblems(room: Room): string[] {
     return inspectionProblems(this.ctx, room);
@@ -1177,6 +1220,10 @@ export class Sim {
   /** Whoever works a station: posted at it, or for a mat, at the bowls in its room. */
   stationStaff(it: Item): Staff | undefined {
     return stationStaff(this.ctx, it);
+  }
+  /** A station's line in the order it calls them: emergencies put first, the rest it would call, those it cannot yet. */
+  callOrder(it: Item): [Guest[], Guest[], Guest[]] {
+    return callOrder(this.ctx, it);
   }
 
   /** The guest being seen at a station: its own, or at the bowls, the first lying on the mats it plays for. */

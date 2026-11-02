@@ -56,6 +56,28 @@ test.describe('title screen', () => {
     await screens.shot('title-achievements');
   });
 
+  test('the profiles', async ({ screens, page }) => {
+    await screens.title();
+    await page.evaluate(async () => {
+      localStorage.setItem(
+        'pressure-point-campaign',
+        JSON.stringify({ stars: { willow: 2 }, achieved: ['called-in'], unlocked: ['bonsai'] }),
+      );
+      // someone else on this computer, with nothing played yet
+      const profiles = (await import(/* @vite-ignore */ `${location.origin}/src/storage/profiles.ts`)) as {
+        addProfile: (name: string) => object;
+      };
+      profiles.addProfile('Sam');
+    });
+    await page.locator('#title .title-profile').click();
+    await screens.shot('title-profiles');
+    await page
+      .locator('#title-profiles .profile-row', { hasText: 'Player 1' })
+      .getByRole('button', { name: 'Delete' })
+      .click();
+    await screens.shot('title-profiles-delete');
+  });
+
   test('in a short window', async ({ screens, page }) => {
     await page.setViewportSize({ width: 1000, height: 600 });
     await screens.title();
@@ -101,6 +123,13 @@ test.describe('in a game', () => {
       await screens.shot(`menu-${menu.toLowerCase()}`);
     });
   }
+
+  test("the Items menu's groups for a room", async ({ screens, game, page }) => {
+    await screens.play();
+    await game.menu('Items');
+    await page.locator('#menu .tab', { hasText: 'Massage Suite' }).click();
+    await screens.shot('menu-items-room');
+  });
 
   test("the Rooms menu's templates", async ({ screens, game, page }) => {
     // two templates kept from earlier games: one to build, and one whose room is still locked here
@@ -271,6 +300,40 @@ test.describe('in a game', () => {
       pp.tools.select({ kind: 'item', id: table.id });
     });
     await screens.shot('inspector-line');
+  });
+
+  test('the queue over a room', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      // a few more guests sent in, lined up at the table, one of them an emergency, and one more on the table
+      pp.sim.cheat('guests 4', true);
+      const table = pp.state.items.find((i) => i.type === 'massage_table')!;
+      const guests = pp.state.guests.filter((g) => g.state !== 'leaving').slice(0, 5);
+      for (const it of pp.state.items) it.queue = it.queue.filter((id) => !guests.some((g) => g.id === id));
+      const [seen, ...waiting] = guests;
+      table.queue = waiting.map((g) => g.id);
+      // named here, as the guests sent in differ from one run to the next
+      const names = ['Wilma Thumbwell', 'Ada Relaxworth', 'Vernon Stretchley', 'Percy Kneadham'];
+      const conditions = ['slump', 'knotted', 'band', 'crick'];
+      waiting.forEach((g, i) =>
+        Object.assign(g, {
+          name: names[i],
+          station: table.id,
+          state: 'waiting',
+          goal: 'treat',
+          condition: conditions[i],
+          waited: 15 - i * 4,
+          emergency: i === 1,
+        }),
+      );
+      if (seen) {
+        Object.assign(seen, { station: table.id, state: 'served', goal: 'treat' });
+        table.serving = seen.id;
+      }
+    });
+    await game.hoverRoom('massage');
+    await expect(page.locator('#room-tip')).toBeVisible();
+    await screens.shot('room-tip');
   });
 
   for (const type of ['massage', 'consult'] as const) {
@@ -672,6 +735,62 @@ test.describe('in a game', () => {
       pp.sim.emit({ type: 'awards', year: 2 });
     });
     await screens.shot('awards');
+  });
+
+  test('the town paper: its message, the paper, and the Paper tab', async ({ screens, game, page }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      const s = pp.state;
+      const caretaker = s.staff[0]!;
+      const room = s.rooms.find((r) => r.type === 'massage') ?? s.rooms[0]!;
+      const headline = 'FIRE BRIGADE ARRIVES, FINDS FIRE OUT, LEAVES SLIGHTLY DISAPPOINTED';
+      s.paper = {
+        issue: 7,
+        day: s.day,
+        name: 'The Willow Lane Leaflet',
+        motto: 'Folded by hand since last Tuesday.',
+        lead: {
+          kind: 'fire',
+          headline,
+          story: `The Kneadmaster 9000 in the Massage Suite caught fire on day 14 of month 7. Two things burnt before it was out. ${caretaker.name}, Caretaker, put it out with the Fire Extinguisher by the door. The fire brigade arrived to find it out, and did not charge.`,
+        },
+        also: 'Local woman waits 11 days, can now describe the potted fern in detail.',
+        letters: [
+          { text: 'Walked in knotted, walked out new.', sign: 'Yours, Ada Kneadham, much looser.', stars: 5 },
+          { text: 'I aged a year in that waiting area.', sign: 'Name and address supplied.', stars: 1 },
+        ],
+        column: { title: 'Florist Watch', text: 'Day 204. Still empty. A man looked in the window on Tuesday.' },
+        classified: 'LOST: one aura, red, last seen in the fire exit.',
+        links: [
+          { text: caretaker.name, kind: 'staff', id: caretaker.id },
+          { text: 'Massage Suite', kind: 'room', id: room.id },
+        ],
+        read: false,
+      };
+      // paused, the message waits to be read
+      s.speed = 0;
+      pp.sim.emit({
+        type: 'toast',
+        text: 'Payday: $4,210 in salaries.',
+        kind: 'info',
+        icon: 'ui-news',
+        headline: {
+          name: s.paper.name,
+          issue: 7,
+          lead: headline,
+          also: 'Local woman waits 11 days, can now describe the potted fern in detail.',
+        },
+        about: { kind: 'staff', id: caretaker.id },
+      });
+    });
+    await screens.shot('paper-message');
+    await page.getByRole('button', { name: 'Read the paper' }).click();
+    await screens.shot('paper');
+    await page.getByRole('button', { name: 'Back to work' }).click();
+    await game.eval((pp) => pp.ui.dismissAllToasts());
+    await game.menu('Stats');
+    await page.locator('#menu').getByRole('button', { name: /Paper/ }).click();
+    await screens.shot('stats-paper');
   });
 
   test('a visitor, and the report after a visit', async ({ screens, game }) => {

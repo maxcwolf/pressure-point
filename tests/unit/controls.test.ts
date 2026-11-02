@@ -61,12 +61,13 @@ describe('key bindings', () => {
 });
 
 describe('the controls kept', () => {
-  it('start with the default keys, no edge scrolling, an autosave every 5 minutes, pausing to place, no cheat console or dev mode', () => {
+  it('start with the default keys, no edge scrolling, an autosave every 5 minutes, pausing to place, the queue on hover, no cheat console or dev mode', () => {
     expect(loadControls()).toEqual({
       keys: DEFAULT_KEYS,
       edgeScroll: false,
       autosave: 300,
       pauseToPlace: true,
+      queueTip: true,
       console: false,
       dev: false,
     });
@@ -78,6 +79,7 @@ describe('the controls kept', () => {
       edgeScroll: true,
       autosave: 60,
       pauseToPlace: false,
+      queueTip: false,
       console: true,
       dev: false,
     });
@@ -87,6 +89,7 @@ describe('the controls kept', () => {
       edgeScroll: true,
       autosave: 60,
       pauseToPlace: false,
+      queueTip: false,
       console: true,
       dev: false,
     });
@@ -113,6 +116,7 @@ describe('the controls kept', () => {
         edgeScroll: 'yes',
         autosave: 45,
         pauseToPlace: 0,
+        queueTip: 'off',
       }),
     ).toEqual({
       ...defaultControls(),

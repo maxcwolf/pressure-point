@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Audio } from '../../audio/audio';
 import { CENTERS, GAME_TITLE } from '../../core/data';
 import { loadControls, saveControls } from '../../storage/controls';
+import { currentProfileInfo } from '../../storage/profiles';
 import { latestSave, timeAgo } from '../../storage/saves';
 import { loadDisciplinePrefs } from '../../storage/settings';
 import { readThumb } from '../../storage/thumbnails';
@@ -24,6 +25,7 @@ import { Icon, IconText } from './common/Icon';
 import { ScrollTab } from './common/ScrollTab';
 import { Dialog } from './dialogs/Dialog';
 import { FeedbackPanel } from './FeedbackPanel';
+import { ProfilesPanel } from './ProfilesPanel';
 import { SandboxPanel } from './SandboxPanel';
 import { SavesPanel } from './SavesPanel';
 import { SettingsPanel } from './SettingsPanel';
@@ -275,6 +277,35 @@ const badge = css({
   '&.off': { bg: 'title.off', borderColor: 'title.off-border', filter: '[grayscale(1)]', opacity: 'soft' },
 });
 
+/** Who is playing, in the top left corner, across from the sound and music switches: a way to the profiles. */
+const profileButton = css({
+  position: 'fixed',
+  top: 'gutter',
+  left: 'gutter',
+  zIndex: 'above',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6',
+  maxW: '[min(260px, 40vw)]',
+  border: '[{borderWidths.medium} solid {colors.title.border}]',
+  borderRadius: 'pill',
+  bg: 'title.panel',
+  color: 'title.fg',
+  fontSize: '15',
+  fontWeight: 'bold',
+  py: '4',
+  pl: '4',
+  pr: '12',
+  boxShadow: 'low.dark',
+  _hover: { bg: 'title.button' },
+  '&[hidden]': { display: 'none' },
+  // icons on the dark panel sit on cream chips, or their navy outlines would vanish
+  '& .icon': { bg: 'bg.panel', borderRadius: 'disc', p: '1', flex: 'none' },
+});
+
+/** The profile's name on its button, cut short with an ellipsis if it is long. */
+const profileName = css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });
+
 /** The sound and music switches, in the top right corner. */
 const sys = css({ position: 'fixed', top: 'gutter', right: 'gutter', display: 'flex', gap: '8', zIndex: 'above' });
 
@@ -377,7 +408,7 @@ const updateLook = css({
   _motionReduce: { animation: 'none' },
 });
 
-type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings' | 'changes' | 'feedback';
+type Panel = 'campaign' | 'sandbox' | 'saves' | 'settings' | 'changes' | 'feedback' | 'profiles';
 
 /** The heading over each panel. */
 const PANEL_NAMES: Readonly<Record<Panel, string>> = {
@@ -387,6 +418,7 @@ const PANEL_NAMES: Readonly<Record<Panel, string>> = {
   settings: 'Settings',
   changes: 'What’s new',
   feedback: 'Give feedback',
+  profiles: 'Who’s playing?',
 };
 
 /** The logo, the latest save and the ways into the game. */
@@ -456,12 +488,24 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
     redraw();
   };
   const badges = titleBadges((d) => loadDisciplinePrefs()[d] !== false);
+  const profile = currentProfileInfo();
   const picture = latest ? readThumb(latest.id) : null;
-  // title-panel and title-sub are what the scroll cues look for (ui/scroll-cue.ts), and title-sys, title-logo, save-card,
-  // save-thumb and title-version are for the tests
+  // title-panel and title-sub are what the scroll cues look for (ui/scroll-cue.ts), and title-sys, title-profile,
+  // title-logo, save-card, save-thumb and title-version are for the tests
   return (
     <>
       <div class={backdropLook} style={{ backgroundImage: `url(${picture ?? backdrop})` }} />
+      <button
+        class={cx('title-profile', profileButton)}
+        title="Switch, add or rename profiles"
+        hidden={showing === 'profiles'}
+        onClick={() => {
+          open('profiles');
+        }}
+      >
+        <Icon id="ui-guests" size={22} />
+        <span class={profileName}>{profile.name}</span>
+      </button>
       <div class={cx('title-sys', sys)}>
         <button
           class={cx(roundButton({ size: 'small' }), !audio.sound && 'off')}
@@ -610,6 +654,16 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
           </div>
           <div id="title-changes" class={cx('title-sub', sub)} hidden={showing !== 'changes'}>
             {opened.includes('changes') && <ChangelogPanel />}
+            <ScrollTab />
+          </div>
+          <div id="title-profiles" class={cx('title-sub', sub)} hidden={showing !== 'profiles'}>
+            {opened.includes('profiles') && (
+              <ProfilesPanel
+                reload={() => {
+                  location.reload();
+                }}
+              />
+            )}
             <ScrollTab />
           </div>
           <div id="title-feedback" class={cx('title-sub', sub)} hidden={showing !== 'feedback'}>

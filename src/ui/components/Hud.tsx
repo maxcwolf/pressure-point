@@ -19,6 +19,7 @@ import { Objectives } from './Objectives';
 import { OverlayPicker } from './OverlayPicker';
 import { PlanPanel } from './PlanPanel';
 import { PlansKey } from './PlansKey';
+import { RoomTip } from './RoomTip';
 import { SketchLabels } from './SketchLabels';
 import { StatsBar } from './StatsBar';
 import { SystemButtons } from './SystemButtons';
@@ -118,13 +119,17 @@ export function Hud({ hud }: { hud: HudState }) {
   );
 }
 
-/** The layer over the scene and beneath the interface: the floating text, and the labels on rooms pencilled in. */
+/**
+ * The layer over the scene and beneath the interface: the floating text, the labels on rooms pencilled in, and the
+ * tooltip over a room saying who is in its line.
+ */
 export function FloaterLayer({ hud }: { hud: HudState }) {
   useHudUpdates(hud);
   return (
     <HudContext.Provider value={hud}>
       <SketchLabels />
       <Floaters />
+      <RoomTip />
     </HudContext.Provider>
   );
 }

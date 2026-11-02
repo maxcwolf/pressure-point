@@ -62,6 +62,7 @@ interface Handle {
         | { kind: 'plot'; id: string }
         | null,
     ): void;
+    startItem(type: string): void;
     startResize(roomId: number): void;
     startExpand(pointed?: string | null): void;
     pointerDown(clientX: number, clientY: number): void;
@@ -71,14 +72,21 @@ interface Handle {
     subscribe(listener: () => void): () => void;
     update(): void;
     overlay: string | null;
+    /** The room the pointer rests on, for its tooltip, or 0. */
+    pointedRoom: number;
     /** The messages on the right, oldest first. */
     toasts: { text: string; count: number }[];
     /** Run the messages' clock for a frame of so many seconds. */
     tickToasts(dt: number): void;
     /** Clear every message on the right. */
     dismissAllToasts(): void;
+    /** The dialog open, if any, and closing it, which opens the next waiting. */
+    dialog: string | null;
+    close(): void;
   };
   loop: { saveSoon(): void };
+  /** What the floor is colored by: an overlay, the land, or nothing. */
+  floorShown: string | null;
   data: { ITEMS: typeof ITEMS; ROOMS: typeof ROOMS; W: number; BX0: number; BX1: number; BY0: number; BY1: number };
   geo: {
     itemDims(type: string, rot: number): [number, number];
@@ -441,6 +449,10 @@ export class Game {
   /** Click a bare patch of floor in a room, which selects the room. */
   async clickRoom(type: string) {
     await this.clickAt(await this.find('roomFloor', type));
+  }
+  /** Hold the mouse over a bare patch of floor in a room. */
+  async hoverRoom(type: string) {
+    await this.hoverAt(await this.find('roomFloor', type));
   }
   /** Hold the mouse over the lawn. */
   async hoverLawn() {

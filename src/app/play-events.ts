@@ -10,6 +10,7 @@ import type {
   HouseCall,
   Ledger,
   Outbreak,
+  Paper,
   Sketch,
   VisitReport,
   Wave,
@@ -66,6 +67,8 @@ export interface PlayMark {
   unsettled: boolean;
   /** The latest fire, burning or out. */
   fire: FireReport | null;
+  /** The latest issue of the town paper. */
+  paper: Paper | null;
 }
 
 /** The offers a game makes, which the player takes on, turns down or lets lapse. */
@@ -107,6 +110,7 @@ export function markOf(s: GameState): PlayMark {
     report: s.visitReport,
     unsettled: s.visitReport?.bribes !== undefined,
     fire: s.fire ?? null,
+    paper: s.paper ?? null,
   };
 }
 
@@ -172,7 +176,10 @@ export function playEvents(mark: PlayMark, s: GameState, known: PlayContext = {}
   // only the month just closed is in the records: the books for any before it in the same look are summed into it
   const last = s.months.at(-1);
   if (monthOf(s) > mark.month && last)
-    out.push({ name: 'month_ended', props: { ...game, ...monthProps(s, last), ...known.month } });
+    out.push({
+      name: 'month_ended',
+      props: { ...game, ...monthProps(s, last), ...known.month },
+    });
   out.push(...sketchEvents(mark, s, game));
   for (let star = mark.stars + 1; star <= s.stars; star++) out.push({ name: 'star_earned', props: { ...game, star } });
   for (const id of s.achieved)
@@ -237,6 +244,10 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
       name: 'fire_ended',
       props: { ...game, item: f.item, how: f.how ?? 'sold', burnt: f.burnt, fee: f.fee },
     });
+  // an issue of the town paper is printed on the payday that closes a quarter, or later, once a payday the bank could
+  // not cover is paid
+  if (s.paper && s.paper !== mark.paper)
+    out.push({ name: 'paper_printed', props: { ...game, issue: s.paper.issue, headline: s.paper.lead.kind } });
   // a failed inspection is settled by paying it off, or by its fine: the next visit's report settles it first
   const was = mark.report;
   if (was && mark.unsettled && (s.visitReport !== was || was.bribes === undefined))

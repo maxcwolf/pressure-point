@@ -5,6 +5,8 @@ import { app, BrowserWindow, ipcMain, Menu, type MenuItemConstructorOptions, ses
 
 import {
   BACKUP_DROP_CHANNEL,
+  BACKUP_DROP_PROFILE_CHANNEL,
+  BACKUP_PROFILES_CHANNEL,
   BACKUP_READ_CHANNEL,
   BACKUP_SAVE_CHANNEL,
   FULL_SCREEN_CHANGED_CHANNEL,
@@ -12,7 +14,15 @@ import {
   FULL_SCREEN_STATE_CHANNEL,
   QUIT_CHANNEL,
 } from './api';
-import { backupSave, backupsPending, backupsWritten, dropBackup, readBackup } from './backup';
+import {
+  backupProfiles,
+  backupSave,
+  backupsPending,
+  backupsWritten,
+  dropBackup,
+  dropProfile,
+  readBackup,
+} from './backup';
 import { loadWindowPrefs, saveWindowPrefs } from './prefs';
 import { startReports, watchWindow } from './reports';
 import { startUpdates } from './updates';
@@ -193,19 +203,27 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
-// Copies of the saved games, in files beside the window settings, so they outlive the page's storage. Only the game's
-// own page may ask, not a frame inside it.
-/** Where the copies of the saved games are kept. */
-const backupDir = () => path.join(app.getPath('userData'), 'saved-games');
-ipcMain.on(BACKUP_SAVE_CHANNEL, (event, id: unknown, text: unknown, index: unknown) => {
-  if (event.senderFrame === event.sender.mainFrame) backupSave(backupDir(), id, text, index);
+// Copies of the saved games, and of the list of profiles, in files beside the window settings, so they outlive the
+// page's storage. Only the game's own page may ask, not a frame inside it.
+/** Where the copies are kept: each profile's in a folder of its own (electron/backup.ts). */
+const backupRoot = () => app.getPath('userData');
+ipcMain.on(BACKUP_SAVE_CHANNEL, (event, id: unknown, text: unknown, index: unknown, profile: unknown) => {
+  if (event.senderFrame === event.sender.mainFrame) backupSave(backupRoot(), profile, id, text, index);
 });
-ipcMain.on(BACKUP_DROP_CHANNEL, (event, id: unknown, index: unknown) => {
-  if (event.senderFrame === event.sender.mainFrame) dropBackup(backupDir(), id, index);
+ipcMain.on(BACKUP_DROP_CHANNEL, (event, id: unknown, index: unknown, profile: unknown) => {
+  if (event.senderFrame === event.sender.mainFrame) dropBackup(backupRoot(), profile, id, index);
 });
-ipcMain.handle(BACKUP_READ_CHANNEL, (event) =>
-  event.senderFrame === event.sender.mainFrame ? readBackup(backupDir()) : { index: null, saves: {} },
+ipcMain.handle(BACKUP_READ_CHANNEL, (event, profile: unknown) =>
+  event.senderFrame === event.sender.mainFrame
+    ? readBackup(backupRoot(), profile)
+    : { index: null, saves: {}, profiles: null },
 );
+ipcMain.on(BACKUP_PROFILES_CHANNEL, (event, text: unknown) => {
+  if (event.senderFrame === event.sender.mainFrame) backupProfiles(backupRoot(), text);
+});
+ipcMain.on(BACKUP_DROP_PROFILE_CHANNEL, (event, profile: unknown) => {
+  if (event.senderFrame === event.sender.mainFrame) dropProfile(backupRoot(), profile);
+});
 // The copies are written in the background, and Exit game quits just after it saves: so the app holds off quitting
 // until they are all written, then quits again. Not at 'before-quit', which comes before the windows close, and the
 // game saves once more as its window closes.

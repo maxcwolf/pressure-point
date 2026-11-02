@@ -237,6 +237,7 @@ describe('a really bad trip', () => {
     expect(c.g.bubble).toBe('bubble-going-home');
     expect(c.s.reputation).toBeLessThan(40 - 1);
     expect(toasts(drainEvents(c.ctx)).join(' ')).toContain(`${c.g.name} found the door`);
+    expect(c.s.news).toContainEqual(expect.objectContaining({ kind: 'runaway', how: 'door', who: c.g.name }));
   });
 
   it('is ringed in red at their feet from any view, a size up, over whatever an overlay says', () => {
@@ -299,6 +300,7 @@ describe('calming a runner down', () => {
     expect(sent.job).toBeNull();
     // and with their trip over, they head home calmly
     expect(c.g.state).toBe('leaving');
+    expect(c.s.news).toContainEqual(expect.objectContaining({ kind: 'runaway', who: c.g.name, by: sent.name }));
     expect(inconsistencies(c.sim)).toEqual([]);
   });
 

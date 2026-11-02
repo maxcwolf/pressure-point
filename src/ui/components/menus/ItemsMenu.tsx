@@ -1,6 +1,8 @@
-// The Items menu: furniture, equipment and decor, filtered by where it goes and what it is for, each showing what it
-// does in its tooltip, on its card or in a panel beside the cards, as the settings choose.
+// The Items menu: furniture, equipment and decor, filtered by where it goes and what it is for, grouped into a room's
+// specialty kit, what else only goes in a room, and what goes anywhere, each showing what it does in its tooltip, on
+// its card or in a panel beside the cards, as the settings choose.
 
+import { Fragment } from 'preact';
 import { useState } from 'preact/hooks';
 
 import { itemOpen } from '../../../core/campaign';
@@ -13,7 +15,15 @@ import { loadDisplay } from '../../../storage/display';
 import { css } from '../../../styled-system/css';
 import { guideRing, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
-import { filterItems, ITEM_KINDS, itemOffered, placeFilters, placeLabel, placeName } from '../../lib/catalog';
+import {
+  filterItems,
+  ITEM_KINDS,
+  itemOffered,
+  itemSections,
+  placeFilters,
+  placeLabel,
+  placeName,
+} from '../../lib/catalog';
 import { cx } from '../../lib/cx';
 import { statsText } from '../../lib/item-stats';
 import { lockLabel } from '../../lib/karma';
@@ -42,6 +52,23 @@ const itemCard = css(cardLook, {
   },
 });
 
+/**
+ * A group's heading, across the row of cards, small and in capitals, with a line over it from the second group on.
+ * `item-group` is for the end-to-end tests to find it by.
+ */
+const groupHead = css({
+  gridColumn: '[1 / -1]',
+  flexBasis: 'full',
+  m: '0',
+  mt: '2',
+  fontSize: '12',
+  fontWeight: 'bold',
+  letterSpacing: 'wider',
+  textTransform: 'uppercase',
+  color: 'fg.muted',
+  '&:not(:first-child)': { borderTop: 'divider', mt: '6', pt: '10' },
+});
+
 /** The cards, and the panel beside them. */
 const withDetail = css({
   display: 'grid',
@@ -68,6 +95,8 @@ export function ItemsMenu() {
   // a room switched off since it was chosen falls back to everywhere
   const place = places.includes(hud.itemPlace) ? hud.itemPlace : 'all';
   const types = sorted(filterItems(offered, place, hud.itemKind), ITEM_SORTS, hud.sorts.items);
+  // a room's specialty kit first, then what else only goes there, then what goes anywhere, each in the order picked
+  const sections = itemSections(types, place);
   // karma's unlocks for good, and the kit of any technique opened early by an ailment going around
   const unlocked = [...loadCampaign().unlocked, ...openedKit(s)];
   /**
@@ -96,57 +125,65 @@ export function ItemsMenu() {
   };
   const detail = view === 'detail' && types.length > 0;
   // the item picked, or the first on show if it is not among them
-  const shown = picked && types.includes(picked) ? picked : types[0];
+  const first = sections[0]?.types[0];
+  const shown = picked && types.includes(picked) ? picked : first;
   const guide = hud.guide();
+  /** An item's card. */
+  const card = (t: ItemType) => {
+    const it = ITEMS[t];
+    const { earned, locked, forKarma, short } = standing(t);
+    const stats = view === 'tooltip' ? statsText(t) : '';
+    return (
+      <Button
+        key={t}
+        class={cx(
+          'card',
+          itemCard,
+          short > 0 && 'poor',
+          forKarma && 'locked karma',
+          detail && t === shown && 'picked',
+          guide === `item:${t}` && guideRing(),
+        )}
+        title={short ? "Can't afford it" : stats || undefined}
+        richTip={stats ? `item:${t}` : undefined}
+        // picking one to read about in the panel beside the cards is never refused, only placing it
+        locked={(short > 0 || (locked && !forKarma)) && !detail}
+        onPress={() => {
+          if (detail) setPicked(t);
+          else choose(t);
+        }}
+      >
+        <Icon id={it.icon} size={34} />
+        <b>{it.name}</b>
+        <span class="cost">{earned === null ? money(it.cost) : `${earned} to hang`}</span>
+        {!detail && <p>{it.desc}</p>}
+        {view === 'chips' && <ItemChips type={t} />}
+        {short > 0 ? (
+          <em class="short">
+            <IconText id="bubble-cant-afford">{`Need ${money(short)} more`}</IconText>
+          </em>
+        ) : earned === 0 ? (
+          <em>
+            <IconText id="ui-lock">Win an award</IconText>
+          </em>
+        ) : locked ? (
+          <em>
+            <IconText id="ui-lock">{lockLabel(it)}</IconText>
+          </em>
+        ) : (
+          <em>{placeLabel(it)}</em>
+        )}
+      </Button>
+    );
+  };
   const cards = (
     <div class={itemCards}>
-      {types.map((t) => {
-        const it = ITEMS[t];
-        const { earned, locked, forKarma, short } = standing(t);
-        const stats = view === 'tooltip' ? statsText(t) : '';
-        return (
-          <Button
-            key={t}
-            class={cx(
-              'card',
-              itemCard,
-              short > 0 && 'poor',
-              forKarma && 'locked karma',
-              detail && t === shown && 'picked',
-              guide === `item:${t}` && guideRing(),
-            )}
-            title={short ? "Can't afford it" : stats || undefined}
-            richTip={stats ? `item:${t}` : undefined}
-            // picking one to read about in the panel beside the cards is never refused, only placing it
-            locked={(short > 0 || (locked && !forKarma)) && !detail}
-            onPress={() => {
-              if (detail) setPicked(t);
-              else choose(t);
-            }}
-          >
-            <Icon id={it.icon} size={34} />
-            <b>{it.name}</b>
-            <span class="cost">{earned === null ? money(it.cost) : `${earned} to hang`}</span>
-            {!detail && <p>{it.desc}</p>}
-            {view === 'chips' && <ItemChips type={t} />}
-            {short > 0 ? (
-              <em class="short">
-                <IconText id="bubble-cant-afford">{`Need ${money(short)} more`}</IconText>
-              </em>
-            ) : earned === 0 ? (
-              <em>
-                <IconText id="ui-lock">Win an award</IconText>
-              </em>
-            ) : locked ? (
-              <em>
-                <IconText id="ui-lock">{lockLabel(it)}</IconText>
-              </em>
-            ) : (
-              <em>{placeLabel(it)}</em>
-            )}
-          </Button>
-        );
-      })}
+      {sections.map((section) => (
+        <Fragment key={section.group}>
+          {section.heading && <h4 class={cx('item-group', groupHead)}>{section.heading}</h4>}
+          {section.types.map(card)}
+        </Fragment>
+      ))}
     </div>
   );
   return (

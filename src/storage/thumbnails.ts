@@ -1,13 +1,15 @@
 // A small picture of each saved game, kept beside it for the title screen.
 //
 // Pictures are stored apart from the saves, as JPEG data URLs, so a save's data stays plain JSON
-// and a missing picture never stops a game loading.
+// and a missing picture never stops a game loading. Each profile keeps its own, as it keeps its saves.
+import { profileGone, profileKey } from './profiles';
 
 /** The storage key a save's picture is kept under. */
-const thumbKey = (id: string) => `pressure-point-thumb:${id}`;
+const thumbKey = (id: string) => profileKey(`pressure-point-thumb:${id}`);
 
-/** Keep a picture for a save. Out of room, the save simply goes without one. */
+/** Keep a picture for a save. Out of room, or with its profile deleted since, the save simply goes without one. */
 export function storeThumb(id: string, dataUrl: string) {
+  if (profileGone()) return;
   try {
     localStorage.setItem(thumbKey(id), dataUrl);
   } catch {

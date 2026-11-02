@@ -564,11 +564,13 @@ export interface Brigade {
 export type PutOut = 'extinguisher' | 'beaten' | 'sprinklers' | 'brigade';
 
 /**
- * A fire, from the first thing that caught until the last of it was out: what caught first, how many things burnt, how
+ * A fire, from the first thing that caught until the last of it was out: what caught first, how many things burned, how
  * the last of it was put out, and what the fire brigade charged for it.
  */
 export interface FireReport {
   item: ItemType;
+  /** The room the first item caught in, unless something in another room caught while it burned. */
+  room?: number;
   burnt: number;
   how?: PutOut;
   fee: number;
@@ -1053,6 +1055,10 @@ export interface GameState {
    * Null before the first check.
    */
   surroundings: Surroundings | null;
+  /** This quarter's news so far, for the town paper to print from at its end. Missing from a save before the paper. */
+  news?: NewsItem[];
+  /** The last issue of the town paper, as it was printed. */
+  paper?: Paper;
 }
 
 /**
@@ -1113,4 +1119,129 @@ export interface Surroundings {
   attract: PackedGrid;
   noise: PackedGrid;
   warmth: PackedGrid;
+}
+
+/** A kind of story the town paper can print. */
+export type NewsKind =
+  | 'opened'
+  | 'fire'
+  | 'runaway'
+  | 'vip'
+  | 'inspection'
+  | 'mishap'
+  | 'overload'
+  | 'sale'
+  | 'left'
+  | 'expert'
+  | 'amanda'
+  | 'overtook'
+  | 'emergency'
+  | 'outbreak'
+  | 'grade'
+  | 'star'
+  | 'awards'
+  | 'wait';
+
+/**
+ * How a story ended, in its kind's own terms: how a fire was put out; whether a runner found the door or was calmed,
+ * by a Shaman or not; how a visit went, and how a failed inspection was settled; whether a mishap was ready for, warded
+ * off or flooded a restroom; whether someone quit or was hired away; how an emergency or an outbreak ended; and whether
+ * the awards made the center Center of the Year.
+ */
+export type NewsHow =
+  | PutOut
+  | 'door'
+  | 'calmed'
+  | 'shaman'
+  | 'delighted'
+  | 'satisfied'
+  | 'disappointed'
+  | 'clean'
+  | 'passed'
+  | 'failed'
+  | 'warned'
+  | 'mushrooms'
+  | 'paid off'
+  | 'refused'
+  | 'unready'
+  | 'ready'
+  | 'warded'
+  | 'flooded'
+  | 'quit'
+  | 'poached'
+  | 'handled'
+  | 'contained'
+  | 'escaped'
+  | 'center';
+
+/**
+ * Something that happened this quarter that the town paper may print, with the facts its headline and story are filled
+ * from and nothing else: everything in it was told at the time, by a message, the speakers or a report.
+ */
+export interface NewsItem {
+  kind: NewsKind;
+  /** The game day it happened. */
+  day: number;
+  how?: NewsHow;
+  /** Who it is about: a guest or a member of staff by name, or a VIP by their title. */
+  who?: string;
+  /** The member of staff who did it, by name: who put the fire out, or calmed the runner down. */
+  by?: string;
+  /** The role of the member of staff it names. */
+  role?: Role;
+  room?: RoomType;
+  item?: ItemType;
+  /** A count: things burned, problems found, cases healed, guests still stressed, days waited, the star or the year. */
+  n?: number;
+  /** How many rooms a visitor looked around. */
+  rooms?: number;
+  /** What `n` was out of: an emergency's target. */
+  of?: number;
+  /** What it cost, where that was told: the fire brigade's fee, or an offer the inspector turned down. */
+  fee?: number;
+  /** The name it needs: a condition, a grade, an award, a mishap, or a VIP's note on a room. */
+  what?: string;
+  /** For a fire: the fire brigade arrived to find it out. */
+  early?: true;
+  /** Who the paper can take the player to: the member of staff, the guest or the room it names, by id. */
+  ids?: { staff?: number; guest?: number; room?: number };
+}
+
+/** A name in the paper that takes the player to whoever or whatever it names, while they are still there. */
+export interface PaperLink {
+  text: string;
+  kind: 'staff' | 'guest' | 'room';
+  id: number;
+}
+
+/** A letter to the editor: a review word for word, and how it is signed. */
+export interface PaperLetter {
+  text: string;
+  sign: string;
+  stars: number;
+}
+
+/**
+ * An issue of the town paper as it was printed, kept word for word so that a later version which rewords a template
+ * never changes an old issue.
+ */
+export interface Paper {
+  /** The quarter's count in this center, from 1. */
+  issue: number;
+  /** The game day it was printed. */
+  day: number;
+  name: string;
+  motto: string;
+  /** The story that led: its kind, or a quiet quarter; its headline, in capitals; and its story. */
+  lead: { kind: NewsKind | 'quiet'; headline: string; story: string };
+  /** The next biggest story, in a sentence. */
+  also?: string;
+  letters: PaperLetter[];
+  /** The center's own column: its title and its one line. */
+  column: { title: string; text: string };
+  classified: string;
+  /** The names in the lead story that can be clicked, first to last. */
+  links: PaperLink[];
+  /** Whether it has been opened. */
+  read: boolean;
 }

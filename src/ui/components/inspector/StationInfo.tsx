@@ -91,8 +91,24 @@ const moves = css({
   '& button.locked': { opacity: 'locked' },
 });
 
-/** One guest in a station's line: who they are, how they are holding up, and buttons to move them or send them home. */
-function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: number }) {
+/**
+ * One guest in a station's line: who they are, how they are holding up, and buttons to move them or send them home. Up
+ * and down swap them with the guest shown above or below them, `above` and `below`, who are in the same group of the
+ * line (`callOrder`), if anyone is.
+ */
+function InLine({
+  item,
+  guest: g,
+  index,
+  above,
+  below,
+}: {
+  item: Item;
+  guest: Guest;
+  index: number;
+  above: Guest | undefined;
+  below: Guest | undefined;
+}) {
   const { sim } = useGame();
   const hud = useHud();
   const other = sim.shortestOtherLine(item);
@@ -120,18 +136,18 @@ function InLine({ item, guest: g, index }: { item: Item; guest: Guest; index: nu
       <span class={moves}>
         <Button
           title="Up the line"
-          locked={index === 0}
+          locked={!above}
           onPress={() => {
-            sim.moveInLine(g.id, -1);
+            if (above) sim.moveInLine(g.id, item.queue.indexOf(above.id) - item.queue.indexOf(g.id));
           }}
         >
           ▲
         </Button>
         <Button
           title="Down the line"
-          locked={index === item.queue.length - 1}
+          locked={!below}
           onPress={() => {
-            sim.moveInLine(g.id, 1);
+            if (below) sim.moveInLine(g.id, item.queue.indexOf(below.id) - item.queue.indexOf(g.id));
           }}
         >
           ▼
@@ -168,7 +184,14 @@ export function StationInfo({ item }: { item: Item }) {
   if (!def) return null;
   const staff = sim.stationStaff(item);
   const guest = sim.guest(item.serving);
-  const line = item.queue.flatMap((id) => sim.guest(id) ?? []);
+  // in the order it calls them, emergencies first if the policy says so, and the guests it cannot call yet last
+  const groups = sim.callOrder(item);
+  const line = groups.flat();
+  /** The guest shown next to this one, up (-1) or down (1), if they are in the same group, which a move keeps to. */
+  const beside = (g: Guest, by: number) => {
+    const group = groups.find((list) => list.includes(g));
+    return group?.[group.indexOf(g) + by];
+  };
   const busy = busyNote(item, !def.staff);
   const staffing = staffingStatus(item, staff, def.staff && ROLES[def.staff].name);
   const staffed = (
@@ -208,7 +231,7 @@ export function StationInfo({ item }: { item: Item }) {
       {line.length > 0 && (
         <ol class={lineStyle}>
           {line.map((g, i) => (
-            <InLine key={g.id} item={item} guest={g} index={i} />
+            <InLine key={g.id} item={item} guest={g} index={i} above={beside(g, -1)} below={beside(g, 1)} />
           ))}
         </ol>
       )}{' '}

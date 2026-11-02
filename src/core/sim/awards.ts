@@ -15,6 +15,7 @@ import type { AwardResult, GameState, MonthRecord, Staff } from '../state/types'
 import type { SimContext } from './context';
 import { changeRep, earn, netOf } from './economy';
 import { emit } from './events';
+import { awardsNews, logNews } from './news';
 import { awardSetback, rivalOpen, rivalPoints } from './rival';
 import { standingPoints } from './standing';
 
@@ -189,6 +190,7 @@ export function holdAwards(ctx: SimContext, year: number) {
     if (winner) winner.morale = Math.min(100, winner.morale + AWARD_MORALE);
   }
   for (const st of s.staff) st.yearServed = 0;
+  logNews(ctx, awardsNews(results, year));
   s.ceremony = { year, results };
   emit(ctx, { type: 'awards', year });
   emit(ctx, { type: 'sfx', name: 'fanfare' });

@@ -16,6 +16,7 @@ import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, toast } from './events';
 import { spawnGuest } from './guests';
+import { emergencyEnded, logNews } from './news';
 import { offered, unlocked } from './treatments';
 import { cutOff } from './twists';
 
@@ -117,6 +118,7 @@ function endEmergency(ctx: SimContext) {
     toast(ctx, `Emergency failed: only ${e.healed} of the ${e.target} needed cases of ${name} were healed.`, 'bad');
     emit(ctx, { type: 'sfx', name: 'fail' });
   }
+  logNews(ctx, emergencyEnded(e, name));
   for (const g of s.guests) g.emergency = false;
   s.emergency = null;
   s.nextEmergency = s.day + rnd(s, 50, 80) * tuning(s, 'chances');

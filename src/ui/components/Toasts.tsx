@@ -357,11 +357,102 @@ function useHold() {
   };
 }
 
-/** A message, how many times it has come up, and its close button. */
+/** The town paper's masthead over a payday's message, in small capitals. */
+const paperName = css({ fontSize: '12', fontWeight: 'bold', letterSpacing: 'wide', textTransform: 'uppercase' });
+
+/** The paper's lead headline, in the paper's serif; a click to whoever it names, if it names someone still there. */
+const paperLead = css({
+  display: 'block',
+  my: '4',
+  p: '0',
+  border: 'none',
+  bg: '[none]',
+  color: 'inherit',
+  textAlign: 'left',
+  fontFamily: 'paper',
+  fontSize: '15',
+  fontWeight: 'heavy',
+  lineHeight: 'tight',
+  pointerEvents: 'auto',
+});
+
+/** The "Also", and payday's own words, a little smaller. */
+const paperLine = css({ fontSize: '13', lineHeight: 'snug', '& + &': { mt: '2' } });
+
+/** The way into the paper: a small worded button under the message. */
+const readPaper = css({
+  mt: '6',
+  py: '2',
+  px: '10',
+  border: 'outline.thin',
+  borderRadius: 'pill',
+  bg: 'control',
+  fontSize: '13',
+  fontWeight: 'bold',
+  pointerEvents: 'auto',
+  _hover: { transform: '[translateY(-1px)]' },
+});
+
+/**
+ * A payday that prints the town paper: its masthead and issue, the lead headline, the "Also" and payday's own words,
+ * then Read the paper. The headline takes you to whoever it names.
+ */
+function PaperMessage({ toast: t }: { toast: Toast & { headline: NonNullable<Toast['headline']> } }) {
+  const hud = useHud();
+  const hold = useHold();
+  const about = t.about;
+  const h = t.headline;
+  return (
+    // `paper-message` and `read-paper` are for the end-to-end tests
+    <div class={cx('toast', 'paper-message', message, t.kind, t.leaving && 'out')} {...hold}>
+      <div class={cx('words', wordsStyle)}>
+        <IconText id={t.icon ?? 'ui-news'}>
+          <span class={paperName}>{`${h.name} · Issue ${h.issue}`}</span>
+        </IconText>
+        {about ? (
+          <Button
+            class={paperLead}
+            title="Show me"
+            onPress={() => {
+              hud.show(about);
+            }}
+          >
+            {h.lead}
+          </Button>
+        ) : (
+          <b class={paperLead}>{h.lead}</b>
+        )}
+        {h.also && <p class={paperLine}>{`Also: ${h.also}`}</p>}
+        <p class={paperLine}>{t.text}</p>
+        <Button
+          class={cx('read-paper', readPaper)}
+          onPress={() => {
+            hud.readPaper('message');
+          }}
+        >
+          Read the paper
+        </Button>
+      </div>
+      <Button
+        class={close}
+        title="Dismiss"
+        onPress={() => {
+          hud.dismissToast(t.id);
+        }}
+      >
+        ✕
+      </Button>
+    </div>
+  );
+}
+
+/** A message, how many times it has come up, and its close button; the town paper's in a card of its own. */
 function Message({ toast: t }: { toast: Toast }) {
   const hud = useHud();
   const hold = useHold();
   const about = t.about;
+  const { headline } = t;
+  if (headline) return <PaperMessage toast={{ ...t, headline }} />;
   const words = (
     <>
       {t.icon ? <IconText id={t.icon}>{t.text}</IconText> : t.text}

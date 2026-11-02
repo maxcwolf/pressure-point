@@ -30,6 +30,14 @@ export interface Subject {
   id: number;
 }
 
+/** The town paper on top of a payday's message: its name, the issue, the lead headline in capitals, and the "Also". */
+export interface Headline {
+  name: string;
+  issue: number;
+  lead: string;
+  also?: string;
+}
+
 /** Something a member of staff asks for, which waits on a card of its own until it is answered. */
 export type StaffRequest = 'raise' | 'promotion';
 
@@ -44,6 +52,8 @@ export type SimEvent =
       request?: StaffRequest;
       /** Which message this is, if it is kept up to date: one with the same key on screen gives way to it. */
       key?: string;
+      /** The town paper's headlines, on the payday that prints it. */
+      headline?: Headline;
     }
   | { type: 'sfx'; name: SfxName }
   | { type: 'announce'; text: string }

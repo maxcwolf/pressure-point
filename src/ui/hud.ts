@@ -7,7 +7,7 @@ import { voiceFor } from '../audio/voice';
 import type { DecorKey, IconId, ItemType, Modality, Role } from '../core/data';
 import { ANNOUNCEMENTS } from '../core/data';
 import { PAYDAY_WARNING_KEY } from '../core/sim/economy';
-import type { SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
+import type { Headline, SimEvent, StaffRequest, Subject, Tone } from '../core/sim/events';
 import { lessonCard, type LessonId } from '../core/sim/lessons';
 import type { TutorialStep } from '../core/sim/tutorial';
 import type { Template } from '../core/templates';
@@ -39,7 +39,7 @@ export type MoneyTab = 'books' | 'payroll' | 'prices' | 'marketing' | 'loan' | '
 export type RoomsTab = 'rooms' | 'templates';
 
 /** The tabs of the Stats menu. */
-export type StatsTab = 'charts' | 'guests' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards';
+export type StatsTab = 'charts' | 'guests' | 'reputation' | 'standing' | 'casebook' | 'regulars' | 'awards' | 'paper';
 
 export type DialogId =
   | 'pause'
@@ -59,7 +59,8 @@ export type DialogId =
   | 'payroll'
   | 'bankrupt'
   | 'update'
-  | 'lesson';
+  | 'lesson'
+  | 'paper';
 
 /** What the interface has the floor show: the overlay chosen, and the plots of land while the Land tab is open. */
 export interface FloorShown {
@@ -85,6 +86,8 @@ export interface Toast {
   icon?: IconId;
   /** Which message it is, if it is kept up to date while on screen, as the payday warning is. */
   key?: string;
+  /** The town paper's headlines over its words, on the payday that prints it. */
+  headline?: Headline;
   /** How many times it has come up while on screen, shown once it is more than one. */
   count: number;
   /** Milliseconds it has been up while its clock ran. */
@@ -120,6 +123,11 @@ export class HudState {
   moneyTab: MoneyTab = 'books';
   /** The plot of land the pointer is over in the Land tab, shown brighter on the ground. */
   landPointedAt: string | null = null;
+  /**
+   * The finished room the pointer rests on over the scene, whose line the tooltip over it shows (`RoomTip.tsx`); 0 for
+   * none, and while a button is held or a tool is in hand. Kept up to date by the pointer (`app/pointer.ts`).
+   */
+  pointedRoom = 0;
   /** The plot of land asked about in the dialog to buy it. */
   plotAsked: string | null = null;
   /** The member of staff asked about in the dialog to let them go. */
@@ -479,7 +487,7 @@ export class HudState {
       if (e.type === 'sfx') audio.play(e.name);
       // a raise or a promotion asked for waits on the card for everyone asking, which keeps what they said
       else if (e.type === 'toast' && e.request && e.about) this.asked.set(e.about.id, e.text);
-      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon, e.key);
+      else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon, e.key, e.headline);
       else if (e.type === 'announce') this.announce(e.text);
       else if (e.type === 'star') this.raise('star', e.stars);
       else if (e.type === 'awards') this.raise('awards');
@@ -514,7 +522,7 @@ export class HudState {
    * Show a message at the top of the right side. One saying the same as one already there takes its place, counted,
    * and one with a key takes the place of the message with that key, afresh.
    */
-  toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId, key?: string) {
+  toast(text: string, kind: Tone = 'info', about?: Subject, icon?: IconId, key?: string, headline?: Headline) {
     this.toasts = withMessage(this.toasts, {
       id: this.nextId++,
       text,
@@ -522,8 +530,17 @@ export class HudState {
       ...(about && { about }),
       ...(icon && { icon }),
       ...(key && { key }),
+      ...(headline && { headline }),
     });
     this.update();
+  }
+
+  /** Open the latest issue of the town paper, from its message or the Paper tab, and note that it has been read. */
+  readPaper(from: 'message' | 'stats') {
+    const paper = this.host.sim.readPaper();
+    if (!paper) return;
+    track('paper_opened', { ...gameProps(this.host.sim.s), issue: paper.issue, lead: paper.lead.kind, from });
+    if (from === 'message') this.open('paper');
   }
 
   /**

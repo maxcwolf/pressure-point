@@ -1,10 +1,11 @@
-// The overlays: how pleasant, quiet or warm the floor is, how worn the furniture, and how patient or needy the guests
-// are, how much condition they have left and how fresh the staff. The floor's values run from 0 to 1 with ordinary at
-// a half, drawn clear, so only what stands out shows: bad to good, or for temperature cold to hot. People are ringed by
-// how they are doing, 0 to 1.
+// The overlays: how pleasant, quiet or warm the floor is, how worn the furniture, which rooms have a Fire
+// Extinguisher near the door, and how patient or needy the guests are, how much condition they have left and how fresh
+// the staff. The floor's values run from 0 to 1 with ordinary at a half, drawn clear, so only what stands out shows:
+// bad to good, or for temperature cold to hot. People are ringed by how they are doing, 0 to 1.
 
 import { HAMPER_SIZE, type IconId, isWatered, ITEMS, NOISE_PEACEFUL } from '../../core/data';
 import { footprintTiles } from '../../core/footprint';
+import { type HeldExtinguisher, inReach } from '../../core/sim/fire-cover';
 import { calmness } from '../../core/sim/noise';
 import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
@@ -16,7 +17,7 @@ import type { HeatTile, Palette } from '../../render/heatmap';
 
 /** What the floor can be colored by, or, for the plans, dimmed under the rooms pencilled in. */
 export type OverlayMode =
-  'decor' | 'calm' | 'temperature' | 'patience' | 'condition' | 'needs' | 'energy' | 'upkeep' | 'plans';
+  'decor' | 'calm' | 'temperature' | 'patience' | 'condition' | 'needs' | 'energy' | 'upkeep' | 'fire' | 'plans';
 
 /**
  * How an overlay's key is drawn: `diverging` worse through clear to better, `temperature` cold through clear to hot,
@@ -104,6 +105,14 @@ export const OVERLAYS: readonly OverlayDef[] = [
     ends: ['Neglected', 'Kept'],
   },
   {
+    id: 'fire',
+    icon: 'overlay-fire',
+    name: 'Fire safety',
+    desc: 'Rooms green with a Fire Extinguisher near the door, red without. Pale green is in reach of one.',
+    key: 'diverging',
+    ends: ['Needs one', 'Covered'],
+  },
+  {
     id: 'plans',
     icon: 'overlay-plans',
     name: 'Plans',
@@ -156,15 +165,48 @@ export const pleasantness = (drain: number) => unit(0.5 + (1.12 - drain) * 2);
 
 /**
  * The overlay to show while an item is in hand: the one showing, if it is one an item changes, or else the one for
- * what this item changes most, or none if it changes none of them.
+ * what this item changes most, or none if it changes none of them. Something made to warm or cool a room shows the
+ * temperature, whatever else it does, even resting while the weather is nice: an Air Conditioner hums, but is not
+ * bought for its noise.
  */
 export function previewMode(p: PlacePreview, showing: OverlayMode | null): OverlayMode | null {
+  // an extinguisher is for fire safety, and fire safety chosen stays, whatever is in hand
+  if (p.placed.type === 'fire_extinguisher' || showing === 'fire') return 'fire';
   if (showing === 'decor' || showing === 'calm' || showing === 'temperature') return showing;
+  if (ITEMS[p.placed.type].thermostat && (p.heat || p.resting)) return 'temperature';
   if (p.decor) return 'decor';
   // a treatment table minds the noise where it goes, though it makes none
   if (p.noise || ITEMS[p.placed.type].station?.goal === 'treat') return 'calm';
   if (p.heat) return 'temperature';
   return null;
+}
+
+/** How a tile within reach of a Fire Extinguisher shows, faintly good: a door there would be covered. */
+const REACHED = 0.62;
+
+/**
+ * The floor for fire safety: each room good with sprinklers or a Fire Extinguisher near its door and bad without (a
+ * blueprint as it will stand once built), and the rest of the floor within reach of a working extinguisher faintly
+ * good, where a door would be covered. An extinguisher in hand counts where it is held, one in a blueprint only for
+ * that blueprint until it is built, and one being moved not where it stands.
+ */
+export function fireTiles(sim: Sim, held?: HeldExtinguisher): HeatTile[] {
+  const w = sim.world;
+  const covered = new Map(sim.fireCover(held).map((c) => [c.room.id, c.then]));
+  const spots = sim.extinguisherSpots(held);
+  const out: HeatTile[] = [];
+  for (const [x, y] of footprintTiles(w.building)) {
+    const room = covered.get(w.zoneAt(x, y));
+    if (room !== undefined) out.push([x, y, room ? 1 : 0]);
+    else if (spots.some((e) => inReach(e.x, e.y, { x, y }))) out.push([x, y, REACHED]);
+  }
+  return out;
+}
+
+/** An extinguisher in hand, from the preview of what is in hand, if it is one. */
+function heldExtinguisher(p: PlacePreview | null): HeldExtinguisher | undefined {
+  if (p?.placed.type !== 'fire_extinguisher') return undefined;
+  return { x: p.placed.x, y: p.placed.y, ...(p.moving !== undefined && { moving: p.moving }) };
 }
 
 /** The tiles to color for an overlay, and how things stand on each, with an item in hand counted as if it were down. */
@@ -204,6 +246,9 @@ export function heatTiles(sim: Sim, mode: OverlayMode, preview: PlacePreview | n
     case 'needs':
     case 'energy':
       // these ring the people themselves, not the floor
+      break;
+    case 'fire':
+      out.push(...fireTiles(sim, heldExtinguisher(preview)));
       break;
     case 'plans':
       // the plans dim the floor under the sketches instead

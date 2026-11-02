@@ -1,10 +1,11 @@
-// Saved games: a rolling autosave plus named slots.
+// Saved games: a rolling autosave plus named slots, for each player's profile.
 //
 // Everything lives in localStorage, which both the browser and the desktop app
-// have. Saves can also be exported to a file and imported again, for backups
-// and for moving a game between the browser and the app. The desktop app also
-// keeps a copy of every save in files of its own, which come back should its
-// localStorage lose them (see `startBackup`).
+// have, under the keys of the profile being played (storage/profiles.ts). Saves
+// can also be exported to a file and imported again, for backups and for moving
+// a game between the browser and the app. The desktop app also keeps a copy of
+// every save in files of its own, which come back should its localStorage lose
+// them (see `startBackup`).
 import { captureException, logger } from '@sentry/browser';
 
 import type { DesktopApi, SaveCopy } from '../../electron/api';
@@ -14,6 +15,16 @@ import { SAVE_VERSION } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { upgradeSave } from '../core/state/upgrade';
 import { isRecord } from './json';
+import {
+  backupProfile,
+  backupProfiles,
+  currentProfile,
+  loadProfiles,
+  type ProfileBackup,
+  profileGone,
+  restoreProfiles,
+  scoped,
+} from './profiles';
 import { copyThumb, dropThumb } from './thumbnails';
 
 export const AUTOSAVE_ID = 'auto';
@@ -29,13 +40,27 @@ const INDEX_KEY = 'pressure-point-saves';
 /** Where an autosave that will not open is set aside when a new game starts, followed by when, for a later version. */
 const UNREADABLE_KEY = 'pressure-point-save-unreadable';
 
-/** Whether a storage key is the autosave's, as another tab or window writing it reports. */
+/** The storage key of a profile's autosave: this page's profile unless another is named. */
+const autosaveKey = (profile = currentProfile()) => scoped(profile, AUTOSAVE_KEY);
+/** The storage key of a profile's list of saves. */
+const indexKey = (profile = currentProfile()) => scoped(profile, INDEX_KEY);
+/** The storage key a save's data is kept under. */
+const slotKey = (id: string, profile = currentProfile()) =>
+  id === AUTOSAVE_ID ? autosaveKey(profile) : scoped(profile, `pressure-point-save:${id}`);
+
+/** Whether a storage key is this profile's autosave's, as another tab or window writing it reports. */
 export function isAutosaveKey(key: string | null): boolean {
-  return key === AUTOSAVE_KEY;
+  return key === autosaveKey();
 }
 
-/** The storage key a save's data is kept under. */
-const slotKey = (id: string) => (id === AUTOSAVE_ID ? AUTOSAVE_KEY : `pressure-point-save:${id}`);
+/**
+ * What another tab or window changing a key in storage means for the game on this page: its profile deleted, its
+ * autosave written by another game in the same profile, or nothing. A profile's keys going with it are not a game.
+ */
+export function storageChange(key: string | null, value: string | null): 'deleted' | 'shared' | null {
+  if (profileGone()) return 'deleted';
+  return value !== null && isAutosaveKey(key) ? 'shared' : null;
+}
 
 export interface SaveInfo {
   id: string;
@@ -52,7 +77,8 @@ export interface SaveInfo {
   startMonth?: number;
 }
 
-export type SaveError = 'invalid' | 'full';
+/** Why a game could not be saved: not a game, no room, or its profile deleted since, as from another tab. */
+export type SaveError = 'invalid' | 'full' | 'gone';
 
 /** "Day 12, Month 3, Year 1" for a count of elapsed game days, in a game that opened in `startMonth`. */
 export function gameDate(day: number, startMonth = 0): string {
@@ -144,9 +170,9 @@ function parseIndex(raw: string | null): SaveInfo[] {
     return [];
   }
 }
-/** The stored list of saves, dropping any malformed entries. */
-function readIndex(): SaveInfo[] {
-  return parseIndex(localStorage.getItem(INDEX_KEY));
+/** A profile's stored list of saves, dropping any malformed entries. */
+function readIndex(profile?: string): SaveInfo[] {
+  return parseIndex(localStorage.getItem(indexKey(profile)));
 }
 
 /** The keys in storage, found without reading what is stored under them, which for a save is the whole game. */
@@ -160,19 +186,22 @@ function storedKeys(): Set<string> {
 }
 
 /** The entries whose data is still there, forgetting any that has gone missing. */
-function liveEntries(list: SaveInfo[]): SaveInfo[] {
+function liveEntries(list: SaveInfo[], profile?: string): SaveInfo[] {
   const keys = storedKeys();
-  return list.filter((i) => keys.has(slotKey(i.id)));
+  return list.filter((i) => keys.has(slotKey(i.id, profile)));
 }
 
-/** Every saved game, newest first. */
-export function listSaves(): SaveInfo[] {
+/**
+ * Every saved game, newest first: this profile's, or another's for the profiles list to say what deleting it would
+ * lose.
+ */
+export function listSaves(profile?: string): SaveInfo[] {
   let list: SaveInfo[];
   try {
-    list = liveEntries(readIndex());
+    list = liveEntries(readIndex(profile), profile);
     // an autosave from before save slots existed has no entry yet
     if (!list.some((i) => i.id === AUTOSAVE_ID)) {
-      const legacy = parseState(localStorage.getItem(AUTOSAVE_KEY));
+      const legacy = parseState(localStorage.getItem(autosaveKey(profile)));
       if (legacy) list.push(summarize(AUTOSAVE_ID, 'Autosave', legacy, 0));
     }
   } catch {
@@ -212,8 +241,8 @@ const reported = new Set<string>();
  * in bringing an older save up to date; without one, it is not a game this version knows.
  */
 function reportUnreadable(id: string, raw: string, error: unknown) {
-  if (reported.has(id)) return;
-  reported.add(id);
+  if (reported.has(slotKey(id))) return;
+  reported.add(slotKey(id));
   const slot = slotKind(id);
   if (error) captureException(error, { tags: { slot } });
   else logger.warn('A saved game could not be opened', { slot, length: raw.length });
@@ -228,10 +257,11 @@ function reportUnreadable(id: string, raw: string, error: unknown) {
  * agree: both as they were, or both new.
  */
 export function writeSave(s: GameState, name: string, id?: string, now = Date.now()): SaveInfo | SaveError {
+  if (profileGone()) return 'gone';
   let before: string | null;
   let index: SaveInfo[];
   try {
-    before = localStorage.getItem(INDEX_KEY);
+    before = localStorage.getItem(indexKey());
     index = liveEntries(parseIndex(before));
   } catch {
     return 'full';
@@ -245,11 +275,11 @@ export function writeSave(s: GameState, name: string, id?: string, now = Date.no
   try {
     text = JSON.stringify(s);
     list = JSON.stringify([...index.filter((i) => i.id !== slot), info]);
-    localStorage.setItem(INDEX_KEY, list);
+    localStorage.setItem(indexKey(), list);
     try {
       localStorage.setItem(slotKey(slot), text);
     } catch (err) {
-      putBack(INDEX_KEY, before);
+      putBack(indexKey(), before);
       throw err;
     }
   } catch (err) {
@@ -260,7 +290,7 @@ export function writeSave(s: GameState, name: string, id?: string, now = Date.no
     return 'full';
   }
   tellBackup((b) => {
-    b.backupSave(slot, text, list);
+    b.backupSave(slot, text, list, backupProfile());
   });
   return info;
 }
@@ -294,18 +324,20 @@ export function autosave(s: GameState, now = Date.now()): boolean {
 
 /** Delete a save and its list entry. */
 export function deleteSave(id: string) {
+  // a profile deleted in another tab has nothing left to delete, and a list written now would be left behind
+  if (profileGone()) return;
   removeQuietly(slotKey(id));
   dropThumb(id);
   let list: string;
   try {
     list = JSON.stringify(readIndex().filter((i) => i.id !== id));
-    localStorage.setItem(INDEX_KEY, list);
+    localStorage.setItem(indexKey(), list);
   } catch {
     // the entry has no game left, so the list forgets it anyway
     return;
   }
   tellBackup((b) => {
-    b.dropBackup(id, list);
+    b.dropBackup(id, list, backupProfile());
   });
 }
 
@@ -371,13 +403,13 @@ export function openInAutosave(s: GameState, from = '', now = Date.now()): boole
 function keepUnreadable(now: number): boolean {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(AUTOSAVE_KEY);
+    raw = localStorage.getItem(autosaveKey());
   } catch {
     return true;
   }
   if (!raw) return true;
   try {
-    localStorage.setItem(`${UNREADABLE_KEY}:${now}`, raw);
+    localStorage.setItem(scoped(currentProfile(), `${UNREADABLE_KEY}:${now}`), raw);
   } catch {
     return false;
   }
@@ -423,8 +455,8 @@ export function importSave(text: string, now = Date.now()): SaveInfo | SaveError
   );
 }
 
-/** Somewhere outside localStorage that keeps a copy of every save: the desktop app, in files. */
-export type SaveBackup = Pick<DesktopApi, 'backupSave' | 'dropBackup' | 'readBackup'>;
+/** Somewhere outside localStorage that keeps a copy of every save, and of the list of profiles: the desktop app. */
+export type SaveBackup = Pick<DesktopApi, 'backupSave' | 'dropBackup' | 'readBackup'> & ProfileBackup;
 
 let backup: SaveBackup | undefined;
 
@@ -442,35 +474,54 @@ function tellBackup(change: (b: SaveBackup) => void) {
 const SAVE_ID = /^[a-z0-9-]{1,64}$/;
 
 /**
- * Keep a copy of every save in a backup from now on. Should localStorage have lost every save (its data cleared,
- * or a damaged profile), the copies are put back first. With no copies yet, as on the first run of a version that
- * keeps them, the saves already in localStorage are copied.
+ * Keep a copy of every save, and of the list of profiles, in a backup from now on. Should localStorage have lost
+ * every save of the profile being played (its data cleared, or a damaged profile), the copies are put back first; and
+ * should it have lost the list of profiles too, or hold one that will not read, every profile comes back with its
+ * saves. With no copies yet, as on the first run of a version that keeps them, the saves already in localStorage are
+ * copied. True if the page has to load again, for the list put back plays another profile than the page started on.
  */
-export async function startBackup(b: SaveBackup): Promise<void> {
+export async function startBackup(b: SaveBackup): Promise<boolean> {
   backup = b;
+  const playing = currentProfile();
   let copy: SaveCopy;
   try {
-    copy = await b.readBackup();
+    copy = await b.readBackup(backupProfile());
   } catch {
-    return;
+    // the list of profiles is still copied from here on
+    backupProfiles(b, null);
+    return false;
+  }
+  backupProfiles(b, copy.profiles);
+  if (restoreProfiles(copy.profiles)) {
+    for (const { id } of loadProfiles().profiles) {
+      try {
+        restore(await b.readBackup(backupProfile(id)), id);
+      } catch {
+        // the other profiles' saves still come back
+      }
+    }
+    return currentProfile() !== playing;
   }
   let keys: Set<string>;
   try {
     keys = storedKeys();
   } catch {
-    return;
+    return false;
   }
-  if (!keys.has(INDEX_KEY) && !keys.has(AUTOSAVE_KEY)) restore(copy);
+  if (!keys.has(indexKey()) && !keys.has(autosaveKey())) restore(copy, currentProfile());
   else if (copy.index === null) copyAll();
+  return false;
 }
 
-/** Put the backup's saves into an empty localStorage. */
-function restore(copy: SaveCopy) {
+/** Put a profile's saves back from the backup, if its storage has none. */
+function restore(copy: SaveCopy, profile: string) {
   if (copy.index === null) return;
   const saves = Object.entries(copy.saves).filter(([id, text]) => SAVE_ID.test(id) && typeof text === 'string');
   try {
-    for (const [id, text] of saves) localStorage.setItem(slotKey(id), text);
-    localStorage.setItem(INDEX_KEY, copy.index);
+    const keys = storedKeys();
+    if (keys.has(indexKey(profile)) || keys.has(autosaveKey(profile))) return;
+    for (const [id, text] of saves) localStorage.setItem(slotKey(id, profile), text);
+    localStorage.setItem(indexKey(profile), copy.index);
   } catch (err) {
     logger.warn('Saved games could not be restored from the backup', {
       error: err instanceof Error ? err.name : String(err),
@@ -480,7 +531,7 @@ function restore(copy: SaveCopy) {
   logger.info('Saved games restored from the backup', { saves: saves.length });
 }
 
-/** Copy every save in localStorage to the backup. */
+/** Copy every save of this profile in localStorage to the backup. */
 function copyAll() {
   const list = listSaves();
   const index = JSON.stringify(list);
@@ -493,7 +544,7 @@ function copyAll() {
     }
     if (text) {
       tellBackup((b) => {
-        b.backupSave(id, text, index);
+        b.backupSave(id, text, index, backupProfile());
       });
     }
   }

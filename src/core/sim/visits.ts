@@ -13,7 +13,6 @@ import {
   bribeOffers,
   centerOf,
   DIRT_FILTHY,
-  EXTINGUISHER_REACH,
   IDEAL_TEMP,
   INSPECTION_ALLOWED,
   INSPECTION_CLEAN_REP,
@@ -46,7 +45,6 @@ import { randomLook, randomName, rollSex, sexOfName } from '../people';
 import { irnd, pick, random } from '../random';
 import type {
   GameState,
-  Item,
   JudgeKind,
   Room,
   RoomVerdict,
@@ -63,8 +61,10 @@ import { newChar, say, streetTile } from './chars';
 import type { SimContext } from './context';
 import { changeRep, earn, spend } from './economy';
 import { emit, tipOnce, toast } from './events';
+import { extinguisherReaches, NO_EXTINGUISHER_FOUND } from './fire-cover';
 import { goTo, moveAlong } from './movement';
 import { counterVerdict, inspectorComing, inspectorGone, MUSHROOMS_FOUND } from './mushrooms';
+import { logNews, visitNews } from './news';
 import { noiseAt } from './noise';
 import { vipSetback } from './rival';
 import { cutOff } from './twists';
@@ -163,14 +163,7 @@ export function vipNote(scores: AspectScores, cares: Aspect, vibes: number, temp
  * the inspector, and for a Caretaker to put a fire out there quickly.
  */
 export function extinguisherNear(ctx: SimContext, room: Room): boolean {
-  if (room.sprinklers) return true;
-  const { x, y } = room.door;
-  return ctx.s.items.some(
-    (it: Item) =>
-      it.type === 'fire_extinguisher' &&
-      ctx.world.usable(it, true) &&
-      Math.max(Math.abs(it.x - x), Math.abs(it.y - y)) <= EXTINGUISHER_REACH,
-  );
+  return !!room.sprinklers || extinguisherReaches(ctx, room.door);
 }
 
 /** What the inspector finds wrong in a room. */
@@ -179,7 +172,7 @@ export function inspectionProblems(ctx: SimContext, room: Room): string[] {
   const problems: string[] = [];
   if (items.some((it) => it.dirt >= DIRT_FILTHY) || litterIn(ctx, room) > 0) problems.push('dirty');
   if (items.some((it) => it.wear >= 100)) problems.push('broken equipment');
-  if (!extinguisherNear(ctx, room)) problems.push('no Fire Extinguisher nearby');
+  if (!extinguisherNear(ctx, room)) problems.push(NO_EXTINGUISHER_FOUND);
   return problems;
 }
 
@@ -452,6 +445,7 @@ export function finishVisit(ctx: SimContext, v: Visitor) {
     s.inspectionWarned = true;
     Object.assign(s.visitReport, { outcome: 'warned', money: 0, rep: 0, waived: -result.money, unread: true });
   } else if (failed) s.visitReport.bribes = bribeOffers(-result.money);
+  logNews(ctx, visitNews(s, s.visitReport));
   // caught with the mushrooms out, whether or not it is made to go away
   if (failed && v.seen.some((r) => r.problems.includes(MUSHROOMS_FOUND))) s.stats.busted++;
   // the mushrooms come back out only once the inspector has been past the counter
@@ -497,6 +491,7 @@ export function settleInspection(ctx: SimContext, offer?: number): boolean {
     r.outcome = 'paid off';
     r.money = -price;
     r.rep = 0;
+    logNews(ctx, visitNews(s, r));
     emit(ctx, { type: 'sfx', name: 'cash' });
     toast(ctx, 'The inspector’s report seems to have been lost. How unfortunate.', 'good', undefined, 'ui-bribe');
     return true;
@@ -504,6 +499,7 @@ export function settleInspection(ctx: SimContext, offer?: number): boolean {
   r.refused = price;
   r.money = -refusedFine(-r.money);
   r.rep -= BRIBE_REP;
+  logNews(ctx, visitNews(s, r));
   spend(ctx, -r.money, 'fines');
   changeRep(ctx, r.rep);
   // they write ahead in time to arrive within the days promised, with a day to spare for the hour they write at

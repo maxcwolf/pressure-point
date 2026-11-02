@@ -323,14 +323,15 @@ describe('a save that fails partway', () => {
 });
 
 describe('the cost of saving', () => {
-  it('an autosave reads only the list of saves, not every saved game', () => {
+  it('an autosave reads only the list of saves and of profiles, not every saved game', () => {
     const s = game();
     for (let i = 0; i < MAX_SAVES; i++) ok(writeSave(s, `Save ${i}`));
     autosave(s);
     archiveAutosave();
     reads = [];
     expect(autosave(s)).toBe(true);
-    expect(reads).toEqual(['pressure-point-saves']);
+    // the list of profiles, to be sure this one has not been deleted in another tab
+    expect(reads).toEqual(['pressure-point-profiles', 'pressure-point-saves']);
   });
 
   it('listing the saves reads only the list too', () => {
@@ -345,7 +346,7 @@ describe('the cost of saving', () => {
 
 describe('the backup', () => {
   /** A backup kept in memory, as the desktop app keeps one in files. */
-  const fakeBackup = (copy: SaveCopy = { index: null, saves: {} }) => ({
+  const fakeBackup = (copy: SaveCopy = { index: null, saves: {}, profiles: null }) => ({
     copy,
     /** Keep a copy of a save and the list. */
     backupSave(id: string, text: string, index: string) {
@@ -359,6 +360,14 @@ describe('the backup', () => {
     },
     /** Everything kept, as the files would give it back. */
     readBackup: () => Promise.resolve(structuredClone(copy)),
+    /** Keep a copy of the list of profiles. */
+    backupProfiles(text: string) {
+      copy.profiles = text;
+    },
+    /** Forget a deleted profile's copies, of which this backup keeps none. */
+    dropProfileBackup() {
+      // nothing kept
+    },
   });
 
   it('keeps a copy of each save and of the list as they are written, and forgets deleted ones', async () => {
@@ -397,14 +406,14 @@ describe('the backup', () => {
     ok(writeSave(s, 'Only in the backup'));
     const copy = structuredClone(b.copy);
     store.clear();
-    await startBackup(fakeBackup({ index: null, saves: {} }));
+    await startBackup(fakeBackup({ index: null, saves: {}, profiles: null }));
     const here = ok(writeSave(s, 'Here'));
     await startBackup(fakeBackup(copy));
     expect(listSaves()).toEqual([here]);
   });
 
   it('copies the saves already in storage the first time it is used', async () => {
-    await startBackup(fakeBackup({ index: '[]', saves: {} }));
+    await startBackup(fakeBackup({ index: '[]', saves: {}, profiles: null }));
     const s = newGame();
     autosave(s, 1000);
     const a = ok(writeSave(s, 'From before', undefined, 2000));
@@ -421,7 +430,13 @@ describe('the backup', () => {
     const broken = () => {
       throw new Error('no disk');
     };
-    await startBackup({ backupSave: broken, dropBackup: broken, readBackup: broken });
+    await startBackup({
+      backupSave: broken,
+      dropBackup: broken,
+      readBackup: broken,
+      backupProfiles: broken,
+      dropProfileBackup: broken,
+    });
     const info = ok(writeSave(newGame(), 'Saved anyway'));
     expect(autosave(newGame())).toBe(true);
     deleteSave(info.id);

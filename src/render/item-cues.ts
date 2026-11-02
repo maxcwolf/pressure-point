@@ -858,7 +858,7 @@ export function dressStopped(model: THREE.Object3D, look: StopLook | undefined) 
   const cues = cuesOf(model);
   if (cues.dressed === dressed) return;
   cues.dressed = dressed;
-  // what burnt is charred all over, its glow and its moving parts too: they stand still until it is repaired
+  // what burned is charred all over, its glow and its moving parts too: they stand still until it is repaired
   const keep = dressed === 'charred' ? new Set() : animatedMaterials(model);
   model.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o.userData.cue) return;
