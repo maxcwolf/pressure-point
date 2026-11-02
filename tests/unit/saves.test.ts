@@ -323,14 +323,15 @@ describe('a save that fails partway', () => {
 });
 
 describe('the cost of saving', () => {
-  it('an autosave reads only the list of saves, not every saved game', () => {
+  it('an autosave reads only the list of saves and of profiles, not every saved game', () => {
     const s = game();
     for (let i = 0; i < MAX_SAVES; i++) ok(writeSave(s, `Save ${i}`));
     autosave(s);
     archiveAutosave();
     reads = [];
     expect(autosave(s)).toBe(true);
-    expect(reads).toEqual(['pressure-point-saves']);
+    // the list of profiles, to be sure this one has not been deleted in another tab
+    expect(reads).toEqual(['pressure-point-profiles', 'pressure-point-saves']);
   });
 
   it('listing the saves reads only the list too', () => {

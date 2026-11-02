@@ -10,7 +10,8 @@ import { accessTile, itemDims, wallSpotsOf } from '../core/world';
 import { View } from '../render/view';
 import { loadCampaign, recordGame } from '../storage/campaign';
 import { loadControls } from '../storage/controls';
-import { autosave, AUTOSAVE_ID, isAutosaveKey } from '../storage/saves';
+import { profileGone } from '../storage/profiles';
+import { autosave, AUTOSAVE_ID, storageChange } from '../storage/saves';
 import { storeThumb } from '../storage/thumbnails';
 import { mountHud } from '../ui';
 import type { FullScreenSwitch, UpdateOffer } from '../ui/host';
@@ -24,6 +25,7 @@ import {
   previewMode,
   ringsPeople,
 } from '../ui/lib/overlays';
+import { PROFILE_GONE, whoseSaves } from '../ui/lib/profiles';
 import { refused, watchGame } from './analytics';
 import { trackMouse } from './edge';
 import { reloadInto } from './handoff';
@@ -75,9 +77,18 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
 
   /** Whether the last autosave failed, so a run of failures is reported once. */
   let saveFailed = false;
+  /** Whether the player has been told this game's profile was deleted elsewhere, which they are told once. */
+  let toldGone = false;
+  /** That this game's profile was deleted in another tab or window, the first time it is asked for. */
+  const goneWarning = (): string | null => {
+    if (toldGone) return null;
+    toldGone = true;
+    return PROFILE_GONE;
+  };
   /**
    * Write the autosave, with a picture of the view for the title screen if asked. One that fails for want of room comes
-   * back with a warning for the player, once, until a save works again.
+   * back with a warning for the player, once, until a save works again, saying whose games are taking the room; one
+   * refused for a profile deleted in another tab or window says so, once.
    */
   const autosaveNow = (picture: boolean): string | null => {
     const ok = autosave(state);
@@ -85,9 +96,12 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     if (ok) {
       saveFailed = false;
       if (picture) storeThumb(AUTOSAVE_ID, view.snapshot());
+    } else if (profileGone()) {
+      return goneWarning();
     } else if (!saveFailed) {
       saveFailed = true;
-      return 'Your game could not be saved: storage is full. Delete or export some saved games to make room.';
+      const elsewhere = whoseSaves().others ? ', here or in another profile from the main menu' : '';
+      return `Your game could not be saved: storage is full. Delete or export some saved games to make room${elsewhere}.`;
     }
     return null;
   };
@@ -256,10 +270,13 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
     },
     { signal: leaving.signal },
   );
-  // another tab or window with the game open writes the same autosave, so the two save over each other: say so, once
+  // Another tab or window with the game open in the same profile writes the same autosave, so the two save over each
+  // other: say so, once. One that deletes this game's profile stops it saving, which is said instead.
   let warned = false;
   window.addEventListener('storage', (e) => {
-    if (warned || !isAutosaveKey(e.key)) return;
+    const change = storageChange(e.key, e.newValue);
+    if (change === 'deleted') ui.warn(goneWarning());
+    if (warned || change !== 'shared') return;
     warned = true;
     ui.toast(
       'This game is also open in another tab or window, and the two are saving over each other. Close one.',

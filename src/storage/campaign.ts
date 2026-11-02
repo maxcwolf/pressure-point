@@ -25,7 +25,7 @@ import {
 import { type LessonId, LESSONS, LESSONS_BEFORE_MEMORY } from '../core/sim/lessons';
 import type { GameState } from '../core/state/types';
 import { isRecord } from './json';
-import { currentProfile, profileKey, scoped } from './profiles';
+import { currentProfile, profileGone, profileKey, scoped } from './profiles';
 
 const KEY = 'pressure-point-campaign';
 
@@ -65,8 +65,9 @@ export function loadCampaign(profile = currentProfile()): CampaignProgress {
   }
 }
 
-/** Store the campaign's progress. */
+/** Store the campaign's progress, unless its profile has been deleted since, as from another tab. */
 function saveCampaign(p: CampaignProgress) {
+  if (profileGone()) return;
   try {
     localStorage.setItem(profileKey(KEY), JSON.stringify(p));
   } catch {

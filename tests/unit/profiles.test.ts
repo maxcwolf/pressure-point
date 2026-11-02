@@ -25,9 +25,11 @@ import {
   nextName,
   ownedBy,
   type Profile,
+  profileGone,
   readProfiles,
   renameProfile,
   statsName,
+  sweepProfiles,
   switchProfile,
 } from '../../src/storage/profiles';
 import {
@@ -40,6 +42,7 @@ import {
   readSave,
   type SaveInfo,
   startBackup,
+  storageChange,
   writeSave,
 } from '../../src/storage/saves';
 import {
@@ -58,7 +61,7 @@ import {
 import { loadTemplates, saveTemplates } from '../../src/storage/templates';
 import { readThumb, storeThumb } from '../../src/storage/thumbnails';
 import { saveWelcomeSeen, welcomeSeen } from '../../src/storage/welcome';
-import { contentsOf, deleteWarning, profileFacts, refusalNote } from '../../src/ui/lib/profiles';
+import { contentsOf, deleteWarning, makeRoom, profileFacts, refusalNote, whoseSaves } from '../../src/ui/lib/profiles';
 
 // stand-ins for the browser's storage: what lasts, and what lasts only as long as the tab
 const store = new Map<string, string>();
@@ -143,6 +146,12 @@ const keysOf = (profile: string) => [...store.keys()].filter((k) => ownedBy(prof
 const switchTo = (id: string) => {
   expect(switchProfile(id)).toBe(true);
   forgetControls();
+};
+/** What another tab deleting a profile leaves in storage, with this page none the wiser: the list without it. */
+const deletedElsewhere = (id: string) => {
+  const profiles = loadProfiles().profiles.filter((p) => p.id !== id);
+  store.set('pressure-point-profiles', JSON.stringify({ profiles, current: profiles[0]!.id }));
+  for (const key of keysOf(id)) store.delete(key);
 };
 
 /** A computer's storage from before there were profiles: one player's games, campaign, templates and settings. */
@@ -479,10 +488,120 @@ describe('a stored list of profiles', () => {
     });
   });
 
-  it('is read as the first alone when storage holds rubbish', () => {
+  it('is read as the first alone when storage holds rubbish and no other profile keeps anything', () => {
     store.set('pressure-point-profiles', '{not json');
     expect(loadProfiles().profiles).toEqual([{ id: FIRST_PROFILE, name: FIRST_NAME }]);
     expect(currentProfile()).toBe(FIRST_PROFILE);
+  });
+
+  it('is worked out again from the profiles’ keys when it will not read, so no profile is lost', () => {
+    autosave(at('willow', 1), 1000);
+    const sam = made(addProfile('Sam', () => 0.5));
+    const robin = made(addProfile('Robin', () => 0.1));
+    switchTo(sam.id);
+    autosave(at('exchange', 2), 2000);
+    switchTo(robin.id);
+    saveWelcomeSeen();
+    store.set('pressure-point-profiles', '{not json');
+    newPage();
+    // named by place, in the order of their ids
+    expect(loadProfiles()).toEqual({
+      profiles: [
+        { id: FIRST_PROFILE, name: FIRST_NAME },
+        { id: robin.id, name: 'Player 2' },
+        { id: sam.id, name: 'Player 3' },
+      ],
+      current: FIRST_PROFILE,
+    });
+    // the next change to the list stores every one of them, so none is swept away
+    const kim = made(addProfile('Kim'));
+    newPage();
+    sweepProfiles();
+    expect(loadProfiles().profiles.map((p) => p.id)).toEqual([FIRST_PROFILE, robin.id, sam.id, kim.id]);
+    switchTo(sam.id);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(2);
+  });
+
+  it('is worked out without the first profile when nothing of its is left', () => {
+    const sam = made(addProfile('Sam'));
+    switchTo(sam.id);
+    autosave(at('exchange', 2), 2000);
+    store.set('pressure-point-profiles', JSON.stringify({ profiles: 'broken' }));
+    newPage();
+    expect(loadProfiles()).toEqual({ profiles: [{ id: sam.id, name: 'Player 1' }], current: sam.id });
+    expect(currentProfile()).toBe(sam.id);
+  });
+});
+
+describe('a profile deleted in another tab', () => {
+  it('is no longer saved to by a tab still playing it, which hears of it as that and not as a shared game', () => {
+    const sam = made(addProfile('Sam'));
+    switchTo(sam.id);
+    autosave(at('willow', 1), 1000);
+    const autosaveKey = `profile:${sam.id}:pressure-point-save-v1`;
+    expect(profileGone()).toBe(false);
+    expect(storageChange(autosaveKey, '{}')).toBe('shared');
+    expect(storageChange(autosaveKey, null)).toBeNull();
+    expect(storageChange('pressure-point-save-v1', '{}')).toBeNull();
+    deletedElsewhere(sam.id);
+    expect(profileGone()).toBe(true);
+    expect(storageChange('pressure-point-profiles', store.get('pressure-point-profiles')!)).toBe('deleted');
+    expect(storageChange(autosaveKey, null)).toBe('deleted');
+    expect(writeSave(at('willow', 2), 'Mine', undefined, 2000)).toBe('gone');
+    expect(autosave(at('willow', 3), 3000)).toBe(false);
+    storeThumb(AUTOSAVE_ID, 'data:image/jpeg;base64,AAAA');
+    recordGame({ ...at('willow', 1), stars: 3 });
+    expect(saveTemplates([template('A')])).toBe(false);
+    expect(keysOf(sam.id)).toEqual([]);
+  });
+
+  it('has whatever was still written for it swept away as a page next opens, and nothing else', () => {
+    const sam = made(addProfile('Sam'));
+    const robin = made(addProfile('Robin'));
+    autosave(at('willow', 1), 1000);
+    switchTo(robin.id);
+    autosave(at('willow', 2), 2000);
+    store.set(`ph_pressure-point-${robin.id}`, '{}');
+    deletedElsewhere(sam.id);
+    // as an older version in a tab still playing Sam, or its play statistics, could write
+    store.set(`profile:${sam.id}:pressure-point-save-v1`, '{}');
+    store.set(`profile:${sam.id}:pressure-point-thumb:auto`, 'data:image/jpeg;base64,AAAA');
+    store.set(`ph_pressure-point-${sam.id}`, '{}');
+    const kept = [...store.keys()].filter((k) => !ownedBy(sam.id, k)).sort();
+    newPage();
+    sweepProfiles();
+    expect([...store.keys()].sort()).toEqual(kept);
+    expect(keysOf(robin.id)).not.toEqual([]);
+  });
+
+  it('has the keys from before profiles swept when it is the first, never the computer’s', () => {
+    seedOldStorage();
+    const sam = made(addProfile('Sam'));
+    switchTo(sam.id);
+    autosave(at('willow', 5), 5000);
+    deletedElsewhere(FIRST_PROFILE);
+    // a tab still playing Player 1 saves after all
+    store.set('pressure-point-save-v1', '{}');
+    store.set('pressure-point-thumb:auto', 'data:image/jpeg;base64,AAAA');
+    const kept = [...store.keys()].filter((k) => !ownedBy(FIRST_PROFILE, k)).sort();
+    expect(kept).toEqual(expect.arrayContaining(['pressure-point-display', 'pressure-point-audio']));
+    newPage();
+    sweepProfiles();
+    expect([...store.keys()].sort()).toEqual(kept);
+  });
+
+  it('is never swept for when the list is missing or will not read, as nothing says which profiles there are', () => {
+    const sam = made(addProfile('Sam'));
+    switchTo(sam.id);
+    autosave(at('willow', 1), 1000);
+    for (const list of [null, '{not json', JSON.stringify({ profiles: [] })]) {
+      if (list === null) store.delete('pressure-point-profiles');
+      else store.set('pressure-point-profiles', list);
+      const before = snapshot();
+      newPage();
+      sweepProfiles();
+      expect(store).toEqual(before);
+    }
   });
 });
 
@@ -522,9 +641,9 @@ describe('the desktop app’s copies', () => {
       backupProfiles(text: string) {
         b.profiles = text;
       },
-      /** Forget a profile's copies. */
-      dropProfileBackup(profile?: string) {
-        folders.delete(profile ?? 'saved-games');
+      /** Forget a profile's copies, the first's named as 'first'. */
+      dropProfileBackup(profile: string) {
+        folders.delete(profile === FIRST_PROFILE ? 'saved-games' : profile);
       },
     };
     return b;
@@ -557,13 +676,55 @@ describe('the desktop app’s copies', () => {
     // as if the player cleared the app's data
     store.clear();
     newPage();
-    await startBackup(b);
+    // Sam was played last, so the page is loaded again for Sam, who it plays from then on
+    expect(await startBackup(b)).toBe(true);
     expect(loadProfiles().profiles.map((p) => p.name)).toEqual(['Player 1', 'Sam']);
-    expect(currentProfile()).toBe(FIRST_PROFILE);
-    expect(readSave(AUTOSAVE_ID)!.money).toBe(111);
-    switchTo(sam.id);
+    expect(currentProfile()).toBe(sam.id);
+    expect(tab.get('pressure-point-profile')).toBe(sam.id);
     expect(listSaves().map((i) => i.name)).toEqual(['Theirs', 'Autosave']);
     expect(readSave(AUTOSAVE_ID)!.money).toBe(222);
+    switchTo(FIRST_PROFILE);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(111);
+  });
+
+  it('open on the profile this tab was playing after a wipe, if the copies have it', async () => {
+    const b = fakeBackup();
+    await startBackup(b);
+    const sam = made(addProfile('Sam'));
+    const robin = made(addProfile('Robin'));
+    switchTo(sam.id);
+    // another window went on to Robin
+    b.profiles = JSON.stringify({ ...loadProfiles(), current: robin.id });
+    // the page's storage is lost, but the tab still says it was playing Sam
+    store.clear();
+    forgetProfile();
+    expect(await startBackup(b)).toBe(true);
+    expect(currentProfile()).toBe(sam.id);
+    expect(tab.get('pressure-point-profile')).toBe(sam.id);
+  });
+
+  it('open on a profile there is after a wipe, when the first had been deleted', async () => {
+    const b = fakeBackup();
+    await startBackup(b);
+    const sam = made(addProfile('Sam'));
+    switchTo(sam.id);
+    autosave(at('exchange', 222), 2000);
+    expect(deleteProfile(FIRST_PROFILE)).toBe(true);
+    store.clear();
+    newPage();
+    expect(await startBackup(b)).toBe(true);
+    expect(loadProfiles().profiles).toEqual([sam]);
+    expect(currentProfile()).toBe(sam.id);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(222);
+  });
+
+  it('leave the page on its profile when nothing is put back', async () => {
+    const b = fakeBackup();
+    expect(await startBackup(b)).toBe(false);
+    made(addProfile('Sam'));
+    newPage();
+    expect(await startBackup(b)).toBe(false);
+    expect(currentProfile()).toBe(FIRST_PROFILE);
   });
 
   it('copy the list of profiles the first time, when the copies have none', async () => {
@@ -571,6 +732,52 @@ describe('the desktop app’s copies', () => {
     const b = fakeBackup();
     await startBackup(b);
     expect(JSON.parse(b.profiles!).profiles).toEqual([{ id: FIRST_PROFILE, name: FIRST_NAME }, sam]);
+  });
+
+  it('copy the list of profiles from then on, even when the copies will not read', async () => {
+    const sam = made(addProfile('Sam'));
+    const b = fakeBackup();
+    /** Copies that will not read, as a damaged folder gives. */
+    b.readBackup = () => Promise.reject(new Error('unreadable'));
+    expect(await startBackup(b)).toBe(false);
+    expect(JSON.parse(b.profiles!).profiles).toEqual([{ id: FIRST_PROFILE, name: FIRST_NAME }, sam]);
+    const robin = made(addProfile('Robin'));
+    expect(JSON.parse(b.profiles!).profiles).toContainEqual(robin);
+  });
+
+  it('put back the list of profiles over one the page has that will not read', async () => {
+    const b = fakeBackup();
+    await startBackup(b);
+    autosave(at('willow', 111), 1000);
+    const sam = made(addProfile('Sam'));
+    store.set('pressure-point-profiles', '{not json');
+    newPage();
+    expect(await startBackup(b)).toBe(false);
+    expect(loadProfiles().profiles).toEqual([{ id: FIRST_PROFILE, name: FIRST_NAME }, sam]);
+    expect(readSave(AUTOSAVE_ID)!.money).toBe(111);
+  });
+
+  it('never copy a list that will not read over a good copy, and replace a copy that will not read', async () => {
+    const b = fakeBackup();
+    made(addProfile('Sam'));
+    await startBackup(b);
+    const good = b.profiles;
+    store.set('pressure-point-profiles', '{not json');
+    newPage();
+    await startBackup(b);
+    expect(b.profiles).toBe(good);
+    // with no copy at all, a list that will not read is not copied either
+    b.profiles = null;
+    store.set('pressure-point-profiles', '{not json');
+    newPage();
+    await startBackup(b);
+    expect(b.profiles).toBeNull();
+    // and a copy that will not read gives way to the page's good list
+    store.set('pressure-point-profiles', good!);
+    b.profiles = '{broken';
+    newPage();
+    await startBackup(b);
+    expect(b.profiles).toBe(good);
   });
 
   it('put back no profiles over a list the page still has', async () => {
@@ -606,6 +813,24 @@ describe('the profiles list', () => {
     expect(deleteWarning(mine)).toBe('It has no saved games or campaign progress yet, so only its settings go.');
     expect(deleteWarning({ ...mine, saves: 1 })).toBe(
       'This deletes its 1 saved game, and its settings. It cannot be undone.',
+    );
+  });
+
+  it('says where to make room when storage is full, other profiles’ games among what fills it', () => {
+    expect(makeRoom({ mine: true, others: false })).toBe('Delete or export a saved game under Load game');
+    expect(makeRoom({ mine: true, others: true })).toBe(
+      'Delete or export a saved game under Load game, in this profile or another',
+    );
+    expect(makeRoom({ mine: false, others: true })).toBe(
+      'Other profiles’ games are using the space: switch to one and delete or export a game under Load game',
+    );
+    const sam = made(addProfile('Sam'));
+    switchTo(sam.id);
+    autosave(at('willow', 1), 1000);
+    switchTo(FIRST_PROFILE);
+    expect(whoseSaves()).toEqual({ mine: false, others: true });
+    expect(refusalNote('storage', 'Kim')).toBe(
+      'Could not keep the change: the browser’s storage is full. Other profiles’ games are using the space: switch to one and delete or export a game under Load game.',
     );
   });
 

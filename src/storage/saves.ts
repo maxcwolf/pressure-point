@@ -21,6 +21,7 @@ import {
   currentProfile,
   loadProfiles,
   type ProfileBackup,
+  profileGone,
   restoreProfiles,
   scoped,
 } from './profiles';
@@ -52,6 +53,15 @@ export function isAutosaveKey(key: string | null): boolean {
   return key === autosaveKey();
 }
 
+/**
+ * What another tab or window changing a key in storage means for the game on this page: its profile deleted, its
+ * autosave written by another game in the same profile, or nothing. A profile's keys going with it are not a game.
+ */
+export function storageChange(key: string | null, value: string | null): 'deleted' | 'shared' | null {
+  if (profileGone()) return 'deleted';
+  return value !== null && isAutosaveKey(key) ? 'shared' : null;
+}
+
 export interface SaveInfo {
   id: string;
   name: string;
@@ -67,7 +77,8 @@ export interface SaveInfo {
   startMonth?: number;
 }
 
-export type SaveError = 'invalid' | 'full';
+/** Why a game could not be saved: not a game, no room, or its profile deleted since, as from another tab. */
+export type SaveError = 'invalid' | 'full' | 'gone';
 
 /** "Day 12, Month 3, Year 1" for a count of elapsed game days, in a game that opened in `startMonth`. */
 export function gameDate(day: number, startMonth = 0): string {
@@ -246,6 +257,7 @@ function reportUnreadable(id: string, raw: string, error: unknown) {
  * agree: both as they were, or both new.
  */
 export function writeSave(s: GameState, name: string, id?: string, now = Date.now()): SaveInfo | SaveError {
+  if (profileGone()) return 'gone';
   let before: string | null;
   let index: SaveInfo[];
   try {
@@ -312,6 +324,8 @@ export function autosave(s: GameState, now = Date.now()): boolean {
 
 /** Delete a save and its list entry. */
 export function deleteSave(id: string) {
+  // a profile deleted in another tab has nothing left to delete, and a list written now would be left behind
+  if (profileGone()) return;
   removeQuietly(slotKey(id));
   dropThumb(id);
   let list: string;
@@ -462,18 +476,22 @@ const SAVE_ID = /^[a-z0-9-]{1,64}$/;
 /**
  * Keep a copy of every save, and of the list of profiles, in a backup from now on. Should localStorage have lost
  * every save of the profile being played (its data cleared, or a damaged profile), the copies are put back first; and
- * should it have lost the list of profiles too, every profile comes back with its saves. With no copies yet, as on the
- * first run of a version that keeps them, the saves already in localStorage are copied.
+ * should it have lost the list of profiles too, or hold one that will not read, every profile comes back with its
+ * saves. With no copies yet, as on the first run of a version that keeps them, the saves already in localStorage are
+ * copied. True if the page has to load again, for the list put back plays another profile than the page started on.
  */
-export async function startBackup(b: SaveBackup): Promise<void> {
+export async function startBackup(b: SaveBackup): Promise<boolean> {
   backup = b;
+  const playing = currentProfile();
   let copy: SaveCopy;
   try {
     copy = await b.readBackup(backupProfile());
   } catch {
-    return;
+    // the list of profiles is still copied from here on
+    backupProfiles(b, null);
+    return false;
   }
-  backupProfiles(b, copy.profiles !== null);
+  backupProfiles(b, copy.profiles);
   if (restoreProfiles(copy.profiles)) {
     for (const { id } of loadProfiles().profiles) {
       try {
@@ -482,16 +500,17 @@ export async function startBackup(b: SaveBackup): Promise<void> {
         // the other profiles' saves still come back
       }
     }
-    return;
+    return currentProfile() !== playing;
   }
   let keys: Set<string>;
   try {
     keys = storedKeys();
   } catch {
-    return;
+    return false;
   }
   if (!keys.has(indexKey()) && !keys.has(autosaveKey())) restore(copy, currentProfile());
   else if (copy.index === null) copyAll();
+  return false;
 }
 
 /** Put a profile's saves back from the backup, if its storage has none. */

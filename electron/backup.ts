@@ -20,6 +20,8 @@ import type { SaveCopy } from './api';
 const SAVE_ID = /^[a-z0-9-]{1,64}$/;
 /** What a profile id may be: the game's own are letters and digits. */
 const PROFILE_ID = /^[a-z0-9]{1,16}$/;
+/** The first profile's id, as the game has it (`FIRST_PROFILE` in src/storage/profiles.ts). */
+const FIRST_PROFILE = 'first';
 /** A save's file, and the id back from one. */
 const saveFile = (id: string) => `save-${id}.json`;
 const SAVE_FILE = /^save-([a-z0-9-]{1,64})\.json$/;
@@ -44,11 +46,11 @@ const isSaveId = (id: unknown): id is string => typeof id === 'string' && SAVE_I
 const isText = (text: unknown): text is string => typeof text === 'string' && text.length <= MAX_LENGTH;
 
 /**
- * The folder a profile's copies are kept in: the first profile's when none is named, or null when what is named is not
- * a profile id the game could have made.
+ * The folder a profile's copies are kept in: the first profile's when it is named or none is, or null when what is
+ * named is not a profile id the game could have made.
  */
 function folderOf(root: string, profile: unknown): string | null {
-  if (profile === undefined || profile === null) return path.join(root, FIRST_FOLDER);
+  if (profile === undefined || profile === null || profile === FIRST_PROFILE) return path.join(root, FIRST_FOLDER);
   return typeof profile === 'string' && PROFILE_ID.test(profile) ? path.join(root, PROFILES_FOLDER, profile) : null;
 }
 
@@ -134,9 +136,12 @@ export function backupProfiles(root: string, text: unknown) {
   enqueue(() => writeWhole(root, PROFILES_FILE, text), 'Could not keep a copy of the profiles:');
 }
 
-/** Delete the copies of a deleted profile's saves, folder and all. */
+/**
+ * Delete the copies of a deleted profile's saves, folder and all. The profile is always named, the first as 'first', so
+ * a call that has lost its argument can never take the first profile's copies.
+ */
 export function dropProfile(root: string, profile: unknown) {
-  const dir = folderOf(root, profile);
+  const dir = profile === undefined || profile === null ? null : folderOf(root, profile);
   if (!dir) return;
   enqueue(() => rm(dir, { recursive: true, force: true }), 'Could not delete the copies of a profile:');
 }

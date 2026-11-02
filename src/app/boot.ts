@@ -8,6 +8,7 @@ import { featureValues, newGame } from '../core/state/game';
 import type { GameState } from '../core/state/types';
 import { loadIcons } from '../render/models/icons';
 import { loadCampaign } from '../storage/campaign';
+import { profileGone, sweepProfiles } from '../storage/profiles';
 import { AUTOSAVE_ID, openInAutosave, readSave, startBackup } from '../storage/saves';
 import {
   loadDisciplinePrefs,
@@ -18,12 +19,13 @@ import {
 } from '../storage/settings';
 import { welcomeSeen } from '../storage/welcome';
 import { showTitle } from '../ui';
+import { makeRoom, PROFILE_GONE } from '../ui/lib/profiles';
 import { track } from './analytics';
 import { automated } from './automation';
 import { desktop } from './desktop';
 import { fullScreen } from './fullscreen';
 import { startGame } from './game';
-import { takeHandoff } from './handoff';
+import { reloadInto, takeHandoff } from './handoff';
 import { gameProps } from './play-events';
 import { newGameCenter, startTutorial } from './start';
 import { updates } from './updates';
@@ -41,8 +43,15 @@ export async function boot() {
   // or the one when the player comes back from a game. Asked before anything loads, the answer that it is checking
   // is in by the time the title screen draws.
   if (!what) updates?.check();
-  // the desktop app keeps copies of the saves in files, and puts them back if the page's storage has lost them
-  if (desktop) await startBackup(desktop);
+  // The desktop app keeps copies of the saves in files, and puts them back if the page's storage has lost them. A list
+  // of profiles put back that plays another profile than this page started on loads the page again, so everything,
+  // play statistics included, is read for that one.
+  if (desktop && (await startBackup(desktop))) {
+    reloadInto(what ?? '');
+    return;
+  }
+  // anything left under a profile deleted while another tab still played it goes
+  sweepProfiles();
 
   // the lawn sign and welcome mat are drawn to canvas, so the font has to be ready first, and the icons' atlas too
   await Promise.all([
@@ -57,7 +66,7 @@ export async function boot() {
     if (opened === 'no-room') logger.warn('No room to keep the autosave, so the new game did not start');
     // a player is welcomed to the alpha once; a test or a bot is never welcomed, so the menu is there for it at once
     const welcome = !welcomeSeen() && !automated(navigator);
-    what = await showTitle(audio, exit, updates, fullScreen, opened === 'no-room' ? NO_ROOM : '', welcome);
+    what = await showTitle(audio, exit, updates, fullScreen, opened === 'no-room' ? noRoom() : '', welcome);
     audio.unlock();
     opened = open(what);
   }
@@ -73,10 +82,13 @@ export async function boot() {
 
 /**
  * Why a game was not opened, when keeping the one in the autosave, or a center's last game that it pushes out of
- * "Previous game", would not fit in storage.
+ * "Previous game", would not fit in the storage every profile shares, and how to make room; or when the profile was
+ * deleted in another tab, so nothing can be kept for it.
  */
-const NO_ROOM =
-  'There is no room to keep your current game as "Previous game", or the one there now as a save of its own, so the new one has not started. Delete or export a saved game under Load game, then try again.';
+const noRoom = () =>
+  profileGone()
+    ? PROFILE_GONE
+    : `There is no room to keep your current game as "Previous game", or the one there now as a save of its own, so the new one has not started. ${makeRoom()}, then try again.`;
 
 /**
  * Open a saved game by id, or a fresh one for 'new' or 'new:<center>'. Null if there is nothing to open, and

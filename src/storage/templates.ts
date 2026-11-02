@@ -1,6 +1,6 @@
 // Room templates, kept apart from any one game so they can be built in every game of the profile that saved them.
 import { readTemplates, type Template } from '../core/templates';
-import { currentProfile, profileKey, scoped } from './profiles';
+import { currentProfile, profileGone, profileKey, scoped } from './profiles';
 
 const KEY = 'pressure-point-room-templates';
 
@@ -13,8 +13,9 @@ export function loadTemplates(profile = currentProfile()): Template[] {
   }
 }
 
-/** Keep the templates for this game and the next. False if the browser's storage is full. */
+/** Keep the templates for this game and the next. False if the browser's storage is full, or the profile deleted. */
 export function saveTemplates(list: readonly Template[]): boolean {
+  if (profileGone()) return false;
   try {
     localStorage.setItem(profileKey(KEY), JSON.stringify(list.map(({ name, layout }) => ({ name, layout }))));
     return true;

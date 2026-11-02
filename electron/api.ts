@@ -50,8 +50,8 @@ export interface DesktopApi {
   readBackup: (profile?: string) => Promise<SaveCopy>;
   /** Keep a copy of the list of profiles in a file. */
   backupProfiles: (text: string) => void;
-  /** Delete the copies of a deleted profile's saves. */
-  dropProfileBackup: (profile?: string) => void;
+  /** Delete the copies of a deleted profile's saves. Always named, the first profile as 'first'. */
+  dropProfileBackup: (profile: string) => void;
 }
 
 /** The message the game sends to the main process to quit. */

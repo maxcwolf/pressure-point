@@ -2,7 +2,7 @@
 // not do.
 
 import { loadCampaign } from '../../storage/campaign';
-import { MAX_PROFILES, type ProfileRefusal } from '../../storage/profiles';
+import { currentProfile, loadProfiles, MAX_PROFILES, type ProfileRefusal } from '../../storage/profiles';
 import { listSaves } from '../../storage/saves';
 import { loadTemplates } from '../../storage/templates';
 
@@ -53,8 +53,31 @@ export function deleteWarning(c: ProfileContents): string {
   return `This deletes its ${inWords(parts)}, and its settings. It cannot be undone.`;
 }
 
+/** Said once in a game whose profile was deleted in another tab or window, which is no longer saved from then on. */
+export const PROFILE_GONE =
+  'This profile was deleted in another tab or window, so this game is no longer being saved. Go back to the main menu to carry on as another profile.';
+
+/** Whose saved games take up the storage every profile on the computer shares: this profile's, and other profiles'. */
+export function whoseSaves(): { mine: boolean; others: boolean } {
+  const playing = currentProfile();
+  return {
+    mine: listSaves().length > 0,
+    others: loadProfiles().profiles.some((p) => p.id !== playing && listSaves(p.id).length > 0),
+  };
+}
+
+/**
+ * How to make room in storage from the title screen, where Load game lists this profile's saves: there, or in another
+ * profile when other profiles' games are taking the room. Without a full stop, to be finished as the message needs.
+ */
+export function makeRoom({ mine, others } = whoseSaves()): string {
+  if (others && !mine)
+    return 'Other profiles’ games are using the space: switch to one and delete or export a game under Load game';
+  return `Delete or export a saved game under Load game${others ? ', in this profile or another' : ''}`;
+}
+
 /** Why a profile could not be added or renamed to a name. */
-export function refusalNote(refusal: ProfileRefusal, name: string): string {
+export function refusalNote(refusal: ProfileRefusal, name: string, room = makeRoom): string {
   switch (refusal) {
     case 'empty':
       return 'Type a name for the profile.';
@@ -63,6 +86,6 @@ export function refusalNote(refusal: ProfileRefusal, name: string): string {
     case 'full':
       return `There is room for ${MAX_PROFILES} profiles. Delete one to add another.`;
     case 'storage':
-      return 'Could not keep the change: the browser’s storage is full. Delete or export some saved games first.';
+      return `Could not keep the change: the browser’s storage is full. ${room()}.`;
   }
 }

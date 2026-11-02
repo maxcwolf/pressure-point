@@ -213,7 +213,8 @@ test.describe('leaving the desktop app', () => {
     expect(readdirSync(path.join(desktop.profile, 'profiles'))).toEqual([sam]);
     expect(readdirSync(path.join(desktop.profile, 'profiles', sam)).sort()).toEqual(['index.json', 'save-auto.json']);
 
-    // as if the player cleared the app's data: both profiles come back, each with its own game
+    // as if the player cleared the app's data: both profiles come back, each with its own game, and the app opens on
+    // Sam, who played last
     const second = await desktop.launch();
     await second.page.evaluate(() => {
       localStorage.clear();
@@ -221,19 +222,19 @@ test.describe('leaving the desktop app', () => {
     });
     await second.page.reload();
     const again = second.page.locator('#title .title-profile');
-    await expect(again).toHaveText('Player 1');
+    await expect(again).toHaveText('Sam');
     await second.page.getByRole('button', { name: 'Continue' }).click();
-    await expect(second.page.locator('#stats')).toContainText('$30,000');
+    await expect(second.page.locator('#stats')).toContainText('$20,000');
     await openPauseMenu(second.page);
     await second.page.getByRole('button', { name: 'Main menu' }).click();
     await again.click();
     await second.page
-      .locator('#title-profiles .profile-row', { hasText: 'Sam' })
+      .locator('#title-profiles .profile-row', { hasText: 'Player 1' })
       .getByRole('button', { name: 'Play' })
       .click();
-    await expect(again).toHaveText('Sam');
+    await expect(again).toHaveText('Player 1');
     await second.page.getByRole('button', { name: 'Continue' }).click();
-    await expect(second.page.locator('#stats')).toContainText('$20,000');
+    await expect(second.page.locator('#stats')).toContainText('$30,000');
   });
 
   test("finds the copies a version from before profiles kept, as the first profile's", async ({ desktop }) => {

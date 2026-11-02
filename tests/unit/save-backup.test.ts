@@ -139,7 +139,11 @@ describe('save backup files for profiles', () => {
     dropProfile(root, 'k2j3h4g5');
     expect(await readBackup(root, 'k2j3h4g5')).toEqual({ index: null, saves: {}, profiles: null });
     expect((await readBackup(root, undefined)).index).toBe('[1]');
+    // a call that has lost its profile takes nothing; the first's copies go only when it is named
     dropProfile(root, undefined);
+    dropProfile(root, null);
+    expect((await readBackup(root, 'first')).index).toBe('[1]');
+    dropProfile(root, 'first');
     expect(await readBackup(root, undefined)).toEqual({ index: null, saves: {}, profiles: null });
   });
 
