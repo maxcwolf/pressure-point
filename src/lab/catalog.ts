@@ -774,8 +774,13 @@ function runawaySpecimen(man: boolean): Specimen {
       const mosaic = MOSAICS[st.mosaic as MosaicName];
       /** Pose them, running on the spot as fast as a runner goes, or standing calmed down and dressed again. */
       const animate = (t: number, dt: number) => {
-        c.state = st.calmed ? 'waiting' : 'running';
+        c.state = st.calmed ? 'toWait' : 'running';
         c.pose = st.calmed ? 'stand' : 'walk';
+        // calmed down, relieved, and on their way again
+        Object.assign(
+          c,
+          st.calmed ? { bubble: 'bubble-relieved', outcome: '' } : { bubble: 'bubble-stressed', outcome: 'failed' },
+        );
         showBare(rig, !st.calmed, look.sex === 'female', mosaic);
         if (!st.calmed) walkOnTheSpot(rig, t, RUNAWAY_SPEED);
         poseChar(rig, c, t, dt, { style: null });

@@ -109,8 +109,13 @@ test('the lab shows every model, and nothing more', async ({ page }) => {
 test.describe('every model', () => {
   for (const id of IDS) {
     test(id, async ({ page }) => {
+      // twenty people drawn in full, with no batches as the game has, are slow to settle in software rendering
+      const crowd = id === 'crowd';
+      if (crowd) test.slow();
       await openLab(page, id);
-      await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', `${id.replaceAll(':', '-')}.png`]);
+      await expect(page.locator('canvas.stage')).toHaveScreenshot(['models', `${id.replaceAll(':', '-')}.png`], {
+        ...(crowd ? { timeout: 90_000 } : {}),
+      });
     });
   }
 });
