@@ -64,8 +64,7 @@ function toMat(s: GameState, st: Staff) {
 
 /** A center with a Qi Gong Studio, open at the second star, and an Instructor if asked for, just before a Wednesday. */
 function studio(instructor = true) {
-  // a game whose draws give a class a few days running, which the tests of the calls and the first class need
-  const center = openCenter(1);
+  const center = openCenter(3);
   const { sim, s } = center;
   s.stars = 2;
   const room = addQigong(sim);

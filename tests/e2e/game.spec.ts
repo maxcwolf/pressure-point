@@ -886,6 +886,23 @@ test.describe('staff', () => {
     await expect(rows).toHaveCount(1);
     await job.selectOption({ label: 'All (3)' });
     await expect(rows).toHaveCount(3);
+
+    // with nobody left in the job the list shows everyone, and keeps to everyone once someone is in it again
+    await job.selectOption({ label: 'Massage Therapist (1)' });
+    await expect(rows).toHaveCount(1);
+    const id = await game.eval((pp) => {
+      const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+      st.role = 'caretaker';
+      return st.id;
+    });
+    await expect(job).toHaveValue('all');
+    await expect(rows).toHaveCount(3);
+    await game.eval((pp, back) => {
+      pp.state.staff.find((x) => x.id === back)!.role = 'therapist';
+    }, id);
+    await expect(job.locator('option')).toContainText(['Massage Therapist (1)']);
+    await expect(job).toHaveValue('all');
+    await expect(rows).toHaveCount(3);
   });
 
   test('can be put in order in the Staff menu, as items can in the Items menu', async ({ game, page }) => {

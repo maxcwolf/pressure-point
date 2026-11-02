@@ -45,7 +45,27 @@ function countNow(s: GameState, goal: GoalSpec): number {
   return 0;
 }
 
-/** The goals a challenge could set this center now, each a stretch on how it is doing. */
+/**
+ * Whether a challenge's goal would ask what a star already asks: the same kind of goal, whatever its target. Heals
+ * clash unless both name a discipline and the disciplines differ, since every heal counts toward the whole center's,
+ * and prestige clashes only for the same kind of room.
+ */
+export function clashes(goal: GoalSpec, star: GoalSpec): boolean {
+  if (goal.kind !== star.kind) return false;
+  if (goal.kind === 'healed' && star.kind === 'healed')
+    return !goal.discipline || !star.discipline || goal.discipline === star.discipline;
+  if (goal.kind === 'prestige' && star.kind === 'prestige') return goal.room === star.room;
+  return true;
+}
+
+/** Whether one of the next star's objectives already asks what a challenge's goal asks. */
+export const starAsks = (s: GameState, goal: GoalSpec) =>
+  (centerOf(s).goals[s.stars] ?? []).some((g) => clashes(goal, g));
+
+/**
+ * The goals a challenge could set this center now, each a stretch on how it is doing: a room's prestige only in a kind
+ * of room the next star does not ask it of.
+ */
 export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
   const s = ctx.s;
   const goals: GoalSpec[] = [];
@@ -63,7 +83,10 @@ export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
   // a step above the best room of its kind, since any one of them reaching the level meets the goal
   const best = new Map<RoomType, number>();
   for (const r of s.rooms) if (r.done) best.set(r.type, Math.max(best.get(r.type) ?? 0, prestige(ctx, r)));
-  const types = [...best].filter(([, level]) => level < 5);
+  // and one the next star does not ask prestige of already
+  const types = [...best].filter(
+    ([room, level]) => level < 5 && !starAsks(s, { kind: 'prestige', room, level: level + 1 }),
+  );
   if (types.length) {
     const [room, level] = pick(s, types);
     goals.push({ kind: 'prestige', room, level: level + 1 });
@@ -73,23 +96,6 @@ export function challengeGoals(ctx: SimContext, days: number): GoalSpec[] {
   goals.push({ kind: 'balance', amount: roundTo(Math.max(0, s.money - s.loan) + 15000, 5000) });
   return goals;
 }
-
-/**
- * Whether a challenge's goal would ask what a star already asks: the same kind of goal, whatever its target. Heals
- * clash unless both name a discipline and the disciplines differ, since every heal counts toward the whole center's,
- * and prestige clashes only for the same kind of room.
- */
-export function clashes(goal: GoalSpec, star: GoalSpec): boolean {
-  if (goal.kind !== star.kind) return false;
-  if (goal.kind === 'healed' && star.kind === 'healed')
-    return !goal.discipline || !star.discipline || goal.discipline === star.discipline;
-  if (goal.kind === 'prestige' && star.kind === 'prestige') return goal.room === star.room;
-  return true;
-}
-
-/** Whether one of the next star's objectives already asks what a challenge's goal asks. */
-export const starAsks = (s: GameState, goal: GoalSpec) =>
-  (centerOf(s).goals[s.stars] ?? []).some((g) => clashes(goal, g));
 
 /** The goals a challenge could set now that none of the next star's objectives already asks. */
 export function freshGoals(ctx: SimContext, days: number): GoalSpec[] {

@@ -274,6 +274,21 @@ describe('a staff challenge and the star objectives', () => {
     expect(kinds.size).toBeGreaterThanOrEqual(4);
   });
 
+  it('asks prestige of a kind of room the star does not, rather than none', () => {
+    const { s } = withChallenges();
+    // Willow Lane's second star asks for a Massage Suite of prestige 2, and the center has a Consultation Room too
+    s.center = 'willow';
+    s.stars = 1;
+    const ctx = createContext(s);
+    for (let seed = 1; seed <= 20; seed++) {
+      setSeed(seed, s);
+      expect(
+        freshGoals(ctx, 90).filter((g) => g.kind === 'prestige'),
+        `seed ${seed}`,
+      ).toEqual([expect.objectContaining({ room: 'consult' })]);
+    }
+  });
+
   it('sets a heal challenge again once every star is earned', () => {
     const { s } = withChallenges();
     s.center = 'willow';

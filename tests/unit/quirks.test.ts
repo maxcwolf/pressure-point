@@ -127,6 +127,16 @@ describe('the rare quirks for each role', () => {
     }
   });
 
+  it('draws as many random numbers for a Caretaker, with no rare quirk to pick, as for anyone', () => {
+    for (let i = 0; i < 2000; i++) {
+      const caretaker = { rng: i * 7907 + 11 };
+      const receptionist = { rng: i * 7907 + 11 };
+      rollQuirks(caretaker, 'caretaker');
+      rollQuirks(receptionist, 'receptionist');
+      expect(caretaker.rng, `roll ${i}`).toBe(receptionist.rng);
+    }
+  });
+
   it('never gives a Caretaker, who never takes a post, Holds Space', () => {
     for (let i = 0; i < 20000; i++) expect(rollQuirks({ rng: i * 7907 + 11 }, 'caretaker')).not.toContain('space');
     const sim = freshSim(9);

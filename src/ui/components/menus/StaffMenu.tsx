@@ -257,6 +257,8 @@ export function StaffMenu() {
   const staff = sim.s.staff;
   // a job nobody holds any more, or a treatment nobody in it knows, narrows the list to nobody, so each falls back
   const role = shownRole(staff, hud.staffRole);
+  // and a job given up on stays given up on, so hiring into it later does not narrow the list again unasked
+  if (!role) hud.staffRole = null;
   const inRole = role ? staff.filter((st) => st.role === role) : staff;
   const asked = hud.staffKnows;
   const knows = asked && inRole.some((st) => knowsOrLearning(st, asked)) ? asked : null;
