@@ -17,6 +17,7 @@ Each release's notes are taken from its section here. Keep them short.
 - **The tutorial stops asking to start the clock** once you have started it, so pausing to put the Benches down no longer brings the step back, nor does the game pausing itself while you place something.
 - **Overlays while you move things.** Picking up a placed item to move it, or a piece of a blueprint, now shows the same overlay as buying one does (Surroundings, Calm or Temperature), with what the move would change, and puts it away once the item is down.
 - **Heaters and coolers show the temperature.** An Air Conditioner or Fireplace in hand now shows the Temperature overlay rather than the Calm one for its hum, including the one the weather lesson's button puts in hand.
+- **The Items menu in groups.** Pick a room in the Items menu and its specialty kit (what a technique needs, and its machines) comes first, then what else only goes in that room, then what goes anywhere, each under a small heading with a line between. Everywhere lists what is tied to no room first and the specialty kit last.
 - **Amanda on demand.** A new console command, amanda, has Amanda Jablonsky apply straight away, as the newest Massage Therapist applicant, unless she already works for you or is applying. Tab now finishes a command as you type it in the console.
 
 ## v0.35.0

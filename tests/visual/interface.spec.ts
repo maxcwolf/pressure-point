@@ -102,6 +102,13 @@ test.describe('in a game', () => {
     });
   }
 
+  test("the Items menu's groups for a room", async ({ screens, game, page }) => {
+    await screens.play();
+    await game.menu('Items');
+    await page.locator('#menu .tab', { hasText: 'Massage Suite' }).click();
+    await screens.shot('menu-items-room');
+  });
+
   test("the Rooms menu's templates", async ({ screens, game, page }) => {
     // two templates kept from earlier games: one to build, and one whose room is still locked here
     await page.addInitScript(() => {
