@@ -706,6 +706,8 @@ export type FeelingId =
   | 'puddle'
   | 'wet-feet'
   | 'no-restroom'
+  | 'accident'
+  | 'mess'
   | 'fine-room'
   | 'underwhelmed'
   | 'pricey'

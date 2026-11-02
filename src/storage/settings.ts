@@ -92,6 +92,8 @@ export interface SandboxSettings {
   mishaps: boolean;
   /** Whether a machine smoking with wear can catch fire when it overloads. */
   fires: boolean;
+  /** Whether a guest bursting with nowhere to go has an accident on the floor. */
+  accidents: boolean;
   /** Whether wages the bank cannot cover end the game. */
   bankruptcy: boolean;
   /** How hard the game is, setting by setting. One left out is as usual. */
@@ -113,6 +115,7 @@ export function loadSandbox(): SandboxSettings {
     rival: true,
     mishaps: true,
     fires: true,
+    accidents: true,
     bankruptcy: true,
     difficulty: {},
   };
@@ -128,6 +131,7 @@ export function loadSandbox(): SandboxSettings {
     if (typeof raw.rival === 'boolean') out.rival = raw.rival;
     if (typeof raw.mishaps === 'boolean') out.mishaps = raw.mishaps;
     if (typeof raw.fires === 'boolean') out.fires = raw.fires;
+    if (typeof raw.accidents === 'boolean') out.accidents = raw.accidents;
     if (typeof raw.bankruptcy === 'boolean') out.bankruptcy = raw.bankruptcy;
     out.difficulty = readDifficulty(raw.difficulty);
   } catch {

@@ -30,6 +30,7 @@ import { pick, random, rnd } from '../random';
 import type { GameState, Guest, Item, Need, Regular } from '../state/types';
 import { at } from '../util';
 import { accessPose, accessTile, itemCenter, rotVec, Z_CORRIDOR } from '../world';
+import { accidentDue, haveAccident, messNear } from './accidents';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
 import { lobbyTile, say, streetTile, streetTileNear } from './chars';
@@ -459,12 +460,14 @@ function tryNeed(ctx: SimContext, g: Guest): boolean {
   if (!a) {
     // nowhere to go because the restroom is under water: that, they will mention
     if (kind === 'toilet' && ctx.s.rooms.some((r) => ctx.world.flooded(r))) feel(g, 'no-restroom');
+    bursting(g, kind);
     return false;
   }
   claim(ctx, g, a.item, a.idx);
   const [ax, ay] = accessTile(a.item, a.idx);
   if (!goTo(ctx, g, ax, ay, accessPose(a.item, a.idx))) {
     release(ctx, g);
+    bursting(g, kind);
     return false;
   }
   g.needKind = kind;
@@ -473,12 +476,19 @@ function tryNeed(ctx: SimContext, g: Guest): boolean {
   return true;
 }
 
+/** A guest bursting for the toilet with nowhere to go shows it, as warning that they cannot hold on for ever. */
+function bursting(g: Guest, need: Need) {
+  if (need === 'toilet' && g.bladder >= 100) say(g, 'bubble-restroom', 1.5);
+}
+
 /** What a waiting guest makes of where they are waiting: pleasant or grim, with a seat or without. */
 function noticeSurroundings(ctx: SimContext, g: Guest) {
   if (drainFactor(ctx, g.tx, g.ty) <= PLEASANT_DRAIN) feel(g, 'pleasant');
   if (g.pose === 'sit') feel(g, 'comfy');
   feelTemperature(g, warmthAt(ctx, g.tx, g.ty));
-  if (ctx.s.litter.some((l) => !l.flood && Math.abs(l.x - g.tx) <= 2 && Math.abs(l.y - g.ty) <= 2)) feel(g, 'litter');
+  if (ctx.s.litter.some((l) => !l.flood && !l.accident && Math.abs(l.x - g.tx) <= 2 && Math.abs(l.y - g.ty) <= 2))
+    feel(g, 'litter');
+  if (messNear(ctx.s, g.tx, g.ty)) feel(g, 'mess');
 }
 
 /** What a waiting guest reconsiders now and then: a better line, their needs, where to stand. */
@@ -529,6 +539,10 @@ function waitingThink(ctx: SimContext, g: Guest) {
     }
   }
   if (tryNeed(ctx, g)) return;
+  if (accidentDue(ctx, g)) {
+    haveAccident(ctx, g);
+    return;
+  }
 
   if (g.hasWrapper && random(ctx.s) < 0.2) {
     g.hasWrapper = false;
@@ -566,6 +580,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   const walkingToClass = g.state === 'toWait' && g.goal === 'class';
   const waiting =
     (g.state === 'toWait' && !walkingToClass) || g.state === 'waiting' || g.state === 'toNeed' || g.state === 'need';
+  // bursting in a line, not on the way to a toilet: how long they have held on, which they cannot do for ever
+  if (waiting && g.bladder >= 100 && g.state !== 'toNeed' && g.state !== 'need') g.held = (g.held ?? 0) + dt;
+  else delete g.held;
   if (waiting) {
     let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
     // the one they are waiting for has a good bedside manner: at a mat, the Sound Healer at the bowls

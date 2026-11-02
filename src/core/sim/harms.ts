@@ -1,12 +1,18 @@
 // Harm that keeps coming to guests: a failed treatment, a guest fed up with waiting, one who got worse in a line or
-// balked at the price. Each is counted by what it was and why, and once the same has happened a few times, what is
-// behind it in this game and what helps is put on a card that stays until it is read.
+// balked at the price, or one who could not hold on for a toilet. Each is counted by what it was and why, and once the
+// same has happened a few times, what is behind it in this game and what helps is put on a card that stays until it is
+// read.
 
 import {
+  ACCIDENT_LEAVE,
+  ACCIDENT_PATIENCE,
+  ACCIDENT_REP,
   conditionOf,
   DAY_SECONDS,
   DISCIPLINES,
   DISCOMFORT_DRAIN,
+  HOLD_NO_RESTROOM,
+  HOLD_TOILETS_TAKEN,
   IDEAL_TEMP,
   ITEMS,
   MODALITIES,
@@ -20,6 +26,7 @@ import {
 } from '../data';
 import { an } from '../format';
 import type { FailedTreatment, Guest, HarmNote, Item, Staff } from '../state/types';
+import type { ToiletTrouble } from './accidents';
 import { stationPlace } from './advisor';
 import { drainFactor } from './ambience';
 import type { SimContext } from './context';
@@ -349,6 +356,45 @@ export function notePriced(ctx: SimContext, g: Guest) {
       ],
       help: 'The lower your reputation, the more a high price puts new guests off; regulars mind it less. Bring prices down in Money → Prices until your name is worth more.',
       fix: { menu: 'prices' },
+    };
+  });
+}
+
+/** Why there was no restroom a guest could use, in a few words. */
+function noRestroom(ctx: SimContext): string {
+  const restrooms = ctx.s.rooms.filter((r) => r.type === 'restroom');
+  if (!restrooms.length) return 'No Restroom built';
+  if (restrooms.every((r) => !r.done)) return 'The Restroom is not finished';
+  if (restrooms.some((r) => ctx.world.flooded(r))) return 'The Restroom is flooded';
+  return 'No toilet they could get to';
+}
+
+/** Count a guest who had an accident, by whether there was no restroom or every toilet was taken, and explain it. */
+export function noteAccident(ctx: SimContext, g: Guest, trouble: ToiletTrouble) {
+  noteHarm(ctx, `accident:${trouble}`, () => {
+    const toilets = ctx.s.items.filter((it) => it.type === 'toilet' && ctx.world.usable(it)).length;
+    const causes =
+      trouble === 'none'
+        ? [{ label: noRestroom(ctx) }, { label: `Held on, bursting, for ${HOLD_NO_RESTROOM} seconds` }]
+        : [
+            { label: `Every toilet taken: ${toilets} in all` },
+            { label: `Held on, bursting, for ${HOLD_TOILETS_TAKEN} seconds` },
+          ];
+    const fix =
+      trouble === 'none'
+        ? 'Build a Restroom with a toilet and a sink. Guests need one once they have waited a while, and sooner after a drink.'
+        : 'Build another Restroom, or put more toilets in the one there is, so a bursting guest finds one free. Shorter lines mean less waiting to need one.';
+    const clean = hasStaff(ctx, 'caretaker') ? '' : ' Hire a Caretaker to clean up each one.';
+    return {
+      title:
+        trouble === 'none'
+          ? `${HARM_EXPLAIN} guests had accidents with no Restroom to use`
+          : `${HARM_EXPLAIN} guests had accidents waiting for a free toilet`,
+      cost: `−${ACCIDENT_PATIENCE} patience each; ${pct(ACCIDENT_LEAVE)} go home, for −${ACCIDENT_REP} reputation; and the mess puts off everyone near it until it is cleaned up`,
+      causes,
+      help: fix + clean,
+      about: { kind: 'guest' as const, id: g.id },
+      fix: { menu: 'rooms' as const },
     };
   });
 }

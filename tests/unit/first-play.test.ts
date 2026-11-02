@@ -9,7 +9,7 @@ import { PRIMER_TIRING } from '../../src/core/sim/primer';
 import type { Sim } from '../../src/core/sim/sim';
 import { successChance } from '../../src/core/sim/stations';
 import type { Guest, Item, Staff } from '../../src/core/state/types';
-import { addStaffRoom, addTraining, hire, openCenter, run, runUntil, toasts } from './helpers';
+import { addRestroom, addStaffRoom, addTraining, hire, openCenter, run, runUntil, toasts } from './helpers';
 
 /** The simulation's own context, for the functions that take it. */
 const ctxOf = (sim: Sim) => (sim as unknown as { ctx: SimContext }).ctx;
@@ -46,6 +46,7 @@ describe('the first game’s heads-ups', () => {
     const { sim } = firstGame();
     expect(sim.primerLines()).toEqual([
       { id: 'open', label: 'Open with a Massage Suite and a Therapist', done: true },
+      { id: 'restroom', label: 'Build a Restroom', done: false },
       { id: 'caretaker', label: 'Hire a Caretaker', done: false },
       { id: 'smudging', label: 'Train a Caretaker in Smudging', done: false },
       { id: 'staffroom', label: 'Build a Staff Room', done: false },
@@ -127,6 +128,7 @@ describe('the first game’s heads-ups', () => {
     const { sim, s } = firstGame();
     hire(sim, 'caretaker').general.push('smudging');
     addStaffRoom(sim);
+    addRestroom(sim);
     s.stars = 1;
     sim.seePlots();
     sim.drain();

@@ -1,37 +1,35 @@
-// An accident on the floor, left by a guest who could not find a restroom in time: a cartoon poop, chocolate brown and
-// shiny, or a puddle of pee, lemon yellow with a shine on it. Both are drawn as toys, not as the real thing, and neither
-// is the amber of kombucha or the cyan of flood water. Each comes in a few looks for now, to choose between.
+// An accident on the floor, left by a guest who could not find a restroom in time: a cartoon poop, a soft-serve swirl
+// in shiny chocolate brown, with flies looping round it once it has been left a while; or a puddle of pee, lemon yellow
+// with a shine on it and sparkles glinting over it. Both are drawn as toys, not as the real thing, and neither is the
+// amber of kombucha or the cyan of flood water. Max chose these from three of each on 1 November 2026: the heap of
+// lumps, the plain glossy puddle and the puddle with a rim were turned down (docs/planning/fun/options/accidents).
 
 import * as THREE from 'three';
 
 import { hash } from '../shared';
 import { cached, cyl, joined, mat, put } from './parts';
 
-/** The looks a poop can take: a soft-serve swirl, a heap of lumps, or the swirl with flies going round it. */
-export const POOP_LOOKS = ['swirl', 'lumps', 'flies'] as const;
-export type PoopLook = (typeof POOP_LOOKS)[number];
-
-/** The looks a puddle of pee can take: plain and glossy, glinting with sparkles, or ringed in a darker yellow. */
-export const PEE_LOOKS = ['gloss', 'sparkle', 'rim'] as const;
-export type PeeLook = (typeof PEE_LOOKS)[number];
-
-/** Chocolate brown, glossy, as a cartoon has it; a deeper brown for the heap of lumps, which is matt. */
+/** Chocolate brown, glossy, as a cartoon has it. */
 const BROWN = 0x7b4a2b;
-const BROWN_DEEP = 0x5e3820;
-/** How glossy the swirl is, and the heap of lumps. */
 const SWIRL_SHINE = 0.3;
-const LUMP_SHINE = 0.55;
-/** Lemon yellow, well clear of kombucha's amber; the deeper yellow of a rim round it. */
+/** Lemon yellow, well clear of kombucha's amber. */
 const LEMON = 0xf0dc3c;
-const LEMON_RIM = 0xc9a91c;
 /** The shine on a puddle, and the sparkles over it. */
 const SHINE = 0xfffbe8;
 /** A fly's body, and its wings. */
 const FLY = 0x26282e;
 const WING = 0xdce8f2;
 
-/** How wide the swirl is at its foot, in meters: about a guest's head across, to read from the camera. It stands 0.33 m. */
+/**
+ * How wide the swirl is at its foot, in meters: about a guest's head across, to read from the camera. It stands 0.33 m.
+ */
 const SWIRL_R = 0.17;
+
+/**
+ * How far across each kind of accident is, in meters, which it is kept at least so many pixels across as the camera
+ * pulls back.
+ */
+export const ACCIDENT_ACROSS = { poop: 0.34, pee: 0.66 } as const;
 
 /**
  * The soft-serve swirl: three tiers, each narrower than the one under it and set a little off its middle so the stack
@@ -47,20 +45,6 @@ const swirlShape = () =>
       [bun(0.128, 0.07), 0.012, 0.145, -0.008],
       [bun(0.088, 0.058), -0.006, 0.218, 0.008],
       [tip, 0.016, 0.285, 0, 0, 0, -0.45],
-    ]);
-  });
-
-/** The heap of lumps: a few plump lumps of different sizes piled up, as clay would be. */
-const lumpsShape = () =>
-  cached('poop-lumps', () => {
-    /** A lump: a sphere a little flattened. */
-    const lump = (r: number) => new THREE.SphereGeometry(r, 16, 12).scale(1, 0.8, 1.1);
-    return joined('poop-lumps', [
-      [lump(0.1), -0.07, 0.055, 0.02, 0, 0.4, 0],
-      [lump(0.09), 0.08, 0.05, -0.03, 0, -0.6, 0],
-      [lump(0.085), 0.01, 0.05, 0.1, 0, 1.2, 0],
-      [lump(0.08), 0, 0.14, 0.01, 0, 0.2, 0.3],
-      [lump(0.055), -0.015, 0.215, -0.005, 0, 0.9, -0.2],
     ]);
   });
 
@@ -83,7 +67,10 @@ const flyWings = () =>
     ]);
   });
 
-/** The moving parts of an accident: the flies round a poop, and the sparkles over a puddle. */
+/**
+ * The moving parts of an accident: the flies round a poop, kept out of sight until they come, and the sparkles over a
+ * puddle.
+ */
 export interface AccidentParts {
   flies?: THREE.Group[];
   sparkles?: THREE.Mesh[];
@@ -92,25 +79,26 @@ export interface AccidentParts {
 /** The moving parts of an accident built by `buildPoop` or `buildPee`. */
 export const accidentParts = (g: THREE.Group) => g.userData as AccidentParts;
 
-/** A poop on the floor, in one of its looks, turned by its id so no two lie the same way. */
-export function buildPoop(id: number, look: PoopLook = 'swirl'): THREE.Group {
+/** A poop on the floor, turned by its id so no two lie the same way, its flies out of sight until `showFlies`. */
+export function buildPoop(id: number): THREE.Group {
   const g = new THREE.Group();
-  const body =
-    look === 'lumps'
-      ? put(g, lumpsShape(), mat(BROWN_DEEP, LUMP_SHINE))
-      : put(g, swirlShape(), mat(BROWN, SWIRL_SHINE));
-  body.rotation.y = hash(id, 7) * Math.PI * 2;
-  if (look !== 'flies') return g;
+  put(g, swirlShape(), mat(BROWN, SWIRL_SHINE)).rotation.y = hash(id, 7) * Math.PI * 2;
   const flies = Array.from({ length: FLIES }, () => {
     const fly = new THREE.Group();
     put(fly, flyBody(), mat(FLY, 0.4)).castShadow = false;
     put(fly, flyWings(), mat(WING, 0.3)).castShadow = false;
+    fly.visible = false;
     g.add(fly);
     return fly;
   });
   Object.assign(g.userData, { flies } satisfies AccidentParts);
   buzz(g, 0, id);
   return g;
+}
+
+/** Let the flies come to a poop built by `buildPoop`, or keep them away. */
+export function showFlies(g: THREE.Group, on: boolean) {
+  for (const fly of accidentParts(g).flies ?? []) fly.visible = on;
 }
 
 /** How a puddle is laid out: its main pool and the splashes round it, as `[x, z, r]`, by its id. */
@@ -154,23 +142,20 @@ const sparkleShape = () =>
   });
 
 /**
- * A puddle of pee on the floor, in one of its looks: a round pool with a smaller one run into it and a few splashes,
- * lemon yellow and glossy, with a shine across it.
+ * A puddle of pee on the floor: a round pool with a smaller one run into it and a few splashes, lemon yellow and glossy,
+ * with a shine across it and sparkles glinting over it, laid out by its id.
  */
-export function buildPee(id: number, look: PeeLook = 'gloss'): THREE.Group {
+export function buildPee(id: number): THREE.Group {
   const g = new THREE.Group();
   const pools = poolsOf(id);
   const wet = mat(LEMON, 0.08);
   pools.forEach(([x, z, r], i) => {
     put(g, cyl(r, r, 0.01, r > 0.1 ? 24 : 12), wet, x, 0.007 + i * 0.0005, z).castShadow = false;
-    // a rim of deeper yellow just under each pool, showing round its edge
-    if (look === 'rim') put(g, cyl(r + 0.03, r + 0.03, 0.008, 24), mat(LEMON_RIM, 0.2), x, 0.004, z).castShadow = false;
   });
   // the shine, as a cartoon draws it: a thin curve along the main pool's edge, and a dot past its end
   const shine = mat(SHINE, 0.1);
   put(g, shineArc(), shine, 0, 0.013, 0).castShadow = false;
   put(g, cyl(0.022, 0.022, 0.004, 12), shine, -0.1, 0.013, -0.14).castShadow = false;
-  if (look !== 'sparkle') return g;
   const sparkles = Array.from({ length: SPARKLES }, (_, i) => {
     const [x, z] = pools[i === 0 ? 0 : i === 1 ? 1 : 2] ?? [0, 0];
     const s = put(g, sparkleShape(), mat(SHINE, 0.2, 0.8), x * 0.7, SPARKLE_Y + i * 0.06, z * 0.7);
@@ -182,9 +167,10 @@ export function buildPee(id: number, look: PeeLook = 'gloss'): THREE.Group {
   return g;
 }
 
-/** Send the flies round a poop a moment in, each its own way round and bobbing as it goes. */
+/** Send the flies round a poop a moment in, each its own way round and bobbing as it goes, once they have come. */
 function buzz(g: THREE.Group, t: number, id: number) {
   accidentParts(g).flies?.forEach((fly, i) => {
+    if (!fly.visible && t) return;
     const a = ((t / FLY_LAP) * (i % 2 ? -1 : 1) + i / FLIES + hash(id, i)) * Math.PI * 2;
     const reach = FLY_REACH * (0.8 + 0.2 * Math.sin(t * 2.1 + i));
     fly.position.set(Math.cos(a) * reach, FLY_Y + 0.05 * Math.sin(t * 5 + i * 2), Math.sin(a) * reach);

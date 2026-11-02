@@ -27,6 +27,7 @@ import { an, article, listed, money } from '../format';
 import { pickFresh, rnd } from '../random';
 import { featureOn, offeringOn, unlockedUpTo } from '../state/game';
 import type { Item } from '../state/types';
+import { toiletTrouble } from './accidents';
 import { fireAdvice, fireRiskAdvice } from './blazes';
 import { BOTTLENECK, bottleneck, type Stage, stages } from './bottleneck';
 import { roomFor } from './careers';
@@ -168,7 +169,16 @@ function nudge(ctx: SimContext): string | Advice {
   if (tired && !hasRoom(ctx, 'staffroom'))
     return 'Your staff members are worn out and working slowly. Build a Staff Room so they can take breaks.';
   if (s.guests.some((g) => g.bladder > 85) && !hasRoom(ctx, 'restroom'))
-    return 'Guests are crossing their legs. A Restroom would be a kindness.';
+    return 'Guests are crossing their legs. Build a Restroom before someone has an accident.';
+  // a Restroom too small for the crowd: someone holding on, bursting, with every toilet taken
+  const holding = s.guests.find((g) => (g.held ?? 0) > 0 && !g.classDay);
+  if (holding && s.accidentsOn && toiletTrouble(ctx) === 'taken')
+    return {
+      text: `${holding.name} is bursting, and every toilet is taken. Build another Restroom, or put more toilets in the one you have, before someone has an accident.`,
+      about: { kind: 'guest', id: holding.id },
+    };
+  if (s.litter.some((l) => l.accident) && !hasStaff(ctx, 'caretaker'))
+    return 'Someone has had an accident on the floor, and there is nobody to clean it up. Hire a Caretaker.';
   if (s.litter.length >= 3 && !hasStaff(ctx, 'caretaker'))
     return 'Litter is piling up. Hire a Caretaker to keep the place clean.';
   const wilting = s.items.find((i) => isWatered(i.type) && i.water < 20);

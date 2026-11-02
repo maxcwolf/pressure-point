@@ -42,6 +42,7 @@ import type {
 } from '../state/types';
 import { layoutProblem } from '../templates';
 import type { Check, Placed, Rect, World } from '../world';
+import { type ToiletTrouble, toiletTrouble } from './accidents';
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce, warnPrimer, warnUnfed } from './advisor';
 import { drainFactor, prestige } from './ambience';
@@ -1173,6 +1174,11 @@ export class Sim {
   /** Why sprinklers cannot be fitted in a room now, or null if they can. */
   sprinklerBlocker(room: Room): string | null {
     return sprinklerBlocker(this.ctx, room);
+  }
+
+  /** Why a guest bursting for the toilet cannot go now: no restroom they can use, or every toilet taken. */
+  toiletTrouble(): ToiletTrouble {
+    return toiletTrouble(this.ctx);
   }
 
   /** Whether a room is ready for a fire: sprinklers, or a Fire Extinguisher that works near its door. */

@@ -32,7 +32,7 @@ import { deliveryNote } from '../../lib/delivery';
 import { gapNote, machinePullNote, pullNote } from '../../lib/demand';
 import { noExtinguisher } from '../../lib/fire';
 import { FLOODED_LABEL } from '../../lib/mishaps';
-import { statusClass } from '../../lib/status';
+import { burstingNote, statusClass } from '../../lib/status';
 import { problemNote, stillWrong } from '../../lib/visits';
 import { saveAsTemplate } from '../../templates';
 import { Bar } from '../common/Bar';
@@ -176,6 +176,18 @@ function Flooded({ room }: { room: Room }) {
   ) : null;
 }
 
+/** A Restroom too small for the crowd: guests in a line holding on, bursting, with every toilet taken. */
+function Bursting({ room }: { room: Room }) {
+  const { sim } = useGame();
+  if (room.type !== 'restroom' || !room.done || sim.toiletTrouble() !== 'taken') return null;
+  const holding = sim.s.guests.filter((g) => (g.held ?? 0) > 0 && !g.classDay).length;
+  return holding ? (
+    <p class={statusClass('bursting', 'bursting')}>
+      <IconText id="bubble-restroom">{burstingNote(holding)}</IconText>
+    </p>
+  ) : null;
+}
+
 /** What the last inspection found wrong in a room, while it still is, and what to do about it before the next. */
 function Inspection({ room }: { room: Room }) {
   const { sim } = useGame();
@@ -306,7 +318,7 @@ export function RoomInfo({ room }: { room: Room }) {
       <h3>
         <IconText id={def.icon}>{roomLabels(sim.s.rooms).get(room.id) ?? def.name}</IconText>
       </h3>
-      <Flooded room={room} /> <Inspection room={room} /> <FireCover room={room} />{' '}
+      <Flooded room={room} /> <Bursting room={room} /> <Inspection room={room} /> <FireCover room={room} />{' '}
       {/* a studio's spots are summed up in its timetable rather than listed one by one */}
       {room.type !== 'qigong' && stations.map((i) => <StationInfo key={i.id} item={i} />)}
       {room.done && room.type === 'qigong' && <Timetable room={room} />} <BadVibes room={room} />{' '}

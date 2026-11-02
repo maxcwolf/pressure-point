@@ -169,11 +169,12 @@ export class PeopleLayer {
     return room && this.sim.extinguisherNear(room) ? act : 'litter';
   }
 
-  /** Whether a Caretaker is cleaning up flood water, which they mop rather than pick up. */
+  /** Whether a Caretaker is cleaning up flood water or a puddle of pee, which they mop rather than pick up. */
   private mopping(c: Char): boolean {
     if (c.kind !== 'staff' || c.role !== 'caretaker' || c.job?.kind !== 'litter') return false;
     const id = c.job.id;
-    return !!this.sim.s.litter.find((l) => l.id === id)?.flood;
+    const mess = this.sim.s.litter.find((l) => l.id === id);
+    return !!mess?.flood || mess?.accident === 'pee';
   }
 
   /**

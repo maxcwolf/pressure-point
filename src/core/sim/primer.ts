@@ -14,6 +14,7 @@ import { canSmudge } from './vibes';
 /** The things the center will need, in the order they come up, each with its line on the checklist. */
 const STEPS = [
   { id: 'open', label: 'Open with a Massage Suite and a Therapist' },
+  { id: 'restroom', label: 'Build a Restroom' },
   { id: 'caretaker', label: 'Hire a Caretaker' },
   { id: 'smudging', label: 'Train a Caretaker in Smudging' },
   { id: 'staffroom', label: 'Build a Staff Room' },
@@ -37,12 +38,19 @@ function cheapestPlot(ctx: SimContext): PlotOffer | undefined {
 /** Below this, someone on the staff is tiring, well before they are too worn out to work properly. */
 export const PRIMER_TIRING = 50;
 
+/**
+ * From this, a guest is starting to need the toilet: a minute or so before they want one, and longer before they burst.
+ */
+export const PRIMER_BLADDER = 50;
+
 /** Whether a step matters yet: its heads-up comes then, a little before the trouble it heads off. */
 function due(ctx: SimContext, id: StepId): boolean {
   const s = ctx.s;
   switch (id) {
     case 'open':
       return true;
+    case 'restroom':
+      return s.guests.some((g) => g.bladder >= PRIMER_BLADDER);
     case 'caretaker':
       return s.stats.healed >= 1;
     case 'smudging':
@@ -66,6 +74,8 @@ function done(ctx: SimContext, id: StepId): boolean {
         hasStaff(ctx, 'consultant') &&
         hasStaff(ctx, 'therapist')
       );
+    case 'restroom':
+      return hasRoom(ctx, 'restroom');
     case 'caretaker':
       return hasStaff(ctx, 'caretaker');
     case 'smudging':
@@ -83,6 +93,10 @@ function heads(ctx: SimContext, id: StepId): { text: string; about?: Subject } |
   switch (id) {
     case 'open':
       return null;
+    case 'restroom':
+      return {
+        text: 'Guests who wait a while need the toilet, and sooner after a drink. Build a Restroom, with a toilet and a sink, before one of them can’t hold on: an accident on the floor sends them home mortified, and puts off everyone who sees it until it is cleaned up.',
+      };
     case 'caretaker':
       return {
         text: 'Your first guests are being healed. Before long there will be litter in the corridors, dirty toilets and worn-out tables, and nobody to see to them. Hire a Caretaker from the Hire menu before it piles up.',

@@ -52,6 +52,7 @@ export const emptyTally = (): Tally => ({
   waitCount: 0,
   healedBy: {},
   classgoers: 0,
+  accidents: 0,
 });
 
 /** The counts kept over a whole game, with nothing counted yet. */
@@ -72,6 +73,7 @@ export const emptyStats = (): Stats => ({
   fires: 0,
   busted: 0,
   mushroomSales: 0,
+  accidents: 0,
 });
 
 /** A ledger with every entry at zero. */
@@ -145,8 +147,9 @@ export const defaultPolicy = (): Policy => ({
  * 45: Amanda Jablonsky's own quirks, Healing Hands, Quick Study and Dawdler, in place of any she rolled.
  * 46: the first failed inspection let go with a warning, and a few offers to make a failed one go away in place of one.
  * 47: the Burnout Survivor quirk taken out of the game, and from anyone who has it.
+ * 48: accidents on the floor, with a sandbox switch for them, on in a game saved before them.
  */
-export const SAVE_VERSION = 47;
+export const SAVE_VERSION = 48;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -243,6 +246,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     features: {},
     blazes: [],
     blazesOn: true,
+    accidentsOn: true,
     ceremony: null,
     trophies: [],
     achieved: [],

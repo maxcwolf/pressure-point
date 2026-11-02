@@ -197,6 +197,25 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
       'I went in for a wee and came out with a tide table.',
     ],
   },
+  accident: {
+    id: 'accident',
+    icon: 'feeling-bursting',
+    text: 'Had an accident on the floor',
+    good: false,
+    part: 'experience',
+    lines: ['I could not find a toilet in time. I will be moving to another town.', 'Nobody saw. Everybody saw.'],
+  },
+  mess: {
+    id: 'mess',
+    icon: 'feeling-litter',
+    text: 'Saw an accident on the floor',
+    good: false,
+    part: 'experience',
+    lines: [
+      'Somebody did not make it to the restroom, and nobody had cleaned it up.',
+      'Watch where you step in there.',
+    ],
+  },
   'no-restroom': {
     id: 'no-restroom',
     icon: 'feeling-bursting',

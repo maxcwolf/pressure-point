@@ -22,6 +22,7 @@ import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
 import { PeopleLayer } from './people';
 import { Picker, type Selection } from './picking';
 import { RainLayer } from './rain';
+import { pixelsPerMeter } from './readable';
 import { RoomsLayer } from './rooms';
 import { buildScenery, buildShell } from './scenery';
 import { settingName, settingOf } from './setting';
@@ -256,7 +257,7 @@ export class View {
       if (!loading && !this.rig.reduceMotion()) for (const model of landed) this.settling.add(model);
     }
     this.people.update(this.time, dt);
-    this.litter.update(this.time);
+    this.litter.update(this.time, pixelsPerMeter(this.rig.camera.fov, this.rig.dist, window.innerHeight));
     this.rooms.update(this.time);
     this.vibes.update(this.time);
     this.snow.update(this.time);
