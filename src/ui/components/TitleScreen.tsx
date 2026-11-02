@@ -1,9 +1,10 @@
 // The title screen: the logo, the latest save, and the ways into the game, over a blurred view of it.
 
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 
 import type { Audio } from '../../audio/audio';
 import { CENTERS, GAME_TITLE } from '../../core/data';
+import { loadControls, saveControls } from '../../storage/controls';
 import { latestSave, timeAgo } from '../../storage/saves';
 import { loadDisciplinePrefs } from '../../storage/settings';
 import { readThumb } from '../../storage/thumbnails';
@@ -12,6 +13,7 @@ import { css } from '../../styled-system/css';
 import { buttonRow, goButton, roundButton } from '../../styled-system/recipes';
 import { useRedraw } from '../hooks/use-redraw';
 import type { FullScreenSwitch, UpdateOffer } from '../host';
+import { devChordLive, isDevChord } from '../lib/console';
 import { cx } from '../lib/cx';
 import { saveFacts, titleBadges, updateNote } from '../lib/title';
 import backdrop from '../theme/backdrop.jpg';
@@ -286,7 +288,8 @@ const version = css({
   color: 'fg.inverse',
   opacity: 'muted',
   textShadow: 'text.title-strong',
-  pointerEvents: 'none',
+  // clickable for dev mode's unlock, and nothing else, so nothing gives it away
+  userSelect: 'none',
 });
 
 /** The game is unfinished, and says so beside its version. */
@@ -298,6 +301,21 @@ const alpha = css({
   borderRadius: '6',
   bg: 'highlight',
   color: 'fg',
+  fontWeight: 'heavy',
+  letterSpacing: 'wide',
+  textTransform: 'uppercase',
+  textShadow: 'none',
+});
+
+/** Dev mode, unlocked on this computer, beside the version. */
+const devBadge = css({
+  display: 'inline-block',
+  ml: '4',
+  py: '1',
+  px: '6',
+  borderRadius: '6',
+  bg: 'accent',
+  color: 'fg.inverse',
   fontWeight: 'heavy',
   letterSpacing: 'wide',
   textTransform: 'uppercase',
@@ -406,6 +424,30 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
       window.removeEventListener('keydown', onKey);
     };
   }, []);
+  /** When Cmd+Shift+D (Ctrl+Shift+D on Windows) was last pressed, after which a click on the version flips dev mode. */
+  const chordAt = useRef<number | null>(null);
+  useEffect(() => {
+    /** Note the dev mode chord, kept from the browser's own use of it. */
+    const onKey = (e: KeyboardEvent) => {
+      if (!isDevChord(e)) return;
+      e.preventDefault();
+      chordAt.current = performance.now();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+  }, []);
+  /** Switch dev mode on, or off again, if the chord was just pressed. */
+  const clickVersion = () => {
+    if (!devChordLive(chordAt.current, performance.now())) return;
+    chordAt.current = null;
+    const prefs = loadControls();
+    saveControls({ ...prefs, dev: !prefs.dev });
+    audio.unlock();
+    audio.play(prefs.dev ? 'blip' : 'fanfare');
+    redraw();
+  };
   /** Flip a sound switch. A click is what browsers need before any sound, so music can start right here. */
   const flip = (change: () => void) => () => {
     audio.unlock();
@@ -542,7 +584,9 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
             )}
           </div>
           <div id="title-campaign" class={cx('title-sub', sub)} hidden={showing !== 'campaign'}>
-            {opened.includes('campaign') && <CampaignPanel onStart={onPick} audio={audio} />}
+            {opened.includes('campaign') && (
+              <CampaignPanel onStart={onPick} audio={audio} shown={showing === 'campaign'} />
+            )}
             <ScrollTab />
           </div>
           <div id="title-sandbox" class={cx('title-sub', sub)} hidden={showing !== 'sandbox'}>
@@ -573,8 +617,10 @@ export function TitleScreen({ audio, exit, update, fullScreen, note = '', welcom
             <ScrollTab />
           </div>
         </div>
-        <p class={cx('title-version', version)}>
+        {/* Cmd+Shift+D (Ctrl+Shift+D on Windows), then a click here, switches dev mode on or off */}
+        <p class={cx('title-version', version)} onClick={clickVersion}>
           <span class={alpha}>Alpha</span> {`v${__APP_VERSION__}`}
+          {loadControls().dev && <span class={cx('dev-badge', devBadge)}>Dev mode</span>}
         </p>
         <div class={corner}>
           {update && updateVersion && (

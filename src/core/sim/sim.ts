@@ -72,7 +72,17 @@ import {
   sprinklerBlocker,
   toggleWindow,
 } from './building';
-import { acceptCall, type CallCost, callCost, callFee, declineCall, updateCalls, whoCanGo } from './calls';
+import {
+  acceptCall,
+  type CallCost,
+  callCost,
+  callFee,
+  type CallWait,
+  callWait,
+  declineCall,
+  updateCalls,
+  whoCanGo,
+} from './calls';
 import {
   fullyTrained,
   heldSpace,
@@ -144,6 +154,7 @@ import { hasSupplier, setMushrooms } from './mushrooms';
 import { itemNoise, noiseAt } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { updateOutdoors } from './outdoors';
+import { pausedToPlace, type PlacingNow, setSpeed, watchPlacing } from './placing';
 import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
 import { type PlacePreview, previewItem } from './preview';
 import { type PrimerLine, primerLines } from './primer';
@@ -224,6 +235,24 @@ export class Sim {
   /** Whether the game stands still: a payday the bank cannot cover waits on the player, or the center is bankrupt. */
   private stopped(): boolean {
     return !!this.s.payrollDue || this.s.bankrupt;
+  }
+
+  /**
+   * Stop the clock while a room or an item is being placed, if the switch is on, and start it again once it is down.
+   * Called every frame, before the game advances.
+   */
+  watchPlacing(now: PlacingNow) {
+    watchPlacing(this.ctx, now);
+  }
+
+  /** Set the game's speed by hand, which makes a pause the game made for placing the player's own. */
+  setSpeed(speed: number) {
+    setSpeed(this.ctx, speed);
+  }
+
+  /** Whether the clock is stopped only for something being placed, and starts again by itself once it is down. */
+  pausedToPlace(): boolean {
+    return pausedToPlace(this.ctx);
   }
 
   /** Advance the game by a frame's worth of real time, at the game's current speed. */
@@ -896,6 +925,10 @@ export class Sim {
   callCost(st: Staff): CallCost {
     return callCost(this.ctx, st);
   }
+  /** What this member of staff would finish before setting off on a house call, or null if they would go at once. */
+  callWait(st: Staff): CallWait | null {
+    return callWait(this.ctx, st);
+  }
   /** Send someone on the house call on offer. */
   acceptCall(staffId: number): boolean {
     return acceptCall(this.ctx, staffId);
@@ -1228,11 +1261,16 @@ export class Sim {
 
   // ---- Cheats ----------------------------------------------------------------
 
-  /** Run a line typed into the cheat console. */
-  cheat(line: string): CheatResult {
-    return runCheat(this.ctx, line, (days) => {
-      this.fastForward(days);
-    });
+  /** Run a line typed into the cheat console: in dev mode, without the game counting as cheated. */
+  cheat(line: string, dev = false): CheatResult {
+    return runCheat(
+      this.ctx,
+      line,
+      (days) => {
+        this.fastForward(days);
+      },
+      dev,
+    );
   }
 
   /**

@@ -262,6 +262,11 @@ export interface Call {
    */
   fee: number;
   pricedBy?: Modality | 'level';
+  /**
+   * The offer as it was taken, while they finish the treatment, class or session in hand before setting off: until
+   * then `back` is only a guide, and is counted again as they leave. Missing once they are on their way.
+   */
+  due?: HouseCall;
 }
 
 export interface Staff extends CharBase {
@@ -988,6 +993,11 @@ export interface GameState {
   bankruptcyOn: boolean;
   /** A command has been used in the cheat console, so this game earns no achievements or campaign stars. */
   cheated: boolean;
+  /**
+   * A command has been used in the cheat console in dev mode: the game still counts for the campaign, but its play
+   * statistics say so. Missing from a save before dev mode, which had none.
+   */
+  devCheats?: boolean;
   seenTips: string[];
   /**
    * A first go at the campaign's first center: the advisor looks ahead to what the center will soon need, and a

@@ -27,6 +27,8 @@ export interface LoopParts {
   save: () => void;
   /** Note what the game has earned for the campaign, such as a star's karma. */
   record: () => void;
+  /** Stop the clock while a room or an item is being placed, and start it again once it is down. Called every frame. */
+  placing: () => void;
   /** Redraw the floor overlay if its regular redraw is `due`, or if what it shows has changed since. Called every frame. */
   overlay: (due: boolean) => void;
   /** Play an engine's rumble this loud, from 0 (none) to 1. Called every frame. */
@@ -51,6 +53,7 @@ export function runLoop({
   refresh,
   save,
   record,
+  placing,
   overlay,
   rumble,
   siren,
@@ -77,6 +80,8 @@ export function runLoop({
       if (across || up) view.pan(across * pan, up * pan);
     }
 
+    // a dialog open has the clock to itself: it stopped it, and puts back the speed it found when it closes
+    if (!ui.blocking) placing();
     sim.tick(dt);
     // moving and turning the camera is the tutorial's first step done
     if (!looked && sim.s.tutorial && view.looked) {

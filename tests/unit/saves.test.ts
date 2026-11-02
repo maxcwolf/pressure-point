@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { SaveCopy } from '../../electron/api';
+import type { CenterId } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { Sim } from '../../src/core/sim/sim';
 import { newGame, SAVE_VERSION } from '../../src/core/state/game';
@@ -449,7 +450,7 @@ describe('starting over', () => {
     earlier.money = 222;
     writeSave(earlier, 'Previous game', PREVIOUS_ID, 500);
     const opened = readSave(PREVIOUS_ID)!;
-    expect(openInAutosave(opened, 2000)).toBe(true);
+    expect(openInAutosave(opened, PREVIOUS_ID, 2000)).toBe(true);
     expect(readSave(AUTOSAVE_ID)!.money).toBe(222);
     expect(readSave(PREVIOUS_ID)!.money).toBe(111);
   });
@@ -503,6 +504,84 @@ describe('starting over', () => {
   });
 });
 
+describe('moving between centers', () => {
+  /** A new game in a center, told apart by its money. */
+  const at = (center: CenterId, money: number) => {
+    const s = newGame(center);
+    s.money = money;
+    return s;
+  };
+  /** The saves of a center, by name. */
+  const namesIn = (center: CenterId) =>
+    listSaves()
+      .filter((i) => i.center === center)
+      .map((i) => i.name);
+
+  it("never drops a center's only game from Previous game", () => {
+    setSeed(1);
+    // a star at Willow Lane, then on to The Exchange, which pushes Willow Lane's game into Previous game
+    autosave(at('willow', 111), 1000);
+    expect(openInAutosave(at('exchange', 222), 'new:exchange', 2000)).toBe(true);
+    expect(readSave(PREVIOUS_ID)!.center).toBe('willow');
+    // three stars there, kept as a save of its own, and on to The Boardwalk
+    const exchange = readSave(AUTOSAVE_ID)!;
+    ok(writeSave(exchange, 'The Exchange, three stars', undefined, 3000));
+    autosave(exchange, 3000);
+    expect(openInAutosave(at('boardwalk', 333), 'new:boardwalk', 4000)).toBe(true);
+    // Willow Lane's game has a save of its own, kept at the time it was saved
+    const willow = listSaves().filter((i) => i.center === 'willow');
+    expect(willow).toHaveLength(1);
+    expect(willow[0]!.name).toMatch(/^Willow Lane \(Day/);
+    expect(willow[0]!.savedAt).toBe(2000);
+    expect(readSave(willow[0]!.id)!.money).toBe(111);
+    expect(readSave(PREVIOUS_ID)!.center).toBe('exchange');
+    expect(namesIn('exchange')).toEqual([expect.stringMatching(/^Previous game/), 'The Exchange, three stars']);
+  });
+
+  it("keeps a center's only game when a named save is continued", () => {
+    setSeed(1);
+    autosave(at('willow', 111), 1000);
+    openInAutosave(at('exchange', 222), 'new:exchange', 2000);
+    const named = ok(writeSave(at('boardwalk', 333), 'On the boardwalk', undefined, 2500));
+    expect(openInAutosave(readSave(named.id)!, named.id, 3000)).toBe(true);
+    expect(namesIn('willow')).toHaveLength(1);
+    expect(readSave(PREVIOUS_ID)!.center).toBe('exchange');
+  });
+
+  it('does not copy the previous game when it is the one opened', () => {
+    setSeed(1);
+    autosave(at('willow', 111), 1000);
+    openInAutosave(at('exchange', 222), 'new:exchange', 2000);
+    expect(openInAutosave(readSave(PREVIOUS_ID)!, PREVIOUS_ID, 3000)).toBe(true);
+    expect(
+      listSaves()
+        .map((i) => i.id)
+        .sort(),
+    ).toEqual([AUTOSAVE_ID, PREVIOUS_ID]);
+    expect(readSave(AUTOSAVE_ID)!.center).toBe('willow');
+    expect(readSave(PREVIOUS_ID)!.center).toBe('exchange');
+  });
+
+  it('lets a game go from Previous game when its center has another', () => {
+    setSeed(1);
+    autosave(at('willow', 111), 1000);
+    ok(writeSave(at('willow', 100), 'Spring', undefined, 500));
+    openInAutosave(at('exchange', 222), 'new:exchange', 2000);
+    openInAutosave(at('boardwalk', 333), 'new:boardwalk', 3000);
+    expect(namesIn('willow')).toEqual(['Spring']);
+  });
+
+  it("will not start a new game when there is no room to keep a center's only game", () => {
+    setSeed(1);
+    autosave(at('willow', 111), 1000);
+    openInAutosave(at('exchange', 222), 'new:exchange', 2000);
+    for (let i = 0; i < MAX_SAVES; i++) ok(writeSave(at('sandbox', i), `Save ${i}`, undefined, 2500));
+    expect(openInAutosave(at('boardwalk', 333), 'new:boardwalk', 3000)).toBe(false);
+    expect(readSave(PREVIOUS_ID)!.center).toBe('willow');
+    expect(readSave(AUTOSAVE_ID)!.center).toBe('exchange');
+  });
+});
+
 describe('save pictures', () => {
   it('are kept per save and go when the save is deleted', () => {
     const info = ok(writeSave(game(), 'Pictured'));
@@ -543,6 +622,18 @@ describe('export and import', () => {
     const back = ok(importSave(file.text));
     expect(back.name).toBe("Max's Center #1");
     expect(readSave(back.id)).toEqual(JSON.parse(JSON.stringify(s)));
+  });
+
+  it('keep the time a game was saved, not the time it was imported', () => {
+    const info = ok(writeSave(game(), 'Old backup', undefined, 1000));
+    const file = exportSave(info.id)!;
+    store.clear();
+    expect(ok(importSave(file.text, 5000)).savedAt).toBe(1000);
+    // a file with no time, or one from the future, is stamped as it comes in
+    const bare = JSON.stringify({ ...JSON.parse(file.text), savedAt: undefined });
+    expect(ok(importSave(bare, 6000)).savedAt).toBe(6000);
+    const ahead = JSON.stringify({ ...JSON.parse(file.text), savedAt: 9000 });
+    expect(ok(importSave(ahead, 7000)).savedAt).toBe(7000);
   });
 
   it('give an imported autosave a name of its own', () => {

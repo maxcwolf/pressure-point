@@ -283,7 +283,19 @@ describe('play events', () => {
 
   it('never say what the player named the game', () => {
     const sim = freshSim();
-    expect(Object.keys(gameProps(sim.s)).sort()).toEqual(['center', 'cheated', 'day', 'features', 'stars']);
+    expect(Object.keys(gameProps(sim.s)).sort()).toEqual(['center', 'cheated', 'day', 'dev', 'features', 'stars']);
+  });
+
+  it('label a star earned with a cheat in dev mode, which leaves the game uncheated', () => {
+    const sim = freshSim();
+    const mark = markOf(sim.s);
+    expect(gameProps(sim.s)).toMatchObject({ cheated: false, dev: false });
+    sim.cheat('star', true);
+    expect(playEvents(mark, sim.s).find((e) => e.name === 'star_earned')?.props).toMatchObject({
+      star: 1,
+      cheated: false,
+      dev: true,
+    });
   });
 });
 

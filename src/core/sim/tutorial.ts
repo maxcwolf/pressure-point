@@ -17,6 +17,7 @@ import { money, pct } from '../format';
 import type { SimContext } from './context';
 import { monthlyPayroll } from './economy';
 import { emit, type Subject, toast } from './events';
+import { pausedToPlace } from './placing';
 import { primerDone, primerLines, primerNotes, type PrimerStepId } from './primer';
 import { hasItem, hasRoom, hasStaff } from './progress';
 
@@ -145,9 +146,11 @@ function openingDue(ctx: SimContext, id: OpeningId): boolean {
 }
 
 /**
- * Whether a step of the opening is done. The clock counts as paused once the desk is down, the player having got on
- * with it either way, and as started once the opening is built and it runs, so a player who never paused is not asked
- * to start it.
+ * Whether a step of the opening is done. The clock counts as paused once the player has stopped it, not the game while
+ * something is placed, or once the desk is down, the player having got on with it either way; and as started once the
+ * opening is built and it runs, so a player who never paused is not asked to start it. A clock stopped only while something is placed counts as running, since it starts again by itself, and
+ * once the center has opened, which takes the clock running, starting it is learned for good: a pause for the Benches
+ * does not bring the step back.
  */
 function openingDone(ctx: SimContext, id: OpeningId): boolean {
   const s = ctx.s;
@@ -155,9 +158,9 @@ function openingDone(ctx: SimContext, id: OpeningId): boolean {
     case 'look':
       return s.seenTips.includes(LOOKED_TIP) || s.day >= LOOK_DAYS;
     case 'pause':
-      return s.speed === 0 || hasItem(ctx, 'reception_desk');
+      return (s.speed === 0 && !pausedToPlace(ctx)) || hasItem(ctx, 'reception_desk');
     case 'play':
-      return openingBuilt(ctx) && s.speed > 0;
+      return openingBuilt(ctx) && (s.speed > 0 || s.open || pausedToPlace(ctx));
     case 'desk':
       return hasItem(ctx, 'reception_desk');
     case 'receptionist':

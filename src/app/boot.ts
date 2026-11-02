@@ -71,9 +71,12 @@ export async function boot() {
   startGame({ canvas, audio, state: opened, exit, updates, fullScreen });
 }
 
-/** Why a game was not opened, when keeping the one in the autosave would not fit in storage. */
+/**
+ * Why a game was not opened, when keeping the one in the autosave, or a center's last game that it pushes out of
+ * "Previous game", would not fit in storage.
+ */
 const NO_ROOM =
-  'There is no room to keep your current game as "Previous game", so the new one has not started. Delete or export a saved game under Load game, then try again.';
+  'There is no room to keep your current game as "Previous game", or the one there now as a save of its own, so the new one has not started. Delete or export a saved game under Load game, then try again.';
 
 /**
  * Open a saved game by id, or a fresh one for 'new' or 'new:<center>'. Null if there is nothing to open, and
@@ -110,6 +113,6 @@ function open(what: string | null): GameState | 'no-room' | null {
   if (state && center)
     startTutorial(state, { steps: loadTutorialPref(), lessons: loadLessonsPref(), seen: loadCampaign().lessons });
   // the game being left behind moves to the "Previous game" slot rather than being overwritten
-  if (state && what !== AUTOSAVE_ID && !openInAutosave(state)) return 'no-room';
+  if (state && what !== AUTOSAVE_ID && !openInAutosave(state, what)) return 'no-room';
   return state;
 }

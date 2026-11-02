@@ -4,7 +4,16 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
+- **Continue and Restart in the campaign.** A center you have already started now shows Continue, which picks up its latest save, and Restart, which asks first and says what becomes of your game there. Restarting never loses stars, karma, achievements or unlocks.
+- **On to bigger and better things.** The third star in a campaign center now offers to move you on to the next one, keeping your game as a save of its own and picking the next center up where you left it, or starting it. Or stay and keep toiling where you are.
+- **No center left behind.** Starting a game in another center no longer pushes the last game of a center out of "Previous game": it is kept under Load game as a save of its own. An imported save now keeps the date it was saved.
 - **Amanda Jablonsky's own quirks.** She now always comes with Healing Hands, Quick Study and Dawdler, whichever game she applies to.
+- **House calls wait for the treatment in hand.** Someone sent on a house call in the middle of a treatment now finishes it first, and the guest pays as usual, then sets off without calling anyone new. The offer card says who would finish first, their inspector says they are finishing up, and the days away count from when they leave.
+- **Therapists sharing a suite no longer hold up its line.** When a therapist at a table passed over guests who were waiting for a colleague trained in their treatment, and that colleague had nowhere to work, the line could stand still until the first one took a break. They now hand the table over.
+- **The clock waits while you build.** Placing a room or an item now pauses the game until the room is built or the item put down or put away, then carries on at the speed it had. A game you had paused stays paused, and **Pause while placing** in Settings turns it off.
+- **Move furniture before you build.** In a room's blueprint, click a piece of furniture you have put in to pick it up and put it down elsewhere in the room, for nothing. Esc leaves it where it was.
+- **The tutorial stops asking to start the clock** once you have started it, so pausing to put the Benches down no longer brings the step back, nor does the game pausing itself while you place something.
+- **Amanda on demand.** A new console command, amanda, has Amanda Jablonsky apply straight away, as the newest Massage Therapist applicant, unless she already works for you or is applying. Tab now finishes a command as you type it in the console.
 - **Guests come only for what you can give.** Nobody arrives needing a technique nobody on your staff is trained in, such as Deep Tissue or Sports Massage before anyone has taken the course, and a house call never asks for one. The Guests panel and the advisor say which guests stay away and what training would bring them in. A signature machine draws its guests only once someone is trained to run it.
 - **Emergencies first, from the start.** New games call emergency guests ahead of everyone else in line. Turn it off in the Policy menu. Saved games keep their own setting.
 

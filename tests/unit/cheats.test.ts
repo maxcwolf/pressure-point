@@ -2,9 +2,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { freshCampaign, karmaEarned } from '../../src/core/campaign';
-import { CENTERS } from '../../src/core/data';
+import { AMANDA, CENTERS } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { checkAchievements } from '../../src/core/sim/achievements';
+import { applicantCap } from '../../src/core/sim/careers';
 import { CHEAT_ORDER, CHEATS, MAX_SKIP_DAYS, parseAmount } from '../../src/core/sim/cheats';
 import { createContext } from '../../src/core/sim/context';
 import { Sim } from '../../src/core/sim/sim';
@@ -12,7 +13,14 @@ import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { giveKarma, loadCampaign, recordGame } from '../../src/storage/campaign';
-import { consoleNote, recallStep } from '../../src/ui/lib/console';
+import {
+  completeCommand,
+  consoleNote,
+  DEV_CHORD_MS,
+  devChordLive,
+  isDevChord,
+  recallStep,
+} from '../../src/ui/lib/console';
 import { freshSim, openCenter } from './helpers';
 
 describe('the cheat console', () => {
@@ -129,6 +137,51 @@ describe('the cheat console', () => {
     expect(s.guests.every((g) => g.patience === 100 && g.bladder === 0)).toBe(true);
   });
 
+  it('has Amanda Jablonsky apply as the newest therapist, at the cap, in her own quirks', () => {
+    const sim = freshSim();
+    const s = sim.s;
+    expect(
+      s.candidates.some((c) => c.name === AMANDA.name),
+      'seed 1 does not bring her',
+    ).toBe(false);
+    const ids = s.candidates.filter((c) => c.role === 'therapist').map((c) => c.id);
+    const r = sim.cheat('amanda');
+    expect(r).toMatchObject({ ok: true, text: expect.stringContaining('Hire menu') as string });
+    expect(s.cheated).toBe(true);
+    const therapists = s.candidates.filter((c) => c.role === 'therapist');
+    expect(therapists).toHaveLength(applicantCap(s));
+    // whoever had waited longest made way for her, and she waits the longest before anyone takes her place
+    expect(therapists.map((c) => c.id)).toEqual([...ids.slice(1), therapists.at(-1)?.id]);
+    expect(therapists.at(-1)).toMatchObject({
+      name: AMANDA.name,
+      traits: [...AMANDA.traits],
+      quals: [...AMANDA.quals],
+      look: { sex: 'female', hairStyle: AMANDA.hairStyle, hair: AMANDA.hair },
+    });
+    expect(therapists.at(-1)?.skill).toBeGreaterThanOrEqual(AMANDA.minSkill);
+  });
+
+  it('says so when Amanda Jablonsky is already applying or on the payroll, and brings her back once she has gone', () => {
+    const { sim, s } = openCenter();
+    expect(sim.cheat('amanda').ok).toBe(true);
+    expect(sim.cheat('amanda')).toMatchObject({
+      ok: false,
+      text: expect.stringContaining('already applying') as string,
+    });
+    const amanda = s.candidates.find((c) => c.name === AMANDA.name);
+    const hired = amanda && sim.hire(amanda.id);
+    expect(hired).toBeTruthy();
+    expect(sim.cheat('amanda')).toMatchObject({
+      ok: false,
+      text: expect.stringContaining('already works here') as string,
+    });
+    if (hired) hired.state = 'leaving';
+    expect(sim.cheat('amanda')).toMatchObject({ ok: false, text: expect.stringContaining('on her way out') as string });
+    s.staff = s.staff.filter((st) => st !== hired);
+    expect(sim.cheat('amanda').ok, 'having applied, and worked here, before').toBe(true);
+    expect(s.candidates.filter((c) => c.name === AMANDA.name)).toHaveLength(1);
+  });
+
   it('unlocks everything, once', () => {
     const sim = freshSim();
     expect(sim.cheat('unlock').ok).toBe(true);
@@ -197,6 +250,44 @@ describe('a game the console has been used in', () => {
   });
 });
 
+describe('a game the console is used in, in dev mode', () => {
+  const store = new Map<string, string>();
+  beforeEach(() => {
+    store.clear();
+    globalThis.localStorage = {
+      /** Read a stored value, or null if there is none. */
+      getItem: (k: string) => store.get(k) ?? null,
+      /** Store a value. */
+      setItem: (k: string, v: string) => void store.set(k, v),
+    } as Storage;
+  });
+
+  it('goes on earning achievements and stars, recorded for the campaign', () => {
+    setSeed(1);
+    const sim = new Sim(newGame('willow'));
+    expect(sim.cheat('money 100000', true).ok).toBe(true);
+    expect(sim.cheat('win', true).ok).toBe(true);
+    expect(sim.cheat('amanda', true).ok).toBe(true);
+    expect(sim.s.cheated).toBe(false);
+    expect(sim.s.devCheats, 'for play statistics to tell apart').toBe(true);
+    checkAchievements(createContext(sim.s));
+    expect(sim.s.achieved).toContain('nest-egg');
+    recordGame(sim.s);
+    expect(loadCampaign().stars).toEqual({ willow: CENTERS.willow.goals.length });
+    expect(loadCampaign().achieved).toContain('nest-egg');
+  });
+
+  it('keeps a game cheated before dev mode cheated', () => {
+    const sim = new Sim(newGame('willow'));
+    expect(sim.cheat('help', true).ok).toBe(true);
+    expect(sim.s.devCheats, 'help is no cheat').toBeUndefined();
+    sim.cheat('money');
+    expect(sim.s.devCheats, 'outside dev mode').toBeUndefined();
+    sim.cheat('money', true);
+    expect(sim.s.cheated).toBe(true);
+  });
+});
+
 describe('karma from the console', () => {
   const store = new Map<string, string>();
   beforeEach(() => {
@@ -224,6 +315,8 @@ describe('what the console shows', () => {
     expect(consoleNote({ center: 'sandbox', cheated: true })).toBe('');
     expect(consoleNote({ center: 'willow', cheated: false })).toMatch(/stops/);
     expect(consoleNote({ center: 'willow', cheated: true })).toMatch(/Cheats used/);
+    expect(consoleNote({ center: 'willow', cheated: false }, true)).toMatch(/Dev mode/);
+    expect(consoleNote({ center: 'willow', cheated: true }, true), 'cheated before dev mode').toMatch(/Cheats used/);
   });
 
   it('steps back and forth through the commands typed', () => {
@@ -234,5 +327,27 @@ describe('what the console shows', () => {
     expect(recallStep(3, 1, 1)).toBe(2);
     expect(recallStep(3, 2, 1), 'past the newest is a new line').toBeNull();
     expect(recallStep(3, null, 1)).toBeNull();
+  });
+
+  it('finishes a command on Tab, amanda among them', () => {
+    expect(completeCommand('am', CHEAT_ORDER)).toEqual({ line: 'amanda ', options: ['amanda'] });
+    expect(completeCommand('AMA', CHEAT_ORDER).line, 'whatever the case').toBe('amanda ');
+    expect(completeCommand('s', CHEAT_ORDER)).toEqual({ line: 's', options: ['star', 'staff', 'skip'] });
+    expect(completeCommand('st', CHEAT_ORDER)).toEqual({ line: 'sta', options: ['star', 'staff'] });
+    expect(completeCommand('zzz', CHEAT_ORDER)).toEqual({ line: 'zzz', options: [] });
+    expect(completeCommand('money 5', CHEAT_ORDER), 'past the command').toEqual({ line: 'money 5', options: [] });
+    expect(completeCommand('', CHEAT_ORDER).options).toEqual(CHEAT_ORDER);
+  });
+
+  it('flips dev mode on a click of the version just after Cmd+Shift+D, or Ctrl+Shift+D on Windows', () => {
+    const chord = { code: 'KeyD', shiftKey: true, metaKey: false, ctrlKey: false };
+    expect(isDevChord({ ...chord, metaKey: true })).toBe(true);
+    expect(isDevChord({ ...chord, ctrlKey: true })).toBe(true);
+    expect(isDevChord(chord), 'with neither Cmd nor Ctrl').toBe(false);
+    expect(isDevChord({ ...chord, metaKey: true, shiftKey: false })).toBe(false);
+    expect(isDevChord({ ...chord, metaKey: true, code: 'KeyF' })).toBe(false);
+    expect(devChordLive(null, 1000), 'never pressed').toBe(false);
+    expect(devChordLive(1000, 1000 + DEV_CHORD_MS)).toBe(true);
+    expect(devChordLive(1000, 1001 + DEV_CHORD_MS), 'too long ago').toBe(false);
   });
 });

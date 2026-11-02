@@ -1,4 +1,4 @@
-// The controls in the settings: edge scrolling, how often to autosave, and which key does what.
+// The controls in the settings: edge scrolling, pausing while placing, how often to autosave, and which key does what.
 
 import { useLayoutEffect, useState } from 'preact/hooks';
 
@@ -50,7 +50,7 @@ export interface ControlSettingsProps {
   onChange: () => void;
 }
 
-/** Edge scrolling, the autosave interval, and a key for each action, any of which can be set to another. */
+/** Edge scrolling, pausing while placing, the autosave interval, and a key for each action, any of which can be set to another. */
 export function ControlSettings({ onChange }: ControlSettingsProps) {
   const redraw = useRedraw();
   const prefs = loadControls();
@@ -95,6 +95,15 @@ export function ControlSettings({ onChange }: ControlSettingsProps) {
           on={prefs.edgeScroll}
           onToggle={() => {
             change({ ...prefs, edgeScroll: !prefs.edgeScroll });
+          }}
+        />
+        <SettingRow
+          icon="ui-pause"
+          name="Pause while placing"
+          desc="Stop the clock while you place a room or an item, and start it again once it is built or put down."
+          on={prefs.pauseToPlace}
+          onToggle={() => {
+            change({ ...prefs, pauseToPlace: !prefs.pauseToPlace });
           }}
         />
         <li>

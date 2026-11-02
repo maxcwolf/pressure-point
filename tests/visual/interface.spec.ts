@@ -31,14 +31,23 @@ test.describe('title screen', () => {
 
   test('the campaign trail', async ({ screens, page }) => {
     await screens.title();
-    await page.evaluate(() =>
+    await page.evaluate(async () => {
       localStorage.setItem(
         'pressure-point-campaign',
         JSON.stringify({ stars: { willow: 2 }, achieved: ['called-in'], unlocked: ['bonsai'] }),
-      ),
-    );
+      );
+      // the saved game, as one at Willow Lane, so its card has Continue and Restart
+      const saves = (await import(/* @vite-ignore */ `${location.origin}/src/storage/saves.ts`)) as {
+        readSave: (id: string) => object;
+        writeSave: (state: object, name: string, id: undefined, now: number) => void;
+      };
+      saves.writeSave({ ...saves.readSave('auto'), center: 'willow' }, 'Spring at Willow Lane', undefined, Date.now());
+    });
     await page.getByRole('button', { name: 'Campaign' }).click();
     await screens.shot('title-campaign');
+    await page.locator('#title-campaign .stop').first().getByRole('button', { name: 'Restart' }).click();
+    await screens.shot('title-campaign-restart');
+    await page.getByRole('button', { name: 'Keep my game' }).click();
     await page.getByRole('tab', { name: 'Karma shop' }).click();
     await screens.shot('title-karma-shop');
     await page.locator('.shop-head').scrollIntoViewIfNeeded();
@@ -395,6 +404,16 @@ test.describe('in a game', () => {
     await screens.play();
     await game.eval((pp) => pp.sim.emit({ type: 'star', stars: 1 }));
     await screens.shot('star');
+  });
+
+  test('the third star in a campaign center', async ({ screens, game }) => {
+    await screens.play();
+    await game.eval((pp) => {
+      pp.state.center = 'willow';
+      pp.state.stars = 3;
+      pp.sim.emit({ type: 'star', stars: 3 });
+    });
+    await screens.shot('star-three');
   });
 
   test('the Stats menu tabs', async ({ screens, game, page }) => {

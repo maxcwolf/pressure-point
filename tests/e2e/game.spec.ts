@@ -76,6 +76,43 @@ test.describe('starting out', () => {
     expect(game.errors).toEqual([]);
   });
 
+  test('dev mode is unlocked from the title screen, and opens a console that leaves the game counting', async ({
+    game,
+    page,
+  }) => {
+    await page.goto('/');
+    const version = page.locator('#title .title-version');
+    // the settings, opened before and kept while hidden, have no switch for it yet
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const devSwitch = page.locator('#title-settings').getByRole('switch', { name: 'Dev mode' });
+    await expect(devSwitch).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    // a click on the version alone does nothing
+    await version.click();
+    await expect(page.locator('#title .dev-badge')).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+Shift+KeyD');
+    await version.click();
+    await expect(page.locator('#title .dev-badge')).toHaveText('Dev mode');
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(devSwitch).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    // kept for the next visit, and ~ opens the console with its switch in the settings still off
+    await game.start();
+    await page.keyboard.press('Backquote');
+    const box = page.getByRole('textbox', { name: 'Cheat command' });
+    await expect(box).toBeFocused();
+    await box.fill('ama');
+    await page.keyboard.press('Tab');
+    await expect(box).toHaveValue('amanda ');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#console')).toContainText('Amanda Jablonsky has applied');
+    expect(await game.eval((pp) => pp.sim.s.cheated)).toBe(false);
+    await page.keyboard.press('Escape');
+    await game.menu('Hire');
+    await page.getByRole('button', { name: 'Massage Therapist' }).click();
+    await expect(page.getByText('Amanda Jablonsky')).toBeVisible();
+  });
+
   test('music and sound can be switched off on the title screen', async ({ game, page }) => {
     await page.goto('/');
     const music = page.locator('#title').locator('[data-tip="Music"]');
@@ -2154,6 +2191,42 @@ test.describe('the business side', () => {
     expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.state)).toBe('toCall');
   });
 
+  test('someone sent on a house call mid-treatment finishes it first, as the card says', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const name = await game.eval((pp) => {
+      pp.state.speed = 1;
+      const table = pp.state.items.find((it) => it.type === 'massage_table')!;
+      /** Whether a guest is on the table, being treated. */
+      const onTable = () => pp.state.guests.find((g) => g.id === table.serving)?.state === 'served';
+      for (let i = 0; i < 6000 && !onTable(); i++) pp.sim.tick(0.1);
+      pp.state.speed = 0;
+      pp.state.callOffer = {
+        client: 'the Grand Hotel',
+        days: 2,
+        perDay: 600,
+        discipline: 'massage',
+        deadline: pp.state.day + 6,
+      };
+      return pp.state.staff.find((x) => x.role === 'therapist')!.name;
+    });
+    const card = page.locator('#offer .call');
+    const send = card.getByRole('button', { name: new RegExp(`Send ${name}`) });
+    await expect(send).toContainText('Goes once this treatment is done');
+    await send.click();
+    await expect(card).toHaveCount(0);
+    /** Where the therapist is: their state, and whether a house call waits on the treatment in hand. */
+    const therapist = () =>
+      game.eval((pp) => {
+        const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+        return { state: st.state, due: !!st.call?.due };
+      });
+    expect(await therapist()).toEqual({ state: 'atPost', due: true });
+    await game.fastForward(30);
+    expect((await therapist()).due).toBe(false);
+    expect(['toCall', 'away']).toContain((await therapist()).state);
+  });
+
   test('the Shop Counter is in the Items menu from the first star', async ({ game }) => {
     await game.start();
     await game.menu('Items');
@@ -2637,6 +2710,161 @@ test.describe('the campaign', () => {
     await page.getByRole('button', { name: 'Play The Exchange' }).click();
     await page.waitForFunction(() => window.pp?.state.center === 'exchange');
     await expect(page.locator('#objectives')).toContainText('The Exchange');
+  });
+
+  test('a center already started shows Continue, which picks up its latest save, and Restart, which asks first', async ({
+    game,
+    page,
+  }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'willow');
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.money = 54321;
+    });
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const willow = page.locator('#title-campaign .stop').first();
+    await expect(willow.getByRole('button', { name: 'Play Willow Lane' })).toHaveCount(0);
+    await expect(willow).toContainText('saved just now');
+    // a locked center has neither
+    await expect(page.locator('#title-campaign .stop').nth(1).getByRole('button')).toHaveCount(0);
+
+    // Restart asks first, saying what becomes of the game and what is kept, and can be backed out of
+    await willow.getByRole('button', { name: 'Restart' }).click();
+    const asking = willow.locator('.restart');
+    await expect(asking).toContainText('Restart Willow Lane?');
+    await expect(asking).toContainText('moves to "Previous game" under Load game');
+    await expect(asking).toContainText('You keep your karma, achievements and everything unlocked');
+    await asking.getByRole('button', { name: 'Keep my game' }).click();
+    await expect(willow.locator('.restart')).toHaveCount(0);
+
+    await willow.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'willow');
+    expect(await game.eval((pp) => pp.state.money)).toBe(54321);
+
+    // starting over keeps the old game as the previous one
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await willow.getByRole('button', { name: 'Restart' }).click();
+    await willow.getByRole('button', { name: 'Start over' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'willow');
+    expect(await game.eval((pp) => pp.state.money)).toBe(20000);
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Load game' }).click();
+    await expect(page.locator('#title-saves .save-list')).toContainText('Previous game');
+  });
+
+  test('the campaign reads the saves again after Load game changes them, and says when one will not open', async ({
+    game,
+    page,
+  }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'willow');
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const willow = page.locator('#title-campaign .stop').first();
+    await expect(willow.getByRole('button', { name: 'Continue' })).toBeVisible();
+    // deleted under Load game, the game is gone from the card when the campaign shows again
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
+    await page.getByRole('button', { name: 'Load game' }).click();
+    const saves = page.locator('#title-saves');
+    await saves.getByRole('button', { name: 'Delete' }).click();
+    await saves.getByRole('button', { name: 'Really delete?' }).click();
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await expect(willow.getByRole('button', { name: 'Play Willow Lane' })).toBeVisible();
+    // a save that goes while the card shows it is reported, not silently dropped
+    await page.evaluate(async () => {
+      const saves = (await import(/* @vite-ignore */ `${location.origin}/src/storage/saves.ts`)) as {
+        writeSave: (state: object, name: string) => void;
+      };
+      const state = (await import(/* @vite-ignore */ `${location.origin}/src/core/state/game.ts`)) as {
+        newGame: (center: string) => object;
+      };
+      saves.writeSave(state.newGame('willow'), 'Short-lived');
+    });
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await expect(willow.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await page.evaluate(() => {
+      for (const key of Object.keys(localStorage))
+        if (key.startsWith('pressure-point-save:')) localStorage.removeItem(key);
+    });
+    await willow.getByRole('button', { name: 'Continue' }).click();
+    await expect(willow.locator('.gone')).toContainText('"Short-lived" could not be opened');
+    await expect(willow.getByRole('button', { name: 'Play Willow Lane' })).toBeVisible();
+    expect(game.errors).toEqual([]);
+  });
+
+  test('the third star leads on to the next center, keeping this game as a save of its own', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'willow');
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.stars = 3;
+      pp.sim.emit({ type: 'star', stars: 3 });
+    });
+    const dialog = page.locator('#modal');
+    await expect(dialog).toContainText('Three stars!');
+    await expect(dialog).toContainText('The Exchange awaits. A new game starts there');
+    await expect(dialog.getByRole('button', { name: 'Stay and keep toiling here' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'On to bigger and better things' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'exchange');
+    await page.locator('#sys').locator('[data-tip="Menu"]').click();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Load game' }).click();
+    await expect(page.locator('#title-saves .save-list')).toContainText('Willow Lane, three stars');
+    // both centers are started now, and the three stars are kept
+    await page.getByRole('button', { name: '‹ Back', exact: true }).click();
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    const trail = page.locator('#title-campaign .stop');
+    await expect(trail.first().getByRole('button', { name: 'Continue' })).toBeVisible();
+    expect(
+      await page.evaluate(() => JSON.parse(localStorage.getItem('pressure-point-campaign') ?? '{}').stars),
+    ).toEqual({
+      willow: 3,
+    });
+    await expect(trail.nth(1).getByRole('button', { name: 'Continue' })).toBeVisible();
+  });
+
+  test('moving on stops and says why when the game cannot be kept as a save of its own', async ({ game, page }) => {
+    await page.addInitScript(() => localStorage.setItem('pressure-point-audio', '{"sound":false,"music":false}'));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.locator('#title-campaign').getByRole('button', { name: 'Play Willow Lane' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'willow');
+    // every named slot in use
+    await page.evaluate(async () => {
+      const saves = (await import(/* @vite-ignore */ `${location.origin}/src/storage/saves.ts`)) as {
+        writeSave: (state: object, name: string) => void;
+      };
+      for (let i = 0; i < 20; i++) saves.writeSave(window.pp!.state, `Save ${i}`);
+    });
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      pp.state.stars = 3;
+      pp.sim.emit({ type: 'star', stars: 3 });
+    });
+    const dialog = page.locator('#modal');
+    await dialog.getByRole('button', { name: 'On to bigger and better things' }).click();
+    await expect(dialog.locator('.trouble')).toContainText('All 20 named saves are in use');
+    expect(await game.eval((pp) => pp.state.center)).toBe('willow');
+    await dialog.getByRole('button', { name: 'Move on anyway' }).click();
+    await page.waitForFunction(() => window.pp?.state.center === 'exchange');
   });
 
   test('a star at The Boardwalk opens High Pines, which is snowed in now and then each winter', async ({
