@@ -161,6 +161,8 @@ export function staffStatus(st: Staff, sim: Sim): string {
     case 'toPost':
       return `Heading to the ${post ? ITEMS[post.type].name : 'station'}`;
     case 'atPost':
+      // a house call taken mid-treatment: they finish it first
+      if (st.call?.due) return `Finishing up, then off on a house call to ${st.call.client}`;
       return st.busy ? 'Working' : 'Waiting for a guest';
     case 'toBreak':
       return 'Off for a break';

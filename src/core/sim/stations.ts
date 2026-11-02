@@ -277,8 +277,10 @@ export function updateStations(ctx: SimContext, dt: number) {
     }
     if (def.goal === 'lead') {
       const at = staff?.state === 'atPost' && ctx.world.usable(it) ? staff : undefined;
-      if (isClassLead(it)) updateClass(ctx, it, at, dt);
-      else updateSession(ctx, it, at, dt, !!at && wantsAway(ctx, at, it));
+      // an Instructor with a house call to go on starts no class, and one under way is finished first
+      if (isClassLead(it)) updateClass(ctx, it, at, dt, !!at?.call?.due);
+      // and a Sound Healer with one plays for whoever is lying down now, and nobody more
+      else updateSession(ctx, it, at, dt, !!at && wantsAway(ctx, at, it), !!at?.call?.due);
       continue;
     }
     const ready = !!staff && staff.state === 'atPost' && ctx.world.usable(it) && (!lead || ctx.world.usable(lead));
@@ -299,6 +301,8 @@ export function updateStations(ctx: SimContext, dt: number) {
     trackBusy(it, !!it.serving, ready, dt);
     // tired staff finish with their current guest, then stop calling new ones so they can get away
     const wantsBreak = !!staff && restDue(ctx, staff) && !!findAccess(ctx, 'rest', staff.tx, staff.ty);
+    // and those with a house call to go on finish the treatment in hand and take nobody more
+    const callDue = !!staff?.call?.due;
     // a Sound Healer who wants to be off plays out the session for those lying down, and nobody more joins it: anyone
     // still on the way to a mat goes back to the line
     const going = !!lead && !isClassLead(lead) && !!staff && ready && wantsAway(ctx, staff, lead);
@@ -309,7 +313,7 @@ export function updateStations(ctx: SimContext, dt: number) {
     }
     // and calls no more guests to the mats than they can play for
     const matsTaken = !!lead && !isClassLead(lead) && !!staff && (going || matsFull(ctx, lead, staff));
-    if (!it.serving && ready && !wantsBreak && !matsTaken) {
+    if (!it.serving && ready && !wantsBreak && !callDue && !matsTaken) {
       const next = nextInLine(ctx, it);
       if (next) callGuest(ctx, it, next);
     }

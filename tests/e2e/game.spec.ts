@@ -2153,6 +2153,42 @@ test.describe('the business side', () => {
     expect(await game.eval((pp) => pp.state.staff.find((x) => x.role === 'therapist')!.state)).toBe('toCall');
   });
 
+  test('someone sent on a house call mid-treatment finishes it first, as the card says', async ({ game, page }) => {
+    await game.start();
+    await game.buildCenter();
+    const name = await game.eval((pp) => {
+      pp.state.speed = 1;
+      const table = pp.state.items.find((it) => it.type === 'massage_table')!;
+      /** Whether a guest is on the table, being treated. */
+      const onTable = () => pp.state.guests.find((g) => g.id === table.serving)?.state === 'served';
+      for (let i = 0; i < 6000 && !onTable(); i++) pp.sim.tick(0.1);
+      pp.state.speed = 0;
+      pp.state.callOffer = {
+        client: 'the Grand Hotel',
+        days: 2,
+        perDay: 600,
+        discipline: 'massage',
+        deadline: pp.state.day + 6,
+      };
+      return pp.state.staff.find((x) => x.role === 'therapist')!.name;
+    });
+    const card = page.locator('#offer .call');
+    const send = card.getByRole('button', { name: new RegExp(`Send ${name}`) });
+    await expect(send).toContainText('Goes once this treatment is done');
+    await send.click();
+    await expect(card).toHaveCount(0);
+    /** Where the therapist is: their state, and whether a house call waits on the treatment in hand. */
+    const therapist = () =>
+      game.eval((pp) => {
+        const st = pp.state.staff.find((x) => x.role === 'therapist')!;
+        return { state: st.state, due: !!st.call?.due };
+      });
+    expect(await therapist()).toEqual({ state: 'atPost', due: true });
+    await game.fastForward(30);
+    expect((await therapist()).due).toBe(false);
+    expect(['toCall', 'away']).toContain((await therapist()).state);
+  });
+
   test('the Shop Counter is in the Items menu from the first star', async ({ game }) => {
     await game.start();
     await game.menu('Items');

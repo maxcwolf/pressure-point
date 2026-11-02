@@ -1,6 +1,6 @@
-// What a house call costs at home, as its offer card says it for each who could go.
+// What a house call costs at home, and when each who could go would set off, as its offer card says it.
 
-import type { CallCost } from '../../core/sim/calls';
+import type { CallCost, CallWait } from '../../core/sim/calls';
 import type { IconLine } from './icon-line';
 
 /**
@@ -13,4 +13,9 @@ export function callCostNote(cost: CallCost, days: number): IconLine {
   const left = cost.worstDays < 1 ? 'under a day' : `${Math.floor(cost.worstDays)} day${cost.worstDays < 2 ? '' : 's'}`;
   const note = `${who}, the worst with ${left} of condition left`;
   return cost.worstDays < days ? { icon: 'ui-warning', text: note } : { text: note };
+}
+
+/** When someone sent on a house call sets off: once the treatment, class or session in hand is done, or now. */
+export function callWaitNote(wait: CallWait | null): string | null {
+  return wait ? `Goes once this ${wait} is done` : null;
 }

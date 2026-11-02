@@ -46,7 +46,7 @@ import { prestige } from './ambience';
 import { worksAt } from './assignments';
 import { blazeAt, douse, douseSeconds, standByFire } from './blazes';
 import { sameRoomCount } from './building';
-import { leaveForCall, returnFromCall } from './calls';
+import { callWait, leaveForCall, returnFromCall, setOff, withdrawCall } from './calls';
 import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
 import { bless, clearingSeconds } from './ceremonies';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
@@ -139,6 +139,8 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
 export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poached' = 'fired') {
   const st = staffById(ctx, id);
   if (!st || st.state === 'leaving') return;
+  // a house call they had not yet set off on is not lost with them
+  withdrawCall(ctx, st);
   staffIdle(ctx, st);
   // they are paid for the days they worked, and no more
   payOff(ctx, st);
@@ -304,7 +306,8 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
     toast(ctx, `${st.name} will quit within two days. Give them a raise or a break, now.`, 'bad', about, 'ui-warning');
     emit(ctx, { type: 'sfx', name: 'error' });
   }
-  if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training) fire(ctx, st.id, 'quit');
+  // and not with a house call taken: they go on it first, between the treatment they finish and the next
+  if (st.unhappyT > QUIT_AFTER && !st.busy && !st.training && !st.call) fire(ctx, st.id, 'quit');
 }
 
 /**
@@ -339,12 +342,13 @@ function waitingAt(ctx: SimContext, it: Item): number {
  * or outside their rooms, a priority room short of someone, bad vibes to clear, a soul to retrieve or a mishap to ward
  * off, or a drink or a snack to be had. With guests waiting in their line, they see to them first: bad vibes can wait
  * unless they are in this room, and a drink or a snack until they are close to fed up. Being sent elsewhere by the
- * player, and emergencies, cannot wait.
+ * player, on a house call among it, and emergencies, cannot wait.
  */
 function wantedElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
   const line = lineWaiting(ctx, it);
   const cloudy = roomToSmudge(ctx, st);
   return (
+    !!st.call?.due ||
     !onDuty(st, stationDuty(it)) ||
     !worksAt(ctx, st, it.x, it.y) ||
     (!inPriorityRoom(ctx, it.x, it.y) && !!openPriorityPost(ctx, st)) ||
@@ -552,6 +556,44 @@ export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
   return ctx.s.items.find((it) => canStaff(ctx, st, it) && inPriorityRoom(ctx, it.x, it.y));
 }
 
+/** Set off to work a station, which is theirs from now. False if its staff spot cannot be reached. */
+function takePost(ctx: SimContext, st: Staff, it: Item): boolean {
+  const ai = accessIndex(it, 'staff');
+  const [x, y] = accessTile(it, ai);
+  if (!goTo(ctx, st, x, y, accessPose(it, ai))) return false;
+  it.staffId = st.id;
+  st.post = it.id;
+  st.state = 'toPost';
+  return true;
+}
+
+/**
+ * Take over a table from a colleague posted there who passes over guests in its line, leaving them for someone trained
+ * in what they need, as this one is. Without it, the one posted keeps the table and passes over the guests, the one
+ * trained has nowhere to work, and the line waits until the first takes a break. The table is taken before its
+ * colleague is stood down, so it is never left unworked. Whether they took one.
+ */
+function takeOver(ctx: SimContext, st: Staff): boolean {
+  for (const it of ctx.s.items) {
+    if (ITEMS[it.type].station?.goal !== 'treat' || !ctx.world.usable(it) || inHand(ctx, it)) continue;
+    const other = staffById(ctx, it.staffId);
+    if (other?.role !== st.role || other.state !== 'atPost' || other.post !== it.id) continue;
+    if (!onDuty(st, stationDuty(it)) || !worksAt(ctx, st, it.x, it.y)) continue;
+    const theirs = it.queue.some((id) => {
+      const g = guestById(ctx, id);
+      return (
+        (g?.state === 'waiting' || g?.state === 'toWait') &&
+        st.quals.includes(modalityOf(g).id) &&
+        leftForSpecialist(ctx, other, g)
+      );
+    });
+    if (!theirs || !takePost(ctx, st, it)) continue;
+    staffIdle(ctx, other);
+    return true;
+  }
+  return false;
+}
+
 /** Find something to do: a break if tired, then a job or a station to staff, or else a wander. */
 function findWork(ctx: SimContext, st: Staff) {
   if (restDue(ctx, st) && tryBreak(ctx, st)) return;
@@ -628,15 +670,8 @@ function findWork(ctx: SimContext, st: Staff) {
     for (const it of s.items) if (canStaff(ctx, st, it)) posts.push({ it, score: postScore(ctx, st, it) });
     // the best post first, and one that cannot be reached is passed over for the next, as a job is
     posts.sort((a, b) => b.score - a.score);
-    for (const { it } of posts.slice(0, 4)) {
-      const ai = accessIndex(it, 'staff');
-      const [x, y] = accessTile(it, ai);
-      if (!goTo(ctx, st, x, y, accessPose(it, ai))) continue;
-      it.staffId = st.id;
-      st.post = it.id;
-      st.state = 'toPost';
-      return;
-    }
+    for (const { it } of posts.slice(0, 4)) if (takePost(ctx, st, it)) return;
+    if (takeOver(ctx, st)) return;
   }
   // nothing to do: amble about, inside their own rooms if they have been assigned some
   if (st.state === 'idle' && random(s) < 0.25) {
@@ -707,6 +742,9 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
     const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
     st.energy = Math.max(0, st.energy - rate * stamina * tuning(ctx.s, 'tiredness') * dt);
   }
+
+  // a house call taken in the middle of a treatment is set off on as soon as it is done, or no longer under way
+  if (st.call?.due && !callWait(ctx, st)) setOff(ctx, st);
 
   switch (st.state) {
     case 'arriving':

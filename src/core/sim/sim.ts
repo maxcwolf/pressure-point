@@ -72,7 +72,17 @@ import {
   sprinklerBlocker,
   toggleWindow,
 } from './building';
-import { acceptCall, type CallCost, callCost, callFee, declineCall, updateCalls, whoCanGo } from './calls';
+import {
+  acceptCall,
+  type CallCost,
+  callCost,
+  callFee,
+  type CallWait,
+  callWait,
+  declineCall,
+  updateCalls,
+  whoCanGo,
+} from './calls';
 import {
   fullyTrained,
   heldSpace,
@@ -895,6 +905,10 @@ export class Sim {
   /** What it costs at home if this member of staff goes on a house call: who waits in their line, the worst's days. */
   callCost(st: Staff): CallCost {
     return callCost(this.ctx, st);
+  }
+  /** What this member of staff would finish before setting off on a house call, or null if they would go at once. */
+  callWait(st: Staff): CallWait | null {
+    return callWait(this.ctx, st);
   }
   /** Send someone on the house call on offer. */
   acceptCall(staffId: number): boolean {
