@@ -185,9 +185,10 @@ export function previewMode(p: PlacePreview, showing: OverlayMode | null): Overl
 const REACHED = 0.62;
 
 /**
- * The floor for fire safety: each finished room good with sprinklers or a Fire Extinguisher near its door and bad
- * without, and the rest of the floor within reach of an extinguisher faintly good, where a door would be covered. An
- * extinguisher in hand counts where it is held, and one being moved not where it stands.
+ * The floor for fire safety: each room good with sprinklers or a Fire Extinguisher near its door and bad without (a
+ * blueprint as it will stand once built), and the rest of the floor within reach of a working extinguisher faintly
+ * good, where a door would be covered. An extinguisher in hand counts where it is held, one in a blueprint only for
+ * that blueprint until it is built, and one being moved not where it stands.
  */
 export function fireTiles(sim: Sim, held?: HeldExtinguisher): HeatTile[] {
   const w = sim.world;

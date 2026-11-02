@@ -21,13 +21,13 @@ describe('the groups of the Items menu', () => {
 
   it("head a room's list with its name, keeping the order they came in", () => {
     const massage = listed('massage');
-    expect(massage.map(([heading]) => heading)).toEqual(['Specialty', 'Massage Suite only', 'Anywhere']);
+    expect(massage.map(([heading]) => heading)).toEqual(['Specialty', 'For the Massage Suite', 'Anywhere']);
     expect(massage[0]?.[1]).toEqual(['stretch_rack', 'stone_warmer', 'stone_kiln']);
     expect(massage[1]?.[1]).toEqual(['meridian_poster']);
     expect(massage[2]?.[1]).toContain('fire_extinguisher');
     expect(massage[2]?.[1]).not.toContain('bench');
     // a room with no specialty kit has two groups
-    expect(listed('staffroom').map(([heading]) => heading)).toEqual(['Staff Room only', 'Anywhere']);
+    expect(listed('staffroom').map(([heading]) => heading)).toEqual(['For the Staff Room', 'Anywhere']);
   });
 
   it('head everything with what each group is, the everyday furniture first and the specialty kit last', () => {

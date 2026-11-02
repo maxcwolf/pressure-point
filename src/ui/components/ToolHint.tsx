@@ -168,7 +168,7 @@ function Chip({ chip, icon }: { chip: HintChip; icon: IconId | null }) {
 export function ToolHint() {
   const { sim, tools } = useGame();
   // what an item in hand would change, then what it or a room being placed means for fire cover
-  const effects = [...(tools.preview ? placeEffects(sim, tools.preview) : []), ...fireEffects(sim.s.rooms, tools.fire)];
+  const effects = [...(tools.preview ? placeEffects(sim, tools.preview) : []), ...fireEffects(sim.s, tools.fire)];
   const icon = toolIcon(tools.tool);
   return (
     <div id="hint" class={column}>

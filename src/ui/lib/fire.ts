@@ -1,14 +1,20 @@
 // Fire cover in words: what the hint says of an extinguisher in hand, or of a room or a machine that can catch fire
-// being placed, and what a room's inspector says of a room with no extinguisher near its door.
+// being placed, and what a room's inspector says of a room with no extinguisher near its door. Each says only what is
+// true in this game: nothing of the inspector with visits off, nor of fires spreading with fires off.
 
 import { EXTINGUISHER_REACH } from '../../core/data';
 import { roomLabels } from '../../core/sim/assignments';
 import type { FireNote } from '../../core/sim/fire-cover';
-import type { Room } from '../../core/state/types';
+import type { GameState, Room } from '../../core/state/types';
 import type { PlaceEffect } from './item-stats';
 
 /** How many rooms the hint names before it counts the rest. */
 const NAMED = 3;
+
+/** What the inspector makes of a door with no extinguisher near it. */
+const FINED = 'the health inspector fines that';
+/** What a fire does in a room with no extinguisher near its door. */
+const SPREADS = 'a fire here would spread';
 
 /** Rooms by name, as a list: "the Restroom", "the Restroom and the Staff Room", or the first few and how many more. */
 export function roomList(rooms: readonly Room[], ids: readonly number[]): string {
@@ -20,23 +26,34 @@ export function roomList(rooms: readonly Room[], ids: readonly number[]): string
 }
 
 /**
- * What the hint says of fire cover for what is in hand: for an extinguisher, the rooms it would cover that have none,
- * any it would leave with none, and how many would still have none; for a room or a machine that can catch fire,
- * whether its door has one near it.
+ * Why a door with no Fire Extinguisher near it matters in this game, most pressing first: for a room with a machine
+ * that can catch fire, the fire spreading with fires on, and the inspector's fine with visits on. None if neither.
  */
-export function fireEffects(rooms: readonly Room[], note: FireNote | null): PlaceEffect[] {
-  if (!note) return [];
+export function noCoverWhy(s: GameState, risky: boolean): string[] {
+  return [risky && s.blazesOn && SPREADS, s.visitsOn && FINED].filter((why): why is string => !!why);
+}
+
+/**
+ * What the hint says of fire cover for what is in hand: for an extinguisher, the rooms it would cover that have none
+ * (once the blueprint it is held in is built, for one held in a blueprint), any it would leave with none, and how many
+ * would still have none; for a room or a machine that can catch fire, whether its door has one, and why it matters.
+ */
+export function fireEffects(s: GameState, note: FireNote | null): PlaceEffect[] {
+  // with neither visits nor fires, an extinguisher does nothing
+  if (!note || (!s.visitsOn && !s.blazesOn)) return [];
   const icon = 'item-fire-extinguisher';
   if (note.kind === 'door') {
+    const why = noCoverWhy(s, note.machine)[0];
+    if (!why) return [];
     if (note.covered) return [{ icon, text: 'Fire Extinguisher near the door', tone: 'good' }];
-    const why = note.machine ? 'a fire here would spread' : 'the health inspector fines that';
     return [{ icon, text: `No Fire Extinguisher near the door: ${why}`, tone: 'bad' }];
   }
-  // with no room built, there is nothing yet to cover
+  // with no room built or planned, there is nothing yet to cover
   if (!note.rooms) return [];
   const out: PlaceEffect[] = [];
-  if (note.gains.length) out.push({ icon, text: `Covers ${roomList(rooms, note.gains)}`, tone: 'good' });
-  if (note.losses.length) out.push({ icon, text: `Leaves ${roomList(rooms, note.losses)} with none`, tone: 'bad' });
+  if (note.gains.length)
+    out.push({ icon, text: `Covers ${roomList(s.rooms, note.gains)}${built(s, note)}`, tone: 'good' });
+  if (note.losses.length) out.push({ icon, text: `Leaves ${roomList(s.rooms, note.losses)} with none`, tone: 'bad' });
   if (!note.gains.length && !note.losses.length) out.push({ icon, text: 'Covers no room without one', tone: 'plain' });
   out.push(
     note.left
@@ -46,5 +63,20 @@ export function fireEffects(rooms: readonly Room[], note: FireNote | null): Plac
   return out;
 }
 
-/** What a room's inspector says of a room with no extinguisher near its door, over the button to place one. */
-export const NO_EXTINGUISHER = `No Fire Extinguisher within ${EXTINGUISHER_REACH} tiles of the door: the health inspector fines that, and a fire here would spread.`;
+/** When an extinguisher held in a blueprint starts to cover what it would: once that is built. */
+function built(s: GameState, note: FireNote & { kind: 'extinguisher' }): string {
+  if (note.until === undefined) return '';
+  const itself = note.gains.length === 1 && note.gains[0] === note.until;
+  return ` once ${itself ? 'it' : roomList(s.rooms, [note.until])} is built`;
+}
+
+/**
+ * What a room's inspector says of a room with no extinguisher near its door, over the button to place one: nothing,
+ * if neither the inspector nor a fire there would mind.
+ */
+export function noExtinguisher(s: GameState, risky: boolean): string {
+  const why = noCoverWhy(s, risky);
+  return why.length
+    ? `No Fire Extinguisher within ${EXTINGUISHER_REACH} tiles of the door: ${why.join(', and ')}.`
+    : '';
+}

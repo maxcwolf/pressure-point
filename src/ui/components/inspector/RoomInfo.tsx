@@ -17,8 +17,9 @@ import {
 import { money } from '../../../core/format';
 import { copyCost } from '../../../core/room-layout';
 import { roomLabels } from '../../../core/sim/assignments';
-import { NO_EXTINGUISHER_FOUND } from '../../../core/sim/fire-cover';
+import { canCatchFire, NO_EXTINGUISHER_FOUND } from '../../../core/sim/fire-cover';
 import { signatureMachine, treatsHere } from '../../../core/sim/machines';
+import type { Sim } from '../../../core/sim/sim';
 import { tempFeel } from '../../../core/sim/warmth';
 import { unlockedUpTo } from '../../../core/state/game';
 import type { Item, Room } from '../../../core/state/types';
@@ -29,7 +30,7 @@ import { blessingNote } from '../../lib/ceremonies';
 import { cx } from '../../lib/cx';
 import { deliveryNote } from '../../lib/delivery';
 import { machinePullNote, pullNote } from '../../lib/demand';
-import { NO_EXTINGUISHER } from '../../lib/fire';
+import { noExtinguisher } from '../../lib/fire';
 import { FLOODED_LABEL } from '../../lib/mishaps';
 import { statusClass } from '../../lib/status';
 import { problemNote, stillWrong } from '../../lib/visits';
@@ -194,29 +195,40 @@ function Inspection({ room }: { room: Room }) {
 }
 
 /**
+ * What a finished room with neither sprinklers nor a Fire Extinguisher near its door risks in this game: the inspector's
+ * fine, a fire spreading from a machine that can catch fire, both, or nothing ('').
+ */
+function fireWarning(sim: Sim, room: Room): string {
+  if (!room.done || sim.extinguisherNear(room)) return '';
+  const risky = sim.s.items.some((it) => canCatchFire(it.type) && sim.world.roomOfItem(it)?.id === room.id);
+  return noExtinguisher(sim.s, risky);
+}
+
+/**
  * A finished room with no Fire Extinguisher near its door, nor sprinklers, found before the inspector finds it, unless
  * the last inspection's line already says so.
  */
 function FireCover({ room }: { room: Room }) {
   const { sim } = useGame();
-  if (!room.done || sim.extinguisherNear(room)) return null;
+  const warning = fireWarning(sim, room);
+  if (!warning) return null;
   if (stillWrong(sim.s.visitReport, room.id, sim.inspectionProblems(room)).includes(NO_EXTINGUISHER_FOUND)) return null;
   return (
     <p class={cx('status', 'warn', 'fire-cover')}>
-      <IconText id="item-fire-extinguisher">{NO_EXTINGUISHER}</IconText>
+      <IconText id="item-fire-extinguisher">{warning}</IconText>
     </p>
   );
 }
 
-/** A button to take a Fire Extinguisher in hand, beside the one for sprinklers, for a room with neither. */
+/** A button to take a Fire Extinguisher in hand, beside the one for sprinklers, for a room that wants one. */
 function PlaceExtinguisher({ room }: { room: Room }) {
   const hud = useHud();
   const { sim, tools } = useGame();
-  if (!room.done || sim.extinguisherNear(room)) return null;
+  if (!fireWarning(sim, room)) return null;
   return (
     <Button
       class={roomButton}
-      title={`The health inspector wants one within ${EXTINGUISHER_REACH} tiles of the door. The floor shows which rooms each would cover.`}
+      title={`One within ${EXTINGUISHER_REACH} tiles of the door covers the room. The floor shows which rooms each would cover.`}
       onPress={() => {
         hud.menu = null;
         tools.startItem('fire_extinguisher');

@@ -8,6 +8,17 @@ import { expect, type Game, test } from './fixtures';
 /** What the floor is colored by: an overlay, the land, or nothing. */
 const floorShown = (game: Game) => game.eval((pp) => pp.floorShown);
 
+/**
+ * Have the health inspector check the center, though not call while the test runs, and fires break out, so that fire
+ * cover matters: the standard center has visits off.
+ */
+const inspected = (pp: Parameters<Parameters<Game['eval']>[0]>[0]) => {
+  pp.state.visitsOn = true;
+  pp.state.nextVip = 1e9;
+  pp.state.nextInspection = 1e9;
+  pp.state.blazesOn = true;
+};
+
 /** Hold the mouse over the middle of a tile. */
 async function hoverTile(game: Game, page: Page, x: number, y: number) {
   const p = await game.eval((pp, [x, y]) => pp.view.project(x + 0.5, y + 0.5, 0), [x, y] as const);
@@ -99,6 +110,7 @@ test.describe('fire cover', () => {
   }) => {
     await game.start();
     await game.buildCenter();
+    await game.eval(inspected);
     const inspector = page.locator('#inspector');
     await game.clickRoom('massage');
     await expect(inspector.locator('.fire-cover')).toContainText('No Fire Extinguisher within 10 tiles of the door');
@@ -141,13 +153,25 @@ test.describe('fire cover', () => {
   }) => {
     await game.start();
     await game.buildCenter();
+    await game.eval(inspected);
     const hint = page.locator('#hint');
+    // a finished room's door being moved
+    await game.clickRoom('massage');
+    await page.locator('#inspector').getByRole('button', { name: 'Move door' }).click();
+    await game.hoverWall('west');
+    await expect(hint).toContainText('No Fire Extinguisher near the door: the health inspector fines that');
+    await page.keyboard.press('Escape');
+
     await game.menu('Rooms');
     await game.card('Massage Suite').click();
     await game.dragOutRoom(4, 4);
     const door = await game.hoverWall('south');
     await expect(hint).toContainText('No Fire Extinguisher near the door: the health inspector fines that');
     await game.clickWall('south');
+    // one held in the blueprint covers nothing until the room is built
+    await game.eval((pp) => pp.tools.startItem('fire_extinguisher'));
+    await game.hoverHeld({ inRoom: true });
+    await expect(hint).toContainText(/Covers .* is built/);
     // a Hot Stone Kiln in the blueprint, whose door has none near it
     await game.eval((pp) => pp.tools.startItem('stone_kiln'));
     await game.hoverHeld({ inRoom: true });

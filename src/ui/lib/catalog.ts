@@ -149,8 +149,8 @@ export function filterItems(types: readonly ItemType[], place: Place, kind: Item
 
 /**
  * How the Items menu groups what it lists: `specialty`, the kit a technique needs or a machine, for one kind of room;
- * `room`, everything else for one kind of room; and `general`, what is tied to no room, going anywhere indoors, in the
- * corridors or out of doors.
+ * `room`, everything else that goes only in certain kinds of room; and `general`, what is tied to no room, going
+ * anywhere indoors, in the corridors or out of doors.
  */
 export type ItemGroup = 'specialty' | 'room' | 'general';
 
@@ -178,7 +178,8 @@ function groupHeading(group: ItemGroup, place: Place): string {
   const type = roomOf(place);
   const room = type && ROOMS[type].name;
   if (group === 'specialty') return 'Specialty';
-  if (group === 'room') return room ? `${room} only` : 'Room-specific';
+  // some of these go in another kind of room as well, so the heading says who they are for rather than "only"
+  if (group === 'room') return room ? `For the ${room}` : 'Room-specific';
   return room ? 'Anywhere' : 'Not tied to a room';
 }
 

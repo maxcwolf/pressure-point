@@ -5,11 +5,26 @@ import { describe, expect, it } from 'vitest';
 import { reachEdge } from '../../src/app/tools/overlay';
 import { EXTINGUISHER_REACH } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
-import { canCatchFire, doorCovered, fireCover, heldCover, inReach, worksAt } from '../../src/core/sim/fire-cover';
+import {
+  canCatchFire,
+  doorCovered,
+  fireCover,
+  heldCover,
+  inReach,
+  roomCovered,
+  worksAt,
+} from '../../src/core/sim/fire-cover';
 import { extinguisherNear } from '../../src/core/sim/visits';
-import { fireEffects, roomList } from '../../src/ui/lib/fire';
+import { fireEffects, noExtinguisher, roomList } from '../../src/ui/lib/fire';
 import { fireTiles, previewMode } from '../../src/ui/lib/overlays';
-import { addRestroom, addStaffRoom, openCenter } from './helpers';
+import { addRestroom, addStaffRoom, LAYOUT, openCenter } from './helpers';
+
+/** The standard center with a Massage Suite pencilled in as a blueprint beside it, its door 8 tiles from the first's. */
+function withBlueprint() {
+  const center = openCenter(1);
+  const plan = center.sim.createRoom('massage', LAYOUT.assess.rect, LAYOUT.assess.door);
+  return { ...center, plan };
+}
 
 describe('fire cover', () => {
   it('reaches a door from anywhere in the square around it, as far as the reach either way, and no further', () => {
@@ -65,21 +80,14 @@ describe('fire cover', () => {
     const restroom = addRestroom(sim);
     const ctx = createContext(s);
     s.litter.push({ x: 22, y: 5, flood: restroom.id } as (typeof s.litter)[number]);
-    expect(worksAt(ctx, 22, 6)).toBe(false);
-    expect(worksAt(ctx, 13, 10)).toBe(true);
+    expect(worksAt(ctx, 22, 6)).toBe('never');
+    expect(worksAt(ctx, 13, 10)).toBe('now');
+    expect(heldCover(fireCover(ctx, { x: 22, y: 6 }), worksAt(ctx, 22, 6)).gains).toEqual([]);
   });
 
-  it('knows a room with a machine that can catch fire', () => {
-    const { s, massage, consult } = openCenter(1);
+  it('knows a machine that can catch fire', () => {
     expect(canCatchFire('stone_kiln')).toBe(true);
     expect(canCatchFire('massage_table')).toBe(false);
-    expect(fireCover(createContext(s)).some((c) => c.risky)).toBe(false);
-    // a Hot Stone Kiln where the table stands, for the sake of the room it is in
-    const table = s.items.find((it) => it.type === 'massage_table');
-    if (table) table.type = 'stone_kiln';
-    const cover = fireCover(createContext(s));
-    expect(cover.find((c) => c.room.id === massage.id)?.risky).toBe(true);
-    expect(cover.find((c) => c.room.id === consult.id)?.risky).toBe(false);
   });
 
   it('covers a door from extinguishers staying or coming with a room, not those leaving with it', () => {
@@ -92,6 +100,56 @@ describe('fire cover', () => {
     expect(sim.placeItem('fire_extinguisher', 14, 6, 0)).not.toBeNull();
     expect(doorCovered(ctx, door)).toBe(true);
     expect(doorCovered(ctx, door, { leaving: massage.id })).toBe(false);
+  });
+});
+
+describe('fire cover from a blueprint', () => {
+  it('covers nothing else from one held in a blueprint until it is built, but its own door once it is', () => {
+    const { s, massage, consult, plan } = withBlueprint();
+    const ctx = createContext(s);
+    // held in the blueprint: 8 tiles from the Massage Suite's door, 1 from its own, 12 from the Consultation Room's
+    const works = worksAt(ctx, 20, 12);
+    expect(works).toBe(plan.id);
+    const cover = fireCover(ctx, { x: 20, y: 12 });
+    /** How a room stands, by its id. */
+    const of = (id: number) => cover.find((c) => c.room.id === id);
+    expect(of(massage.id)).toMatchObject({ covered: false, then: false, later: true });
+    expect(of(plan.id)).toMatchObject({ covered: false, then: true, later: true });
+    expect(of(consult.id)).toMatchObject({ covered: false, then: false, later: false });
+    expect(heldCover(cover, works)).toEqual({
+      gains: [massage.id, plan.id],
+      losses: [],
+      left: 1,
+      rooms: 3,
+      until: plan.id,
+    });
+  });
+
+  it('agrees with the inspector once put down: nothing for other rooms till the blueprint is built', () => {
+    const { sim, s, massage, plan } = withBlueprint();
+    const ext = sim.placeItem('fire_extinguisher', 20, 12, 0, { roomId: plan.id });
+    if (!ext) throw new Error('no extinguisher');
+    const ctx = createContext(s);
+    expect(extinguisherNear(ctx, massage)).toBe(false);
+    expect(roomCovered(ctx, massage)).toBe(false);
+    expect(doorCovered(ctx, massage.door)).toBe(false);
+    // the blueprint's own door counts it, as it will once built
+    expect(roomCovered(ctx, plan)).toBe(true);
+    expect(fireCover(ctx).find((c) => c.room.id === plan.id)?.covered).toBe(true);
+    sim.finishRoom(plan);
+    expect(extinguisherNear(ctx, massage)).toBe(true);
+    expect(roomCovered(ctx, massage)).toBe(true);
+  });
+
+  it('waits for an extinguisher in another blueprint to be built before counting it', () => {
+    const { sim, s, plan } = withBlueprint();
+    const other = sim.createRoom('consult', LAYOUT.staffroom.rect, LAYOUT.staffroom.door);
+    expect(sim.placeItem('fire_extinguisher', 17, 5, 0, { roomId: other.id })).not.toBeNull();
+    const ctx = createContext(s);
+    // within reach of the first blueprint's door, but in a room not yet built
+    expect(inReach(17, 5, plan.door)).toBe(true);
+    expect(roomCovered(ctx, plan)).toBe(false);
+    expect(roomCovered(ctx, other)).toBe(true);
   });
 });
 
@@ -128,13 +186,23 @@ describe('the Fire safety overlay', () => {
     expect(inMassage()).toBe(1);
     expect(inMassage({ x: 30, y: 12, moving: ext.id })).toBe(0);
   });
+
+  it('shows one held in a blueprint as covering nothing else, and reaching no floor, till it is built', () => {
+    const { sim, massage, plan } = withBlueprint();
+    const tiles = new Map(fireTiles(sim, { x: 20, y: 12 }).map(([x, y, v]) => [`${x},${y}`, v]));
+    expect(tiles.get(`${massage.x + 1},${massage.y + 1}`)).toBe(0);
+    // the blueprint itself, judged as once built, has it
+    expect(tiles.get(`${plan.x + 1},${plan.y + 1}`)).toBe(1);
+    // the corridor between them is not shown as reached
+    expect(tiles.has('16,11')).toBe(false);
+  });
 });
 
 describe('fire cover in words', () => {
   it('names the rooms an extinguisher would cover, and counts what is left', () => {
     const { sim, s, consult, massage } = openCenter(1);
     const note = { kind: 'extinguisher' as const, gains: [consult.id, massage.id], losses: [], left: 1, rooms: 3 };
-    expect(fireEffects(s.rooms, note).map((e) => [e.text, e.tone])).toEqual([
+    expect(fireEffects(s, note).map((e) => [e.text, e.tone])).toEqual([
       ['Covers the Consultation Room and the Massage Suite', 'good'],
       ['1 room still with none', 'bad'],
     ]);
@@ -144,24 +212,64 @@ describe('fire cover in words', () => {
       'the Consultation Room, the Massage Suite, the Restroom and 1 more',
     );
     expect(
-      fireEffects(s.rooms, { kind: 'extinguisher', gains: [], losses: [massage.id], left: 0, rooms: 2 }).map(
-        (e) => e.text,
-      ),
+      fireEffects(s, { kind: 'extinguisher', gains: [], losses: [massage.id], left: 0, rooms: 2 }).map((e) => e.text),
     ).toEqual(['Leaves the Massage Suite with none', 'Every room has one near its door']);
-    expect(fireEffects(s.rooms, { kind: 'extinguisher', gains: [], losses: [], left: 2, rooms: 2 })[0]?.text).toBe(
+    expect(fireEffects(s, { kind: 'extinguisher', gains: [], losses: [], left: 2, rooms: 2 })[0]?.text).toBe(
       'Covers no room without one',
     );
     // with no room built there is nothing to say
-    expect(fireEffects([], { kind: 'extinguisher', gains: [], losses: [], left: 0, rooms: 0 })).toEqual([]);
+    expect(fireEffects(s, { kind: 'extinguisher', gains: [], losses: [], left: 0, rooms: 0 })).toEqual([]);
+  });
+
+  it('says when one held in a blueprint starts to cover what it would', () => {
+    const { s, consult, plan } = withBlueprint();
+    const note = { kind: 'extinguisher' as const, losses: [], left: 1, rooms: 3, until: plan.id };
+    expect(fireEffects(s, { ...note, gains: [consult.id, plan.id] })[0]?.text).toBe(
+      'Covers the Consultation Room and the Massage Suite 2 once the Massage Suite 2 is built',
+    );
+    expect(fireEffects(s, { ...note, gains: [plan.id] })[0]?.text).toBe('Covers the Massage Suite 2 once it is built');
   });
 
   it('says whether a door has one near it, and what having none costs', () => {
-    expect(fireEffects([], { kind: 'door', covered: true, machine: false })[0]?.tone).toBe('good');
-    expect(fireEffects([], { kind: 'door', covered: false, machine: false })[0]?.text).toBe(
+    const { s } = openCenter(1);
+    // the tests' centers have fires off
+    s.blazesOn = true;
+    expect(fireEffects(s, { kind: 'door', covered: true, machine: false })[0]?.tone).toBe('good');
+    expect(fireEffects(s, { kind: 'door', covered: false, machine: false })[0]?.text).toBe(
       'No Fire Extinguisher near the door: the health inspector fines that',
     );
-    expect(fireEffects([], { kind: 'door', covered: false, machine: true })[0]?.text).toBe(
+    expect(fireEffects(s, { kind: 'door', covered: false, machine: true })[0]?.text).toBe(
       'No Fire Extinguisher near the door: a fire here would spread',
+    );
+  });
+
+  it('says nothing untrue with visits or fires switched off', () => {
+    const { s } = openCenter(1);
+    const room = { kind: 'door', covered: false, machine: false } as const;
+    const machine = { kind: 'door', covered: false, machine: true } as const;
+    s.blazesOn = true;
+    s.visitsOn = false;
+    // no inspector to fine a room, but a machine's fire still spreads
+    expect(fireEffects(s, room)).toEqual([]);
+    expect(fireEffects(s, machine)[0]?.text).toBe('No Fire Extinguisher near the door: a fire here would spread');
+    expect(noExtinguisher(s, false)).toBe('');
+    expect(noExtinguisher(s, true)).toBe('No Fire Extinguisher within 10 tiles of the door: a fire here would spread.');
+    s.visitsOn = true;
+    s.blazesOn = false;
+    expect(fireEffects(s, machine)[0]?.text).toBe(
+      'No Fire Extinguisher near the door: the health inspector fines that',
+    );
+    expect(noExtinguisher(s, true)).toBe(
+      'No Fire Extinguisher within 10 tiles of the door: the health inspector fines that.',
+    );
+    // with neither, an extinguisher does nothing, and nothing is said of one
+    s.visitsOn = false;
+    expect(fireEffects(s, { kind: 'extinguisher', gains: [], losses: [], left: 2, rooms: 2 })).toEqual([]);
+    expect(fireEffects(s, machine)).toEqual([]);
+    s.visitsOn = true;
+    s.blazesOn = true;
+    expect(noExtinguisher(s, true)).toBe(
+      'No Fire Extinguisher within 10 tiles of the door: a fire here would spread, and the health inspector fines that.',
     );
   });
 

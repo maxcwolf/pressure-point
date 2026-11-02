@@ -916,7 +916,7 @@ export class Tools {
     const world = sim.world;
     if (placed.type === 'fire_extinguisher') {
       const cover = sim.fireCover({ x: placed.x, y: placed.y, ...(moving && { moving: moving.id }) });
-      this.fire = { kind: 'extinguisher', ...heldCover(cover) };
+      this.fire = { kind: 'extinguisher', ...heldCover(cover, sim.extinguisherWorks(placed.x, placed.y)) };
       const covered = new Map(cover.map((c) => [c.room.id, c.then]));
       const edge = reachEdge(placed.x, placed.y, EXTINGUISHER_REACH).filter(([x, y]) => world.onMap(x, y));
       const doors = cover.map((c) => ({ ...c.room.door, covered: c.then }));
@@ -928,17 +928,7 @@ export class Tools {
       return;
     }
     const room = canCatchFire(placed.type) ? world.roomAt(placed.x, placed.y) : undefined;
-    if (room) this.fire = { kind: 'door', covered: this.roomCovered(room), machine: true };
-  }
-
-  /** Whether a room, built or a blueprint, has sprinklers or an extinguisher near its door, or will once built. */
-  private roomCovered(room: Room, door = room.door): boolean {
-    const world = this.sim.world;
-    // one put in a blueprint works once the room is built
-    const bringing = room.done
-      ? []
-      : this.sim.s.items.filter((it) => it.type === 'fire_extinguisher' && world.roomOfItem(it)?.id === room.id);
-    return this.sim.doorCovered(door, { sprinklers: !!room.sprinklers, bringing });
+    if (room) this.fire = { kind: 'door', covered: sim.roomCovered(room), machine: true };
   }
 
   /** Marker for the window tool on one room. */
@@ -1094,6 +1084,9 @@ export class Tools {
       if (room) {
         this.hint = MOVE_DOOR_HINT;
         this.drawDoor(room);
+        // whether the door would still have an extinguisher near it where it is moving to
+        const spot = this.wallSpot(room);
+        if (spot) this.fire = { kind: 'door', covered: this.sim.roomCovered(room, spot), machine: false };
       }
     } else if (t.kind === 'assign') {
       view.setGhost(null);
@@ -1158,7 +1151,7 @@ export class Tools {
       // with empty hands, whether the room's door has an extinguisher near; moving the door, the spot under the cursor
       const spot = sub?.kind === 'door' ? this.wallSpot(t.room) : null;
       if (!sub || spot)
-        this.fire = { kind: 'door', covered: this.roomCovered(t.room, spot ?? t.room.door), machine: false };
+        this.fire = { kind: 'door', covered: this.sim.roomCovered(t.room, spot ?? t.room.door), machine: false };
       if (!sub) view.setGhost(null);
       else if (sub.kind === 'item') this.drawItem(sub, sub.required ? t.room.id : undefined, drawing);
       // a piece being moved is shown as a built item being moved is, with the squares it would cover and be used from

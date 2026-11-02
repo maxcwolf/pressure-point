@@ -139,6 +139,9 @@ import {
   fireCover,
   type HeldExtinguisher,
   type RoomCover,
+  roomCovered,
+  type Works,
+  worksAt,
 } from './fire-cover';
 import { flurrying } from './flurries';
 import { endow, foundationOpen, giftBlocker, nextGift } from './foundation';
@@ -536,7 +539,7 @@ export class Sim {
     this.refreshAmbience();
     return previewMove(this.ctx, it, placed);
   }
-  /** Every finished room's fire cover, now and with an extinguisher in hand put down where it is held, if one is. */
+  /** Every room's fire cover, finished or a blueprint, now and with an extinguisher in hand put down where it is held. */
   fireCover(held?: HeldExtinguisher): RoomCover[] {
     return fireCover(this.ctx, held);
   }
@@ -547,6 +550,14 @@ export class Sim {
   /** Whether a door being placed would have sprinklers or a Fire Extinguisher near it. */
   doorCovered(door: { x: number; y: number }, opts?: DoorCoverOptions): boolean {
     return doorCovered(this.ctx, door, opts);
+  }
+  /** Whether a room's door, or the spot it is moving to, has fire cover: for a blueprint, once it is built. */
+  roomCovered(room: Room, door?: { x: number; y: number }): boolean {
+    return roomCovered(this.ctx, room, door);
+  }
+  /** When a Fire Extinguisher put down on a tile would work: now, once the blueprint there is built, or never. */
+  extinguisherWorks(x: number, y: number): Works {
+    return worksAt(this.ctx, x, y);
   }
   /** How noisy it is at an item, such as a treatment table. */
   itemNoise(it: Item): number {
