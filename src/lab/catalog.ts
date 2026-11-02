@@ -43,7 +43,7 @@ import type { GagStage } from '../render/gags/types';
 import { NOISE_CUE, usedNoise } from '../render/item-cues';
 import { animateItemParts, type ItemCondition } from '../render/items';
 import { fenceRuns } from '../render/land';
-import { MOSAIC, type MosaicName, MOSAICS, showBare } from '../render/models/bare';
+import { showBare } from '../render/models/bare';
 import { buildBeach } from '../render/models/beach';
 import { buildCharacter, type CharRig, cureRig } from '../render/models/character';
 import { type Expression, showEyes } from '../render/models/character-detail';
@@ -760,7 +760,7 @@ function runawaySpecimen(man: boolean): Specimen {
   const look: Look = man
     ? { ...LAB_LOOK, sex: 'male', hairStyle: HAIR.short, build: 2, skin: 0xb97a55, hair: 0x2b1d16 }
     : LAB_LOOK;
-  const st = { mosaic: MOSAIC as string, calmed: false };
+  const st = { calmed: false };
   return {
     id: man ? 'mood:runaway-man' : 'mood:runaway',
     group: 'Moods',
@@ -771,7 +771,6 @@ function runawaySpecimen(man: boolean): Specimen {
       const rig = buildCharacter(look);
       const c = demoGuest(look, must(CONDITIONS[0], 'a condition').id);
       Object.assign(c, { state: 'running', pose: 'walk', outcome: 'failed', bubble: 'bubble-stressed', bubbleT: 1e9 });
-      const mosaic = MOSAICS[st.mosaic as MosaicName];
       /** Pose them, running on the spot as fast as a runner goes, or standing calmed down and dressed again. */
       const animate = (t: number, dt: number) => {
         c.state = st.calmed ? 'toWait' : 'running';
@@ -781,14 +780,13 @@ function runawaySpecimen(man: boolean): Specimen {
           c,
           st.calmed ? { bubble: 'bubble-relieved', outcome: '' } : { bubble: 'bubble-stressed', outcome: 'failed' },
         );
-        showBare(rig, !st.calmed, look.sex === 'female', mosaic);
+        showBare(rig, !st.calmed, look.sex === 'female');
         if (!st.calmed) walkOnTheSpot(rig, t, RUNAWAY_SPEED);
         poseChar(rig, c, t, dt, { style: null });
       };
-      const options = Object.keys(MOSAICS).map((m): Option => [m, m.charAt(0).toUpperCase() + m.slice(1)]);
       return {
         root: rig.group,
-        controls: [choice('Censor', st, 'mosaic', options, true), toggle('Calmed down', st, 'calmed')],
+        controls: [toggle('Calmed down', st, 'calmed')],
         animate,
       };
     },
