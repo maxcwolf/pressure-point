@@ -13,7 +13,7 @@ import { cx } from '../../lib/cx';
 import { quirksSaid } from '../../lib/quirks';
 import { jobChoices, shownRole } from '../../lib/roles';
 import { sorted, STAFF_SORTS } from '../../lib/sorts';
-import { moraleLook, promotionRequests, raiseRequests, staffStatus } from '../../lib/status';
+import { heldBackSaid, moraleLook, promotionRequests, raiseRequests, staffStatus } from '../../lib/status';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Dropdown } from '../common/Dropdown';
@@ -329,14 +329,26 @@ export function StaffMenu() {
             {/* the whole row selects them, from a button stretched over its cells, as a button cannot hold another */}
             <Button
               class={pick}
-              label={[`Show ${st.name}.`, quirksSaid(st.traits)].filter(Boolean).join(' ')}
+              label={[`Show ${st.name}.`, sim.heldBack(st) && heldBackSaid(st), quirksSaid(st.traits)]
+                .filter(Boolean)
+                .join(' ')}
               onPress={() => {
                 hud.show({ kind: 'staff', id: st.id });
               }}
             />
             <Icon id={ROLES[st.role].icon} size={26} />
             <b>
-              <IconText id={sim.aboutToQuit(st) ? 'ui-warning' : st.raiseAsked ? 'bubble-raise' : undefined}>
+              <IconText
+                id={
+                  sim.aboutToQuit(st)
+                    ? 'ui-warning'
+                    : st.raiseAsked
+                      ? 'bubble-raise'
+                      : sim.heldBack(st)
+                        ? 'room-training'
+                        : undefined
+                }
+              >
                 {st.name}
               </IconText>
             </b>

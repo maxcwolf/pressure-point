@@ -179,7 +179,7 @@ export class HudState {
   toastsOpen = false;
   /** Whether the messages were opened out from the band over the inspector. */
   private toastsFromStrip = false;
-  /** What each member of staff asking for a raise or a promotion said when they asked, for the list under its card. */
+  /** What each member of staff asking for a raise, a promotion or training said when they asked, for the list under its card. */
   readonly asked = new Map<number, string>();
   /** The card whose list of the staff asking is open, if one is. */
   requestsOpen: StaffRequest | null = null;
@@ -485,7 +485,7 @@ export class HudState {
     const { audio } = this.host;
     for (const e of events) {
       if (e.type === 'sfx') audio.play(e.name);
-      // a raise or a promotion asked for waits on the card for everyone asking, which keeps what they said
+      // a raise, a promotion or training asked for waits on the card for everyone asking, which keeps what they said
       else if (e.type === 'toast' && e.request && e.about) this.asked.set(e.about.id, e.text);
       else if (e.type === 'toast') this.toast(e.text, e.kind, e.about, e.icon, e.key, e.headline);
       else if (e.type === 'announce') this.announce(e.text);
@@ -594,7 +594,7 @@ export class HudState {
     this.update();
   }
 
-  /** Open the list of the staff asking for a raise or a promotion under its card, or close it. */
+  /** Open the list of the staff asking for a raise, a promotion or training under its card, or close it. */
   toggleRequests(which: StaffRequest) {
     this.requestsOpen = this.requestsOpen === which ? null : which;
     this.update();

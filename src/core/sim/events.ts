@@ -38,8 +38,11 @@ export interface Headline {
   also?: string;
 }
 
-/** Something a member of staff asks for, which waits on a card of its own until it is answered. */
-export type StaffRequest = 'raise' | 'promotion';
+/**
+ * Something a member of staff asks for, which waits on a card of its own until it is answered: a raise, a promotion,
+ * or the training a promotion they have the experience for still needs.
+ */
+export type StaffRequest = 'raise' | 'promotion' | 'training';
 
 export type SimEvent =
   | { type: 'float'; text: string; x: number; y: number; kind: Tone }
@@ -102,7 +105,7 @@ export function toast(
 }
 
 /**
- * Say what a member of staff asks for: a raise or a promotion. The card for everyone asking says that much, so this is
+ * Say what a member of staff asks for: a raise, a promotion or training. The card for everyone asking says that much, so this is
  * what they said in their own words, kept for it rather than shown as a message of its own.
  */
 export function staffRequest(ctx: SimContext, st: { id: number }, request: StaffRequest, text: string, kind: Tone) {

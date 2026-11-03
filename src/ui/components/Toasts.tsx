@@ -1,10 +1,11 @@
-// Right side: a downloaded update, a card for the raises and one for the promotions waiting on an answer, then messages,
-// newest first, that
-// fade once there has been time to read them. Past the first few they pile up underneath, to open out or dismiss at
-// once. One about someone or something takes you there when clicked. While the inspector is open the newest two show
-// above it in a band of their own, the rest counted, so the inspector keeps its place.
+// Right side: a downloaded update, a card each for the raises, the promotions and the training waiting on an answer,
+// then messages, newest first, that fade once there has been time to read them. Past the first few they pile up
+// underneath, to open out or dismiss at once. One about someone or something takes you there when clicked. While the
+// inspector is open the newest two show above it in a band of their own, the rest counted, so the inspector keeps its
+// place.
 
 import type { StaffRequest } from '../../core/sim/events';
+import type { Sim } from '../../core/sim/sim';
 import type { Staff } from '../../core/state/types';
 import { css } from '../../styled-system/css';
 import { useGame, useHud } from '../hooks/use-hud';
@@ -208,7 +209,9 @@ const chevron = css({ ml: '6', opacity: 'quiet' });
 /** The count of warnings among the rest, in red. */
 const warningCount = css({ color: 'bad' });
 
-/** Raise requests and promotions still waiting, and the messages on screen with any piled under them. */
+/**
+ * Raise requests, promotions and training still waiting, and the messages on screen with any piled under them.
+ */
 export function Toasts() {
   const hud = useHud();
   const game = useGame();
@@ -217,7 +220,12 @@ export function Toasts() {
   const { shown, piled } = pileUp(hud.toasts);
   const open = hud.toastsOpen;
   if (!open && inspecting(game)) {
-    const requests = [version, raiseRequests(sim.s.staff)[0], promotionRequests(sim.s.staff)[0]].filter(Boolean).length;
+    const requests = [
+      version,
+      raiseRequests(sim.s.staff)[0],
+      promotionRequests(sim.s.staff)[0],
+      heldBack(sim)[0],
+    ].filter(Boolean).length;
     return <Strip newest={[...shown, ...piled]} requests={requests} />;
   }
   return (
@@ -236,6 +244,7 @@ export function Toasts() {
       )}
       <RequestCard which="raise" staff={raiseRequests(sim.s.staff)} />
       <RequestCard which="promotion" staff={promotionRequests(sim.s.staff)} />
+      <RequestCard which="training" staff={heldBack(sim)} />
       <div class={cx('messages', messages)}>
         {(open ? [...shown, ...piled] : shown).map((t) => (
           <Message key={t.id} toast={t} />
@@ -290,10 +299,14 @@ function Strip({ newest, requests }: { newest: Toast[]; requests: number }) {
 const REQUEST_CARDS = {
   raise: { icon: 'bubble-raise', one: 'wants a raise', many: 'want a raise' },
   promotion: { icon: 'ui-upgrade', one: 'is ready for promotion', many: 'are ready for promotion' },
+  training: { icon: 'room-training', one: 'needs training to be promoted', many: 'need training to be promoted' },
 } as const;
 
+/** The staff with the experience for promotion who still need a course for it, in payroll order. */
+const heldBack = (sim: Sim) => sim.s.staff.filter((st) => sim.heldBack(st));
+
 /**
- * One card for everyone asking for a raise, or for a promotion, which stays until each is answered: "Ines Crickmore and
+ * One card for everyone asking for a raise, a promotion or training, which stays until each is answered: "Ines Crickmore and
  * 2 more want a raise". For one, it takes you to them; for several, it opens a list of them under it to pick from, each
  * with what they said in its tooltip.
  */

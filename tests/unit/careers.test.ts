@@ -23,6 +23,7 @@ import {
   caretakerSpeed,
   cheeredUp,
   gainXp,
+  heldBack,
   rankName,
   rankProgress,
   serviceSeconds,
@@ -73,12 +74,20 @@ describe('ranks', () => {
     therapist.quals = ['swedish'];
     therapist.general = [];
     therapist.xp = RANK_XP[1]! - 1;
-    // a free slot: a nudge to train them, but no promotion yet
+    // a free slot: they ask to be trained, for the card for everyone held back, but no promotion yet
     gainXp(ctx, therapist, 1);
     expect(therapist.promotion).toBe(false);
-    expect(drainEvents(ctx).some((e) => e.type === 'toast' && e.text.includes('fill every qualification slot'))).toBe(
-      true,
+    expect(drainEvents(ctx)).toContainEqual(
+      expect.objectContaining({
+        type: 'toast',
+        text: expect.stringContaining('fill every qualification slot'),
+        about: { kind: 'staff', id: therapist.id },
+        request: 'training',
+      }),
     );
+    // and only once at the rank, however much more they earn
+    gainXp(ctx, therapist, 1);
+    expect(drainEvents(ctx)).toEqual([]);
     therapist.general = ['bedside'];
     gainXp(ctx, therapist, 1);
     expect(therapist.promotion).toBe(true);
@@ -91,6 +100,44 @@ describe('ranks', () => {
         request: 'promotion',
       }),
     );
+  });
+
+  it('wait on training while there is the experience but a slot to fill, and no course under way', () => {
+    const { s, receptionist } = openCenter(1);
+    const ctx = createContext(s);
+    receptionist.skill = 2;
+    receptionist.general = ['service'];
+    receptionist.xp = RANK_XP[2]! - 1;
+    // not the experience yet
+    expect(heldBack(ctx, receptionist)).toBe(false);
+    receptionist.xp = RANK_XP[2]!;
+    expect(heldBack(ctx, receptionist)).toBe(true);
+    // on a course that will fill the slot, they are on their way
+    receptionist.training = { course: 'bedside', progress: 0, seconds: 6, cost: 900 };
+    expect(heldBack(ctx, receptionist)).toBe(false);
+    receptionist.training = null;
+    // the slot filled, they ask for the promotion instead
+    receptionist.general = ['service', 'bedside'];
+    expect(heldBack(ctx, receptionist)).toBe(false);
+    receptionist.general = ['service'];
+    receptionist.promotion = true;
+    expect(heldBack(ctx, receptionist)).toBe(false);
+    receptionist.promotion = false;
+    receptionist.state = 'leaving';
+    expect(heldBack(ctx, receptionist)).toBe(false);
+  });
+
+  it('never wait on training at the top rank, nor with every course they can take', () => {
+    const { s, consultant } = openCenter(1);
+    const ctx = createContext(s);
+    consultant.skill = 5;
+    consultant.general = [];
+    consultant.xp = RANK_XP[4]! + 50;
+    expect(heldBack(ctx, consultant)).toBe(false);
+    // a Senior with all three of a consultant's courses has a slot left over, and nothing to fill it with
+    consultant.skill = 4;
+    consultant.general = ['bedside', 'motivation', 'stamina'];
+    expect(heldBack(ctx, consultant)).toBe(false);
   });
 
   it('are asked for by someone with every course they can take, though slots are left over', () => {
