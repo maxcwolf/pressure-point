@@ -6,6 +6,8 @@ import {
   conditionOf,
   IDEAL_TEMP,
   ITEMS,
+  MAX_CHANCE,
+  MIN_CHANCE,
   MODALITIES,
   type Modality,
   modalityLabel,
@@ -20,15 +22,7 @@ import { roomLabels, worksIn } from './assignments';
 import { rankName } from './careers';
 import type { SimContext } from './context';
 import { toast } from './events';
-import {
-  AWAY,
-  type Chance,
-  type ChanceCause,
-  type ChanceFactor,
-  MAX_CHANCE,
-  MIN_CHANCE,
-  settledChance,
-} from './stations';
+import { AWAY, type Chance, type ChanceCause, type ChanceFactor, settledChance } from './stations';
 import type { DeliveryProblem } from './treatments';
 import { warmthAt } from './warmth';
 

@@ -4,33 +4,58 @@ import {
   BOOKCASE_MAX,
   BOOKCASE_SPEEDUP,
   BREAK_REST,
+  CHORE_SECONDS,
+  CLEAN_SECONDS,
   COFFEE_BREAK_BOOST,
   DAY_SECONDS,
   DIRT_CLEAN,
   DIRT_FILTHY,
   DISCOMFORT_MORALE,
+  ENERGY_DRAIN,
   INSTALL_SECONDS,
   isWatered,
   ITEMS,
   LAUNDER_SECONDS,
+  LITTER_MORALE,
+  LITTER_STAFF,
+  LONE_WAIT,
   MAINTENANCE_SPEED,
   MISERABLE_MORALE,
+  MORALE_BASE,
+  MORALE_DRIFT,
+  MORALE_STARS,
   MOTIVATION_SPEED,
+  PAY_MORALE,
+  PAY_MORALE_HIGH,
+  PAY_MORALE_LOW,
   POOL_TABLE_MORALE,
   PROMOTION_SULK,
   QUIT_AFTER,
+  QUIT_REP,
   QUIT_THINKING,
   QUIT_WARNING,
+  RAISE_ASK_MORALE,
+  RAISE_MORALE,
+  RAISE_STEP,
   RED_MONTH_MORALE,
   RED_MORALE,
+  REPAIR_SECONDS,
   RIVAL_NAME,
   ROLES,
   STAFF_NEED_MORALE,
+  STAFF_WALK,
   STAMINA_DRAIN,
+  STAR_MORALE,
+  TIRED_ENERGY,
+  TIRED_WALK,
   traitOf,
   traitSpeed,
+  UNDERPAID,
   VIBES_MORALE,
+  WANDER_CHANCE,
   WEAR_REPAIR,
+  WEARY_ENERGY,
+  WEARY_MORALE,
   XP_PER_JOB,
 } from '../data';
 import { tuning } from '../difficulty';
@@ -156,7 +181,7 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
     return;
   }
   ctx.s.stats.lastQuit = ctx.s.day;
-  changeRep(ctx, -2);
+  changeRep(ctx, -QUIT_REP);
   const text =
     how === 'quit'
       ? `${st.name} has quit. Unhappy staff do not stay.`
@@ -173,7 +198,7 @@ export function fairPay(st: Staff, scale = 1): number {
 
 /** The salary a raise would take them to: the going rate, or 10% more if they already earn it. */
 export function raiseTo(st: Staff, scale = 1): number {
-  return Math.max(fairPay(st, scale), Math.round((st.salary * 1.1) / 10) * 10);
+  return Math.max(fairPay(st, scale), Math.round((st.salary * RAISE_STEP) / 10) * 10);
 }
 
 /** Give a member of staff the raise they are due, which lifts their morale. */
@@ -181,7 +206,7 @@ export function giveRaise(ctx: SimContext, id: number, { sound = true } = {}) {
   const st = staffById(ctx, id);
   if (!st || st.state === 'leaving') return;
   st.salary = raiseTo(st, tuning(ctx.s, 'salaries'));
-  st.morale = Math.min(100, st.morale + 22);
+  st.morale = Math.min(100, st.morale + RAISE_MORALE);
   st.raiseAsked = false;
   st.unhappyT = 0;
   say(st, 'bubble-happy', 4);
@@ -231,17 +256,19 @@ export function trainingSpeed(bookcases: number): number {
 
 /** The morale a member of staff drifts toward: set by their pay, energy, workplace and the state of the center. */
 export function moraleTarget(ctx: SimContext, st: Staff): number {
-  let target = 62 + clamp((st.salary / fairPay(st, tuning(ctx.s, 'salaries')) - 1) * 90, -45, 20);
-  if (st.energy < 20) target -= 18;
+  let target =
+    MORALE_BASE +
+    clamp((st.salary / fairPay(st, tuning(ctx.s, 'salaries')) - 1) * PAY_MORALE, -PAY_MORALE_LOW, PAY_MORALE_HIGH);
+  if (st.energy < WEARY_ENERGY) target -= WEARY_MORALE;
   const post = ctx.world.item(st.post);
   const room = post && st.state === 'atPost' ? ctx.world.roomOfItem(post) : undefined;
-  if (room) target += (prestige(ctx, room) - 2) * 5;
+  if (room) target += (prestige(ctx, room) - MORALE_STARS) * STAR_MORALE;
   if (room && room.vibes > 0) target -= VIBES_MORALE;
   target -= discomfort(warmthAt(ctx, st.tx, st.ty)) * DISCOMFORT_MORALE;
   if (fedUp(st)) target -= STAFF_NEED_MORALE;
   if (hasItem(ctx, 'pool_table')) target += POOL_TABLE_MORALE;
   target += posterMorale(ctx);
-  if (ctx.s.litter.length > 6) target -= 6;
+  if (ctx.s.litter.length > LITTER_STAFF) target -= LITTER_MORALE;
   if (st.promotion) target -= PROMOTION_SULK;
   if (cheeredUp(ctx.s, st)) target += CHEER_MORALE;
   // with the bank in the red they worry about their wages, and more so once it has been there a month
@@ -266,16 +293,16 @@ function updateMorale(ctx: SimContext, st: Staff, dt: number) {
   if (st.state === 'leaving' || st.state === 'arriving' || st.state === 'toCall' || st.state === 'away') return;
   const fair = fairPay(st, tuning(ctx.s, 'salaries'));
   const target = moraleTarget(ctx, st);
-  st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * 0.03), 0, 100);
+  st.morale = clamp(st.morale + (target - st.morale) * Math.min(1, dt * MORALE_DRIFT), 0, 100);
   // cheered up before a Shaman could come: there is no soul to retrieve, and they can be asked for again if need be
   if (st.soulAsked && !burntOut(st.morale)) st.soulAsked = false;
 
   // the underpaid ask for a raise once unhappy; after a month with the bank in the red, so does anyone unhappy, to stay
   const red = ctx.s.bankruptcyOn && ctx.s.money < 0 && longInRed(ctx.s);
-  if (!st.raiseAsked && (st.salary < fair * 0.97 || red) && st.morale < 56) {
+  if (!st.raiseAsked && (st.salary < fair * UNDERPAID || red) && st.morale < RAISE_ASK_MORALE) {
     st.raiseAsked = true;
     say(st, 'bubble-raise', 5);
-    if (st.salary < fair * 0.97)
+    if (st.salary < fair * UNDERPAID)
       staffRequest(
         ctx,
         st,
@@ -373,9 +400,6 @@ function lineElsewhere(ctx: SimContext, st: Staff, it: Item): boolean {
       (isLeadStation(o) ? matsOf(ctx, o).some((m) => lineWaiting(ctx, m)) : lineWaiting(ctx, o)),
   );
 }
-
-/** Seconds a lone guest is left waiting at an unworked station before someone idle at another goes over to them. */
-const LONE_WAIT = 3;
 
 /**
  * Whether a member of staff at a station with nobody to see should go to another of theirs where guests are waiting
@@ -505,11 +529,11 @@ export function caretakerSpeed(st: Staff): number {
 
 /** How long a Caretaker takes over a chore. */
 export function jobSeconds(kind: Job['kind'] | undefined): number {
-  if (kind === 'repair') return 3.2;
+  if (kind === 'repair') return REPAIR_SECONDS;
   if (kind === 'install') return INSTALL_SECONDS;
-  if (kind === 'clean') return 2.4;
+  if (kind === 'clean') return CLEAN_SECONDS;
   if (kind === 'launder') return LAUNDER_SECONDS;
-  return 1.6;
+  return CHORE_SECONDS;
 }
 
 /** Whether a tile is in a room the player has put first. */
@@ -674,7 +698,7 @@ function findWork(ctx: SimContext, st: Staff) {
     if (takeOver(ctx, st)) return;
   }
   // nothing to do: amble about, inside their own rooms if they have been assigned some
-  if (st.state === 'idle' && random(s) < 0.25) {
+  if (st.state === 'idle' && random(s) < WANDER_CHANCE) {
     const own = st.rooms.map((id) => ctx.world.room(id)).filter((r) => r !== undefined);
     if (own.length) {
       if (wander(ctx, st, pick(s, own))) st.state = 'wander';
@@ -722,14 +746,14 @@ function smudgeStep(ctx: SimContext, st: Staff, dt: number) {
 /** Move one member of staff forward in time: walking, morale, energy and what they do next. */
 export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
   if (st.bubbleT > 0) st.bubbleT -= dt;
-  let walk = 2.3;
+  let walk = STAFF_WALK;
   let stamina = 1;
   for (const t of st.traits) {
     walk *= traitOf(t).walk ?? 1;
     stamina *= traitOf(t).stamina ?? 1;
   }
   if (hasGeneral(st, 'stamina')) stamina *= STAMINA_DRAIN;
-  if (st.energy < 15) walk *= 0.75;
+  if (st.energy < TIRED_ENERGY) walk *= TIRED_WALK;
   const arrived = moveAlong(st, dt, walk);
   // someone who quits this very step has only just set off for the door
   const wasLeaving = st.state === 'leaving';
@@ -739,7 +763,11 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
   growNeeds(ctx, st, dt, breakRoom(ctx, st));
   if (st.state === 'onBreak') st.energy = Math.min(100, st.energy + dt * BREAK_REST * breakBoost(ctx, st));
   else if (st.state !== 'leaving' && st.state !== 'training' && st.state !== 'away') {
-    const rate = st.busy ? 0.42 * (st.strain || 1) : st.state === 'atPost' ? 0.14 : 0.2;
+    const rate = st.busy
+      ? ENERGY_DRAIN.busy * (st.strain || 1)
+      : st.state === 'atPost'
+        ? ENERGY_DRAIN.post
+        : ENERGY_DRAIN.about;
     st.energy = Math.max(0, st.energy - rate * stamina * tuning(ctx.s, 'tiredness') * dt);
   }
 

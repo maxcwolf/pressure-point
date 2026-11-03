@@ -1,4 +1,5 @@
-// The numbers that tune the game: time, fees, loans and wear. Each center's goals are in centers.ts.
+// The numbers that tune the game: time, fees, loans and wear, staff at work, guests, and how treatments go. Each
+// center's goals are in centers.ts.
 
 import type { Role } from './types';
 
@@ -434,3 +435,138 @@ export const WOMEN_APPLY: Readonly<Record<Role, number>> = {
 };
 /** Share of guests and visitors who are women. */
 export const WOMEN_VISIT = 0.5;
+
+// Staff at work: pay and morale, energy, and the time chores take.
+
+/** What a member of staff quitting or poached by the rival costs in reputation. */
+export const QUIT_REP = 2;
+/** What a raise takes a salary to when it is already at the going rate: 10% more. */
+export const RAISE_STEP = 1.1;
+/** How much a raise lifts morale. */
+export const RAISE_MORALE = 22;
+/**
+ * The morale staff settle toward at fair pay with nothing else to say about it, and how much it moves for pay above
+ * or below fair: `PAY_MORALE` for each fair salary's worth, but no more than `PAY_MORALE_HIGH` up or `PAY_MORALE_LOW`
+ * down.
+ */
+export const MORALE_BASE = 62;
+export const PAY_MORALE = 90;
+export const PAY_MORALE_HIGH = 20;
+export const PAY_MORALE_LOW = 45;
+/** Below this energy staff are weary, which takes this much off the morale they settle toward. */
+export const WEARY_ENERGY = 20;
+export const WEARY_MORALE = 18;
+/** How much each star of their room's prestige moves the morale staff at their post settle toward, from this many. */
+export const STAR_MORALE = 5;
+export const MORALE_STARS = 2;
+/** With more than this much litter about, staff settle this much lower. */
+export const LITTER_STAFF = 6;
+export const LITTER_MORALE = 6;
+/** How much of the way to the morale they settle toward staff go each second. */
+export const MORALE_DRIFT = 0.03;
+/** Staff below this share of fair pay are underpaid, and ask for a raise once their morale falls below the second. */
+export const UNDERPAID = 0.97;
+export const RAISE_ASK_MORALE = 56;
+/** How fast staff walk, in tiles a second. */
+export const STAFF_WALK = 2.3;
+/** Below this energy staff are worn out: they walk and work slower, and their treatments work less often. */
+export const TIRED_ENERGY = 15;
+/** How fast worn-out staff walk and work, against usual. */
+export const TIRED_WALK = 0.75;
+export const TIRED_PACE = 0.6;
+/** The energy staff lose each second: busy with a guest (times the work's strain), at their post, and otherwise. */
+export const ENERGY_DRAIN = { busy: 0.42, post: 0.14, about: 0.2 } as const;
+/** The chance, each time they look for work and find none, that staff wander off somewhere. */
+export const WANDER_CHANCE = 0.25;
+/** Seconds a lone guest is left waiting at an unworked station before someone idle at another goes over to them. */
+export const LONE_WAIT = 3;
+/** How long a Caretaker takes to repair something, to clean it, and to pick up litter or water a plant, in seconds. */
+export const REPAIR_SECONDS = 3.2;
+export const CLEAN_SECONDS = 2.4;
+export const CHORE_SECONDS = 1.6;
+
+// Guests: how often they come, what they need while they wait, and how patient they are.
+
+/**
+ * The seconds between one new guest and the next with nothing else moving the pace, at no reputation, and how many
+ * fewer for each point of reputation.
+ */
+export const ARRIVAL_SECONDS = 30;
+export const ARRIVAL_REP = 0.2;
+/** The most thirst, hunger and need for the toilet a guest arrives with. */
+export const ARRIVAL_NEEDS = { thirst: 45, hunger: 40, bladder: 40 } as const;
+/** How fast a guest's thirst, hunger and need for the toilet grow, in points a second. */
+export const NEED_RATES = { thirst: 0.5, hunger: 0.36, bladder: 0.42 } as const;
+/** The need for the toilet, thirst and hunger past which a waiting guest breaks off to see to it. */
+export const NEED_AT = { toilet: 75, drink: 70, eat: 75 } as const;
+/** How long a guest takes on the toilet, at a game and over a drink or a snack, in seconds. */
+export const TOILET_SECONDS = 3.5;
+export const GAME_SECONDS = 3;
+export const SNACK_SECONDS = 2.2;
+/** How much patience a drink, a snack or a toilet gives back. */
+export const NEED_PATIENCE = 8;
+/** How much a drink adds to the need for the toilet. */
+export const DRINK_BLADDER = 22;
+/** How fast guests walk, in tiles a second, and with a stiff condition not yet healed. */
+export const GUEST_WALK = 2.1;
+export const STIFF_WALK = 1.75;
+/** How fast a waiting guest loses patience, in points a second, before anything around them is counted. */
+export const PATIENCE_DRAIN = 0.85;
+/** How much faster they lose it once thirst, hunger or the toilet can wait no longer. */
+export const NEEDY_DRAIN = 1.6;
+/** What a guest leaving fed up costs in reputation. */
+export const STORM_REP = 3;
+/** How far a waiting guest sees litter from, in tiles. */
+export const LITTER_SIGHT = 2;
+/**
+ * A guest with a snack's wrapper does something with it now and then, at this chance each time they think: it goes in
+ * a bin within `BIN_REACH` tiles but for `LITTER_NEAR_BIN` of the time, and on the floor `LITTER_NO_BIN` of the time
+ * with none near.
+ */
+export const WRAPPER_CHANCE = 0.2;
+export const BIN_REACH = 7;
+export const LITTER_NEAR_BIN = 0.12;
+export const LITTER_NO_BIN = 0.9;
+
+// Stations: how fast staff work, how likely a treatment is to work, and what it does for the center's name.
+
+/**
+ * How fast staff work at a station, against usual: `base`, and `rank` more for each rank of skill, times `mood` and a
+ * point more for each `morale` points of morale (0.9 when miserable, 1.1 at the top).
+ */
+export const SERVICE_PACE = { base: 0.85, rank: 0.05, mood: 0.9, morale: 500 } as const;
+/** A treatment's chance of working before anything about it is counted. */
+export const BASE_CHANCE = 0.56;
+/** What each rank of skill adds to the chance. */
+export const SKILL_SUCCESS = 0.09;
+/** What a certain diagnosis adds to the chance, a less certain one in proportion. */
+export const DIAGNOSIS_SUCCESS = 0.15;
+/** What a member of staff worn out below `TIRED_ENERGY` takes off the chance. */
+export const TIRED_PENALTY = 0.15;
+/** What each star of a room's prestige past the first adds to a service's results there. */
+export const PRESTIGE_SUCCESS = 0.02;
+/** The least and the most a treatment's chance can be before a botch cuts it. */
+export const MIN_CHANCE = 0.3;
+export const MAX_CHANCE = 0.98;
+/**
+ * How sure of a diagnosis a consultation makes a Consultant: `base`, `rank` more for each rank of skill, and up to
+ * `luck` more by chance.
+ */
+export const CONSULT_GAIN = { base: 0.4, rank: 0.13, luck: 0.15 } as const;
+/** After this many consultations a guest goes for treatment, however unsure the diagnosis. */
+export const CONSULTS_MAX = 4;
+/** How much patience being seen to gives back, and from a grump. */
+export const SEEN_PATIENCE = 30;
+export const GRUMP_PATIENCE = 10;
+/** The prestige from which a treated guest finds the room fine. */
+export const FINE_ROOM = 4;
+/**
+ * What a heal earns in reputation, a point more for a guest who was still fully patient: times 1 at standard prices,
+ * and `PRICE_REP` more or less for each standard price's worth the treatment costs below or above it.
+ */
+export const HEAL_REP = 1.8;
+export const PRICE_REP = 0.25;
+/** What a failed treatment costs in reputation. */
+export const FAIL_REP = 2.5;
+/** What a guest put off by the price costs in reputation. */
+export const PRICED_REP = 1;

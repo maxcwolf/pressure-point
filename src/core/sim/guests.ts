@@ -1,7 +1,11 @@
 // Guests: arriving, waiting their turn, looking after their needs and leaving.
 
 import {
+  ARRIVAL_NEEDS,
+  ARRIVAL_REP,
+  ARRIVAL_SECONDS,
   BEDSIDE_PATIENCE,
+  BIN_REACH,
   BORED_PATIENCE,
   type ConditionId,
   conditionOf,
@@ -9,20 +13,36 @@ import {
   DAYS_PER_MONTH,
   DIRT_FILTHY,
   DISCOMFORT_DRAIN,
+  DRINK_BLADDER,
   EMERGENCY_CONDITION,
   FILTHY_PATIENCE,
+  GAME_SECONDS,
   GUEST_CAP,
+  GUEST_WALK,
   HEAT_THIRST,
   ITEMS,
+  LITTER_NEAR_BIN,
+  LITTER_NO_BIN,
+  LITTER_SIGHT,
   LONG_WAIT_PATIENCE,
+  NEED_AT,
+  NEED_PATIENCE,
+  NEED_RATES,
+  NEEDY_DRAIN,
+  PATIENCE_DRAIN,
   PLAY_PATIENCE,
   PLAY_RANGE,
   PLEASANT_DRAIN,
   ROOMS,
   RUNAWAY_SPEED,
   SEAT_DRAIN,
+  SNACK_SECONDS,
+  STIFF_WALK,
+  STORM_REP,
   STRESS_DRAIN,
+  TOILET_SECONDS,
   WOMEN_VISIT,
+  WRAPPER_CHANCE,
 } from '../data';
 import { tuning } from '../difficulty';
 import { randomLook, randomName, rollSex } from '../people';
@@ -114,10 +134,10 @@ export interface ArrivalPace {
 const MONTH = DAY_SECONDS * DAYS_PER_MONTH;
 
 /**
- * How often guests arrive now: every `30 − 0.2 × reputation` seconds, more often for each staffed treatment station
- * past the first, and as the center's twist, its season or rush hour and its grade say, less often while the rival
- * draws some away or long lines put new guests off, and as the difficulty sets. Each signature machine with someone to
- * run it draws guests of its own on top, at a share of the same pace.
+ * How often guests arrive now: every `ARRIVAL_SECONDS − ARRIVAL_REP × reputation` seconds, more often for each
+ * staffed treatment station past the first, and as the center's twist, its season or rush hour and its grade say, less
+ * often while the rival draws some away or long lines put new guests off, and as the difficulty sets. Each signature
+ * machine with someone to run it draws guests of its own on top, at a share of the same pace.
  */
 export function arrivalPace(ctx: SimContext): ArrivalPace {
   const s = ctx.s;
@@ -127,8 +147,8 @@ export function arrivalPace(ctx: SimContext): ArrivalPace {
   const lines = lineArrivals(demand(ctx));
   const difficulty = tuning(s, 'arrivals');
   const pace = parts.center * parts.time * parts.grade * parts.rival * parts.mishap;
-  const between = (30 - s.reputation * 0.2) / pace / staffed / lines / difficulty;
-  const base = MONTH / (30 - s.reputation * 0.2);
+  const between = (ARRIVAL_SECONDS - s.reputation * ARRIVAL_REP) / pace / staffed / lines / difficulty;
+  const base = MONTH / (ARRIVAL_SECONDS - s.reputation * ARRIVAL_REP);
   const tables = MONTH / between;
   const machines = machineDemand(ctx, cap).map((d) => ({ demand: d, perMonth: base * pace * difficulty * d.pull }));
   const wave = waveGuests(s, tables);
@@ -281,9 +301,9 @@ export function spawnGuest(
     state: 'enter',
     station: 0,
     needKind: '',
-    thirst: rnd(s, 0, 45),
-    hunger: rnd(s, 0, 40),
-    bladder: rnd(s, 0, 40),
+    thirst: rnd(s, 0, ARRIVAL_NEEDS.thirst),
+    hunger: rnd(s, 0, ARRIVAL_NEEDS.hunger),
+    bladder: rnd(s, 0, ARRIVAL_NEEDS.bladder),
     patience: 100,
     lowest: 100,
     diagnosis: emergency ? 1 : 0,
@@ -439,14 +459,14 @@ export function seatDrain(ctx: SimContext, g: Guest): number {
 export function needRelief(need: Need | '', dirt: number): number {
   if (need === 'play') return PLAY_PATIENCE;
   if (need === 'toilet' && dirt >= DIRT_FILTHY) return -FILTHY_PATIENCE;
-  return 8;
+  return NEED_PATIENCE;
 }
 
 /** What a waiting guest most wants to break off for, if anything: the toilet, a drink, a snack, or a game. */
 export function needNow(g: Guest): Need | '' {
-  if (g.bladder > 75) return 'toilet';
-  if (g.thirst > 70) return 'drink';
-  if (g.hunger > 75) return 'eat';
+  if (g.bladder > NEED_AT.toilet) return 'toilet';
+  if (g.thirst > NEED_AT.drink) return 'drink';
+  if (g.hunger > NEED_AT.eat) return 'eat';
   if (g.patience < BORED_PATIENCE) return 'play';
   return '';
 }
@@ -491,7 +511,11 @@ function noticeSurroundings(ctx: SimContext, g: Guest) {
   if (drainFactor(ctx, g.tx, g.ty) <= PLEASANT_DRAIN) feel(g, 'pleasant');
   if (g.pose === 'sit') feel(g, 'comfy');
   feelTemperature(g, warmthAt(ctx, g.tx, g.ty));
-  if (ctx.s.litter.some((l) => !l.flood && !l.accident && Math.abs(l.x - g.tx) <= 2 && Math.abs(l.y - g.ty) <= 2))
+  if (
+    ctx.s.litter.some(
+      (l) => !l.flood && !l.accident && Math.abs(l.x - g.tx) <= LITTER_SIGHT && Math.abs(l.y - g.ty) <= LITTER_SIGHT,
+    )
+  )
     feel(g, 'litter');
   if (messNear(ctx.s, g.tx, g.ty)) feel(g, 'mess');
 }
@@ -549,11 +573,11 @@ function waitingThink(ctx: SimContext, g: Guest) {
     return;
   }
 
-  if (g.hasWrapper && random(ctx.s) < 0.2) {
+  if (g.hasWrapper && random(ctx.s) < WRAPPER_CHANCE) {
     g.hasWrapper = false;
-    const nearBin = ctx.s.items.some((i) => i.type === 'bin' && Math.hypot(i.x - g.tx, i.y - g.ty) < 7);
+    const nearBin = ctx.s.items.some((i) => i.type === 'bin' && Math.hypot(i.x - g.tx, i.y - g.ty) < BIN_REACH);
     const clear = !ctx.s.litter.some((l) => l.x === g.tx && l.y === g.ty);
-    if (clear && random(ctx.s) < (nearBin ? 0.12 : 0.9))
+    if (clear && random(ctx.s) < (nearBin ? LITTER_NEAR_BIN : LITTER_NO_BIN))
       ctx.s.litter.push({ id: ctx.s.nextId++, x: g.tx, y: g.ty, claimedBy: 0 });
   }
 
@@ -571,13 +595,13 @@ function waitingThink(ctx: SimContext, g: Guest) {
 /** Move one guest forward in time: needs, patience, walking and what they do next. */
 export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   const temp = warmthAt(ctx, g.tx, g.ty);
-  g.thirst = Math.min(100, g.thirst + dt * 0.5 * (1 + hotness(temp) * HEAT_THIRST));
-  g.hunger = Math.min(100, g.hunger + dt * 0.36);
-  g.bladder = Math.min(100, g.bladder + dt * 0.42);
+  g.thirst = Math.min(100, g.thirst + dt * NEED_RATES.thirst * (1 + hotness(temp) * HEAT_THIRST));
+  g.hunger = Math.min(100, g.hunger + dt * NEED_RATES.hunger);
+  g.bladder = Math.min(100, g.bladder + dt * NEED_RATES.bladder);
   if (g.bubbleT > 0) g.bubbleT -= dt;
   const stiff = g.outcome !== 'healed' && conditionOf(g.condition).visual === 'stiff';
   // someone on a really bad trip runs
-  const pace = g.state === 'running' ? RUNAWAY_SPEED : stiff ? 1.75 : 2.1;
+  const pace = g.state === 'running' ? RUNAWAY_SPEED : stiff ? STIFF_WALK : GUEST_WALK;
   const arrived = moveAlong(g, dt, pace * puddleSlow(ctx, g));
   if (worsen(ctx, g, dt)) return;
 
@@ -588,12 +612,12 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
   // bursting in a line since they last tried for a toilet: how long they have held on, which they cannot do for ever
   holdOn(ctx, g, dt, waiting && g.state !== 'toNeed' && g.state !== 'need');
   if (waiting) {
-    let drain = 0.85 * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
+    let drain = PATIENCE_DRAIN * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
     // the one they are waiting for has a good bedside manner: at a mat, the Sound Healer at the bowls
     const station = ctx.world.item(g.station);
     if (station && hasGeneral(stationStaff(ctx, station), 'bedside')) drain *= BEDSIDE_PATIENCE;
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
-    if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= 1.6;
+    if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= NEEDY_DRAIN;
     if (g.stressed) drain *= STRESS_DRAIN;
     // a loyal regular is used to the wait
     drain *= regularPatience(ctx.s, g) * tuning(ctx.s, 'patience');
@@ -650,7 +674,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     case 'toNeed':
       if (arrived) {
         g.state = 'need';
-        g.timer = g.needKind === 'toilet' ? 3.5 : g.needKind === 'play' ? 3 : 2.2;
+        g.timer = g.needKind === 'toilet' ? TOILET_SECONDS : g.needKind === 'play' ? GAME_SECONDS : SNACK_SECONDS;
         g.busy = g.needKind !== 'toilet';
       } else if (!g.path) goWait(ctx, g);
       break;
@@ -677,7 +701,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
         }
         if (g.needKind === 'drink') {
           g.thirst = 0;
-          g.bladder = Math.min(100, g.bladder + 22);
+          g.bladder = Math.min(100, g.bladder + DRINK_BLADDER);
         } else if (g.needKind === 'eat') {
           g.hunger = 0;
           g.hasWrapper = true;
@@ -701,7 +725,7 @@ function stormOut(ctx: SimContext, g: Guest) {
   g.outcome = 'stormed';
   countVisit(ctx, g, 'stormed');
   noteStormed(ctx, g);
-  changeRep(ctx, -3);
+  changeRep(ctx, -STORM_REP);
   say(g, 'bubble-annoyed', 8);
   emit(ctx, { type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });
   tipOnce(

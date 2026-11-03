@@ -3,26 +3,45 @@
 import {
   ASSESS_FEE,
   BARGAIN,
+  BASE_CHANCE,
   BOTCH_FACTOR,
   centerOf,
   conditionOf,
   CONSULT_FEE,
+  CONSULT_GAIN,
+  CONSULTS_MAX,
+  DIAGNOSIS_SUCCESS,
+  FAIL_REP,
+  FINE_ROOM,
+  GRUMP_PATIENCE,
   GRUMP_REP,
   GUESS_PENALTY,
+  HEAL_REP,
   ITEMS,
+  MAX_CHANCE,
+  MIN_CHANCE,
   MODALITIES,
   modalityLabel,
   MOTIVATION_SPEED,
+  PRESTIGE_SUCCESS,
+  PRICE_REP,
+  PRICED_REP,
   PRICEY,
   RANKS,
   ROOMS,
   SCAN_SUCCESS,
+  SEEN_PATIENCE,
+  SERVICE_PACE,
   SERVICE_SPEED,
   SHOP_CHANCE,
   SHOP_LINE_SKIP,
   SHOP_SPEND,
+  SKILL_SUCCESS,
   STONE_USE,
   STRUCTURAL_SURE,
+  TIRED_ENERGY,
+  TIRED_PACE,
+  TIRED_PENALTY,
   traitMost,
   traitSpeed,
   TRIP_DISCOMFORT,
@@ -158,17 +177,15 @@ export function pickStation(ctx: SimContext, g: Guest): Item | null {
  * faster a colleague who Holds Space nearby makes them (`heldSpace`).
  */
 export function serviceSeconds(base: number, st: Staff, held = 1) {
-  let speed = 0.85 + st.skill * 0.05;
+  let speed = SERVICE_PACE.base + st.skill * SERVICE_PACE.rank;
   speed *= traitSpeed(st.traits) * held;
   if (hasGeneral(st, 'motivation')) speed *= MOTIVATION_SPEED;
   if (hasGeneral(st, 'service')) speed *= SERVICE_SPEED;
-  if (st.energy < 15) speed *= 0.6;
-  speed *= 0.9 + st.morale / 500;
+  if (st.energy < TIRED_ENERGY) speed *= TIRED_PACE;
+  speed *= SERVICE_PACE.mood + st.morale / SERVICE_PACE.morale;
   return base / speed;
 }
 
-/** What each star of a room's prestige past the first adds to a service's results there. */
-export const PRESTIGE_SUCCESS = 0.02;
 /** The most stars of prestige a room can have. */
 const MAX_PRESTIGE = 5;
 
@@ -245,20 +262,6 @@ export interface Chance {
   proper: number;
   factors: ChanceFactor[];
 }
-
-/** A treatment's chance of working before anything about it is counted. */
-export const BASE_CHANCE = 0.56;
-/** What each rank of skill adds to the chance. */
-export const SKILL_SUCCESS = 0.09;
-/** What a certain diagnosis adds to the chance, a less certain one in proportion. */
-export const DIAGNOSIS_SUCCESS = 0.15;
-/** What a member of staff worn out below `TIRED_ENERGY` takes off the chance. */
-export const TIRED_PENALTY = 0.15;
-/** The energy below which a member of staff is worn out. */
-export const TIRED_ENERGY = 15;
-/** The least and the most a treatment's chance can be before a botch cuts it. */
-export const MIN_CHANCE = 0.3;
-export const MAX_CHANCE = 0.98;
 
 /**
  * Every term in the chance a guest's treatment at this table works if this member of staff gives it now: better with
@@ -486,7 +489,7 @@ export function goForTreatment(ctx: SimContext, g: Guest) {
     feel(g, 'pricey');
     countVisit(ctx, g, 'priced');
     notePriced(ctx, g);
-    changeRep(ctx, -1);
+    changeRep(ctx, -PRICED_REP);
     say(g, 'bubble-cant-afford', 6);
     emit(ctx, { type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
     tipOnce(
@@ -518,7 +521,7 @@ export function goOnGuess(ctx: SimContext, g: Guest) {
 function completeScan(ctx: SimContext, it: Item, g: Guest) {
   it.serving = 0;
   it.progress = 0;
-  g.patience = Math.min(100, g.patience + 30);
+  g.patience = Math.min(100, g.patience + SEEN_PATIENCE);
   addWear(ctx, it);
   g.consults++;
   g.diagnosis = 1;
@@ -575,7 +578,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   if (hasGeneral(staff, 'bedside')) feel(g, 'kind');
   // how patient they still were, before the lift of being seen to, for what a heal does for the center's name
   const kept = g.patience;
-  g.patience = Math.min(100, g.patience + (grump ? 10 : 30));
+  g.patience = Math.min(100, g.patience + (grump ? GRUMP_PATIENCE : SEEN_PATIENCE));
   addWear(ctx, it);
   const nice = prestigeBonus(ctx, it);
   const price = ctx.s.priceLevel;
@@ -599,7 +602,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.consults++;
     // a structural condition is plain to see but not to pin down: a consultation gets no surer of it than this
     const structural = !!conditionOf(g.condition).structural;
-    const gain = 0.4 + staff.skill * 0.13 + rnd(ctx.s, 0, 0.15);
+    const gain = CONSULT_GAIN.base + staff.skill * CONSULT_GAIN.rank + rnd(ctx.s, 0, CONSULT_GAIN.luck);
     g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? STRUCTURAL_SURE : 1);
     const fee = Math.round(CONSULT_FEE * price);
     earn(ctx, fee, 'consult', g.x, g.y);
@@ -610,7 +613,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         g.goal = 'assess';
         say(g, 'bubble-question');
       } else goOnGuess(ctx, g);
-    } else if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) goForTreatment(ctx, g);
+    } else if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= CONSULTS_MAX) goForTreatment(ctx, g);
     else {
       // unsure: a scan settles it if there is a scanner working, otherwise it is back to the Consultant
       g.goal = canScan(ctx) ? 'assess' : 'consult';
@@ -633,7 +636,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     else if (problem) feel(g, 'no-kit');
     const room = ctx.world.roomOfItem(it);
     const stars = room ? prestige(ctx, room) : 0;
-    if (stars >= 4) feel(g, 'fine-room');
+    if (stars >= FINE_ROOM) feel(g, 'fine-room');
     // a center that stands higher has guests who expect a finer room
     else if (room && stars < expectedPrestige(ctx.s)) feel(g, 'underwhelmed');
     if (room && room.vibes > 0) feel(g, 'bad-vibes');
@@ -673,7 +676,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
       // good value earns a better name than a steep bill does
-      changeRep(ctx, (1.8 + kept / 100) * (1.25 - 0.25 * treatPrice) * (grump ? GRUMP_REP : 1));
+      changeRep(ctx, (HEAL_REP + kept / 100) * (1 + PRICE_REP - PRICE_REP * treatPrice) * (grump ? GRUMP_REP : 1));
       postAboutIt(ctx, staff);
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
       // and a machine may send them off with something, a glass of cider, say
@@ -688,7 +691,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       countVisit(ctx, g, 'failed');
       // why it failed, from the terms the roll used, before the failure's own bad vibes cloud the room
       noteFailure(ctx, it, staff, g, recordFailure(ctx, it, staff, g, odds, handsSave(staff)));
-      changeRep(ctx, -2.5);
+      changeRep(ctx, -FAIL_REP);
       if (room) addVibes(ctx, room);
       // a thumb down: not the hourglass of a guest about to walk out
       say(g, 'bubble-failed', 6);
