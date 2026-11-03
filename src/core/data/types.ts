@@ -275,6 +275,28 @@ export interface ItemDef {
   thermostat?: boolean;
   /** A table with linens on it, soiled a little with each session until a Caretaker changes them. */
   linens?: boolean;
+  /**
+   * Where the fresh linens come from and the used ones go, until a Caretaker launders them: it starts empty, and
+   * `Item.water` counts the used linens in it.
+   */
+  hamper?: boolean;
+  /**
+   * It runs down, and a Caretaker under the duty tops it up once it falls to `at` (`Item.water`). A plant dries out by
+   * `dries` a second. A Stone Warmer's stones cool as fast as the warmth around them lets them, and each session of the
+   * technique that needs them spends `use` of their heat; below that they are no use.
+   */
+  tending?: { duty: 'plants'; at: number; dries: number } | { duty: 'stones'; at: number; use: number };
+  /**
+   * It puts fires out: a room with a working one within `EXTINGUISHER_REACH` of its door has fire cover, and a
+   * Caretaker puts a fire there out quickly.
+   */
+  extinguisher?: boolean;
+  /** Guests within `BIN_REACH` of one put their wrappers in it, mostly, rather than on the floor. */
+  bin?: boolean;
+  /** A chart for a treatment room's wall: treatments there work `CHART_BONUS` more often. Only one counts. */
+  chart?: boolean;
+  /** Bad vibes in its room fade `CHIMES_FADE` times as fast. */
+  chimes?: boolean;
   /** It has a front and a back, so a marker shows which way it will face while it is being placed. */
   front?: boolean;
   /**

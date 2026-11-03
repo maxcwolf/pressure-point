@@ -1,5 +1,7 @@
 // Every item that can be placed: furniture, equipment and decor.
 
+import { ROOMS } from './rooms';
+import { STONE_USE } from './rules';
 import type { ItemDef, ItemType, RoomType } from './types';
 
 export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
@@ -172,6 +174,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     decor: 1,
     reach: 2,
+    tending: { duty: 'plants', at: 40, dries: 0.3 },
   },
   tea_station: {
     type: 'tea_station',
@@ -216,6 +219,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     where: 'any',
     access: [],
     inMenu: true,
+    bin: true,
   },
   fountain: {
     type: 'fountain',
@@ -245,6 +249,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     access: [],
     inMenu: true,
     unlock: 2,
+    tending: { duty: 'stones', at: 55, use: STONE_USE },
   },
   stretch_rack: {
     type: 'stretch_rack',
@@ -574,6 +579,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     decor: 1,
     reach: 2,
+    extinguisher: true,
   },
   arcade_machine: {
     type: 'arcade_machine',
@@ -921,6 +927,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     where: 'any',
     access: [],
     inMenu: true,
+    hamper: true,
   },
   fireplace: {
     type: 'fireplace',
@@ -984,6 +991,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     decor: 2,
     reach: 5,
     noise: 1,
+    chimes: true,
   },
   fortune_teller: {
     type: 'fortune_teller',
@@ -1091,6 +1099,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     unlock: 1,
     decor: 1,
     reach: 2,
+    chart: true,
   },
   meridian_poster: {
     type: 'meridian_poster',
@@ -1108,6 +1117,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     unlock: 1,
     decor: 1,
     reach: 2,
+    chart: true,
   },
   television: {
     type: 'television',
@@ -1169,6 +1179,7 @@ export const ITEMS: Readonly<Record<ItemType, ItemDef>> = {
     inMenu: true,
     unlock: 2,
     decor: 5,
+    tending: { duty: 'plants', at: 40, dries: 0.2 },
   },
   wall_fountain: {
     type: 'wall_fountain',
@@ -1560,7 +1571,22 @@ export const ITEM_MENU: readonly ItemType[] = [
 export const renamedItem = (type: string): string => (type === 'recliner' ? 'lounger' : type);
 
 /** Whether an item is living, and dries out until a Caretaker waters it: a Potted Plant, or a Living Wall. */
-export const isWatered = (type: ItemType) => type === 'plant' || type === 'living_wall';
+export const isWatered = (type: ItemType) => ITEMS[type].tending?.duty === 'plants';
+
+/** How much of its heat equipment spends on each session it is used for, as a Stone Warmer's stones do: 0 for most. */
+export function heatPerUse(type: ItemType): number {
+  const tending = ITEMS[type].tending;
+  return tending?.duty === 'stones' ? tending.use : 0;
+}
+
+/** What a kind of equipment costs to run for a month: a treatment machine's, or that of one that runs itself. */
+export const itemUpkeep = (type: ItemType) => ITEMS[type].machine?.upkeep ?? ITEMS[type].upkeep ?? 0;
+
+/** What to call the place a station is in: its room, or the item itself in a corridor. */
+export function stationPlace(it: { type: ItemType }): string {
+  const where = ITEMS[it.type].where;
+  return where === 'corridor' || where === 'any' || where === 'outdoors' ? ITEMS[it.type].name : ROOMS[where].name;
+}
 
 /** Every kind of room an item may go in, for one that goes in rooms. */
 export function roomsFor(def: Pick<ItemDef, 'where' | 'alsoIn'>): RoomType[] {

@@ -19,6 +19,7 @@ import {
 } from '../../src/core/data';
 import type { Discipline, Modality } from '../../src/core/data/types';
 import { modalityAdvice, postingAdvice, unfedAdvice, untrainedAdvice } from '../../src/core/sim/advisor';
+import { admitGuests, type ArrivalPace, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/arrivals';
 import { makeCall } from '../../src/core/sim/calls';
 import { slotFree } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
@@ -35,8 +36,9 @@ import {
   onOffer,
   unfedStations,
 } from '../../src/core/sim/demand';
-import { admitGuests, type ArrivalPace, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
-import { leftForSpecialist, nextInLine, pickStation } from '../../src/core/sim/stations';
+import { pickStation } from '../../src/core/sim/lines';
+import { nextInLine } from '../../src/core/sim/stations';
+import { leftForSpecialist } from '../../src/core/sim/treatments';
 import { newGame } from '../../src/core/state/game';
 import type { GameState, Guest, Item } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';

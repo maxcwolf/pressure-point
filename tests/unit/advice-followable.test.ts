@@ -6,15 +6,8 @@ import { DAYS_PER_MONTH, INSOLVENCY_DAYS, LOAN_STEP } from '../../src/core/data'
 import { an } from '../../src/core/format';
 import { advice, bottleneckAdvice, newSalary } from '../../src/core/sim/advisor';
 import type { SimContext } from '../../src/core/sim/context';
-import {
-  cashflow,
-  letGoLine,
-  loanLimit,
-  monthEnd,
-  payIntoRed,
-  spareHand,
-  updateInsolvency,
-} from '../../src/core/sim/economy';
+import { cashflow, letGoLine, loanLimit, spareHand } from '../../src/core/sim/economy';
+import { monthEnd, payIntoRed, updateInsolvency } from '../../src/core/sim/payday';
 import { monthSoFar } from '../../src/core/sim/records';
 import type { Item } from '../../src/core/state/types';
 import { addStaffRoom, hire, openCenter, runUntil, toasts } from './helpers';

@@ -3,41 +3,48 @@
 import {
   ASSESS_FEE,
   BARGAIN,
-  BOTCH_FACTOR,
+  BASE_CHANCE,
   centerOf,
   conditionOf,
   CONSULT_FEE,
+  CONSULT_GAIN,
+  CONSULTS_MAX,
+  DIAGNOSIS_SUCCESS,
+  FAIL_REP,
+  FINE_ROOM,
+  GRUMP_PATIENCE,
   GRUMP_REP,
   GUESS_PENALTY,
+  HEAL_REP,
+  heatPerUse,
   ITEMS,
   MODALITIES,
   modalityLabel,
-  MOTIVATION_SPEED,
+  PRESTIGE_SUCCESS,
+  PRICE_REP,
+  PRICED_REP,
   PRICEY,
   RANKS,
   ROOMS,
   SCAN_SUCCESS,
-  SERVICE_SPEED,
-  SHOP_CHANCE,
-  SHOP_LINE_SKIP,
-  SHOP_SPEND,
-  STONE_USE,
+  SEEN_PATIENCE,
+  SKILL_SUCCESS,
   STRUCTURAL_SURE,
+  TIRED_ENERGY,
+  TIRED_PENALTY,
   traitMost,
-  traitSpeed,
   TRIP_DISCOMFORT,
   UPGRADE_LEVELS,
   XP_PER_GUEST,
 } from '../data';
 import { tuning } from '../difficulty';
-import { random, rnd, type Rng } from '../random';
-import type { GameState, Guest, Item, Staff, StaffState } from '../state/types';
-import { at, clamp, must } from '../util';
+import { random, rnd } from '../random';
+import type { GameState, Guest, Item, Staff } from '../state/types';
+import { clamp, must } from '../util';
 import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
-import { worksAt } from './assignments';
 import { trackBusy } from './bottleneck';
-import { gainXp, habitOf, hasGeneral, heldSpace } from './careers';
+import { gainXp, habitOf, hasGeneral, heldSpace, serviceSeconds } from './careers';
 import { badTrip, blessBonus, goodTrip, isTrip, settingWeight } from './ceremonies';
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
@@ -45,13 +52,12 @@ import { dueForSpot, isClassLead, restDue, updateClass } from './classes';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
-import { handsSave, recordFailure } from './failures';
-import { feel, reviewStars } from './feelings';
-import { decide, goWait, leave, resetGuest } from './guests';
+import { type Chance, type ChanceFactor, handsSave, recordFailure, settledChance } from './failures';
+import { feel } from './feelings';
 import { noteFailure, notePriced } from './harms';
 import { linensPenalty, useLinens } from './linens';
+import { decide, goWait, leave, resetGuest } from './lines';
 import {
-  MACHINE_PULL,
   machineSeconds,
   machineStrain,
   machineSuccess,
@@ -59,7 +65,6 @@ import {
   maybeOverload,
   perfectSetting,
   roomForModality,
-  treatsHere,
 } from './machines';
 import { goTo } from './movement';
 import { sellMushrooms } from './mushrooms';
@@ -69,9 +74,10 @@ import { goRest, restPenalty, settleRest } from './recovery';
 import { greeting, mindsPrice, tipFor } from './regulars';
 import { startRunning } from './runaways';
 import { leadOf, matsFull, sessionPlaying, stationStaff, updateSession } from './sessions';
+import { shopSpend, visitStars, wantsToShop } from './shop';
 import { wantsAway } from './staffing';
 import { expectedPrestige } from './standing';
-import { type DeliveryProblem, deliveryProblem, modalityOf } from './treatments';
+import { deliveryProblem, leftForSpecialist, modalityOf } from './treatments';
 import { upgradeSuccess } from './upgrades';
 import { addWear } from './upkeep';
 import { addVibes, vibesAt, vibesPenalty } from './vibes';
@@ -92,83 +98,6 @@ export function guestFee(s: GameState, g: Pick<Guest, 'condition' | 'regular'>):
   return base + tipFor(s, g, base);
 }
 
-/** Lower is better. Guests steer toward tables that can actually deliver what they need. */
-export function stationScore(ctx: SimContext, it: Item, g: Guest) {
-  const staff = stationStaff(ctx, it);
-  // a station that runs itself is never short of someone to work it
-  let score = it.queue.length + (it.serving ? 1 : 0) + (staff || !ITEMS[it.type].station?.staff ? 0 : 2.5);
-  if (ITEMS[it.type].station?.goal === 'treat') {
-    const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
-    // someone untrained is a last resort, and no resort at all while a colleague trained for it is about
-    // and a table without the specialty item can never do it properly, whoever comes to work it
-    if (problem === 'unqualified') score += staff && leftForSpecialist(ctx, staff, g) ? 40 : 6;
-    else if (problem) score += 60;
-    // between a table and a machine doing the same work, the machine is quicker, so a tie goes to it
-    if (ITEMS[it.type].machine) score -= MACHINE_PULL;
-  }
-  return score;
-}
-
-/** Staff who will not be seeing anyone for a while: going, or away for days on a course or a house call. */
-export const AWAY: readonly StaffState[] = ['leaving', 'toCall', 'away', 'toTrain', 'training'];
-
-/**
- * Whether a guest should wait for a colleague trained in their treatment rather than be seen by this member of staff,
- * who is not: there is someone who is, here and free to work a table that does it, with its specialty item there if it
- * needs one, or a machine that does it. One posted at a table that cannot do it is busy there, and leaves them to be
- * seen as they can. A guest the player put in this line is seen in it all the same.
- */
-export function leftForSpecialist(ctx: SimContext, staff: Staff, g: Guest): boolean {
-  const mod = modalityOf(g);
-  if (g.placed || staff.quals.includes(mod.id)) return false;
-  /** Whether a table does the technique properly. */
-  const does = (it: Item) =>
-    ITEMS[it.type].station?.goal === 'treat' &&
-    ctx.world.usable(it) &&
-    treatsHere(it, mod) &&
-    !deliveryProblem(ctx, it, undefined, mod);
-  return ctx.s.staff.some((t) => {
-    if (!t.quals.includes(mod.id) || AWAY.includes(t.state)) return false;
-    const post = ctx.world.item(t.post);
-    if (post && !does(post)) return false;
-    return ctx.s.items.some((it) => does(it) && worksAt(ctx, t, it.x, it.y));
-  });
-}
-
-/** The best usable station for a guest's current goal, if there is one. */
-export function pickStation(ctx: SimContext, g: Guest): Item | null {
-  const goal = g.goal;
-  let best: Item | null = null;
-  let bestScore = 1e9;
-  for (const it of ctx.s.items) {
-    const st = ITEMS[it.type].station;
-    if (st?.goal !== goal || !ctx.world.usable(it)) continue;
-    if (goal === 'treat' && !treatsHere(it, modalityOf(g))) continue;
-    const score = stationScore(ctx, it, g);
-    if (score < bestScore) {
-      bestScore = score;
-      best = it;
-    }
-  }
-  return best;
-}
-
-/**
- * How long a service takes this member of staff, given their skill, traits, courses, energy and morale, and how much
- * faster a colleague who Holds Space nearby makes them (`heldSpace`).
- */
-export function serviceSeconds(base: number, st: Staff, held = 1) {
-  let speed = 0.85 + st.skill * 0.05;
-  speed *= traitSpeed(st.traits) * held;
-  if (hasGeneral(st, 'motivation')) speed *= MOTIVATION_SPEED;
-  if (hasGeneral(st, 'service')) speed *= SERVICE_SPEED;
-  if (st.energy < 15) speed *= 0.6;
-  speed *= 0.9 + st.morale / 500;
-  return base / speed;
-}
-
-/** What each star of a room's prestige past the first adds to a service's results there. */
-export const PRESTIGE_SUCCESS = 0.02;
 /** The most stars of prestige a room can have. */
 const MAX_PRESTIGE = 5;
 
@@ -204,61 +133,6 @@ export function worksAnyway(ctx: SimContext, st: Staff): boolean {
   const rescue = traitMost(st.traits, 'rescue');
   return rescue > 0 && random(ctx.s) < rescue;
 }
-
-/** What moved a treatment's chance of working, one term each. */
-export type ChanceCause =
-  | 'skill'
-  | 'diagnosis'
-  | 'scan'
-  | 'guess'
-  | 'prestige'
-  | 'chart'
-  | 'blessed'
-  | 'upgrade'
-  | 'machine'
-  | 'difficulty'
-  | 'tired'
-  | 'worse'
-  | 'vibes'
-  | 'noise'
-  | 'linens'
-  | 'temperature'
-  | 'rest';
-
-/**
- * One term in a treatment's chance of working: what it added (or, below zero, took off), and the most it could have
- * added, for a term that falls short of its best rather than going wrong.
- */
-export interface ChanceFactor {
-  cause: ChanceCause;
-  amount: number;
-  best?: number;
-}
-
-/** A treatment's chance of working, what if anything stops it being delivered properly, and what it is made of. */
-export interface Chance {
-  chance: number;
-  problem: DeliveryProblem;
-  /** The terms added up, before they are kept between the least and the most. */
-  raw: number;
-  /** The chance had it been delivered properly: the terms added up, kept between the least and the most. */
-  proper: number;
-  factors: ChanceFactor[];
-}
-
-/** A treatment's chance of working before anything about it is counted. */
-export const BASE_CHANCE = 0.56;
-/** What each rank of skill adds to the chance. */
-export const SKILL_SUCCESS = 0.09;
-/** What a certain diagnosis adds to the chance, a less certain one in proportion. */
-export const DIAGNOSIS_SUCCESS = 0.15;
-/** What a member of staff worn out below `TIRED_ENERGY` takes off the chance. */
-export const TIRED_PENALTY = 0.15;
-/** The energy below which a member of staff is worn out. */
-export const TIRED_ENERGY = 15;
-/** The least and the most a treatment's chance can be before a botch cuts it. */
-export const MIN_CHANCE = 0.3;
-export const MAX_CHANCE = 0.98;
 
 /**
  * Every term in the chance a guest's treatment at this table works if this member of staff gives it now: better with
@@ -312,15 +186,6 @@ export function successChance(ctx: SimContext, it: Item, staff: Staff, g: Guest)
   const factors = chanceFactors(ctx, it, staff, g);
   const raw = factors.reduce((sum, f) => sum + f.amount, BASE_CHANCE);
   return { ...settledChance(raw, problem), problem, raw, factors };
-}
-
-/**
- * A chance from its terms added up: kept between the least and the most a treatment can be, then cut by a botch if
- * something stops it being delivered properly. What the roll uses, and what a failure's reasons are sized by.
- */
-export function settledChance(raw: number, problem: DeliveryProblem): { chance: number; proper: number } {
-  const proper = clamp(raw, MIN_CHANCE, MAX_CHANCE);
-  return { chance: problem ? proper * BOTCH_FACTOR : proper, proper };
 }
 
 /**
@@ -486,7 +351,7 @@ export function goForTreatment(ctx: SimContext, g: Guest) {
     feel(g, 'pricey');
     countVisit(ctx, g, 'priced');
     notePriced(ctx, g);
-    changeRep(ctx, -1);
+    changeRep(ctx, -PRICED_REP);
     say(g, 'bubble-cant-afford', 6);
     emit(ctx, { type: 'float', text: 'Too pricey!', x: g.x, y: g.y, kind: 'bad' });
     tipOnce(
@@ -518,7 +383,7 @@ export function goOnGuess(ctx: SimContext, g: Guest) {
 function completeScan(ctx: SimContext, it: Item, g: Guest) {
   it.serving = 0;
   it.progress = 0;
-  g.patience = Math.min(100, g.patience + 30);
+  g.patience = Math.min(100, g.patience + SEEN_PATIENCE);
   addWear(ctx, it);
   g.consults++;
   g.diagnosis = 1;
@@ -575,7 +440,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   if (hasGeneral(staff, 'bedside')) feel(g, 'kind');
   // how patient they still were, before the lift of being seen to, for what a heal does for the center's name
   const kept = g.patience;
-  g.patience = Math.min(100, g.patience + (grump ? 10 : 30));
+  g.patience = Math.min(100, g.patience + (grump ? GRUMP_PATIENCE : SEEN_PATIENCE));
   addWear(ctx, it);
   const nice = prestigeBonus(ctx, it);
   const price = ctx.s.priceLevel;
@@ -599,7 +464,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.consults++;
     // a structural condition is plain to see but not to pin down: a consultation gets no surer of it than this
     const structural = !!conditionOf(g.condition).structural;
-    const gain = 0.4 + staff.skill * 0.13 + rnd(ctx.s, 0, 0.15);
+    const gain = CONSULT_GAIN.base + staff.skill * CONSULT_GAIN.rank + rnd(ctx.s, 0, CONSULT_GAIN.luck);
     g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? STRUCTURAL_SURE : 1);
     const fee = Math.round(CONSULT_FEE * price);
     earn(ctx, fee, 'consult', g.x, g.y);
@@ -610,7 +475,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
         g.goal = 'assess';
         say(g, 'bubble-question');
       } else goOnGuess(ctx, g);
-    } else if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= 4) goForTreatment(ctx, g);
+    } else if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= CONSULTS_MAX) goForTreatment(ctx, g);
     else {
       // unsure: a scan settles it if there is a scanner working, otherwise it is back to the Consultant
       g.goal = canScan(ctx) ? 'assess' : 'consult';
@@ -633,7 +498,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     else if (problem) feel(g, 'no-kit');
     const room = ctx.world.roomOfItem(it);
     const stars = room ? prestige(ctx, room) : 0;
-    if (stars >= 4) feel(g, 'fine-room');
+    if (stars >= FINE_ROOM) feel(g, 'fine-room');
     // a center that stands higher has guests who expect a finer room
     else if (room && stars < expectedPrestige(ctx.s)) feel(g, 'underwhelmed');
     if (room && room.vibes > 0) feel(g, 'bad-vibes');
@@ -642,19 +507,17 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     useLinens(ctx, it, g);
     if (treatPrice >= PRICEY) feel(g, 'pricey');
     else if (treatPrice <= BARGAIN) feel(g, 'bargain');
-    // a machine heats its own stones
-    if (!problem && mod.equipment === 'stone_warmer' && !ITEMS[it.type].machine) {
+    // the session spends some of the heat of the equipment it needs, the hottest there; a machine heats its own stones
+    const use = mod.equipment ? heatPerUse(mod.equipment) : 0;
+    if (!problem && use && !ITEMS[it.type].machine) {
       const zone = ctx.world.zoneAt(it.x, it.y);
       const warmer = ctx.s.items
         .filter(
           (i) =>
-            i.type === 'stone_warmer' &&
-            ctx.world.zoneAt(i.x, i.y) === zone &&
-            i.water >= STONE_USE &&
-            ctx.world.usable(i),
+            i.type === mod.equipment && ctx.world.zoneAt(i.x, i.y) === zone && i.water >= use && ctx.world.usable(i),
         )
         .sort((a, b) => b.water - a.water)[0];
-      if (warmer) warmer.water -= STONE_USE;
+      if (warmer) warmer.water -= use;
     }
     g.goal = 'leave';
     // Healing Hands only roll for a treatment that failed, as before they showed
@@ -673,7 +536,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       earn(ctx, fee, 'treatment', g.x, g.y);
       g.spent += fee;
       // good value earns a better name than a steep bill does
-      changeRep(ctx, (1.8 + kept / 100) * (1.25 - 0.25 * treatPrice) * (grump ? GRUMP_REP : 1));
+      changeRep(ctx, (HEAL_REP + kept / 100) * (1 + PRICE_REP - PRICE_REP * treatPrice) * (grump ? GRUMP_REP : 1));
       postAboutIt(ctx, staff);
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
       // and a machine may send them off with something, a glass of cider, say
@@ -688,7 +551,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       countVisit(ctx, g, 'failed');
       // why it failed, from the terms the roll used, before the failure's own bad vibes cloud the room
       noteFailure(ctx, it, staff, g, recordFailure(ctx, it, staff, g, odds, handsSave(staff)));
-      changeRep(ctx, -2.5);
+      changeRep(ctx, -FAIL_REP);
       if (room) addVibes(ctx, room);
       // a thumb down: not the hourglass of a guest about to walk out
       say(g, 'bubble-failed', 6);
@@ -768,33 +631,4 @@ function walkThrough(it: Item, g: Guest) {
   g.y = pose.y;
   g.h = 0;
   g.facing = pose.face;
-}
-
-/** The stars a treated guest, or a class-goer, gave their visit. */
-export const visitStars = (g: Guest) =>
-  reviewStars(g.outcome === 'healed' || g.outcome === 'class' ? g.outcome : 'failed', g.feelings);
-
-/** What a guest spends at the Shop Counter, by the stars they gave their visit: a round number, a little either way. */
-export function shopSpend(r: Rng, stars: number): number {
-  return Math.round((at(SHOP_SPEND, clamp(stars, 0, SHOP_SPEND.length - 1)) * rnd(r, 0.8, 1.2)) / 5) * 5;
-}
-
-/**
- * Whether a treated guest stops at the Shop Counter on the way out: likelier the better their visit went, and not at
- * all if every counter already has a line of `SHOP_LINE_SKIP`.
- */
-export function wantsToShop(ctx: SimContext, g: Guest): boolean {
-  const counters = ctx.s.items.filter((i) => i.type === 'shop_counter' && ctx.world.usable(i));
-  if (!counters.length) return false;
-  if (Math.min(...counters.map((i) => i.queue.length)) >= SHOP_LINE_SKIP) return false;
-  return random(ctx.s) < at(SHOP_CHANCE, clamp(visitStars(g), 0, SHOP_CHANCE.length - 1));
-}
-
-/** Take a guest out of every line and off every station. */
-export function removeFromStations(ctx: SimContext, g: Guest) {
-  for (const it of ctx.s.items) {
-    if (it.serving === g.id) it.serving = 0;
-    if (it.queue.includes(g.id)) it.queue = it.queue.filter((id) => id !== g.id);
-  }
-  g.station = 0;
 }

@@ -6,11 +6,11 @@
 import { HAMPER_SIZE, type IconId, isWatered, ITEMS, NOISE_PEACEFUL } from '../../core/data';
 import { footprintTiles } from '../../core/footprint';
 import { type HeldExtinguisher, inReach } from '../../core/sim/fire-cover';
+import { worsening } from '../../core/sim/lines';
 import { calmness } from '../../core/sim/noise';
 import type { PlacePreview } from '../../core/sim/preview';
 import type { Sim } from '../../core/sim/sim';
 import { tempScale } from '../../core/sim/warmth';
-import { worsening } from '../../core/sim/worsening';
 import type { Guest, Staff } from '../../core/state/types';
 import { footprint } from '../../core/world';
 import type { HeatTile, Palette } from '../../render/heatmap';

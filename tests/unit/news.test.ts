@@ -14,35 +14,37 @@ import {
   VICARAGE,
 } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
-import { monthEnd } from '../../src/core/sim/economy';
 import { drainEvents } from '../../src/core/sim/events';
 import {
   awardsNews,
+  emergencyEnded,
+  fireNews,
+  hireNews,
+  issueAt,
+  logNews,
+  mishapNews,
+  outbreakNews,
+  quarterEnded,
+  runnerNews,
+  scoreOf,
+  visitNews,
+  waitNews,
+} from '../../src/core/sim/news';
+import {
   canLead,
   casesOf,
   classifiedOf,
   columnOf,
-  emergencyEnded,
   fill,
-  fireNews,
   headlineOf,
-  hireNews,
-  issueAt,
   leadOf,
   lettersOf,
-  logNews,
-  mishapNews,
   noteOf,
-  outbreakNews,
   printIssue,
-  quarterEnded,
-  runnerNews,
-  scoreOf,
   signOf,
   storyOf,
-  visitNews,
-  waitNews,
-} from '../../src/core/sim/news';
+} from '../../src/core/sim/paper';
+import { monthEnd } from '../../src/core/sim/payday';
 import { returnGap } from '../../src/core/sim/regulars';
 import { newGame } from '../../src/core/state/game';
 import type { Guest, NewsItem, Staff, VisitReport } from '../../src/core/state/types';

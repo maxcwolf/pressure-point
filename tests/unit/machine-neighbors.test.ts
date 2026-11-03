@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { BORED_PATIENCE, CONDITIONS, ITEMS, ROOMS, SESSION_WAIT } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { accessIndex, claim, findAccess } from '../../src/core/sim/claims';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { rattledRooms, rattlersBeside, rattling } from '../../src/core/sim/machines';
 import { noiseAt, updateNoise } from '../../src/core/sim/noise';
 import type { Sim } from '../../src/core/sim/sim';

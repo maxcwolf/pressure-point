@@ -15,9 +15,9 @@ import {
 } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
 import { waveAdvice } from '../../src/core/sim/advisor';
+import { arrivalPace, spawnGuest } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { arrivalPace, spawnGuest } from '../../src/core/sim/guests';
 import { awardStar } from '../../src/core/sim/progress';
 import { countVisit } from '../../src/core/sim/records';
 import { Sim } from '../../src/core/sim/sim';

@@ -19,7 +19,7 @@ import {
   WEAR_REPAIR,
 } from '../data';
 import { tuning } from '../difficulty';
-import { calendarDay, money } from '../format';
+import { calendarDay, money, seasonOf } from '../format';
 import { irnd, pick, random } from '../random';
 import type { GameState, Mishap, Room, Staff } from '../state/types';
 import { say } from './chars';
@@ -27,7 +27,6 @@ import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { logNews, mishapNews } from './news';
-import { seasonOf } from './twists';
 
 /** The mishap that comes next here: the center's own, if it has one and it is in season, or none. */
 export function chooseMishap(s: GameState): MishapId | null {

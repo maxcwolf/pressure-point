@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { createContext } from '../../src/core/sim/context';
-import { leftForSpecialist, pickStation } from '../../src/core/sim/stations';
+import { pickStation } from '../../src/core/sim/lines';
+import { leftForSpecialist } from '../../src/core/sim/treatments';
 import { must } from '../../src/core/util';
 import { addConsult, addRecovery, addStaffRoom, buildRoom, freshSim, hire, run } from './helpers';
 

@@ -5,8 +5,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 
 import { it } from 'vitest';
 
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import type { Sim } from '../../src/core/sim/sim';
 import { addPostureLab, addRestroom, addStaffRoom, addTraining, hire, openCenter, run } from '../unit/helpers';
 

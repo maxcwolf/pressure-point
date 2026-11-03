@@ -19,8 +19,8 @@ import {
   WOMEN_HAIR,
 } from '../../src/core/people';
 import { random, setSeed, stream } from '../../src/core/random';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { newGame } from '../../src/core/state/game';
 import type { Look } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';

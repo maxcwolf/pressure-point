@@ -3,9 +3,9 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 
+import { type Season, seasonOf } from '../../src/core/format';
 import { buildingsOf } from '../../src/core/land';
 import { newMishap } from '../../src/core/sim/mishaps';
-import { type Season, seasonOf } from '../../src/core/sim/twists';
 import { animateItemParts, type ItemCondition } from '../../src/render/items';
 import {
   addLights,

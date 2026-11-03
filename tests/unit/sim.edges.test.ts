@@ -3,12 +3,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { DAY_SECONDS } from '../../src/core/data';
+import { guestCap } from '../../src/core/sim/arrivals';
 import { canMoveItem } from '../../src/core/sim/building';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents } from '../../src/core/sim/events';
-import { guestCap } from '../../src/core/sim/guests';
-import { repathAll } from '../../src/core/sim/movement';
+import { repathAll } from '../../src/core/sim/repath';
 import { Sim } from '../../src/core/sim/sim';
 import { updateStations } from '../../src/core/sim/stations';
 import { inRush, updateTwists } from '../../src/core/sim/twists';

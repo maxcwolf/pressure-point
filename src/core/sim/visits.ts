@@ -61,7 +61,7 @@ import { newChar, say, streetTile } from './chars';
 import type { SimContext } from './context';
 import { changeRep, earn, spend } from './economy';
 import { emit, tipOnce, toast } from './events';
-import { extinguisherReaches, NO_EXTINGUISHER_FOUND } from './fire-cover';
+import { extinguisherNear, NO_EXTINGUISHER_FOUND } from './fire-cover';
 import { goTo, moveAlong } from './movement';
 import { counterVerdict, inspectorComing, inspectorGone, MUSHROOMS_FOUND } from './mushrooms';
 import { logNews, visitNews } from './news';
@@ -156,14 +156,6 @@ export function vipNote(scores: AspectScores, cares: Aspect, vibes: number, temp
   if (worst && scores[worst] < 0.35) note += `${liked ? ', but' : ', and'} ${aspectNote(worst, false, temp)}`;
   if (vibes >= 30) note += ', with a gloomy air about it';
   return `${note.charAt(0).toUpperCase()}${note.slice(1)}.`;
-}
-
-/**
- * Whether a room is ready for a fire: sprinklers fitted, or a Fire Extinguisher that works near enough its door, for
- * the inspector, and for a Caretaker to put a fire out there quickly.
- */
-export function extinguisherNear(ctx: SimContext, room: Room): boolean {
-  return !!room.sprinklers || extinguisherReaches(ctx, room.door);
 }
 
 /** What the inspector finds wrong in a room. */

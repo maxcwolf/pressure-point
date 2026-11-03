@@ -1,10 +1,11 @@
 // Stars, the objectives for the next one, and what the center has so far.
 
-import { centerOf, type ItemType, type Role, type RoomType } from '../data';
+import { centerOf } from '../data';
 import type { SimContext } from './context';
 import { earn } from './economy';
 import { emit, toast } from './events';
 import { type Objective, objectiveFor } from './goals';
+import { hasItem, hasRoom } from './inventory';
 import { logNews } from './news';
 import { scheduleWave } from './waves';
 
@@ -67,19 +68,4 @@ export function objectives(ctx: SimContext): Objective[] {
 /** Whether every star there is to earn in this center has been earned. */
 export function allStars(ctx: SimContext): boolean {
   return !centerOf(ctx.s).goals[ctx.s.stars];
-}
-
-/** Whether the center has a usable item of this type. */
-export function hasItem(ctx: SimContext, t: ItemType) {
-  return ctx.s.items.some((i) => i.type === t && ctx.world.usable(i));
-}
-
-/** Whether the center has a finished room of this type. */
-export function hasRoom(ctx: SimContext, t: RoomType) {
-  return ctx.s.rooms.some((r) => r.type === t && r.done);
-}
-
-/** Whether anyone in this role is on the payroll and staying. */
-export function hasStaff(ctx: SimContext, r: Role) {
-  return ctx.s.staff.some((x) => x.role === r && x.state !== 'leaving');
 }

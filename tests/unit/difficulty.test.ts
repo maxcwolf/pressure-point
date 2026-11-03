@@ -13,14 +13,14 @@ import {
 import { nextLevel, presetLevels, presetOf, readDifficulty, tuning } from '../../src/core/difficulty';
 import { fairSalary, makeCandidate } from '../../src/core/people';
 import { setSeed } from '../../src/core/random';
-import { updateApplicants } from '../../src/core/sim/careers';
+import { admitGuests, spawnGuest } from '../../src/core/sim/arrivals';
+import { fairPay, updateApplicants } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
 import { borrow, changeRep, loanLimit } from '../../src/core/sim/economy';
 import { declineEmergency } from '../../src/core/sim/emergencies';
-import { admitGuests, spawnGuest, updateGuest } from '../../src/core/sim/guests';
+import { updateGuest } from '../../src/core/sim/guests';
 import { declineOutbreak } from '../../src/core/sim/outbreaks';
 import type { Sim } from '../../src/core/sim/sim';
-import { fairPay } from '../../src/core/sim/staffing';
 import { treatmentFee } from '../../src/core/sim/stations';
 import { addWear } from '../../src/core/sim/upkeep';
 import { inspectionGap } from '../../src/core/sim/visits';

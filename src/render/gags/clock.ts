@@ -3,8 +3,8 @@
 
 import { ITEMS } from '../../core/data';
 import { accessIndex } from '../../core/sim/claims';
-import { smoking } from '../../core/sim/machines';
 import type { Sim } from '../../core/sim/sim';
+import { smoking } from '../../core/sim/upkeep';
 import type { Item } from '../../core/state/types';
 import { clamp } from '../../core/util';
 import { hiccupOf } from './beats';

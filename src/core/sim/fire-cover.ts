@@ -16,6 +16,9 @@ interface Spot {
   y: number;
 }
 
+/** Whether an item puts fires out, as a Fire Extinguisher does. */
+export const isExtinguisher = (it: Item) => !!ITEMS[it.type].extinguisher;
+
 /** Whether an extinguisher on a tile reaches a door: within so many tiles of the tile inside it, walls or not. */
 export const inReach = (x: number, y: number, door: Spot) =>
   Math.max(Math.abs(x - door.x), Math.abs(y - door.y)) <= EXTINGUISHER_REACH;
@@ -23,8 +26,7 @@ export const inReach = (x: number, y: number, door: Spot) =>
 /** Whether a Fire Extinguisher stands working within reach of a door, any but the one left out. */
 export function extinguisherReaches(ctx: SimContext, door: Spot, skip?: number): boolean {
   return ctx.s.items.some(
-    (it: Item) =>
-      it.type === 'fire_extinguisher' && it.id !== skip && ctx.world.usable(it, true) && inReach(it.x, it.y, door),
+    (it: Item) => isExtinguisher(it) && it.id !== skip && ctx.world.usable(it, true) && inReach(it.x, it.y, door),
   );
 }
 
@@ -39,10 +41,7 @@ export function roomCovered(ctx: SimContext, room: Room, door: Spot = room.door,
     !room.done &&
     ctx.s.items.some(
       (it) =>
-        it.type === 'fire_extinguisher' &&
-        it.id !== skip &&
-        ctx.world.roomOfItem(it)?.id === room.id &&
-        inReach(it.x, it.y, door),
+        isExtinguisher(it) && it.id !== skip && ctx.world.roomOfItem(it)?.id === room.id && inReach(it.x, it.y, door),
     )
   );
 }
@@ -74,7 +73,7 @@ export interface HeldExtinguisher {
  */
 export function extinguisherSpots(ctx: SimContext, held?: HeldExtinguisher): Spot[] {
   const spots: Spot[] = ctx.s.items
-    .filter((it) => it.type === 'fire_extinguisher' && it.id !== held?.moving && ctx.world.usable(it, true))
+    .filter((it) => isExtinguisher(it) && it.id !== held?.moving && ctx.world.usable(it, true))
     .map((it) => ({ x: it.x, y: it.y }));
   if (held && worksAt(ctx, held.x, held.y) === 'now') spots.push({ x: held.x, y: held.y });
   return spots;
@@ -154,7 +153,7 @@ export function doorCovered(ctx: SimContext, door: Spot, opts: DoorCoverOptions 
   if (opts.sprinklers || opts.bringing?.some((it) => inReach(it.x, it.y, door))) return true;
   return ctx.s.items.some(
     (it) =>
-      it.type === 'fire_extinguisher' &&
+      isExtinguisher(it) &&
       ctx.world.usable(it, true) &&
       (opts.leaving === undefined || ctx.world.roomOfItem(it)?.id !== opts.leaving) &&
       inReach(it.x, it.y, door),
@@ -166,3 +165,11 @@ export function doorCovered(ctx: SimContext, door: Spot, opts: DoorCoverOptions 
  * room being placed, or of the room a machine that can catch fire is going into, has an extinguisher near it.
  */
 export type FireNote = ({ kind: 'extinguisher' } & HeldCover) | { kind: 'door'; covered: boolean; machine: boolean };
+
+/**
+ * Whether a room is ready for a fire: sprinklers fitted, or a Fire Extinguisher that works near enough its door, for
+ * the inspector, and for a Caretaker to put a fire out there quickly.
+ */
+export function extinguisherNear(ctx: SimContext, room: Room): boolean {
+  return !!room.sprinklers || extinguisherReaches(ctx, room.door);
+}

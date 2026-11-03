@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 import { DAY_SECONDS } from '../../src/core/data';
 import { setSeed } from '../../src/core/random';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { streetEnds } from '../../src/core/sim/chars';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { Sim } from '../../src/core/sim/sim';
 import { newGame } from '../../src/core/state/game';
 import { hire, runUntil } from './helpers';

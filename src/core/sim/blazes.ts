@@ -31,18 +31,18 @@ import { randomLook, randomName, rollSex } from '../people';
 import { pick } from '../random';
 import type { Blaze, Brigade, Char, GameState, Item, PutOut, Room, Staff, Visitor } from '../state/types';
 import { footprint, itemCenter } from '../world';
-import { itemsBeside } from './building';
+import { caretakerSpeed } from './careers';
 import { newChar, say, streetEnds, streetTileNear } from './chars';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, type Subject, toast } from './events';
 import { feel } from './feelings';
-import { smoking } from './machines';
+import { extinguisherNear } from './fire-cover';
+import { itemsBeside } from './inventory';
 import { floodTiles } from './mishaps';
-import { goTo, halt, moveAlong } from './movement';
+import { goTo, halt, moveAlong, standBeside } from './movement';
 import { fireNews, logNews } from './news';
-import { caretakerSpeed, standBeside } from './staffing';
-import { extinguisherNear } from './visits';
+import { smoking } from './upkeep';
 
 /** What a fire is shown with in messages: the item every room should have near its door for one. */
 const FIRE_ICON = 'item-fire-extinguisher';

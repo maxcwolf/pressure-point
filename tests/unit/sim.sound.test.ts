@@ -15,9 +15,9 @@ import {
 import { setSeed } from '../../src/core/random';
 import { contextAnnouncement } from '../../src/core/sim/advisor';
 import { prestige } from '../../src/core/sim/ambience';
+import { rollCondition } from '../../src/core/sim/arrivals';
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { bestRoom, roomPull } from '../../src/core/sim/demand';
-import { rollCondition } from '../../src/core/sim/guests';
 import { noiseAt, updateNoise } from '../../src/core/sim/noise';
 import {
   leadOf,

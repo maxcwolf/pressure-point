@@ -18,6 +18,7 @@ import {
   STAFF_NEED_HOLD,
 } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
+import { admitGuests, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/arrivals';
 import { accessIndex } from '../../src/core/sim/claims';
 import {
   admitClassgoers,
@@ -40,9 +41,8 @@ import {
   weeklyInterest,
 } from '../../src/core/sim/classes';
 import type { SimContext } from '../../src/core/sim/context';
-import { admitGuests, guestCap, guestsCounted, spawnGuest } from '../../src/core/sim/guests';
+import { worsening } from '../../src/core/sim/lines';
 import { wantsAway } from '../../src/core/sim/staffing';
-import { worsening } from '../../src/core/sim/worsening';
 import type { GameState, Guest, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { accessTile } from '../../src/core/world';

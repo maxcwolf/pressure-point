@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Season } from '../../src/core/sim/twists';
+import type { Season } from '../../src/core/format';
 import {
   brightness,
   type Daylight,

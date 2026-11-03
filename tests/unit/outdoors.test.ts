@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { CENTERS, DAY_SECONDS, SIDEWALK_Y } from '../../src/core/data';
 import { entranceSpan, entranceSteps, footprintOf, onPath } from '../../src/core/footprint';
 import { buildingsOf } from '../../src/core/land';
-import { spawnGuest } from '../../src/core/sim/guests';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { badWeather, updateOutdoors } from '../../src/core/sim/outdoors';
 import type { Sim } from '../../src/core/sim/sim';
 import { spreader } from '../../src/core/sim/spread';

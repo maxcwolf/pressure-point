@@ -4,8 +4,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { placeLayout } from '../../src/core/room-layout';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { addPostureLab, addRestroom, addStaffRoom, addTraining, hire, openCenter, run } from './helpers';
 
 /** The grid's expensive questions: a route, a flood fill, a fresh grid, a check nobody is walled in. */

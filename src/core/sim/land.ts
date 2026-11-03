@@ -1,18 +1,16 @@
 // Land: buying the plots next door, the builders' days of work on each, and the building growing into it after.
 
 import { ITEMS } from '../data';
-import { buildDays, nameInSentence, plotGroundAt, type PlotOffer, plotOffers } from '../land';
+import { buildDays, nameInSentence, plotGroundAt } from '../land';
 import { footprint } from '../world';
 import { takeDownLoose } from './building';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, toast } from './events';
+import { landOffers } from './inventory';
 
 /** How long a plot's name can be. */
 export const PLOT_NAME_MAX = 32;
-
-/** Each of the center's plots as things stand: the game's, being built on, for sale and for how much, or not yet. */
-export const landOffers = (ctx: SimContext): PlotOffer[] => plotOffers(ctx.s, ctx.world.building);
 
 /** Buy a plot and set the builders to work on it. False if it is not for sale or costs too much. */
 export function buyPlot(ctx: SimContext, id: string): boolean {

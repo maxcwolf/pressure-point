@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { DIRT_FILTHY, ITEMS, type ItemType, NOISE_NOTICE, WEAR_REPAIR, WEAR_WARN } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import {
   BROKEN_LEAN,
   burst,

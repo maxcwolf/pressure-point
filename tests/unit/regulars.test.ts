@@ -10,9 +10,9 @@ import {
   REGULARS_MAX,
   VISION_LOYALTY,
 } from '../../src/core/data';
+import { admitGuests, spawnGuest } from '../../src/core/sim/arrivals';
 import type { SimContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { admitGuests, spawnGuest } from '../../src/core/sim/guests';
 import {
   afterVisit,
   dueRegular,

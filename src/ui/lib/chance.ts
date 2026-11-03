@@ -1,7 +1,7 @@
 // How a guest's chance of success reads in the interface.
 
 import type { ModalityDef } from '../../core/data';
-import type { Chance } from '../../core/sim/stations';
+import type { Chance } from '../../core/sim/failures';
 import { deliveryNote } from './delivery';
 
 /** A fraction as a whole percentage. */

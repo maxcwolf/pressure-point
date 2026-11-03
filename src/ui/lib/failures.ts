@@ -1,9 +1,8 @@
 // Failed treatments as the interface shows them: one guest's, and the latest broken down by technique, with the main
 // causes and what helps.
 
-import { type Modality, modalityLabel } from '../../core/data';
+import { MAX_CHANCE, type Modality, modalityLabel } from '../../core/data';
 import { failRate, NAMED_COST } from '../../core/sim/failures';
-import { MAX_CHANCE } from '../../core/sim/stations';
 import type { FailedTreatment, FailureReason } from '../../core/state/types';
 import { percent } from './chance';
 

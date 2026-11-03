@@ -27,7 +27,7 @@ import {
 import { copyCost, type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { itemStart, roomStart, sameSpot, unlockedUpTo } from '../state/game';
 import type { Guest, Item, Room, Staff, WallSpot } from '../state/types';
-import { footprint, itemCenter, onWall, type Rect, wallSpotsOf } from '../world';
+import { itemCenter, onWall, type Rect, wallSpotsOf } from '../world';
 import { forgetRoom } from './assignments';
 import { charById } from './chars';
 import { release } from './claims';
@@ -35,10 +35,11 @@ import type { SimContext } from './context';
 import { decorFor, withDecor } from './decor';
 import { recoup, spend } from './economy';
 import { emit, toast } from './events';
-import { goWait, resetGuest } from './guests';
-import { halt, repathAll } from './movement';
+import { goWait, resetGuest } from './lines';
+import { halt } from './movement';
+import { staffIdle } from './posts';
 import { inLine } from './queues';
-import { staffIdle } from './staffing';
+import { repathAll } from './repath';
 import { backToStudy } from './training';
 import { upgradeSpent } from './upgrades';
 
@@ -81,7 +82,7 @@ function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: num
     staffId: 0,
     progress: 0,
     // a hamper starts empty; everything else starts watered, or hot
-    water: type === 'linen_hamper' ? 0 : 100,
+    water: ITEMS[type].hamper ? 0 : 100,
     ...itemStart(),
   };
 }
@@ -185,25 +186,9 @@ export function finishRoom(ctx: SimContext, room: Room) {
   emit(ctx, { type: 'sfx', name: 'build' });
 }
 
-/** How many working items of a type share a room with an item. */
-export function sameRoomCount(ctx: SimContext, item: Item, type: ItemType): number {
-  const zone = ctx.world.zoneAt(item.x, item.y);
-  if (zone <= 0) return 0;
-  return ctx.s.items.filter((i) => i.type === type && ctx.world.usable(i) && ctx.world.zoneAt(i.x, i.y) === zone)
-    .length;
-}
-
 /** The items inside a room. */
 export function itemsInRoom(ctx: SimContext, room: Room) {
   return ctx.s.items.filter((it) => ctx.world.zoneAt(it.x, it.y) === room.id);
-}
-
-/** The other items standing beside an item: any of their tiles next to any of its own, corners included. */
-export function itemsBeside(ctx: SimContext, it: Item): Item[] {
-  const near = new Set<string>();
-  for (const [x, y] of footprint(it))
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) near.add(`${x + dx},${y + dy}`);
-  return ctx.s.items.filter((o) => o !== it && footprint(o).some(([x, y]) => near.has(`${x},${y}`)));
 }
 
 /** Can this item be picked up and put down here instead? */

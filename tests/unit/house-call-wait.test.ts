@@ -3,10 +3,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { CALL_PER_DAY, SESSION_WAIT } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { canGo } from '../../src/core/sim/calls';
 import { awayForClass } from '../../src/core/sim/classes';
 import { createContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import type { Sim } from '../../src/core/sim/sim';
 import type { HouseCall } from '../../src/core/state/types';
 import { callWaitNote } from '../../src/ui/lib/calls';

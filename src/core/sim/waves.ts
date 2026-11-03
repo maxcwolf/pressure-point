@@ -29,10 +29,10 @@ import { an } from '../format';
 import { random } from '../random';
 import { featureOn, unlockedUpTo } from '../state/game';
 import type { GameState, Wave } from '../state/types';
+import { atWork } from './careers';
 import type { SimContext } from './context';
-import { atWork } from './demand';
 import { emit, toast } from './events';
-import { hasRoom } from './progress';
+import { hasRoom } from './inventory';
 import { enabled, equipmentProblem, offered } from './treatments';
 
 /** The wave this center has, if any, and it has not been yet. */

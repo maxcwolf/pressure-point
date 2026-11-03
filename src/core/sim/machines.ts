@@ -10,13 +10,11 @@ import {
   machineRoom,
   MODALITIES,
   type Modality,
-  type ModalityDef,
   ROOMS,
   type RoomType,
 } from '../data';
-import { money } from '../format';
 import { random } from '../random';
-import type { GameState, Item, Room } from '../state/types';
+import type { Item, Room } from '../state/types';
 import { itemCenter } from '../world';
 import { startFire } from './blazes';
 import type { SimContext } from './context';
@@ -25,17 +23,10 @@ import { announceOnce, emit, toast } from './events';
 import { logNews, overloadNews } from './news';
 import { playingFor } from './sessions';
 import { unlocked } from './treatments';
+import { downNotice, smoking } from './upkeep';
 
 /** How much a machine is preferred over a table that does the same, in places in line: a tie goes to the machine. */
 export const MACHINE_PULL = 0.5;
-
-/** Whether a station takes guests for a technique: a table any of its discipline's but a machine's own, a machine its own. */
-export function treatsHere(it: Pick<Item, 'type'>, mod: ModalityDef): boolean {
-  const def = ITEMS[it.type];
-  if (def.station?.goal !== 'treat' || def.station.discipline !== mod.discipline) return false;
-  if (def.machine) return def.machine.performs.includes(mod.id);
-  return !mod.machine;
-}
 
 /** Whether a machine is a signature machine: the one place its own techniques are done, drawing guests of its own. */
 export const signatureMachine = (type: ItemType) =>
@@ -45,14 +36,6 @@ export const signatureMachine = (type: ItemType) =>
 export function roomForModality(m: Modality): RoomType {
   const machine = MODALITIES[m].machine;
   return (machine ? machineRoom(machine) : undefined) ?? DISCIPLINES[MODALITIES[m].discipline].room;
-}
-
-/** Whether a machine technique's room has been built, so its technique can be learned and priced. Any other, true. */
-export function machineBuilt(s: Pick<GameState, 'rooms'>, m: Modality): boolean {
-  const machine = MODALITIES[m].machine;
-  if (!machine) return true;
-  const room = machineRoom(machine);
-  return s.rooms.some((r) => r.done && r.type === room);
 }
 
 /** A machine that can take a guest now: built, finished, not broken, overloaded or stopped by a mishap. */
@@ -131,25 +114,6 @@ function boostersOrSetting(ctx: SimContext, it: Item): Item[] {
 /** Whether a machine is running: someone is inside it. */
 export const running = (it: Item) => !!ITEMS[it.type].machine && it.serving > 0;
 
-/** What a kind of equipment costs to run for a month: a treatment machine's, or that of one that runs itself. */
-export const itemUpkeep = (type: ItemType) => ITEMS[type].machine?.upkeep ?? ITEMS[type].upkeep ?? 0;
-
-/** What every machine owned costs to run for a month, in power and parts. */
-export function machineUpkeep(s: Pick<GameState, 'items'>): number {
-  return s.items.reduce((sum, it) => sum + itemUpkeep(it.type), 0);
-}
-
-/** Whether a machine is worn enough to smoke, a warning that it may overload. */
-export function smoking(it: Item): boolean {
-  const o = ITEMS[it.type].machine?.overload;
-  return !!o && it.wear >= o.from && it.wear < 100;
-}
-
-/** How many guests are waiting in a station's line. */
-const waitingAt = (ctx: SimContext, it: Item) =>
-  it.queue.filter((id) => ctx.s.guests.some((g) => g.id === id && (g.state === 'waiting' || g.state === 'toWait')))
-    .length;
-
 /**
  * After a session, a machine smoking with wear may overload: out of action at once, with a bill for parts, until a
  * Caretaker sees to it, or for a machine with a flame or a motor, now and then on fire (see `blazes.ts`). The guest
@@ -175,22 +139,6 @@ export function maybeOverload(ctx: SimContext, it: Item): boolean {
   toast(ctx, downNotice(ctx, it, `has overloaded and ${o.mess}`, o.bill), 'bad', { kind: 'item', id: it.id });
   logNews(ctx, overloadNews(ctx, it));
   return true;
-}
-
-/**
- * What the toast says when a machine goes down: what happened, the bill if there is one, who is left waiting for it,
- * and what will get it going again.
- */
-export function downNotice(ctx: SimContext, it: Item, what: string, bill = 0): string {
-  const def = ITEMS[it.type];
-  const waiting = waitingAt(ctx, it);
-  const parts = bill ? ` Parts cost ${money(bill)}.` : '';
-  const line = waiting
-    ? ` ${waiting} ${waiting === 1 ? 'guest is' : 'guests are'} waiting for it, and no more will be sent its way until it is fixed.`
-    : '';
-  const room = ROOMS[machineRoom(it.type) ?? 'massage'];
-  const where = machineRoom(it.type) ? ` in the ${room.name}` : '';
-  return `The ${def.name}${where} ${what}.${parts}${line} Send a Caretaker to repair it.`;
 }
 
 /** Announce each kind of room with an opening line of its own the first time one is finished, once the center is open. */

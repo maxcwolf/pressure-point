@@ -54,18 +54,25 @@ import {
   WINDOW_COST,
   WINDOW_MAX_BONUS,
 } from '../../src/core/data';
+import { seasonOf } from '../../src/core/format';
 import { setSeed } from '../../src/core/random';
 import { roomCost } from '../../src/core/resize';
+import { INTAKE_CAP_MIN } from '../../src/core/sim/arrivals';
 import { BUSY_DAYS } from '../../src/core/sim/bottleneck';
 import { unfedStations } from '../../src/core/sim/demand';
-import { daysUntilBankrupt, loanLimit, projectedCashflow, putOffChance, wagesDue } from '../../src/core/sim/economy';
+import {
+  daysUntilBankrupt,
+  loanLimit,
+  machineUpkeep,
+  projectedCashflow,
+  putOffChance,
+  wagesDue,
+} from '../../src/core/sim/economy';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
-import { INTAKE_CAP_MIN } from '../../src/core/sim/guests';
-import { machineUpkeep } from '../../src/core/sim/machines';
 import { rivalPoints } from '../../src/core/sim/rival';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
-import { inRush, SEASON_AHEAD_DAYS, seasonOf } from '../../src/core/sim/twists';
+import { inRush, SEASON_AHEAD_DAYS } from '../../src/core/sim/twists';
 import { upgradeCost } from '../../src/core/sim/upgrades';
 import { openedEarly } from '../../src/core/sim/waves';
 import { worsenRate } from '../../src/core/sim/worsening';

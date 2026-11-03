@@ -22,7 +22,7 @@ import {
   type ThermostatSetting,
 } from '../data';
 import { tuning } from '../difficulty';
-import { calendarDay } from '../format';
+import { calendarDay, type Season, seasonOf } from '../format';
 import type { PlotOffer } from '../land';
 import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { featureOn, offeringOn } from '../state/game';
@@ -54,7 +54,8 @@ import {
 import { checkAchievements } from './achievements';
 import { type Advice, advice, advise, announce, warnPrimer, warnUnfed } from './advisor';
 import { drainFactor, prestige } from './ambience';
-import { assignRoom, clearRooms } from './assignments';
+import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap } from './arrivals';
+import { clearRooms } from './assignments';
 import { holdAwards, YEAR_MONTHS } from './awards';
 import { beingPutOut, onFire, updateBlazes, updateBrigade } from './blazes';
 import { bottleneck, type Stage } from './bottleneck';
@@ -94,6 +95,7 @@ import {
   whoCanGo,
 } from './calls';
 import {
+  fairPay,
   fullyTrained,
   heldSpace,
   holdingSpaceFor,
@@ -127,25 +129,23 @@ import { decorateRoom } from './decor';
 import { demand, type DisciplineDemand, fadeFollowing, roomPull, type SpecialtyGap, specialtyGaps } from './demand';
 import {
   borrow,
-  monthEnd,
+  machineUpkeep,
   type PaydayWarning,
   paydayWarning,
-  payIntoRed,
   priceFor,
   repay,
   setPrice,
   setTechniquePrice,
-  takePayrollLoan,
-  updateInsolvency,
   warnPayday,
 } from './economy';
 import { acceptEmergency, declineEmergency, offerEmergency, updateEmergency } from './emergencies';
 import type { SimEvent, Subject } from './events';
 import { drainEvents, emit } from './events';
-import { currentFix } from './failures';
+import { type Chance, currentFix } from './failures';
 import {
   doorCovered,
   type DoorCoverOptions,
+  extinguisherNear,
   extinguisherSpots,
   fireCover,
   type HeldExtinguisher,
@@ -157,13 +157,13 @@ import {
 import { flurrying } from './flurries';
 import { endow, foundationOpen, giftBlocker, nextGift } from './foundation';
 import { objectiveDetail } from './goals';
-import { admitGuests, type ArrivalPace, arrivalPace, guestCap, intakeLimit, setIntakeCap, updateGuest } from './guests';
-import { buyPlot, landOffers, renamePlot, updateLand } from './land';
+import { updateGuest } from './guests';
+import { hasRoom, landOffers } from './inventory';
+import { buyPlot, renamePlot, updateLand } from './land';
 import { checkLessons } from './lessons';
 import {
   announceOpenings,
   machineBusy,
-  machineUpkeep,
   practicable,
   rattledRooms,
   rattleReach,
@@ -176,12 +176,13 @@ import { hasSupplier, setMushrooms } from './mushrooms';
 import { itemNoise, noiseAt } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { updateOutdoors } from './outdoors';
+import { monthEnd, payIntoRed, takePayrollLoan, updateInsolvency } from './payday';
 import { pausedToPlace, type PlacingNow, setSpeed, watchPlacing } from './placing';
-import { type PolicyChange, setPolicy, setRoomPriority } from './policy';
+import { type PolicyChange, setDiscipline, setPolicy, setRoomPriority } from './policy';
 import { type PlacePreview, previewItem, previewMove } from './preview';
 import { type PrimerLine, primerLines } from './primer';
 import type { Objective } from './progress';
-import { checkOpening, checkStars, hasRoom, objectives } from './progress';
+import { checkOpening, checkStars, objectives } from './progress';
 import { moveInLine, moveToStation, sendHome, shortestOtherLine } from './queues';
 import { monthSoFar } from './records';
 import { type RivalCourse, rivalCourse, updateRival } from './rival';
@@ -201,8 +202,8 @@ import {
 import { askSoul, canRetrieve } from './souls';
 import {
   aboutToQuit,
+  assignRoom,
   daysUntilQuit,
-  fairPay,
   fire,
   giveRaise,
   giveRaisesAsked,
@@ -211,13 +212,13 @@ import {
   updateStaff,
 } from './staffing';
 import { type StandingPoints, standingPoints, updateStanding } from './standing';
-import { callOrder, type Chance, successChance, updateStations } from './stations';
+import { callOrder, successChance, updateStations } from './stations';
 import { subjectSpot } from './subjects';
 import { checkSurroundings, restoreSurroundings } from './surroundings';
 import type { Course } from './training';
 import { cancelBlocker, cancelTraining, courses, train, trainBlocker } from './training';
 import type { DeliveryProblem } from './treatments';
-import { deliveryProblem, modalityOf, offered, setDiscipline, unlocked } from './treatments';
+import { deliveryProblem, modalityOf, offered, unlocked } from './treatments';
 import {
   currentStep,
   noteLooked,
@@ -229,18 +230,11 @@ import {
   type TutorialStep,
   warnTutorial,
 } from './tutorial';
-import { cutOff, inRush, type Season, seasonOf, updateTwists } from './twists';
+import { cutOff, inRush, updateTwists } from './twists';
 import { orderUpgrade } from './upgrades';
 import { decayItems, wearByTheDay } from './upkeep';
 import { fadeVibes } from './vibes';
-import {
-  extinguisherNear,
-  inspectionProblems,
-  lapseInspection,
-  settleInspection,
-  updateVisitor,
-  updateVisits,
-} from './visits';
+import { inspectionProblems, lapseInspection, settleInspection, updateVisitor, updateVisits } from './visits';
 import { outdoorTemp, thermostatShare, todayIndoors, warmthAt } from './warmth';
 import { letWaveIn, updateWaves, type WaveChecks, waveChecks, waveReady, wavesSwitched } from './waves';
 import { warnWorsening } from './worsening';

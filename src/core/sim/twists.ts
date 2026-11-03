@@ -2,7 +2,7 @@
 
 import { centerOf, DAY_SECONDS, DAYS_PER_MONTH } from '../data';
 import type { RushHours, Seasons, Snowfall } from '../data/types';
-import { calendarDay } from '../format';
+import { calendarDay, type Season, seasonOf } from '../format';
 import type { GameState } from '../state/types';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
@@ -22,18 +22,6 @@ export const RUSH_DAYS = 2;
 export function inRush(day: number): boolean {
   const t = day - Math.floor(day / RUSH_CYCLE_DAYS) * RUSH_CYCLE_DAYS;
   return t >= RUSH_START && t < RUSH_START + RUSH_DAYS;
-}
-
-/** The seasons, a quarter of the year each, starting the year in winter. */
-export type Season = 'winter' | 'spring' | 'summer' | 'autumn';
-
-/** The season a game day falls in: December to February is winter, and so on. */
-export function seasonOf(day: number): Season {
-  const month = Math.floor(day / DAYS_PER_MONTH) % 12;
-  if (month === 11 || month <= 1) return 'winter';
-  if (month <= 4) return 'spring';
-  if (month <= 7) return 'summer';
-  return 'autumn';
 }
 
 /** A number from 0 to 1 that is always the same for the same whole number, and looks random from one to the next. */

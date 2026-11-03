@@ -1,8 +1,8 @@
 // The Stats menu's Guests tab: which discipline new guests come for, and what draws them to each.
 
 import { centerOf, DISCIPLINES } from '../../../core/data';
+import { guestsCounted } from '../../../core/sim/arrivals';
 import type { DisciplineDemand } from '../../../core/sim/demand';
-import { guestsCounted } from '../../../core/sim/guests';
 import { css } from '../../../styled-system/css';
 import { useGame } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';

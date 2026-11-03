@@ -13,11 +13,11 @@ import {
   RUNAWAY_SECONDS,
 } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { badTrip } from '../../src/core/sim/ceremonies';
 import type { SimContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { spawnGuest } from '../../src/core/sim/guests';
-import { repathAll } from '../../src/core/sim/movement';
+import { repathAll } from '../../src/core/sim/repath';
 import { calmerFor, calmSeconds, rollRunaway, RUNAWAY_LINES, running, startRunning } from '../../src/core/sim/runaways';
 import type { Sim } from '../../src/core/sim/sim';
 import type { Guest, Staff } from '../../src/core/state/types';

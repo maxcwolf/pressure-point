@@ -4,8 +4,7 @@
 import * as THREE from 'three';
 
 import { centerOf } from '../core/data';
-import { calendarDay } from '../core/format';
-import { type Season, seasonOf } from '../core/sim/twists';
+import { calendarDay, type Season, seasonOf } from '../core/format';
 import type { GameState } from '../core/state/types';
 import { type Ground, seasonGround } from './daylight';
 

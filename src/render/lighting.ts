@@ -7,10 +7,9 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { footprintKey } from '../core/footprint';
-import { calendarDay } from '../core/format';
+import { calendarDay, seasonOf } from '../core/format';
 import { buildingsOf } from '../core/land';
 import { mishapHolder } from '../core/sim/mishaps';
-import { seasonOf } from '../core/sim/twists';
 import type { GameState, Mishap } from '../core/state/types';
 import { type Daylight, daylightAt, NOON, SEASON_LIGHT, stormy, type Tint } from './daylight';
 import { orchardFor } from './models/orchard';

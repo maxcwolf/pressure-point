@@ -18,14 +18,14 @@ import {
   SPRINKLER_SECONDS,
 } from '../../src/core/data';
 import { advise } from '../../src/core/sim/advisor';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { fireRiskAdvice, startFire, truckPark, truckStart, updateBlazes } from '../../src/core/sim/blazes';
 import { roomRefund } from '../../src/core/sim/building';
+import { caretakerSpeed } from '../../src/core/sim/careers';
 import { streetEnds } from '../../src/core/sim/chars';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { maybeOverload } from '../../src/core/sim/machines';
 import type { Sim } from '../../src/core/sim/sim';
-import { caretakerSpeed } from '../../src/core/sim/staffing';
 import { inspectionProblems } from '../../src/core/sim/visits';
 import type { Item, Staff } from '../../src/core/state/types';
 import { buildRoom, hire, inconsistencies, openCenter, run, runUntil, toasts } from './helpers';

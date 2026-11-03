@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-import type { Season } from '../../core/sim/twists';
+import type { Season } from '../../core/format';
 import { must } from '../../core/util';
 import { owned } from '../disposal';
 import { hash } from '../shared';

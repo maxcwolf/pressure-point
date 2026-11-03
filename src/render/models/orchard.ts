@@ -3,7 +3,7 @@
 // down to a few empty branches like the park's trees.
 import * as THREE from 'three';
 
-import type { Season } from '../../core/sim/twists';
+import type { Season } from '../../core/format';
 import { blob, cyl, mat, sph } from './parts';
 import { bareCrowns, BARK, crownPlacement, SPREADING, type TreeSpot } from './tree';
 

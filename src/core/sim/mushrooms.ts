@@ -9,6 +9,7 @@ import type { Guest, RoomVerdict } from '../state/types';
 import type { SimContext } from './context';
 import { earn } from './economy';
 import { toast } from './events';
+import { isCounter } from './shop';
 
 /** What the inspector writes up on finding mushrooms under the counter. */
 export const MUSHROOMS_FOUND = 'magic mushrooms under the counter';
@@ -18,7 +19,7 @@ export const hasSupplier = (ctx: SimContext) =>
   offeringOn(ctx.s, 'shaman') && ctx.s.staff.some((st) => st.role === 'shaman' && st.state !== 'leaving');
 
 /** Whether there is a Shop Counter to sell them from. */
-const hasCounter = (ctx: SimContext) => ctx.s.items.some((it) => it.type === 'shop_counter');
+const hasCounter = (ctx: SimContext) => ctx.s.items.some(isCounter);
 
 /** Whether mushrooms are on sale under the counter right now: switched on, with a Shaman to supply them and a counter. */
 export const mushroomsOnSale = (ctx: SimContext) => ctx.s.mushrooms && hasSupplier(ctx) && hasCounter(ctx);
@@ -64,7 +65,7 @@ export function inspectorComing(ctx: SimContext) {
       ctx,
       'The mushrooms are still on sale under the Shop Counter. Put them away before the inspector sees them.',
       'bad',
-      { kind: 'item', id: s.items.find((it) => it.type === 'shop_counter')?.id ?? 0 },
+      { kind: 'item', id: s.items.find(isCounter)?.id ?? 0 },
       'bubble-mushroom',
     );
 }

@@ -2,9 +2,21 @@
 // it is noticed and kept for the casebook.
 import { describe, expect, it } from 'vitest';
 
-import { BOTCH_FACTOR, GUESS_PENALTY, ROLES, UPGRADE_LEVELS, UPGRADE_SUCCESS } from '../../src/core/data';
+import {
+  BASE_CHANCE,
+  BOTCH_FACTOR,
+  GUESS_PENALTY,
+  MAX_CHANCE,
+  MIN_CHANCE,
+  ROLES,
+  SKILL_SUCCESS,
+  TIRED_PENALTY,
+  UPGRADE_LEVELS,
+  UPGRADE_SUCCESS,
+} from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import {
+  type Chance,
   failRate,
   failureCause,
   failureOf,
@@ -12,18 +24,10 @@ import {
   FAILURES_KEPT,
   failureText,
   recordFailure,
+  settledChance,
 } from '../../src/core/sim/failures';
 import type { Sim } from '../../src/core/sim/sim';
-import {
-  BASE_CHANCE,
-  type Chance,
-  MAX_CHANCE,
-  MIN_CHANCE,
-  settledChance,
-  SKILL_SUCCESS,
-  successChance,
-  TIRED_PENALTY,
-} from '../../src/core/sim/stations';
+import { successChance } from '../../src/core/sim/stations';
 import type { FailedTreatment } from '../../src/core/state/types';
 import { causeText, failureBreakdown, failureHead, failureLines } from '../../src/ui/lib/failures';
 import { hire, openCenter, runUntil } from './helpers';

@@ -32,6 +32,7 @@ import type { GameState, Guest, Item, Room, Staff } from '../state/types';
 import { at, clamp } from '../util';
 import { prestige } from './ambience';
 import { roomLabels, worksIn } from './assignments';
+import { atWork } from './careers';
 import type { SimContext } from './context';
 import { practicable, signatureMachine } from './machines';
 import { campaignBoost } from './marketing';
@@ -398,9 +399,6 @@ export interface MachineCapacity {
 
 /** Whether a station is there to work: in a finished room, or the corridor, and not broken. */
 const working = (ctx: SimContext, it: Item) => it.wear < 100 && (ctx.world.roomOfItem(it)?.done ?? true);
-
-/** Whether someone on the payroll is at work today: staying, and not away on a course or a house call. */
-export const atWork = (st: Staff) => !['leaving', 'toTrain', 'training', 'toCall', 'away'].includes(st.state);
 
 /**
  * What the center can treat at once. A treatment station counts while someone on the payroll and at work could work

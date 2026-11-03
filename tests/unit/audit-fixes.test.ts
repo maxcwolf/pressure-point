@@ -15,6 +15,7 @@ import {
   RED_MONTH_MORALE,
   RED_MORALE,
 } from '../../src/core/data';
+import { fairPay } from '../../src/core/sim/careers';
 import { createContext } from '../../src/core/sim/context';
 import {
   averagePrice,
@@ -22,19 +23,17 @@ import {
   daysInRed,
   daysUntilBankrupt,
   loanLimit,
-  monthEnd,
-  payIntoRed,
   projectedCashflow,
   recoup,
   spend,
-  updateInsolvency,
   warnPayday,
 } from '../../src/core/sim/economy';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { campaignBlocker } from '../../src/core/sim/marketing';
+import { monthEnd, payIntoRed, updateInsolvency } from '../../src/core/sim/payday';
 import { saleDraw, updateRival } from '../../src/core/sim/rival';
 import { reachSoul, retrieved } from '../../src/core/sim/souls';
-import { fairPay, moraleTarget } from '../../src/core/sim/staffing';
+import { moraleTarget } from '../../src/core/sim/staffing';
 import { hasMechanic } from '../../src/core/sim/upgrades';
 import { updateVisits } from '../../src/core/sim/visits';
 import { disciplineOn, unlockedUpTo } from '../../src/core/state/game';

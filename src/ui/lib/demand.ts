@@ -16,8 +16,8 @@ import {
 import type { Discipline, ItemType, Modality } from '../../core/data/types';
 import { an, listed } from '../../core/format';
 import { gapAdvice } from '../../core/sim/advisor';
+import { type ArrivalPace, fedMachines } from '../../core/sim/arrivals';
 import type { Capacity, DisciplineDemand, MachineDemand, SpecialtyGap } from '../../core/sim/demand';
-import { type ArrivalPace, fedMachines } from '../../core/sim/guests';
 import type { IconLine } from './icon-line';
 
 /** A multiplier as it reads, to two places at most: "×1.4", "×0.75", "×1". */

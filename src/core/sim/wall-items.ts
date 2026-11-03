@@ -6,6 +6,7 @@ import {
   CLOCK_BREAK_BOOST,
   CLOCK_DRAIN,
   CLOCK_SIGHT,
+  ITEMS,
   type ItemType,
   POSTER_MAX,
   POSTER_MORALE,
@@ -75,15 +76,12 @@ export function wallDrain(ctx: SimContext, g: Guest): number {
   );
 }
 
-/** The charts that help treatments in their rooms. */
-const CHARTS: readonly ItemType[] = ['chakra_chart', 'meridian_poster'];
-
 /** How much more often a treatment at this table works for a chart on its room's wall. Only one counts. */
 export function chartBonus(ctx: SimContext, table: Item): number {
   const zone = ctx.world.zoneAt(table.x, table.y);
   if (zone <= 0) return 0;
   const chart = ctx.s.items.some(
-    (it) => CHARTS.includes(it.type) && ctx.world.zoneAt(it.x, it.y) === zone && ctx.world.usable(it),
+    (it) => ITEMS[it.type].chart && ctx.world.zoneAt(it.x, it.y) === zone && ctx.world.usable(it),
   );
   return chart ? CHART_BONUS : 0;
 }

@@ -2,7 +2,7 @@
 // and an amber evening at closing, and a sky and lawn a little fresher in spring, warmer in summer, golden in autumn
 // and paler in winter. Pure numbers, so the balance is easy to tune and test; lighting.ts puts them on the lights.
 
-import type { Season } from '../core/sim/twists';
+import type { Season } from '../core/format';
 
 /** A tint for a light, red, green and blue, each 1 for no change. */
 export type Tint = readonly [number, number, number];

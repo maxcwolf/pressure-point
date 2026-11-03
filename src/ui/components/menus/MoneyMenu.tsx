@@ -11,10 +11,10 @@ import {
   PRICE_MIN,
 } from '../../../core/data';
 import { money } from '../../../core/format';
+import { INTAKE_CAP_MIN } from '../../../core/sim/arrivals';
 import { loanLimit, payrollOutlook } from '../../../core/sim/economy';
 import { netOf } from '../../../core/sim/economy';
 import { giftsToCome } from '../../../core/sim/foundation';
-import { INTAKE_CAP_MIN } from '../../../core/sim/guests';
 import type { Ledger } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
 import { buttonRow, panelCard, tabButton, tabStrip } from '../../../styled-system/recipes';
