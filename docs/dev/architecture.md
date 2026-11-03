@@ -36,6 +36,7 @@ Input goes the other way. Pointer and keyboard handlers in `src/app/` call the b
 ## The simulation (`src/core/`)
 
 - **State is plain data.** `GameState` (`core/state/types.ts`) is JSON all the way down, so saving is `JSON.stringify`. Anything that can be rebuilt from it, such as the tile grid, is kept out of it.
+- **The grid and what reads it.** `World` (`core/world.ts`) keeps the grids worked out from the state: each tile's zone, what blocks it, what is kept clear, the doors, and the buildings, and says whether a tile can be walked on and a step taken (`walkable`, `canStep`). Pathfinding over them (`core/pathfinding.ts`: A\*, flood fills, standing spots, whether everything can be reached) and the build rules (`core/build-rules.ts`) are modules of their own, functions that take the world, or a what-if's grids from `World.tryOut`; `World` passes its calls through to them, so the sim asks the world as before.
 - **Content is data too.** Rooms, items, roles, treatments and conditions are tables in `core/data/`. Adding one means adding an entry, not writing new logic.
 - **Logic is functions.** Each file in `core/sim/` covers one area (guests, staffing, stations, building, economy and so on) as functions that take a `SimContext`: the state, the `World` grid built from it, the queue of events and the ambience grid. Functions that need none of that take no context and are pure.
 - **`Sim` is the front door.** The rest of the game talks only to the `Sim` class, which runs the clock and passes each call to the function that does the work.
