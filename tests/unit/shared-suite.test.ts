@@ -3,8 +3,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ItemType } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
-import { goWait, spawnGuest } from '../../src/core/sim/guests';
+import { goWait } from '../../src/core/sim/lines';
 import type { Sim } from '../../src/core/sim/sim';
 import type { Item, Staff } from '../../src/core/state/types';
 import { must } from '../../src/core/util';

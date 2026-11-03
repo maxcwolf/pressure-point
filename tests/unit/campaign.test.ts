@@ -4,10 +4,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { newGameCenter } from '../../src/app/start';
 import { centerOpen, freshCampaign, nextCenter, withStars } from '../../src/core/campaign';
 import { CAMPAIGN, type CenterId, CENTERS } from '../../src/core/data';
+import { seasonOf } from '../../src/core/format';
 import { setSeed } from '../../src/core/random';
+import { admitGuests, guestCap, guestsCounted, INTAKE_CAP_MIN, rollCondition } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { admitGuests, guestCap, guestsCounted, INTAKE_CAP_MIN, rollCondition } from '../../src/core/sim/guests';
 import { LESSON_IDS, LESSONS_BEFORE_MEMORY } from '../../src/core/sim/lessons';
 import { monthSoFar } from '../../src/core/sim/records';
 import { Sim } from '../../src/core/sim/sim';
@@ -18,7 +19,6 @@ import {
   SEASON_AHEAD_DAYS,
   seasonAhead,
   seasonNews,
-  seasonOf,
   seasonOutlook,
   updateTwists,
 } from '../../src/core/sim/twists';

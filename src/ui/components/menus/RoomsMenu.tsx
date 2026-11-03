@@ -1,9 +1,8 @@
 // The Rooms menu: every kind of room that can be built, the templates saved to build again, and the rooms again to
 // pencil in for later.
 
-import { ITEMS, ROLES, ROOM_ORDER, roomHere, ROOMS } from '../../../core/data';
+import { ITEMS, itemUpkeep, ROLES, ROOM_ORDER, roomHere, ROOMS } from '../../../core/data';
 import { money } from '../../../core/format';
-import { itemUpkeep } from '../../../core/sim/machines';
 import { unlockedUpTo } from '../../../core/state/game';
 import { loadCampaign } from '../../../storage/campaign';
 import { css } from '../../../styled-system/css';

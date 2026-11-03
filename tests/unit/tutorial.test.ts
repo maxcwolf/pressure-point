@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { startTutorial } from '../../src/app/start';
 import { type CenterId, QUIT_AFTER } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { lessonTip } from '../../src/core/sim/lessons';
 import { PRIMER_BLADDER, primerTip } from '../../src/core/sim/primer';
 import { Sim } from '../../src/core/sim/sim';

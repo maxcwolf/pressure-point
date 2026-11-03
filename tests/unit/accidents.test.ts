@@ -25,9 +25,9 @@ import {
   wentHomeMortified,
 } from '../../src/core/sim/accidents';
 import { prestigeTerms } from '../../src/core/sim/ambience';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { setDuty } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { HARM_EXPLAIN } from '../../src/core/sim/harms';
 import { inPuddle } from '../../src/core/sim/novelties';
 import { primerTip } from '../../src/core/sim/primer';

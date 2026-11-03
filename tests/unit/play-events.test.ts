@@ -7,7 +7,7 @@ import { FrameStats } from '../../src/app/frames';
 import { feelProps, freshFeel, gameProps, markOf, noteFeel, playEvents } from '../../src/app/play-events';
 import { DAYS_PER_MONTH } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
-import { monthEnd } from '../../src/core/sim/economy';
+import { monthEnd } from '../../src/core/sim/payday';
 import type { Emergency, Outbreak, VisitReport } from '../../src/core/state/types';
 import { forgetSharing, loadSharing, saveSharing } from '../../src/storage/analytics';
 import { addConsult, addMassage, freshSim, hire } from './helpers';

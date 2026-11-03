@@ -19,11 +19,11 @@ import {
 } from '../../src/core/data';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
+import { extinguisherNear } from '../../src/core/sim/fire-cover';
 import { snowedIn } from '../../src/core/sim/twists';
 import {
   type AspectScores,
   aspectScores,
-  extinguisherNear,
   inspectionProblems,
   updateVisits,
   verdict,

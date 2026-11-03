@@ -22,10 +22,10 @@ import {
 } from '../../src/core/data';
 import { tuning } from '../../src/core/difficulty';
 import { fairSalary, makeCandidate, rollQuirks, scalePay } from '../../src/core/people';
-import { heldSpace, holdingSpaceFor, spaceHolder } from '../../src/core/sim/careers';
+import { heldSpace, holdingSpaceFor, serviceSeconds, spaceHolder } from '../../src/core/sim/careers';
 import type { SimContext } from '../../src/core/sim/context';
 import type { Sim } from '../../src/core/sim/sim';
-import { postAboutIt, serviceSeconds, worksAnyway } from '../../src/core/sim/stations';
+import { postAboutIt, worksAnyway } from '../../src/core/sim/stations';
 import type { Candidate, GameState, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { quirkNotes, quirksSaid, rareFirst } from '../../src/ui/lib/quirks';

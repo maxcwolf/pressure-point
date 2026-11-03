@@ -16,6 +16,7 @@ import {
 } from '../../src/core/data';
 import type { SimContext } from '../../src/core/sim/context';
 import {
+  type Chance,
   failRate,
   failureCause,
   failureOf,
@@ -23,9 +24,10 @@ import {
   FAILURES_KEPT,
   failureText,
   recordFailure,
+  settledChance,
 } from '../../src/core/sim/failures';
 import type { Sim } from '../../src/core/sim/sim';
-import { type Chance, settledChance, successChance } from '../../src/core/sim/stations';
+import { successChance } from '../../src/core/sim/stations';
 import type { FailedTreatment } from '../../src/core/state/types';
 import { causeText, failureBreakdown, failureHead, failureLines } from '../../src/ui/lib/failures';
 import { hire, openCenter, runUntil } from './helpers';

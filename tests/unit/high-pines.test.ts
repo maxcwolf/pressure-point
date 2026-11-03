@@ -5,10 +5,10 @@ import { nextCenter } from '../../src/core/campaign';
 import { CENTERS, COLD_STONES, DAYS_PER_MONTH, H, IDEAL_TEMP, LOT_W, STONE_COOLING } from '../../src/core/data';
 import type { Snowfall } from '../../src/core/data/types';
 import { setSeed } from '../../src/core/random';
+import { admitGuests, rollCondition } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
 import { updateEmergency } from '../../src/core/sim/emergencies';
 import { drainEvents } from '../../src/core/sim/events';
-import { admitGuests, rollCondition } from '../../src/core/sim/guests';
 import { Sim } from '../../src/core/sim/sim';
 import {
   arrivalFactor,

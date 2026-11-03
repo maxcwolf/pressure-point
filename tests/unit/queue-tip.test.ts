@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { conditionOf, DAY_SECONDS } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import type { Sim } from '../../src/core/sim/sim';
 import { nextInLine } from '../../src/core/sim/stations';
 import type { Guest, Item } from '../../src/core/state/types';

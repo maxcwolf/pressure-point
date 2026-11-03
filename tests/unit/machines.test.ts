@@ -20,6 +20,7 @@ import {
 } from '../../src/core/data';
 import { makeCandidate } from '../../src/core/people';
 import type { Layout } from '../../src/core/room-layout';
+import { admitGuests, guestCap, spawnGuest } from '../../src/core/sim/arrivals';
 import type { SimContext } from '../../src/core/sim/context';
 import {
   capacity,
@@ -30,19 +31,12 @@ import {
   machineDemand,
   roomPull,
 } from '../../src/core/sim/demand';
-import { admitGuests, guestCap, spawnGuest } from '../../src/core/sim/guests';
-import {
-  machineBuilt,
-  machineSeconds,
-  machineUpkeep,
-  maybeOverload,
-  practicable,
-  roomForModality,
-  smoking,
-  treatsHere,
-} from '../../src/core/sim/machines';
+import { machineUpkeep } from '../../src/core/sim/economy';
+import { machineBuilt } from '../../src/core/sim/inventory';
+import { machineSeconds, maybeOverload, practicable, roomForModality } from '../../src/core/sim/machines';
 import type { Sim } from '../../src/core/sim/sim';
-import { unlocked } from '../../src/core/sim/treatments';
+import { treatsHere, unlocked } from '../../src/core/sim/treatments';
+import { smoking } from '../../src/core/sim/upkeep';
 import { templateLock } from '../../src/core/templates';
 import { machineCures, roomKarmaLock } from '../../src/ui/lib/catalog';
 import { capacityNote, machinePullNote, paceNote } from '../../src/ui/lib/demand';

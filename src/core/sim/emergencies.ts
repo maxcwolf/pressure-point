@@ -12,10 +12,10 @@ import {
 import { tuning } from '../difficulty';
 import { money } from '../format';
 import { irnd, pick, rnd } from '../random';
+import { spawnGuest } from './arrivals';
 import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, toast } from './events';
-import { spawnGuest } from './guests';
 import { emergencyEnded, logNews } from './news';
 import { offered, unlocked } from './treatments';
 import { cutOff } from './twists';

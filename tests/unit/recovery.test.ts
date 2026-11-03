@@ -2,8 +2,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { ITEMS, MODALITIES, NO_REST_PENALTY, ROOMS } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import type { SimContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { guestNoise } from '../../src/core/sim/noise';
 import { needsRest, restPenalty } from '../../src/core/sim/recovery';
 import type { Sim } from '../../src/core/sim/sim';

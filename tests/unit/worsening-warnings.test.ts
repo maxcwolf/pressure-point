@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 
 import { POOR_CONDITION, SEND_HOME_REP, WORSE_REP } from '../../src/core/data';
 import { advise } from '../../src/core/sim/advisor';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
-import { spawnGuest } from '../../src/core/sim/guests';
+import { lineOf } from '../../src/core/sim/lines';
 import {
   aboutToWorsen,
   conditionDays,
-  lineOf,
   poorlyWaiting,
   warnWorsening,
   WORSE_SOON_DAYS,

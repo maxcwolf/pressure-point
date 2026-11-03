@@ -1,5 +1,6 @@
 // Every item that can be placed: furniture, equipment and decor.
 
+import { ROOMS } from './rooms';
 import { STONE_USE } from './rules';
 import type { ItemDef, ItemType, RoomType } from './types';
 
@@ -1576,6 +1577,15 @@ export const isWatered = (type: ItemType) => ITEMS[type].tending?.duty === 'plan
 export function heatPerUse(type: ItemType): number {
   const tending = ITEMS[type].tending;
   return tending?.duty === 'stones' ? tending.use : 0;
+}
+
+/** What a kind of equipment costs to run for a month: a treatment machine's, or that of one that runs itself. */
+export const itemUpkeep = (type: ItemType) => ITEMS[type].machine?.upkeep ?? ITEMS[type].upkeep ?? 0;
+
+/** What to call the place a station is in: its room, or the item itself in a corridor. */
+export function stationPlace(it: { type: ItemType }): string {
+  const where = ITEMS[it.type].where;
+  return where === 'corridor' || where === 'any' || where === 'outdoors' ? ITEMS[it.type].name : ROOMS[where].name;
 }
 
 /** Every kind of room an item may go in, for one that goes in rooms. */

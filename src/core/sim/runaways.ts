@@ -39,13 +39,12 @@ import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
 import { feel } from './feelings';
-import { decide, leave } from './guests';
+import { decide, leave, removeFromStations } from './lines';
 import { goTo, halt } from './movement';
 import { logNews, runnerNews } from './news';
 import { catchable } from './outbreaks';
+import { staffIdle } from './posts';
 import { within } from './souls';
-import { staffIdle } from './staffing';
-import { removeFromStations } from './stations';
 
 /** What the announcer says as a guest starts running, one or the other by who they are. */
 export const RUNAWAY_LINES = [

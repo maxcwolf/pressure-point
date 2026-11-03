@@ -7,8 +7,7 @@ import { nameInSentence, type PlotOffer } from '../land';
 import { starsEarned } from '../state/game';
 import type { SimContext } from './context';
 import type { Subject } from './events';
-import { landOffers } from './land';
-import { hasItem, hasRoom, hasStaff } from './progress';
+import { hasItem, hasRoom, hasStaff, landOffers } from './inventory';
 import { canSmudge } from './vibes';
 
 /** The things the center will need, in the order they come up, each with its line on the checklist. */

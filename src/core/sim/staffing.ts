@@ -18,12 +18,10 @@ import {
   LITTER_MORALE,
   LITTER_STAFF,
   LONE_WAIT,
-  MAINTENANCE_SPEED,
   MISERABLE_MORALE,
   MORALE_BASE,
   MORALE_DRIFT,
   MORALE_STARS,
-  MOTIVATION_SPEED,
   PAY_MORALE,
   PAY_MORALE_HIGH,
   PAY_MORALE_LOW,
@@ -48,7 +46,6 @@ import {
   TIRED_ENERGY,
   TIRED_WALK,
   traitOf,
-  traitSpeed,
   UNDERPAID,
   VIBES_MORALE,
   WANDER_CHANCE,
@@ -59,74 +56,52 @@ import {
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
-import { fairSalary, scalePay } from '../people';
 import { pick, random } from '../random';
 import { staffStart } from '../state/game';
-import type { Char, Item, Job, Staff } from '../state/types';
+import type { Item, Job, Staff } from '../state/types';
 import { clamp, must } from '../util';
-import { accessPose, accessTile, footprint } from '../world';
+import { accessPose, accessTile } from '../world';
 import { prestige } from './ambience';
-import { worksAt } from './assignments';
+import { canWorkIn, toggled, worksAt } from './assignments';
 import { blazeAt, douse, douseSeconds, standByFire } from './blazes';
-import { sameRoomCount } from './building';
 import { callWait, leaveForCall, returnFromCall, setOff, withdrawCall } from './calls';
-import { CHEER_MORALE, cheeredUp, gainXp, hasGeneral, jobDuty, onDuty, stationDuty } from './careers';
+import {
+  caretakerSpeed,
+  CHEER_MORALE,
+  cheeredUp,
+  fairPay,
+  gainXp,
+  hasGeneral,
+  jobDuty,
+  onDuty,
+  stationDuty,
+} from './careers';
 import { bless, clearingSeconds } from './ceremonies';
 import { guestById, lobbyTile, say, staffById, streetTile } from './chars';
 import { newChar } from './chars';
-import { accessIndex, claim, findAccess, release } from './claims';
+import { claim, findAccess, release } from './claims';
 import { backForClass, isClassLead, restDue } from './classes';
 import type { SimContext } from './context';
-import { changeRep, longInRed, payOff, recoup } from './economy';
+import { changeRep, longInRed, payOff } from './economy';
 import { emit, staffRequest, tipOnce, toast } from './events';
-import { resetGuest } from './guests';
+import { hasItem, sameRoomCount } from './inventory';
 import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaundering } from './linens';
 import { startWard, wardStep, wardWanted } from './mishaps';
-import { goTo, halt, moveAlong } from './movement';
+import { goTo, moveAlong, standBeside } from './movement';
 import { hireNews, logNews } from './news';
-import { hasItem } from './progress';
+import { dropJob, leavePost, staffIdle, takePost } from './posts';
 import { calmStep, followRunner } from './runaways';
 import { isLeadStation, matsOf, sessionState } from './sessions';
 import { burntOut, reachSoul, soulStep, soulToRetrieve, startSoul } from './souls';
 import type { BreakRoom } from './staff-needs';
 import { fedUp, goRefresh, growNeeds, refreshed, refreshSeconds, wants, wantsRefresh } from './staff-needs';
-import { leftForSpecialist } from './stations';
 import { graduate } from './training';
-import { deliveryProblem, modalityOf } from './treatments';
+import { deliveryProblem, leftForSpecialist, modalityOf } from './treatments';
 import { installUpgrade } from './upgrades';
 import { wantsTending } from './upkeep';
 import { clearVibes, roomToSmudge, smudgeSeconds, smudging, startSmudge, wander } from './vibes';
 import { clockBreak, posterMorale } from './wall-items';
 import { discomfort, warmthAt } from './warmth';
-
-/** The four tiles beside a tile, for standing next to something. */
-const BESIDE: readonly (readonly [dx: number, dy: number])[] = [
-  [0, 1],
-  [1, 0],
-  [-1, 0],
-  [0, -1],
-];
-
-/**
- * Set someone walking to stand next to an item, on whichever side can be reached, and on the same side of the
- * building's walls, passing over any tile `free` turns down. False if no side can be reached.
- */
-export function standBeside(
-  ctx: SimContext,
-  c: Char,
-  item: Item,
-  free: (x: number, y: number) => boolean = () => true,
-): boolean {
-  const indoors = ctx.world.inside(item.x, item.y);
-  for (const [fx, fy] of footprint(item)) {
-    for (const [dx, dy] of BESIDE) {
-      const [bx, by] = [fx + dx, fy + dy];
-      if (!free(bx, by)) continue;
-      if (ctx.world.walkable(bx, by) && ctx.world.inside(bx, by) === indoors && goTo(ctx, c, bx, by)) return true;
-    }
-  }
-  return false;
-}
 
 /** Take on an applicant and send them in from the street. */
 export function hire(ctx: SimContext, candidateId: number): Staff | null {
@@ -189,11 +164,6 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
   toast(ctx, text, 'bad', { kind: 'staff', id: st.id });
   logNews(ctx, { kind: 'left', how, who: st.name, role: st.role });
   emit(ctx, { type: 'sfx', name: 'fail' });
-}
-
-/** What this member of staff could reasonably expect to be paid, with salaries scaled as the game's difficulty sets. */
-export function fairPay(st: Staff, scale = 1): number {
-  return scalePay(fairSalary(st.role, st.skill, st.traits, st.quals, st.general.length), scale);
 }
 
 /** The salary a raise would take them to: the going rate, or 10% more if they already earn it. */
@@ -438,64 +408,6 @@ export function wantsAway(ctx: SimContext, st: Staff, it: Item): boolean {
   return wantedElsewhere(ctx, st, it) || (restDue(ctx, st) && !!findAccess(ctx, 'rest', st.tx, st.ty));
 }
 
-/** Step away from the station they were staffing. */
-function leavePost(ctx: SimContext, st: Staff) {
-  const it = ctx.world.item(st.post);
-  if (it?.staffId === st.id) {
-    it.staffId = 0;
-    // whoever they had called or were seeing goes back to the line, rather than wait on the table for nobody
-    const g = guestById(ctx, it.serving);
-    if (g) resetGuest(ctx, g);
-    // a class they were leading is called off, and can start again when someone is there to lead it
-    if (isClassLead(it) && it.progress > 0) {
-      it.progress = 0;
-      const room = ctx.world.roomOfItem(it);
-      if (room) delete room.lastClass;
-    }
-    // and at the bowls, so does everyone lying on the mats they played for
-    if (isLeadStation(it))
-      for (const m of matsOf(ctx, it)) {
-        const lying = guestById(ctx, m.serving);
-        if (lying) resetGuest(ctx, lying);
-      }
-  }
-  st.post = 0;
-  st.busy = false;
-  delete st.lineT;
-}
-
-/** Give up the cleaning, watering or repair job they had claimed. */
-function dropJob(ctx: SimContext, st: Staff) {
-  const job = st.job;
-  if (!job) return;
-  const claimed =
-    job.kind === 'litter'
-      ? ctx.s.litter.find((x) => x.id === job.id)
-      : job.kind === 'smudge'
-        ? ctx.s.rooms.find((r) => r.id === job.id)
-        : // a soul retrieval is for a member of staff, and a runner is calmed wherever they are: neither claims anything
-          job.kind === 'soul' || job.kind === 'ward' || job.kind === 'calm'
-          ? undefined
-          : ctx.world.item(job.id);
-  if (claimed?.claimedBy === st.id) claimed.claimedBy = 0;
-  st.job = null;
-}
-
-/** Drop whatever a member of staff is doing and leave them free for new work. */
-export function staffIdle(ctx: SimContext, st: Staff) {
-  if (st.training) {
-    // interrupted before finishing: the course fee comes back
-    recoup(ctx, st.training.cost, 'training');
-    st.training = null;
-  }
-  leavePost(ctx, st);
-  release(ctx, st);
-  dropJob(ctx, st);
-  halt(st);
-  st.state = 'idle';
-  st.timer = 0.2;
-}
-
 /** Head for a free rest spot, if there is one. */
 function tryBreak(ctx: SimContext, st: Staff): boolean {
   const sofa = findAccess(ctx, 'rest', st.tx, st.ty);
@@ -513,18 +425,6 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
   st.timer = 0;
   say(st, 'bubble-break');
   return true;
-}
-
-/**
- * How much faster than usual a Caretaker gets through their jobs: quicker with Maintenance, and with Motivation, and
- * as their quirks make them.
- */
-export function caretakerSpeed(st: Staff): number {
-  return (
-    (hasGeneral(st, 'maintenance') ? MAINTENANCE_SPEED : 1) *
-    (hasGeneral(st, 'motivation') ? MOTIVATION_SPEED : 1) *
-    traitSpeed(st.traits)
-  );
 }
 
 /** How long a Caretaker takes over a chore. */
@@ -577,17 +477,6 @@ function postScore(ctx: SimContext, st: Staff, it: Item): number {
 export function openPriorityPost(ctx: SimContext, st: Staff): Item | undefined {
   if (!ctx.s.rooms.some((r) => r.priority)) return undefined;
   return ctx.s.items.find((it) => canStaff(ctx, st, it) && inPriorityRoom(ctx, it.x, it.y));
-}
-
-/** Set off to work a station, which is theirs from now. False if its staff spot cannot be reached. */
-function takePost(ctx: SimContext, st: Staff, it: Item): boolean {
-  const ai = accessIndex(it, 'staff');
-  const [x, y] = accessTile(it, ai);
-  if (!goTo(ctx, st, x, y, accessPose(it, ai))) return false;
-  it.staffId = st.id;
-  st.post = it.id;
-  st.state = 'toPost';
-  return true;
 }
 
 /**
@@ -955,4 +844,20 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
       if ((arrived && wasLeaving) || !st.path) ctx.s.staff = ctx.s.staff.filter((x) => x !== st);
       break;
   }
+}
+
+/** Leave whatever post they hold outside their rooms, unless they are seeing someone, who is finished first. */
+function leaveIfOutside(ctx: SimContext, st: Staff) {
+  const post = ctx.world.item(st.post);
+  if (post && !post.serving && !worksAt(ctx, st, post.x, post.y)) staffIdle(ctx, st);
+}
+
+/** Add a room to someone's assignment, or take it away. False if there is no work for them in that room. */
+export function assignRoom(ctx: SimContext, staffId: number, roomId: number): boolean {
+  const st = staffById(ctx, staffId);
+  const room = ctx.world.room(roomId);
+  if (!st || !room?.done || !canWorkIn(st.role, room.type)) return false;
+  st.rooms = toggled(st.rooms, roomId);
+  leaveIfOutside(ctx, st);
+  return true;
 }

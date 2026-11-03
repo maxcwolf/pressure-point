@@ -5,9 +5,9 @@ import { describe, expect, it } from 'vitest';
 
 import { FLOOD_PUDDLES, MISHAP_NOTICE_DAYS, type MishapId, MISHAPS, PUDDLE_SLOW } from '../../src/core/data';
 import { advice } from '../../src/core/sim/advisor';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { spawnGuest } from '../../src/core/sim/guests';
 import { floodRestroom, floodTiles, newMishap, updateMishaps } from '../../src/core/sim/mishaps';
 import { puddleSlow } from '../../src/core/sim/novelties';
 import { buildPuddle, floodParts, rippleFlood } from '../../src/render/models/puddle';

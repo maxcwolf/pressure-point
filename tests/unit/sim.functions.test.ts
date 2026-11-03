@@ -13,13 +13,15 @@ import {
   PRICE_MIN,
   SANDBOX_PLOT,
   SIDEWALK_Y,
+  stationPlace,
 } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { fairSalary } from '../../src/core/people';
 import { setSeed } from '../../src/core/random';
-import { stationPlace } from '../../src/core/sim/advisor';
 import { decorOf, drainFactor, prestige, updateAmbience } from '../../src/core/sim/ambience';
+import { rollCondition, spawnGuest } from '../../src/core/sim/arrivals';
 import { createRoom, finishRoom, itemsInRoom, placeItem, usersOf } from '../../src/core/sim/building';
+import { fairPay, serviceSeconds } from '../../src/core/sim/careers';
 import {
   charById,
   guestById,
@@ -34,11 +36,10 @@ import { accessIndex, claim, findAccess, release } from '../../src/core/sim/clai
 import { createContext, type SimContext } from '../../src/core/sim/context';
 import { borrow, changeRep, earn, repay, setPrice, spend } from '../../src/core/sim/economy';
 import { drainEvents, tipOnce, toast } from '../../src/core/sim/events';
-import { rollCondition, spawnGuest } from '../../src/core/sim/guests';
+import { hasItem, hasRoom, hasStaff } from '../../src/core/sim/inventory';
 import { goTo, halt, moveAlong, turnToward } from '../../src/core/sim/movement';
-import { hasItem, hasRoom, hasStaff, objectives } from '../../src/core/sim/progress';
-import { fairPay, hire, raiseTo } from '../../src/core/sim/staffing';
-import { serviceSeconds } from '../../src/core/sim/stations';
+import { objectives } from '../../src/core/sim/progress';
+import { hire, raiseTo } from '../../src/core/sim/staffing';
 import { equipmentProblem, modalityOf, offered, unlocked } from '../../src/core/sim/treatments';
 import { newGame } from '../../src/core/state/game';
 import type { Item, Staff } from '../../src/core/state/types';

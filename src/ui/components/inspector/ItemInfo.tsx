@@ -20,9 +20,9 @@ import {
 } from '../../../core/data';
 import { money } from '../../../core/format';
 import { sellBack } from '../../../core/sim/building';
-import { smoking } from '../../../core/sim/machines';
 import { calmness } from '../../../core/sim/noise';
 import { cannotUpgrade, upgradeCost } from '../../../core/sim/upgrades';
+import { smoking } from '../../../core/sim/upkeep';
 import { starsEarned } from '../../../core/state/game';
 import type { Item } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';

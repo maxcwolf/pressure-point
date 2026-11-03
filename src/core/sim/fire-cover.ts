@@ -165,3 +165,11 @@ export function doorCovered(ctx: SimContext, door: Spot, opts: DoorCoverOptions 
  * room being placed, or of the room a machine that can catch fire is going into, has an extinguisher near it.
  */
 export type FireNote = ({ kind: 'extinguisher' } & HeldCover) | { kind: 'door'; covered: boolean; machine: boolean };
+
+/**
+ * Whether a room is ready for a fire: sprinklers fitted, or a Fire Extinguisher that works near enough its door, for
+ * the inspector, and for a Caretaker to put a fire out there quickly.
+ */
+export function extinguisherNear(ctx: SimContext, room: Room): boolean {
+  return !!room.sprinklers || extinguisherReaches(ctx, room.door);
+}

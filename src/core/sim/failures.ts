@@ -3,6 +3,7 @@
 // casebook.
 
 import {
+  BOTCH_FACTOR,
   conditionOf,
   IDEAL_TEMP,
   ITEMS,
@@ -17,14 +18,64 @@ import {
 } from '../data';
 import { an } from '../format';
 import type { FailedTreatment, FailureReason, Guest, Item, Room, Staff } from '../state/types';
+import { clamp } from '../util';
 import { prestige } from './ambience';
 import { roomLabels, worksIn } from './assignments';
 import { rankName } from './careers';
 import type { SimContext } from './context';
 import { toast } from './events';
-import { AWAY, type Chance, type ChanceCause, type ChanceFactor, settledChance } from './stations';
-import type { DeliveryProblem } from './treatments';
+import { AWAY, type DeliveryProblem } from './treatments';
 import { warmthAt } from './warmth';
+
+/** What moved a treatment's chance of working, one term each. */
+export type ChanceCause =
+  | 'skill'
+  | 'diagnosis'
+  | 'scan'
+  | 'guess'
+  | 'prestige'
+  | 'chart'
+  | 'blessed'
+  | 'upgrade'
+  | 'machine'
+  | 'difficulty'
+  | 'tired'
+  | 'worse'
+  | 'vibes'
+  | 'noise'
+  | 'linens'
+  | 'temperature'
+  | 'rest';
+
+/**
+ * One term in a treatment's chance of working: what it added (or, below zero, took off), and the most it could have
+ * added, for a term that falls short of its best rather than going wrong.
+ */
+export interface ChanceFactor {
+  cause: ChanceCause;
+  amount: number;
+  best?: number;
+}
+
+/** A treatment's chance of working, what if anything stops it being delivered properly, and what it is made of. */
+export interface Chance {
+  chance: number;
+  problem: DeliveryProblem;
+  /** The terms added up, before they are kept between the least and the most. */
+  raw: number;
+  /** The chance had it been delivered properly: the terms added up, kept between the least and the most. */
+  proper: number;
+  factors: ChanceFactor[];
+}
+
+/**
+ * A chance from its terms added up: kept between the least and the most a treatment can be, then cut by a botch if
+ * something stops it being delivered properly. What the roll uses, and what a failure's reasons are sized by.
+ */
+export function settledChance(raw: number, problem: DeliveryProblem): { chance: number; proper: number } {
+  const proper = clamp(raw, MIN_CHANCE, MAX_CHANCE);
+  return { chance: problem ? proper * BOTCH_FACTOR : proper, proper };
+}
 
 /** How many failed treatments are kept. */
 export const FAILURES_KEPT = 30;

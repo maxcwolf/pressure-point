@@ -1,6 +1,6 @@
 // Wear and tear: equipment wearing out, toilets getting grubby, plants drying and warm stones cooling.
 
-import { centerOf, ITEMS, type ItemType } from '../data';
+import { centerOf, ITEMS, type ItemType, machineRoom, ROOMS } from '../data';
 import { tuning } from '../difficulty';
 import { an, money } from '../format';
 import type { Item } from '../state/types';
@@ -8,7 +8,6 @@ import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, toast } from './events';
-import { downNotice } from './machines';
 import { mishapCarrier } from './mishaps';
 import { upgradeWear } from './upgrades';
 import { stoneCooling, warmthAt } from './warmth';
@@ -72,4 +71,31 @@ export function wearByTheDay(ctx: SimContext) {
 /** How grubby an item is after one more use. */
 export function dirtier(type: ItemType, dirt: number): number {
   return Math.min(100, dirt + (ITEMS[type].dirt ?? 0));
+}
+
+/** Whether a machine is worn enough to smoke, a warning that it may overload. */
+export function smoking(it: Item): boolean {
+  const o = ITEMS[it.type].machine?.overload;
+  return !!o && it.wear >= o.from && it.wear < 100;
+}
+
+/** How many guests are waiting in a station's line. */
+const waitingAt = (ctx: SimContext, it: Item) =>
+  it.queue.filter((id) => ctx.s.guests.some((g) => g.id === id && (g.state === 'waiting' || g.state === 'toWait')))
+    .length;
+
+/**
+ * What the toast says when a machine goes down: what happened, the bill if there is one, who is left waiting for it,
+ * and what will get it going again.
+ */
+export function downNotice(ctx: SimContext, it: Item, what: string, bill = 0): string {
+  const def = ITEMS[it.type];
+  const waiting = waitingAt(ctx, it);
+  const parts = bill ? ` Parts cost ${money(bill)}.` : '';
+  const line = waiting
+    ? ` ${waiting} ${waiting === 1 ? 'guest is' : 'guests are'} waiting for it, and no more will be sent its way until it is fixed.`
+    : '';
+  const room = ROOMS[machineRoom(it.type) ?? 'massage'];
+  const where = machineRoom(it.type) ? ` in the ${room.name}` : '';
+  return `The ${def.name}${where} ${what}.${parts}${line} Send a Caretaker to repair it.`;
 }

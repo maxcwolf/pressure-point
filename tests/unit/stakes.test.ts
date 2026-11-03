@@ -14,14 +14,15 @@ import {
   VIBES_PER_FAIL,
   WORSE_REP,
 } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
 import { createContext } from '../../src/core/sim/context';
 import { changeRep, gainDamping, lossDamping } from '../../src/core/sim/economy';
 import { reviewStars } from '../../src/core/sim/feelings';
-import { spawnGuest } from '../../src/core/sim/guests';
+import { worsening } from '../../src/core/sim/lines';
 import { endOutbreak, spreadStress } from '../../src/core/sim/outbreaks';
 import { moraleTarget, wantsAway } from '../../src/core/sim/staffing';
 import { addVibes, canSmudge, fadeVibes, roomToSmudge, vibesPenalty } from '../../src/core/sim/vibes';
-import { conditionPenalty, worsening, worsenRate } from '../../src/core/sim/worsening';
+import { conditionPenalty, worsenRate } from '../../src/core/sim/worsening';
 import { SAVE_VERSION } from '../../src/core/state/game';
 import type { GameState, Guest } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';

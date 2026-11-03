@@ -11,9 +11,9 @@ import { claim, findAccess, release } from './claims';
 import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, toast } from './events';
+import { hasRoom } from './inventory';
 import { canWalkTo, goTo } from './movement';
-import { hasRoom } from './progress';
-import { staffIdle } from './staffing';
+import { staffIdle } from './posts';
 
 /** Something a member of staff can study in a Training Room. */
 export interface Course {

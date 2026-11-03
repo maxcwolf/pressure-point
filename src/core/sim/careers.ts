@@ -1,5 +1,5 @@
 // Staff careers: experience and promotions, qualification slots, the duties staff are kept to, the hiring pool,
-// and the habits some staff have.
+// the habits some staff have, how fast they work and what they are worth.
 
 import {
   APPLICANT_DAYS,
@@ -12,9 +12,11 @@ import {
   type GeneralId,
   isWatered,
   ITEMS,
+  MAINTENANCE_SPEED,
   MODALITIES,
   type Modality,
   MODALITY_ORDER,
+  MOTIVATION_SPEED,
   PROMOTION_CHEER,
   RANK_XP,
   RANKS,
@@ -22,13 +24,18 @@ import {
   type Role,
   ROLE_ORDER,
   ROLES,
+  SERVICE_PACE,
+  SERVICE_SPEED,
+  TIRED_ENERGY,
+  TIRED_PACE,
   type TraitDef,
   traitOf,
   traitProduct,
+  traitSpeed,
 } from '../data';
 import { tuning } from '../difficulty';
 import { money } from '../format';
-import { makeCandidate } from '../people';
+import { fairSalary, makeCandidate, scalePay } from '../people';
 import { pick, random } from '../random';
 import type { CourseId, GameState, Item, Job, Staff } from '../state/types';
 import { at } from '../util';
@@ -38,7 +45,6 @@ import type { SimContext } from './context';
 import { emit, staffRequest, tipOnce, toast } from './events';
 import { running } from './marketing';
 import { logNews } from './news';
-import { fairPay } from './staffing';
 import { unlocked } from './treatments';
 
 /** The name of a rank, from 1 to 5. */
@@ -169,6 +175,37 @@ export function generalFor(role: Role): GeneralId[] {
 
 /** Whether they have passed a general course. */
 export const hasGeneral = (st: Staff | undefined, id: GeneralId) => !!st?.general.includes(id);
+
+/** What this member of staff could reasonably expect to be paid, with salaries scaled as the game's difficulty sets. */
+export function fairPay(st: Staff, scale = 1): number {
+  return scalePay(fairSalary(st.role, st.skill, st.traits, st.quals, st.general.length), scale);
+}
+
+/**
+ * How much faster than usual a Caretaker gets through their jobs: quicker with Maintenance, and with Motivation, and
+ * as their quirks make them.
+ */
+export function caretakerSpeed(st: Staff): number {
+  return (
+    (hasGeneral(st, 'maintenance') ? MAINTENANCE_SPEED : 1) *
+    (hasGeneral(st, 'motivation') ? MOTIVATION_SPEED : 1) *
+    traitSpeed(st.traits)
+  );
+}
+
+/**
+ * How long a service takes this member of staff, given their skill, traits, courses, energy and morale, and how much
+ * faster a colleague who Holds Space nearby makes them (`heldSpace`).
+ */
+export function serviceSeconds(base: number, st: Staff, held = 1) {
+  let speed = SERVICE_PACE.base + st.skill * SERVICE_PACE.rank;
+  speed *= traitSpeed(st.traits) * held;
+  if (hasGeneral(st, 'motivation')) speed *= MOTIVATION_SPEED;
+  if (hasGeneral(st, 'service')) speed *= SERVICE_SPEED;
+  if (st.energy < TIRED_ENERGY) speed *= TIRED_PACE;
+  speed *= SERVICE_PACE.mood + st.morale / SERVICE_PACE.morale;
+  return base / speed;
+}
 
 /** The duty a station is, for the roles that have a choice. */
 export function stationDuty(it: Item): Duty | null {
@@ -302,3 +339,6 @@ export function updateHabits(ctx: SimContext) {
       say(st, 'bubble-unhappy', 2.5);
   }
 }
+
+/** Whether someone on the payroll is at work today: staying, and not away on a course or a house call. */
+export const atWork = (st: Staff) => !['leaving', 'toTrain', 'training', 'toCall', 'away'].includes(st.state);

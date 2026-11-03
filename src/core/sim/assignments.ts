@@ -5,7 +5,6 @@ import { ITEMS, type Role, ROOMS, type RoomType } from '../data';
 import type { Room, Staff } from '../state/types';
 import { staffById } from './chars';
 import type { SimContext } from './context';
-import { staffIdle } from './staffing';
 
 /** Whether someone may work in this zone: anywhere when they have no rooms, otherwise only in those rooms. */
 export function worksIn(rooms: readonly number[], zone: number): boolean {
@@ -45,22 +44,6 @@ export function toggled(rooms: readonly number[], roomId: number): number[] {
 /** Whether a member of staff may work at this tile. */
 export function worksAt(ctx: SimContext, st: Staff, x: number, y: number): boolean {
   return worksIn(st.rooms, ctx.world.zoneAt(x, y));
-}
-
-/** Leave whatever post they hold outside their rooms, unless they are seeing someone, who is finished first. */
-function leaveIfOutside(ctx: SimContext, st: Staff) {
-  const post = ctx.world.item(st.post);
-  if (post && !post.serving && !worksAt(ctx, st, post.x, post.y)) staffIdle(ctx, st);
-}
-
-/** Add a room to someone's assignment, or take it away. False if there is no work for them in that room. */
-export function assignRoom(ctx: SimContext, staffId: number, roomId: number): boolean {
-  const st = staffById(ctx, staffId);
-  const room = ctx.world.room(roomId);
-  if (!st || !room?.done || !canWorkIn(st.role, room.type)) return false;
-  st.rooms = toggled(st.rooms, roomId);
-  leaveIfOutside(ctx, st);
-  return true;
 }
 
 /** Let someone work anywhere again. */

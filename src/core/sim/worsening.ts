@@ -7,9 +7,7 @@ import {
   type ConditionId,
   conditionOf,
   DAY_SECONDS,
-  type Discipline,
   DISCIPLINES,
-  MODALITIES,
   POOR_CONDITION,
   SEND_HOME_REP,
   WORSE_REP,
@@ -20,8 +18,8 @@ import { say } from './chars';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
-import { leave } from './guests';
 import { noteWorse } from './harms';
+import { leave, type LineKey, lineOf, worsening } from './lines';
 import { countVisit } from './records';
 
 /** How many points a second a condition worsens by while its guest waits. */
@@ -29,9 +27,6 @@ export const worsenRate = (id: ConditionId) => CONDITION_DRAIN * (conditionOf(id
 
 /** How much a guest's condition takes off their chance of success: nothing at full health, the most at none. */
 export const conditionPenalty = (health: number) => (1 - clamp(health, 0, 100) / 100) * CONDITION_PENALTY;
-
-/** Whether a guest's condition is still worsening: untreated, in the building, and not on the table. */
-export const worsening = (g: Guest) => !g.classDay && !g.outcome && g.goal !== 'leave' && g.state !== 'served';
 
 /** Days before a waiting guest's condition runs out and they go home worse off, at the rate it worsens. */
 export const conditionDays = (g: Guest) => g.health / worsenRate(g.condition) / DAY_SECONDS;
@@ -45,13 +40,6 @@ export const poorlyWaiting = (s: GameState) => s.guests.filter((g) => worsening(
 /** Guests still waiting whose condition runs out within a couple of days, worst first. */
 export const aboutToWorsen = (s: GameState) =>
   s.guests.filter((g) => worsening(g) && conditionDays(g) <= WORSE_SOON_DAYS).sort((a, b) => a.health - b.health);
-
-/** What a waiting guest is waiting for, as a line is named: the discipline once diagnosed, and to be seen before. */
-export type LineKey = Discipline | 'consult';
-
-/** Which line a guest is in, as far as the warnings group them. */
-export const lineOf = (g: Guest): LineKey =>
-  g.goal === 'treat' ? MODALITIES[conditionOf(g.condition).modality].discipline : 'consult';
 
 /** A line, in words: "waiting for massage therapy", "waiting to be seen". */
 const lineWords = (key: LineKey) =>

@@ -1,9 +1,9 @@
 // The words for a center's seasons and rush hours: how arrivals run now, how they will run next, and when it turns.
 
 import type { CenterDef } from '../../core/data';
-import { calendarDay, dateOf } from '../../core/format';
-import type { ArrivalPace } from '../../core/sim/guests';
-import { rushOutlook, type Season, seasonTurn } from '../../core/sim/twists';
+import { calendarDay, dateOf, type Season } from '../../core/format';
+import type { ArrivalPace } from '../../core/sim/arrivals';
+import { rushOutlook, seasonTurn } from '../../core/sim/twists';
 import { paceNote, times } from './demand';
 
 /** A season's name, capitalized. */

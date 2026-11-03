@@ -17,8 +17,8 @@ import { callFee, canGo, makeCall, updateCalls } from '../../src/core/sim/calls'
 import { createContext } from '../../src/core/sim/context';
 import { netOf } from '../../src/core/sim/economy';
 import { campaignBoost, running, updateCampaigns } from '../../src/core/sim/marketing';
-import { repathAll } from '../../src/core/sim/movement';
-import { shopSpend, wantsToShop } from '../../src/core/sim/stations';
+import { repathAll } from '../../src/core/sim/repath';
+import { shopSpend, wantsToShop } from '../../src/core/sim/shop';
 import { conditionDays } from '../../src/core/sim/worsening';
 import { emptyLedger } from '../../src/core/state/game';
 import type { Guest, HouseCall } from '../../src/core/state/types';

@@ -20,10 +20,12 @@ import {
 import { amandaAround, makeCandidate } from '../../src/core/people';
 import {
   applicantCap,
+  caretakerSpeed,
   cheeredUp,
   gainXp,
   rankName,
   rankProgress,
+  serviceSeconds,
   slotFree,
   trained,
   updateApplicants,
@@ -32,8 +34,7 @@ import {
 } from '../../src/core/sim/careers';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { caretakerSpeed, courseSpeed, moraleTarget } from '../../src/core/sim/staffing';
-import { serviceSeconds } from '../../src/core/sim/stations';
+import { courseSpeed, moraleTarget } from '../../src/core/sim/staffing';
 import { newGame } from '../../src/core/state/game';
 import type { GameState } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';

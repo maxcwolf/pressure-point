@@ -21,6 +21,7 @@ import {
   ROLES,
   ROOMS,
   SEND_HOME_REP,
+  stationPlace,
   WORSE_REP,
 } from '../data';
 import { an, article, listed, money } from '../format';
@@ -47,11 +48,12 @@ import {
   shortOfAMonth,
 } from './economy';
 import { emit, type Subject, tipOnce, toast } from './events';
+import { hasItem, hasRoom, hasStaff } from './inventory';
 import { hamperWithRoom, hasLinens, isHamper, staleLinens } from './linens';
 import { roomForModality } from './machines';
 import { floodAdvice, mishapAdvice } from './mishaps';
 import { primerDone, primerNotes, primerTip } from './primer';
-import { allStars, hasItem, hasRoom, hasStaff } from './progress';
+import { allStars } from './progress';
 import { calmerOf, running } from './runaways';
 import { stationStaff } from './sessions';
 import { fedUp, refreshmentFor, wants } from './staff-needs';
@@ -689,12 +691,6 @@ export function modalityAdvice(ctx: SimContext): string | Advice {
     return `${def.name} is now available. Build ${article(room.name)} ${room.name} and hire ${article(ROLES[def.role].name)} ${ROLES[def.role].name} to bring in a new kind of guest.`;
   }
   return '';
-}
-
-/** What to call the place a station is in: its room, or the item itself in a corridor. */
-export function stationPlace(it: Pick<Item, 'type'>): string {
-  const where = ITEMS[it.type].where;
-  return where === 'corridor' || where === 'any' || where === 'outdoors' ? ITEMS[it.type].name : ROOMS[where].name;
 }
 
 /** What the speakers say when a station has a line and nobody working it. */

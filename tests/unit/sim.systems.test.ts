@@ -19,7 +19,7 @@ import {
 } from '../../src/core/data';
 import { contextAnnouncement } from '../../src/core/sim/advisor';
 import { createContext } from '../../src/core/sim/context';
-import { machineUpkeep } from '../../src/core/sim/machines';
+import { machineUpkeep } from '../../src/core/sim/economy';
 import type { Sim } from '../../src/core/sim/sim';
 import { inUse, standingPoints } from '../../src/core/sim/standing';
 import type { Guest } from '../../src/core/state/types';

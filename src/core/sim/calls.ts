@@ -27,11 +27,12 @@ import { isClassLead } from './classes';
 import type { SimContext } from './context';
 import { earn, priceFor } from './economy';
 import { emit, tipOnce, toast } from './events';
+import { worsening } from './lines';
 import { canWalkTo, goTo, halt } from './movement';
+import { staffIdle } from './posts';
 import { isLeadStation, sessionState, stationStaff } from './sessions';
-import { staffIdle } from './staffing';
 import { offered, unlocked } from './treatments';
-import { conditionDays, worsening } from './worsening';
+import { conditionDays } from './worsening';
 
 /** Experience from a house call. */
 export const CALL_XP = 3;

@@ -17,9 +17,9 @@ import { money, pct } from '../format';
 import type { SimContext } from './context';
 import { monthlyPayroll } from './economy';
 import { emit, type Subject, toast } from './events';
+import { hasItem, hasRoom, hasStaff } from './inventory';
 import { pausedToPlace } from './placing';
 import { primerDone, primerLines, primerNotes, type PrimerStepId } from './primer';
-import { hasItem, hasRoom, hasStaff } from './progress';
 
 /**
  * What a step wants the player to do, which the interface rings: look around, stop or start the clock, or an item,

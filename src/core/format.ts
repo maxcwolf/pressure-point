@@ -23,6 +23,18 @@ export function an(name: string, start = false): string {
  */
 export const calendarDay = (s: { day: number; startMonth: number }, day = s.day) => day + s.startMonth * DAYS_PER_MONTH;
 
+/** The seasons, a quarter of the year each, starting the year in winter. */
+export type Season = 'winter' | 'spring' | 'summer' | 'autumn';
+
+/** The season a game day falls in: December to February is winter, and so on. */
+export function seasonOf(day: number): Season {
+  const month = Math.floor(day / DAYS_PER_MONTH) % 12;
+  if (month === 11 || month <= 1) return 'winter';
+  if (month <= 4) return 'spring';
+  if (month <= 7) return 'summer';
+  return 'autumn';
+}
+
 /**
  * The day, month and year that a running day count falls on, in a game that opened in `startMonth` (0 for January):
  * the month is the calendar's, and the year the year of running the center, the one its awards are for.

@@ -8,13 +8,13 @@ import { createContext } from '../../src/core/sim/context';
 import {
   canCatchFire,
   doorCovered,
+  extinguisherNear,
   fireCover,
   heldCover,
   inReach,
   roomCovered,
   worksAt,
 } from '../../src/core/sim/fire-cover';
-import { extinguisherNear } from '../../src/core/sim/visits';
 import { fireEffects, noExtinguisher, roomList } from '../../src/ui/lib/fire';
 import { fireTiles, previewMode } from '../../src/ui/lib/overlays';
 import { addRestroom, addStaffRoom, LAYOUT, openCenter } from './helpers';

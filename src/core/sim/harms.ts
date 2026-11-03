@@ -4,9 +4,6 @@
 // read.
 
 import {
-  ACCIDENT_LEAVE,
-  ACCIDENT_PATIENCE,
-  ACCIDENT_REP,
   conditionOf,
   DAY_SECONDS,
   DISCIPLINES,
@@ -19,23 +16,21 @@ import {
   ROOMS,
   SEAT_DRAIN,
   SEND_HOME_REP,
+  stationPlace,
   STRESS_DRAIN,
   WORSE_REP,
 } from '../data';
 import { an } from '../format';
 import type { FailedTreatment, Guest, HarmNote, Item, Staff } from '../state/types';
-import { holdFor, isToilet, toiletsOut, type ToiletTrouble } from './accidents';
-import { stationPlace } from './advisor';
 import { drainFactor } from './ambience';
 import type { SimContext } from './context';
 import { priceFor, putOffChance } from './economy';
+import { hasItem, hasRoom, hasStaff } from './inventory';
 import { hamperWithRoom } from './linens';
-import { treatsHere } from './machines';
-import { hasItem, hasRoom, hasStaff } from './progress';
-import { modalityOf } from './treatments';
+import { type LineKey, lineOf, worsening } from './lines';
+import { modalityOf, treatsHere } from './treatments';
 import { canSmudge } from './vibes';
 import { discomfort, warmthAt } from './warmth';
-import { type LineKey, lineOf, worsening } from './worsening';
 
 /** How many times the same harm, for the same reason, comes before it is explained. */
 export const HARM_EXPLAIN = 3;
@@ -354,52 +349,6 @@ export function notePriced(ctx: SimContext, g: Guest) {
       ],
       help: 'The lower your reputation, the more a high price puts new guests off; regulars mind it less. Bring prices down in Money → Prices until your name is worth more.',
       fix: { menu: 'prices' },
-    };
-  });
-}
-
-/**
- * Count a guest who had an accident, by why they could not go, a Restroom out of action by what has it so, and
- * explain it.
- */
-export function noteAccident(ctx: SimContext, g: Guest, trouble: ToiletTrouble) {
-  const out = trouble === 'out' ? toiletsOut(ctx) : undefined;
-  noteHarm(ctx, out ? `accident:out:${out.cause}` : `accident:${trouble}`, () => {
-    const caretaker = hasStaff(ctx, 'caretaker');
-    const toilets = ctx.s.items.filter((it) => isToilet(it) && ctx.world.usable(it)).length;
-    const held = { label: `Held on, bursting, for ${holdFor(trouble)} seconds` };
-    const causes =
-      trouble === 'none'
-        ? [{ label: 'No Restroom built' }, held]
-        : out
-          ? [{ label: out.why.charAt(0).toUpperCase() + out.why.slice(1) }, held]
-          : [{ label: `Every toilet taken: ${toilets} in all` }, held];
-    // a flood or a breakdown is a Caretaker's to put right, and the same Caretaker cleans up after each accident
-    const hireFor = out?.task && !caretaker ? out.task : undefined;
-    const fix =
-      trouble === 'none'
-        ? 'Build a Restroom with a toilet and a sink. Guests need one once they have waited a while, and sooner after a drink.'
-        : hireFor
-          ? `Hire a Caretaker to ${hireFor}, and to clean up after each accident.`
-          : out
-            ? out.fix
-            : 'Build another Restroom, or put more toilets in the one there is, so a bursting guest finds one free. Shorter lines mean less waiting to need one.';
-    const spare =
-      out?.cause === 'broken' ? ' A second toilet means one breaking down still leaves somewhere to go.' : '';
-    const clean = caretaker || hireFor ? '' : ' Hire a Caretaker to clean up each one.';
-    const button = !out ? { menu: 'rooms' as const } : hireFor ? { hire: 'caretaker' as const } : undefined;
-    return {
-      title:
-        trouble === 'none'
-          ? `${HARM_EXPLAIN} guests had accidents with no Restroom to use`
-          : out
-            ? `${HARM_EXPLAIN} guests had accidents with no toilet working`
-            : `${HARM_EXPLAIN} guests had accidents waiting for a free toilet`,
-      cost: `−${ACCIDENT_PATIENCE} patience each; ${pct(ACCIDENT_LEAVE)} go home, for −${ACCIDENT_REP} reputation; and the mess puts off everyone near it until it is cleaned up`,
-      causes,
-      help: fix + spare + clean,
-      about: { kind: 'guest' as const, id: g.id },
-      ...(button && { fix: button }),
     };
   });
 }

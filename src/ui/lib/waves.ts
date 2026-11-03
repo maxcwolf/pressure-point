@@ -2,7 +2,7 @@
 
 import { DISCIPLINES, ITEMS, MODALITIES, type Modality, ROOMS } from '../../core/data';
 import { an } from '../../core/format';
-import { atWork } from '../../core/sim/demand';
+import { atWork } from '../../core/sim/careers';
 import { daysInWords } from '../../core/sim/mishaps';
 import { trainedAway, type WaveChecks } from '../../core/sim/waves';
 import type { GameState, Wave } from '../../core/state/types';

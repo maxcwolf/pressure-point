@@ -2,13 +2,14 @@
 // sale a much bigger one, until the health inspector finds them. The inspector writes ahead, so they can be put away in
 // time: by hand, or as soon as the notice comes if the policy says so, coming back out once the inspector has gone.
 
-import { ITEMS, MUSHROOM_CHANCE, MUSHROOM_SALE } from '../data';
+import { MUSHROOM_CHANCE, MUSHROOM_SALE } from '../data';
 import { random, rnd } from '../random';
 import { offeringOn } from '../state/game';
-import type { Guest, Item, RoomVerdict } from '../state/types';
+import type { Guest, RoomVerdict } from '../state/types';
 import type { SimContext } from './context';
 import { earn } from './economy';
 import { toast } from './events';
+import { isCounter } from './shop';
 
 /** What the inspector writes up on finding mushrooms under the counter. */
 export const MUSHROOMS_FOUND = 'magic mushrooms under the counter';
@@ -16,9 +17,6 @@ export const MUSHROOMS_FOUND = 'magic mushrooms under the counter';
 /** Whether there is a Shaman on the payroll to supply the mushrooms. */
 export const hasSupplier = (ctx: SimContext) =>
   offeringOn(ctx.s, 'shaman') && ctx.s.staff.some((st) => st.role === 'shaman' && st.state !== 'leaving');
-
-/** Whether an item is a Shop Counter, where guests stop to buy something on the way out. */
-const isCounter = (it: Item) => ITEMS[it.type].station?.goal === 'shop';
 
 /** Whether there is a Shop Counter to sell them from. */
 const hasCounter = (ctx: SimContext) => ctx.s.items.some(isCounter);

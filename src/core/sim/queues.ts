@@ -6,11 +6,9 @@ import { guestById, say } from './chars';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit } from './events';
-import { goWait, leave } from './guests';
-import { treatsHere } from './machines';
+import { goWait, leave, removeFromStations } from './lines';
 import { countVisit } from './records';
-import { removeFromStations } from './stations';
-import { modalityOf } from './treatments';
+import { modalityOf, treatsHere } from './treatments';
 
 /** Whether a guest is waiting their turn, rather than being seen or on their way out. */
 export function inLine(g: Guest): boolean {

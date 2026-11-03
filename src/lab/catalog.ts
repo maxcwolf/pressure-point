@@ -28,9 +28,9 @@ import {
   UPGRADE_LEVELS,
 } from '../core/data';
 import { footprintOf } from '../core/footprint';
+import type { Season } from '../core/format';
 import { BOTTOMS, HAIR, randomLook, TOPS } from '../core/people';
 import { newSeed, stream } from '../core/random';
-import type { Season } from '../core/sim/twists';
 import type { BubbleId, Char, Guest, Look, Room, VisitorKind } from '../core/state/types';
 import { must } from '../core/util';
 import { accessPose, itemCenter } from '../core/world';
