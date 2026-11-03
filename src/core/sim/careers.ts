@@ -42,7 +42,7 @@ import { at } from '../util';
 import { Z_CORRIDOR } from '../world';
 import { say, staffById } from './chars';
 import type { SimContext } from './context';
-import { emit, staffRequest, tipOnce, toast } from './events';
+import { emit, staffRequest, toast } from './events';
 import { running } from './marketing';
 import { logNews } from './news';
 import { unlocked } from './treatments';
@@ -106,24 +106,36 @@ export const generalToLearn = (st: Staff) => generalFor(st.role).filter((id) => 
 export const fullyTrained = (ctx: SimContext, st: Staff) =>
   !slotFree(st) || (treatmentsToLearn(ctx, st).length === 0 && generalToLearn(st).length === 0);
 
+/**
+ * Whether their promotion waits on training: the experience for the next rank, but a slot still to fill, and no course
+ * under way to fill it.
+ */
+export const heldBack = (ctx: SimContext, st: Staff) =>
+  st.state !== 'leaving' && !st.promotion && !st.training && xpToNext(st) === 0 && !fullyTrained(ctx, st);
+
 /** Add experience for work done, and see whether it has earned a promotion. */
 export function gainXp(ctx: SimContext, st: Staff, amount: number) {
   st.xp += amount;
   offerPromotion(ctx, st);
 }
 
-/** Ask for promotion once there is the experience for it and they are fully trained, or nudge to train them first. */
+/**
+ * Ask for promotion once there is the experience for it and they are fully trained, or ask to be trained first, for
+ * the card for everyone held back.
+ */
 export function offerPromotion(ctx: SimContext, st: Staff) {
   if (st.promotion || xpToNext(st) !== 0) return;
-  const about = { kind: 'staff', id: st.id } as const;
   if (!fullyTrained(ctx, st)) {
-    tipOnce(
+    // once at each rank, as each wants another slot filled
+    const asked = `slots-${st.id}-${st.skill}`;
+    if (ctx.s.seenTips.includes(asked)) return;
+    ctx.s.seenTips.push(asked);
+    staffRequest(
       ctx,
-      // once at each rank, as each wants another slot filled
-      `slots-${st.id}-${st.skill}`,
-      `${st.name} has the experience for promotion, but must fill every qualification slot first. Send them on a course in a Training Room.`,
+      st,
+      'training',
+      `${st.name} has the experience for promotion to ${rankName(st.skill + 1)}, but must fill every qualification slot first. Send them on a course in a Training Room.`,
       'info',
-      about,
     );
     return;
   }

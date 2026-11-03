@@ -97,6 +97,7 @@ import {
 import {
   fairPay,
   fullyTrained,
+  heldBack,
   heldSpace,
   holdingSpaceFor,
   promote,
@@ -837,6 +838,11 @@ export class Sim {
   /** Whether a member of staff is as qualified as they can be for now, as a promotion needs. */
   fullyTrained(st: Staff): boolean {
     return fullyTrained(this.ctx, st);
+  }
+
+  /** Whether a member of staff has the experience for promotion but still needs a course for it. */
+  heldBack(st: Staff): boolean {
+    return heldBack(this.ctx, st);
   }
 
   /** How much faster a colleague who Holds Space makes someone work right now. */

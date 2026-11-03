@@ -433,7 +433,7 @@ describe('what a promotion still needs', () => {
     expect(promotionNote(receptionist, false)).toBe('');
     receptionist.xp = RANK_XP[2]!;
     expect(promotionNote(receptionist, false)).toBe(
-      'To be promoted, fill every qualification slot (1 of 2 filled) with a course in a Training Room.',
+      'Has the experience for Experienced. To be promoted, fill every qualification slot (1 of 2 filled) with a course in a Training Room.',
     );
     // fully trained, or already asking: nothing more is needed
     expect(promotionNote(receptionist, true)).toBe('');

@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Held back by training.** Someone with the experience for their next rank but a qualification slot still empty now waits on a card at the side, as a raise or a promotion does, "needs training to be promoted", and has a Training Room mark on their row in the Staff menu. Their inspector says which rank they have the experience for.
+
 ## v0.36.0
 
 - **Accidents on the floor.** A guest bursting for the toilet with no Restroom to use, or none working (broken, flooded or unfinished), holds on about 15 seconds, or 40 while every toilet is taken, then has an accident where they stand: a poop, which draws flies once it has been left half a minute, or a puddle of pee. They are mortified and often go home, and waiting guests who see it think worse of the place than they do of litter. A Caretaker cleans it up ahead of litter, and a puddle slows walkers as spilled kombucha does. You see it coming: a bubble over the guest, their inspector and the Restroom's saying why, and the advisor naming them with the seconds left and what to do. The first game's checklist asks for a Restroom before any can happen, and **Accidents** in the sandbox settings turns them off.

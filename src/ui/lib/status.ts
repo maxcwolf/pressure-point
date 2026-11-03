@@ -2,7 +2,7 @@
 
 import { ITEMS, POOR_CONDITION, ROLES, ROOMS } from '../../core/data';
 import { wentHomeMortified } from '../../core/sim/accidents';
-import { expert, slots, trained, xpToNext } from '../../core/sim/careers';
+import { expert, rankName, slots, trained, xpToNext } from '../../core/sim/careers';
 import { missNote } from '../../core/sim/classes';
 import { worsening } from '../../core/sim/lines';
 import { roomForModality } from '../../core/sim/machines';
@@ -246,8 +246,12 @@ export function promotionRequests(staff: readonly Staff[]): Staff[] {
 /** What still stands between a member of staff and a promotion they have the experience for, if anything. */
 export function promotionNote(st: Staff, fullyTrained: boolean): string {
   if (st.promotion || xpToNext(st) !== 0 || fullyTrained) return '';
-  return `To be promoted, fill every qualification slot (${trained(st)} of ${slots(st)} filled) with a course in a Training Room.`;
+  return `Has the experience for ${rankName(st.skill + 1)}. To be promoted, fill every qualification slot (${trained(st)} of ${slots(st)} filled) with a course in a Training Room.`;
 }
+
+/** What their row in the Staff menu says of someone whose promotion waits on training. */
+export const heldBackSaid = (st: Staff) =>
+  `Has the experience for ${rankName(st.skill + 1)}, but needs training to be promoted.`;
 
 /** How many of their qualification slots are filled, and what more training can bring. */
 export function slotNote(st: Staff): string {
