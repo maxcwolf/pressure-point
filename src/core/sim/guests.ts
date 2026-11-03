@@ -423,7 +423,7 @@ export function goWait(ctx: SimContext, g: Guest) {
   g.needKind = '';
   const st = ctx.world.item(g.station);
   let ok = false;
-  if (st?.type === 'reception_desk') {
+  if (st && ITEMS[st.type].station?.goal === 'reception') {
     const [qx, qy] = queueTile(ctx, st, Math.max(0, st.queue.indexOf(g.id)));
     ok = goTo(ctx, g, qx, qy);
   } else {
@@ -575,13 +575,13 @@ function waitingThink(ctx: SimContext, g: Guest) {
 
   if (g.hasWrapper && random(ctx.s) < WRAPPER_CHANCE) {
     g.hasWrapper = false;
-    const nearBin = ctx.s.items.some((i) => i.type === 'bin' && Math.hypot(i.x - g.tx, i.y - g.ty) < BIN_REACH);
+    const nearBin = ctx.s.items.some((i) => ITEMS[i.type].bin && Math.hypot(i.x - g.tx, i.y - g.ty) < BIN_REACH);
     const clear = !ctx.s.litter.some((l) => l.x === g.tx && l.y === g.ty);
     if (clear && random(ctx.s) < (nearBin ? LITTER_NEAR_BIN : LITTER_NO_BIN))
       ctx.s.litter.push({ id: ctx.s.nextId++, x: g.tx, y: g.ty, claimedBy: 0 });
   }
 
-  if (st?.type === 'reception_desk') {
+  if (st && ITEMS[st.type].station?.goal === 'reception') {
     const [qx, qy] = queueTile(ctx, st, Math.max(0, st.queue.indexOf(g.id)));
     if (qx !== g.tx || qy !== g.ty) {
       if (goTo(ctx, g, qx, qy)) g.state = 'toWait';

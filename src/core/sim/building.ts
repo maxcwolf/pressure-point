@@ -81,7 +81,7 @@ function newItem(ctx: SimContext, type: ItemType, x: number, y: number, rot: num
     staffId: 0,
     progress: 0,
     // a hamper starts empty; everything else starts watered, or hot
-    water: type === 'linen_hamper' ? 0 : 100,
+    water: ITEMS[type].hamper ? 0 : 100,
     ...itemStart(),
   };
 }

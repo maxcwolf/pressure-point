@@ -4,11 +4,11 @@ import {
   conditionOf,
   type Discipline,
   DISCIPLINES,
+  heatPerUse,
   ITEMS,
   MODALITIES,
   type Modality,
   type ModalityDef,
-  STONE_USE,
 } from '../data';
 import { refillCandidates } from '../people';
 import { rnd } from '../random';
@@ -78,7 +78,8 @@ export function equipmentProblem(ctx: SimContext, table: Item, def: ModalityDef)
   // there, but broken or stopped by a power cut
   const working = kit.filter((i) => ctx.world.usable(i));
   if (!working.length) return 'out-of-action';
-  if (def.equipment === 'stone_warmer' && working.every((i) => i.water < STONE_USE)) return 'cold';
+  const use = heatPerUse(def.equipment);
+  if (use && working.every((i) => i.water < use)) return 'cold';
   return '';
 }
 

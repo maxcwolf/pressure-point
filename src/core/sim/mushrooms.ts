@@ -2,10 +2,10 @@
 // sale a much bigger one, until the health inspector finds them. The inspector writes ahead, so they can be put away in
 // time: by hand, or as soon as the notice comes if the policy says so, coming back out once the inspector has gone.
 
-import { MUSHROOM_CHANCE, MUSHROOM_SALE } from '../data';
+import { ITEMS, MUSHROOM_CHANCE, MUSHROOM_SALE } from '../data';
 import { random, rnd } from '../random';
 import { offeringOn } from '../state/game';
-import type { Guest, RoomVerdict } from '../state/types';
+import type { Guest, Item, RoomVerdict } from '../state/types';
 import type { SimContext } from './context';
 import { earn } from './economy';
 import { toast } from './events';
@@ -17,8 +17,11 @@ export const MUSHROOMS_FOUND = 'magic mushrooms under the counter';
 export const hasSupplier = (ctx: SimContext) =>
   offeringOn(ctx.s, 'shaman') && ctx.s.staff.some((st) => st.role === 'shaman' && st.state !== 'leaving');
 
+/** Whether an item is a Shop Counter, where guests stop to buy something on the way out. */
+const isCounter = (it: Item) => ITEMS[it.type].station?.goal === 'shop';
+
 /** Whether there is a Shop Counter to sell them from. */
-const hasCounter = (ctx: SimContext) => ctx.s.items.some((it) => it.type === 'shop_counter');
+const hasCounter = (ctx: SimContext) => ctx.s.items.some(isCounter);
 
 /** Whether mushrooms are on sale under the counter right now: switched on, with a Shaman to supply them and a counter. */
 export const mushroomsOnSale = (ctx: SimContext) => ctx.s.mushrooms && hasSupplier(ctx) && hasCounter(ctx);
@@ -64,7 +67,7 @@ export function inspectorComing(ctx: SimContext) {
       ctx,
       'The mushrooms are still on sale under the Shop Counter. Put them away before the inspector sees them.',
       'bad',
-      { kind: 'item', id: s.items.find((it) => it.type === 'shop_counter')?.id ?? 0 },
+      { kind: 'item', id: s.items.find(isCounter)?.id ?? 0 },
       'bubble-mushroom',
     );
 }

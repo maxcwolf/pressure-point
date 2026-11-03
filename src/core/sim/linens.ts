@@ -20,7 +20,7 @@ export const linensPenalty = (it: Item) =>
   hasLinens(it) ? clamp((it.dirt - DIRT_CLEAN) / (100 - DIRT_CLEAN), 0, 1) * LINENS_PENALTY : 0;
 
 /** Whether an item is a linen hamper. */
-export const isHamper = (it: Item) => it.type === 'linen_hamper';
+export const isHamper = (it: Item) => !!ITEMS[it.type].hamper;
 
 /** Whether a hamper is full enough to want laundering. */
 export const wantsLaundering = (it: Item) => isHamper(it) && it.water >= HAMPER_LAUNDER;

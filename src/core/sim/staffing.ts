@@ -13,7 +13,6 @@ import {
   DISCOMFORT_MORALE,
   ENERGY_DRAIN,
   INSTALL_SECONDS,
-  isWatered,
   ITEMS,
   LAUNDER_SECONDS,
   LITTER_MORALE,
@@ -95,6 +94,7 @@ import { leftForSpecialist } from './stations';
 import { graduate } from './training';
 import { deliveryProblem, modalityOf } from './treatments';
 import { installUpgrade } from './upgrades';
+import { wantsTending } from './upkeep';
 import { clearVibes, roomToSmudge, smudgeSeconds, smudging, startSmudge, wander } from './vibes';
 import { clockBreak, posterMorale } from './wall-items';
 import { discomfort, warmthAt } from './warmth';
@@ -659,8 +659,7 @@ function findWork(ctx: SimContext, st: Staff) {
       else if (p.dirt >= DIRT_CLEAN && (!hasLinens(p) || hamperWithRoom(ctx)))
         add('clean', p.id, p.x, p.y, p.dirt >= DIRT_FILTHY ? 1 : 0);
       else if (wantsLaundering(p)) add('launder', p.id, p.x, p.y, hamperFull(p) ? 1 : 0);
-      else if ((isWatered(p.type) && p.water <= 40) || (p.type === 'stone_warmer' && p.water <= 55))
-        add('water', p.id, p.x, p.y, 0);
+      else if (wantsTending(p)) add('water', p.id, p.x, p.y, 0);
     }
     /** How far a task is from this member of staff. */
     const dist = (t: Task) => Math.hypot(t.x - st.tx, t.y - st.ty);

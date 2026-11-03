@@ -86,7 +86,7 @@ export function toiletTrouble(ctx: SimContext): ToiletTrouble | null {
 }
 
 /** Whether an item is something a guest uses as a toilet. */
-const isToilet = (it: Item) => ITEMS[it.type].access.some((a) => a.role === 'toilet');
+export const isToilet = (it: Item) => ITEMS[it.type].access.some((a) => a.role === 'toilet');
 
 /** What has the toilets out of action across every Restroom, and what puts it right. */
 export const toiletsOut = (ctx: SimContext): ToiletsOut =>

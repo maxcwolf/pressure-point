@@ -2,7 +2,7 @@
 // works in it, until a Reiki Practitioner, or a Caretaker who has learned Smudging, wafts burning sage through it, or a
 // Shaman clears it. Left alone, they fade slowly on their own, and four times as fast with Wind Chimes in the room.
 
-import { CHIMES_FADE, ROOMS, SMUDGE_SECONDS, VIBES_FADE, VIBES_PENALTY, VIBES_PER_FAIL } from '../data';
+import { CHIMES_FADE, ITEMS, ROOMS, SMUDGE_SECONDS, VIBES_FADE, VIBES_PENALTY, VIBES_PER_FAIL } from '../data';
 import { pick } from '../random';
 import type { Item, Room, Staff } from '../state/types';
 import { worksIn } from './assignments';
@@ -44,7 +44,7 @@ export function addVibes(ctx: SimContext, room: Room) {
 export function fadeVibes(ctx: SimContext, dt: number) {
   if (!ctx.s.rooms.some((r) => r.vibes > 0)) return;
   const chimed = new Set<number>();
-  for (const it of ctx.s.items) if (it.type === 'wind_chimes') chimed.add(ctx.world.zoneAt(it.x, it.y));
+  for (const it of ctx.s.items) if (ITEMS[it.type].chimes) chimed.add(ctx.world.zoneAt(it.x, it.y));
   for (const room of ctx.s.rooms) {
     if (room.vibes <= 0) continue;
     const fade = VIBES_FADE * (chimed.has(room.id) ? CHIMES_FADE : 1);

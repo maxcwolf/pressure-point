@@ -1,6 +1,6 @@
 // Wear and tear: equipment wearing out, toilets getting grubby, plants drying and warm stones cooling.
 
-import { centerOf, isWatered, ITEMS, type ItemType } from '../data';
+import { centerOf, ITEMS, type ItemType } from '../data';
 import { tuning } from '../difficulty';
 import { an, money } from '../format';
 import type { Item } from '../state/types';
@@ -13,13 +13,20 @@ import { mishapCarrier } from './mishaps';
 import { upgradeWear } from './upgrades';
 import { stoneCooling, warmthAt } from './warmth';
 
-/** Plants dry out and warm stones cool as time passes, the stones faster in a cold room. A Living Wall dries slower. */
+/** Plants dry out and warm stones cool as time passes, each plant at its own pace, the stones faster in a cold room. */
 export function decayItems(ctx: SimContext, dt: number) {
   for (const it of ctx.s.items) {
-    if (isWatered(it.type)) it.water = Math.max(0, it.water - dt * (it.type === 'living_wall' ? 0.2 : 0.3));
-    else if (it.type === 'stone_warmer')
+    const tending = ITEMS[it.type].tending;
+    if (tending?.duty === 'plants') it.water = Math.max(0, it.water - dt * tending.dries);
+    else if (tending?.duty === 'stones')
       it.water = Math.max(0, it.water - dt * stoneCooling(warmthAt(ctx, it.x, it.y)));
   }
+}
+
+/** Whether a plant wants watering, or a Stone Warmer heating up again. */
+export function wantsTending(it: Item): boolean {
+  const tending = ITEMS[it.type].tending;
+  return !!tending && it.water <= tending.at;
 }
 
 /** Add wear to an item after a use, or as much as `wear` would add. At full wear it breaks down. */

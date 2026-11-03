@@ -20,6 +20,7 @@ import {
   FREAK_PATIENCE,
   FREAK_RANGE,
   FREAK_STRESS,
+  ITEMS,
   RUNAWAY_CHANCE,
   RUNAWAY_DOOR_REP,
   RUNAWAY_PAUSE,
@@ -173,7 +174,7 @@ function free(ctx: SimContext, st: Staff): boolean {
 /** Whether a member of staff's post is a Reception Desk with someone in line at it. */
 function deskWithLine(ctx: SimContext, st: Staff): boolean {
   const desk = st.post ? ctx.world.item(st.post) : undefined;
-  return desk?.type === 'reception_desk' && desk.queue.length > 0;
+  return !!desk && ITEMS[desk.type].station?.goal === 'reception' && desk.queue.length > 0;
 }
 
 /** Where a member of staff free to go comes in the order of who is sent after a runner: lower first, or never. */

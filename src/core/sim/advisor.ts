@@ -10,6 +10,7 @@ import {
   DISCIPLINES,
   DISCOMFORT_NOTICE,
   FIRST_PAYDAYS,
+  heatPerUse,
   IDEAL_TEMP,
   isWatered,
   ITEMS,
@@ -20,7 +21,6 @@ import {
   ROLES,
   ROOMS,
   SEND_HOME_REP,
-  STONE_USE,
   WORSE_REP,
 } from '../data';
 import { an, article, listed, money } from '../format';
@@ -672,7 +672,7 @@ export function modalityAdvice(ctx: SimContext): string | Advice {
       if (!have.length)
         return `${modalityLabel(m)} needs a ${eq.name} in the ${room.name}. You'll find it in the Items menu.`;
       const warmer = have[0];
-      if (warmer && have.every((i) => i.type === 'stone_warmer' && i.water < STONE_USE))
+      if (warmer && have.every((i) => heatPerUse(i.type) > 0 && i.water < heatPerUse(i.type)))
         return {
           text: hasStaff(ctx, 'caretaker')
             ? 'The massage stones have gone cold. Your Caretaker is stretched thin.'

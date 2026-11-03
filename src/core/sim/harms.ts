@@ -24,7 +24,7 @@ import {
 } from '../data';
 import { an } from '../format';
 import type { FailedTreatment, Guest, HarmNote, Item, Staff } from '../state/types';
-import { holdFor, toiletsOut, type ToiletTrouble } from './accidents';
+import { holdFor, isToilet, toiletsOut, type ToiletTrouble } from './accidents';
 import { stationPlace } from './advisor';
 import { drainFactor } from './ambience';
 import type { SimContext } from './context';
@@ -366,7 +366,7 @@ export function noteAccident(ctx: SimContext, g: Guest, trouble: ToiletTrouble) 
   const out = trouble === 'out' ? toiletsOut(ctx) : undefined;
   noteHarm(ctx, out ? `accident:out:${out.cause}` : `accident:${trouble}`, () => {
     const caretaker = hasStaff(ctx, 'caretaker');
-    const toilets = ctx.s.items.filter((it) => it.type === 'toilet' && ctx.world.usable(it)).length;
+    const toilets = ctx.s.items.filter((it) => isToilet(it) && ctx.world.usable(it)).length;
     const held = { label: `Held on, bursting, for ${holdFor(trouble)} seconds` };
     const causes =
       trouble === 'none'

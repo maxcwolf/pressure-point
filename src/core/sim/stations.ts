@@ -17,6 +17,7 @@ import {
   GRUMP_REP,
   GUESS_PENALTY,
   HEAL_REP,
+  heatPerUse,
   ITEMS,
   MAX_CHANCE,
   MIN_CHANCE,
@@ -37,7 +38,6 @@ import {
   SHOP_LINE_SKIP,
   SHOP_SPEND,
   SKILL_SUCCESS,
-  STONE_USE,
   STRUCTURAL_SURE,
   TIRED_ENERGY,
   TIRED_PACE,
@@ -645,19 +645,17 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     useLinens(ctx, it, g);
     if (treatPrice >= PRICEY) feel(g, 'pricey');
     else if (treatPrice <= BARGAIN) feel(g, 'bargain');
-    // a machine heats its own stones
-    if (!problem && mod.equipment === 'stone_warmer' && !ITEMS[it.type].machine) {
+    // the session spends some of the heat of the equipment it needs, the hottest there; a machine heats its own stones
+    const use = mod.equipment ? heatPerUse(mod.equipment) : 0;
+    if (!problem && use && !ITEMS[it.type].machine) {
       const zone = ctx.world.zoneAt(it.x, it.y);
       const warmer = ctx.s.items
         .filter(
           (i) =>
-            i.type === 'stone_warmer' &&
-            ctx.world.zoneAt(i.x, i.y) === zone &&
-            i.water >= STONE_USE &&
-            ctx.world.usable(i),
+            i.type === mod.equipment && ctx.world.zoneAt(i.x, i.y) === zone && i.water >= use && ctx.world.usable(i),
         )
         .sort((a, b) => b.water - a.water)[0];
-      if (warmer) warmer.water -= STONE_USE;
+      if (warmer) warmer.water -= use;
     }
     g.goal = 'leave';
     // Healing Hands only roll for a treatment that failed, as before they showed
@@ -787,7 +785,7 @@ export function shopSpend(r: Rng, stars: number): number {
  * all if every counter already has a line of `SHOP_LINE_SKIP`.
  */
 export function wantsToShop(ctx: SimContext, g: Guest): boolean {
-  const counters = ctx.s.items.filter((i) => i.type === 'shop_counter' && ctx.world.usable(i));
+  const counters = ctx.s.items.filter((i) => ITEMS[i.type].station?.goal === 'shop' && ctx.world.usable(i));
   if (!counters.length) return false;
   if (Math.min(...counters.map((i) => i.queue.length)) >= SHOP_LINE_SKIP) return false;
   return random(ctx.s) < at(SHOP_CHANCE, clamp(visitStars(g), 0, SHOP_CHANCE.length - 1));
