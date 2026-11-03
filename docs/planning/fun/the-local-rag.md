@@ -1,6 +1,6 @@
 # The Local Rag
 
-Drafted 27 October 2026. An idea, not a plan: nothing here is decided. It is first in [the ranked list](README.md).
+Drafted 27 October 2026, as an idea first in [the ranked list](README.md), and built since.
 
 **Built for 0.36.0** (1 November 2026), with Max's two changes to what follows: both parts ship at once, the headline and the one-page paper, skipping the gate on the headline proving itself; and the paper is **quarterly**, printed on every third payday, so its issue number is the quarter's count. The log covers the quarter and keeps 48 items. A long wait now scores at most 35, under a star, since over a quarter the longest wait runs long; the "Also" needs 15. The year's awards fall at the start of a quarter, so they lead the first issue of the year. A PA line plays with every issue rather than one in three, and Read the paper pauses the game like every dialog. The code is `sim/news.ts` and `data/headlines.ts`; the doc below is the design as drafted.
 
@@ -232,7 +232,7 @@ Each has a recommended default.
 1. **Where the headline goes.** The payday message, not the payday dialog, which most paydays never open. _Recommended._
 2. **Real names in headlines.** Yes, staff and guests alike, cameo names too. Never in a recorded line. _Recommended._
 3. **Stored or rebuilt, for the paper.** Store the printed text of the last issue, a few kilobytes. _Recommended._
-4. **A PA line every issue.** No: one issue in three, by turn, so three lines last. _Recommended._
+4. **A PA line every issue.** No: one issue in three, by turn, so three lines last. _Recommended._ As built, a line plays with every issue, since a quarterly paper prints a third as often.
 
 ## Risks
 

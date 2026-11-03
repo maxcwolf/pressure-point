@@ -2,7 +2,9 @@
 
 Drafted 27 October 2026, after Max chose it from [the research drip options](options/research-drip/index.html): "The research drip recommendations sounds great, but i would want to ensure that the system works well with the actual game play flow."
 
-An idea, not a plan: nothing is built until Max has read this. It answers gap 3 of the [Two Point fun gaps review](../../audits/two-point-fun-gaps.md), "a research drip between the stars", and sits beside [Grand Occasions](grand-occasions.md), which reworks the third star.
+**Status, 2 November 2026: the first slice is built,** and shipped in 0.35.0 behind the Feature testing switch in Settings, off by default (`src/core/sim/waves.ts`, `src/core/data/waves.ts`). It is one wave, Cold Feet at The Exchange, which opens Moxibustion and its Moxa Burner early, with a Let them in / Turn them back switch on the wave's card that the design below does not have; [plans/release-0.35.0-review.md](../../plans/release-0.35.0-review.md) decision 4 added it. Waves at the other centers are not built.
+
+Drafted as an idea, not a plan, to be read by Max before anything was built. It answers gap 3 of the [Two Point fun gaps review](../../audits/two-point-fun-gaps.md), "a research drip between the stars", and sits beside [Grand Occasions](grand-occasions.md), which reworks the third star.
 
 Every six to eight weeks an ailment goes around town. A week ahead, a dialog in the star dialog's look names it, says why it is going around and what it opens, and the PA reads one line. For the next 30 days guests with it come on top of the usual ones, about a quarter of all new guests, each wearing the ailment's prop. If the technique that treats it is still waiting on a star, the wave opens it early, with its kit. The verb is **chase it or let it pass**. Chasing costs a course, a practitioner off the floor while they learn, the kit, maybe a Recovery Lounge, and a line that crowds the others. Letting it pass costs nothing: a wave guest the center cannot treat turns around at the door and says they will come back later.
 

@@ -49,7 +49,7 @@ A healing lounge airside at Gate 44: a long, narrow strip of concourse between t
 
 **Reviews**, three: "Boarded with one slipper and the calmest neck in row 31." · "The arch found a grudge in my coat and let me keep the tray." · "They called my flight before they called my name."
 
-**The Rag.** If [The Local Rag](the-local-rag.md) is built, the concourse's free paper is **_The Layover_**, motto _"Read it twice. You have time."_ Its headlines: GUEST SPRINTS TO GATE 44 IN ROBE, MAKES FLIGHT, LEAVES SLIPPER · SOUL SCANNER FINDS {N} GRUDGES IN ONE DAY; TRAYS RUN SHORT · {STAFF} FINISHES DEEP TISSUE AT A RUN.
+**The Rag.** [The Local Rag](the-local-rag.md) is built (0.36.0), so the concourse's free paper is **_The Layover_**, motto _"Read it twice. You have time."_ Its headlines: GUEST SPRINTS TO GATE 44 IN ROBE, MAKES FLIGHT, LEAVES SLIPPER · SOUL SCANNER FINDS {N} GRUDGES IN ONE DAY; TRAYS RUN SHORT · {STAFF} FINISHES DEEP TISSUE AT A RUN.
 
 ## Rules and numbers
 

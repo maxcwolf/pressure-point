@@ -2,7 +2,7 @@
 
 A plan, 22 October 2026, for a tutorial that walks a first game at Willow Lane through its opening and explains each thing the first time it happens, on by itself for the first campaign game and switched off (or on again) in Settings. It builds on the first-game heads-ups of 0.32.2 rather than replacing them. The mockups of the options are on the canvas [Tutorial Mode Mockups](https://claude.ai/artifact/2m9vMpKHMt6LeyVsRjqniW).
 
-**Status, 25 October 2026: built.** The recommendation (A and C together) shipped in 0.33.0, all three phases (`86b110d2`, `b5429c8d`, `8d7d334c`), with changes since in 0.33.1 (the pause and play steps, the applicants' ring), 0.33.4 (a lesson on money) and Unreleased (a lesson on the first cold snap, and lessons once each across the campaign). Two things were not done: the announcer's opening line, and drawn pictures for the lessons, whose strips use the game's icons. Where the build went another way from the design below, a note marked "As built" says how.
+**Status, 25 October 2026: built.** The recommendation (A and C together) shipped in 0.33.0, all three phases (`86b110d2`, `b5429c8d`, `8d7d334c`), with changes since in 0.33.1 (the pause and play steps, the applicants' ring), 0.33.4 (a lesson on money) and 0.33.7 (a lesson on the first cold snap, and lessons once each across the campaign). Two things were not done: the announcer's opening line, and drawn pictures for the lessons, whose strips use the game's icons. Where the build went another way from the design below, a note marked "As built" says how.
 
 ## What the Two Point games do
 
@@ -148,7 +148,7 @@ A `LessonDialog` over the game, which pauses it as any dialog does, raised by th
 
 Each lesson has a square picture per panel, drawn in the game's clay style as the Museum cards are (a job for `scripts/`, from the game's own scene at the right moment, or hand drawn). Until the pictures exist the strip shows the icons the game has (`room-`, `role-`, `ui-`), which is enough to ship.
 
-As built (`LESSON_IDS` in `src/core/sim/lessons.ts`): nine lessons. The seven above the star, and the star as a paragraph in the star dialog, as planned; then **Money**, the first time the bank holds less than the next payday takes, with a Show me to the Loan tab (0.33.4), and **the first cold snap**, with a Radiator or an Air Conditioner put in hand (Unreleased). Every trigger is checked once a second from the state (`checkLessons`), not from the events in `guests.ts`, `stations.ts` and the rest. Since Unreleased each lesson comes once across the campaign, in whichever center it first happens (`recordLesson` in `src/storage/campaign.ts`), not once a game. The strips still use the icons: no pictures were drawn.
+As built (`LESSON_IDS` in `src/core/sim/lessons.ts`): nine lessons. The seven above the star, and the star as a paragraph in the star dialog, as planned; then **Money**, the first time the bank holds less than the next payday takes, with a Show me to the Loan tab (0.33.4), and **the first cold snap**, with a Radiator or an Air Conditioner put in hand (0.33.7). Every trigger is checked once a second from the state (`checkLessons`), not from the events in `guests.ts`, `stations.ts` and the rest. Since 0.33.7 each lesson comes once across the campaign, in whichever center it first happens (`recordLesson` in `src/storage/campaign.ts`), not once a game. The strips still use the icons: no pictures were drawn.
 
 ### Pacing
 

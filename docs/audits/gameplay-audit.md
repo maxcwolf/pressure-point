@@ -2,7 +2,7 @@
 
 A read of the code at 0.30.14 for bugs and gameplay problems, by three reviewers (staff, economy and events, treatment flow and the world) and one playtest-bot run (`yarn balance`, one seed per center, 48 months). Typecheck and all unit tests passed before any change. Nothing below was reproduced by hand in play: findings are from reading the code, and the balance numbers are from a single seed each, so read them as hints.
 
-Follow-up, as of 25 October 2026: the six planned fixes and the pass's extras came in 0.31.0. Of the 22 to-do items, 13 are done, in 0.31.0, 0.32.0 and 0.33.6; the nine left open are marked below.
+Follow-up, as of 2 November 2026: the six planned fixes and the pass's extras came in 0.31.0. Of the 22 to-do items, 14 are done, in 0.31.0, 0.32.0, 0.33.6 and 0.33.7; the eight left open are marked below, one of them half done in 0.36.0.
 
 [planning/known-issues.md](../planning/known-issues.md) holds the earlier audit's open issues; this one keeps its own in the to-do list below, and [audits/deep-dive-audit.md](deep-dive-audit.md) (20 October) follows on from this one.
 
@@ -58,7 +58,7 @@ See the plan above. All six are in, in 0.31.0, with tests, and so are these, fro
 - [ ] **The sim's build API trusts the UI** for money, `missingItems`, unlock stars and "room done" (`building.ts`, `upgrades.ts`). Reachable only through `window.pp` or the console.
 - [ ] **Monthly goals can be met on a small sample early in a month** (`goals.ts`: 7 of 10 healed meets a 70% cure rate, with no minimum span). Awards use 20 guests and a full year. Still so at 0.31.0: the cure rate now counts guests sent home, but 10 judged are still enough. The new month-heals goals are counts, so a short span is no shortcut there.
 - [ ] **"Go 30 days without anyone quitting" is free** once day 30 comes if nobody has ever quit (`goals.ts:41`), and so is the 90-day achievement. Probably intended.
-- [ ] **A failed inspection's bribe** is at least $10,000 (`BRIBE_MIN`) against fines of $800 a problem, so it is rarely worth paying; and `settleInspection(false)` runs silently when a later visitor finishes (`visits.ts`).
+- [ ] **A failed inspection's bribe** is at least $10,000 (`BRIBE_MIN`) against fines of $800 a problem, so it is rarely worth paying; and `settleInspection(false)` runs silently when a later visitor finishes (`visits.ts`). Half done in 0.36.0: `BRIBE_MIN` is gone, and a failed inspection offers three bribes below the fine (`BRIBE_OFFERS` in `rules.ts`). Still open: with no offer chosen, `settleInspection` pays the fine with no message, when a later visitor finishes (`finishVisit`) or the day after the report (`lapseInspection`).
 - [x] **The awards ceremony finds a winner by name** (`awards.ts:185`), so two staff with one name get the first match. **Done in 0.33.6** (`e03e28b`): a result keeps the winner's id (`winnerId`).
 
 ### Balance and gameplay

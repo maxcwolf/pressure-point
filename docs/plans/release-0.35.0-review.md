@@ -1,5 +1,7 @@
 # Closing out the 0.35.0 review
 
+**Status, 2 November 2026: done.** Streams A to E were all built, and 0.35.0 was tagged on 28 October 2026. Stream D's measurements are [balance/log.md](../balance/log.md) entries 52 and 53, the second of which brought a Chatterbox's pay to ×0.85. Decision 3, keeping Burnout Survivor, was overtaken in 0.36.0, which took the quirk out.
+
 A plan, 28 October 2026, for everything the pre-tag review of 0.35.0 left open. Four fixes went in on the day (the bubble over tall heads, Former Influencer as the one costly quirk, Holds Space kept from Caretakers, the wave dialog's date and a switched-off wave coming back). What is left falls into five streams. A, B and C can run at the same time, each in its own worktree; D waits for A; E goes last, on main.
 
 The review itself: six Opus reviewers over quirks, waves, the UI code, the symptom models in the lab, a Playwright play-test, and the check suite, plus a replay of six balance games against a v0.34.3 worktree. The stance throughout is [challenging but fair](../balance/log.md): communicate, give counterplay, keep the pressure, remove the cliff.

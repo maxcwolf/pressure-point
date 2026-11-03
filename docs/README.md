@@ -26,7 +26,7 @@ Everything about the game beyond the [README](../README.md), by what it is for. 
 - [planning/known-issues.md](planning/known-issues.md): bugs and risks found and left open, with a way to fix each.
 - [planning/roadmap.md](planning/roadmap.md): the order the Two Point gaps were built in, release by release.
 - [planning/ideas.md](planning/ideas.md), [planning/item-ideas.md](planning/item-ideas.md) and [planning/machine-ideas.md](planning/machine-ideas.md): ideas nobody has decided on yet.
-- [planning/fun/](planning/fun/README.md): ideas for making the game more fun and more its own, ranked against where the fun sags today and re-ranked after Max's notes on two reviews, with design docs for the top nine, two new centers and the three parked ideas, and a review of the ideas for their mechanics (27 October 2026).
+- [planning/fun/](planning/fun/README.md): ideas for making the game more fun and more its own, ranked against where the fun sags, with design docs for the top ideas, two new centers and the parked ones, a review of the ideas for their mechanics, and [whats-going-around.md](planning/fun/whats-going-around.md), the plan for ailments going around. Its options pages show the choices put to Max for each idea built: [staff quirks](planning/fun/options/staff/index.html), [symptoms you can see](planning/fun/options/symptoms/index.html), [the research drip](planning/fun/options/research-drip/index.html) and [accidents on the floor](planning/fun/options/accidents/index.html). From it came the quirks, the symptom models and the first ailments going around in 0.35.0, and the town paper and accidents in 0.36.0; the README there says what has shipped.
 
 ## Plans
 
@@ -37,6 +37,8 @@ Design plans for features, each with the decisions made. Most are built; each sa
 - [plans/wall-items.md](plans/wall-items.md): wall items, and better windows.
 - [plans/machines.md](plans/machines.md): big treatment machines.
 - [plans/tutorial.md](plans/tutorial.md): the tutorial mode.
+- [plans/pencil-in.md](plans/pencil-in.md): pencilling rooms in, to lay a center out before it can be paid for.
+- [plans/release-0.35.0-review.md](plans/release-0.35.0-review.md): closing out the review of 0.35.0 before it was tagged.
 - [plans/next-pass.md](plans/next-pass.md): advice that can be followed, prices that bite, side income in proportion, demand that grows.
 - [plans/polish-pass.md](plans/polish-pass.md): the October features up to Two Point's bar.
 - [plans/people-pass.md](plans/people-pass.md): the clay people, moving as they should.

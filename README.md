@@ -40,7 +40,7 @@ Drag out a room, click a wall for its door, and furnish it. Hire from the applic
 
 - **Look after the guests.** Benches, tea, snacks, plants and a restroom keep them patient while they wait. Their condition worsens the longer they wait, and the worse it gets, the less likely their treatment is to work. Treat them well and some come back as regulars, greeted by name.
 - **Look after the staff.** They tire, get thirsty and hungry, and need a Staff Room to recover in. They gain experience, rise through five ranks and expect a raise to match, and quit if you ignore them for too long.
-- **Keep it running.** Equipment wears out and breaks down unless a Caretaker services it. Noise spoils treatments nearby, winters get cold and summers hot, and a failed treatment leaves bad vibes over its room.
+- **Keep it running.** Equipment wears out and breaks down unless a Caretaker services it, and a worn machine can catch fire. Noise spoils treatments nearby, winters get cold and summers hot, a failed treatment leaves bad vibes over its room, and a guest with no toilet to use has an accident on the floor.
 - **Keep the books.** Set prices, take out loans, run marketing campaigns, and send staff out on house calls. A health inspector and the odd VIP come to judge, and a ZenMart opens across the street to compete for your guests.
 
 ## Two ways to play
@@ -62,10 +62,10 @@ Five centers, each with its own building, guests, goals and quirks, and three st
 ### Karma: unlocks that stay unlocked
 
 <p align="center">
-  <img src="docs/assets/karma.png" alt="Earn karma: 2 for each campaign star and 1 to 3 for each achievement, 52 in all. Spend it on items such as a Koi Pond, a Fireplace and a Massage Chair, the Carousel of Rebirth, and floors and walls" width="100%" />
+  <img src="docs/assets/karma.png" alt="Earn karma: 2 for each campaign star, 1 to 3 for each achievement and 1 for each gift to the Foundation, 67 in all. Spend it on items such as a Koi Pond, a Fireplace and a Massage Chair, the Carousel of Rebirth, and floors and walls" width="100%" />
 </p>
 
-Every star and achievement earns **✨ karma**. Spend it in the karma shop on items you can't get any other way, or to unlock one before its star comes round. Whatever you buy stays unlocked in every center and the sandbox.
+Every star and achievement earns **✨ karma**, and so does each gift to the Foundation once every star in a center is earned. Spend it in the karma shop on items you can't get any other way, or to unlock one before its star comes round. Whatever you buy stays unlocked in every center and the sandbox.
 
 ## How you progress
 
@@ -85,9 +85,9 @@ Whether in the campaign or the sandbox, four things grow as you play.
 - **A campaign of five centers**, three stars each, plus a sandbox at Relaxed, Standard or Demanding, or set pressure by pressure.
 - **A healing art for every taste**, each with its own room, staff, treatments and ailments you can spot on the guests who have them, and weekly Qi Gong classes.
 - **A treatment machine at every center**, from the Kneadmaster 9000 to the Cider Press of Rebirth, each with two ailments of its own, and a Carousel of Rebirth to unlock with karma.
-- **Staff with careers:** ranks, traits, courses, raises, breaks, and duties you can set.
+- **Staff with careers:** ranks, quirks, courses, raises, breaks, and duties you can set.
 - **Rooms you can change:** resize them, move them, copy them, save them as templates, and decorate them. Buy the plots of land around it, with the Expand tool, when the building gets too small: some join on, and some are buildings of their own across the grass.
-- **Events to plan for:** emergencies, stress outbreaks, VIPs, the health inspector, mishaps like power cuts and storms, staff challenges and a year-end awards ceremony.
+- **Events to plan for:** emergencies, stress outbreaks, VIPs, the health inspector, mishaps like power cuts and storms, fires, staff challenges and a year-end awards ceremony.
 - **Overlays and stats:** color the floor by how pleasant, quiet or warm each spot is, or which rooms have a Fire Extinguisher near the door, or by guests' patience and staff energy, and read the reviews and a casebook of every visit.
 - **Sound and music**, with an announcer, plus keys you can set, edge scrolling and autosave.
 
@@ -105,7 +105,7 @@ The Mac app is signed and notarized by Apple, so it opens like any other. The Wi
 
 The desktop app keeps itself up to date. It downloads each new version in the background and offers to restart for it, or installs it the next time you quit.
 
-The game saves itself every few minutes, and as you leave it. The browser and the desktop app keep their own saves, and **Save or load**, in the pause menu, can export a game to a file and import it into the other.
+The game saves itself every few minutes, and as you leave it. The browser and the desktop app keep their own saves, and **Save or load**, in the pause menu, can export a game to a file and import it into the other. People sharing a computer can each have a profile of their own, with their own saves and campaign.
 
 See the [changelog](CHANGELOG.md) for what's new.
 

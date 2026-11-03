@@ -1,6 +1,6 @@
 # Pencilled rooms
 
-A plan, 26 October 2026, for letting players lay out their center before they can pay for it. Phase 1 is built in this branch; phases 2 and 3 come later, each in a session of its own.
+A plan, 26 October 2026, for letting players lay out their center before they can pay for it. All three phases are built and shipped in 0.34.0.
 
 What a player wants: "I know I want another Consultation Room in that corner at the second star, but I don't want to pay for it now, and I don't want a bench ending up there." Today the only way to keep a space is to build the room, or to remember.
 
@@ -63,7 +63,7 @@ In `core/build-rules.ts`: `sketchAt(world, x, y)` and `sketchOverlap(world, rect
 
 ## Phases
 
-1. **Pencilled rooms** (this branch): everything above.
+1. **Pencilled rooms**: everything above.
 2. **A fit that keeps up.** A sketch rechecks whether it fits as the world changes, says so on its label ("⚠ doorway blocked", amber), and the Pencil in tab's line counts the ones that no longer fit. A sketch on a plot is carried into the building when the builders are done, or flagged if it no longer fits.
 3. **Sketches that remember a room.** A sketch can carry a saved template, built whole when it is built, and a Plans overlay shows every sketch at once.
 

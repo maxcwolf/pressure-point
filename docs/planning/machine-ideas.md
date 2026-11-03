@@ -144,7 +144,7 @@ These don't bring new ailments. They do a technique we already have in a differe
 
 - **Overloads are a mess, never a disaster.** A machine smokes once it is three-quarters worn, so the player sees it coming. At full wear it overloads, but the guest inside always finishes first. Each machine's mess is its own joke (kneading the air, a flood of foam, an avalanche, a runaway stone), and a Caretaker clears it as an urgent repair.
 - **Upgrades show.** Machines use the three upgrade levels we already have, and each level adds something to the model you can see.
-- **Mishaps reach them.** A power cut stops anything with a plug, and a storm stops anything that runs on water. The Generator, already planned, is the answer to the first.
+- **Mishaps reach them.** A power cut stops anything with a plug, and a storm stops anything that runs on water. The Generator, built in 0.32.0, is the answer to the first.
 - **Combos with the room next door.** The Aura Wash with a Recovery Lounge; the Great Alphorn heard in a Sound Bath Studio.
 - **They cost money to run.** Power and parts each month, a bill when one overloads, and expensive upgrades, so a settled center's money has somewhere to go.
 - **A down machine stops drawing guests,** and the toast says who is stuck in its line and what will clear it.

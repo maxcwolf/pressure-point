@@ -36,7 +36,7 @@ These fit systems already in the sim. Most are data only or need a small hook, s
 
 **7. Generator** 🔋. A bulky diesel generator, placed outdoors only (chosen on that condition), 2×1, $2,800, `noise: 8`. Owned, it keeps the power on through every power cut without paying for a hired one each time, but it's loud, so it goes outside, where the building's outer walls hold back its noise. Nothing can be placed outdoors yet, so it needs a first step of phase 7 of [plans/land.md](../plans/land.md). The first of the **mishap items**: something the player can buy once, ahead of time, instead of paying each time. Others in the same family: **Storm Shutters** on windows (The Boardwalk), **Pipe Lagging** as a room upgrade (High Pines) and a **Wasp Trap** (The Orchard Estate). _New code, small each_: a mishap checks for its item before it counts as unprepared.
 
-**8. Fire Extinguisher, made to matter.** No new item: the inspector already wants one near every room. A broken or missing extinguisher next to a room could appear as a line in the inspector's report, and the Fire Extinguisher could wear a little each month until a Caretaker checks it. _New code, small._ **Done 25 October 2026, another way:** fires. A machine smoking with wear can catch fire as it overloads, and a Caretaker with an extinguisher within 10 tiles of the room's door puts it out before it spreads; sprinklers from the third star and the fire brigade's call-out are the other answers. Extinguishers still do not wear or run out.
+**8. Fire Extinguisher, made to matter.** No new item: the inspector already wants one near every room. A broken or missing extinguisher next to a room could appear as a line in the inspector's report, and the Fire Extinguisher could wear a little each month until a Caretaker checks it. _New code, small._ **Done 25 October 2026, another way:** fires. A machine smoking with wear can catch fire as it overloads, and a Caretaker with an extinguisher within 10 tiles of the room's door puts it out before it spreads; sprinklers from the third star and the fire brigade's call-out are the other answers. The line in the inspector came in 0.36.0, in the room's own inspector rather than the health inspector's report: a room with no extinguisher in reach says so, with a button to place one, and the Fire safety overlay colors every room by it. Extinguishers still do not wear or run out.
 
 ## Things to watch and spend on
 
@@ -84,7 +84,7 @@ These belong to one center, unlocked at its first star and available there only 
 
 These need more than an item, but would make items more fun across the board.
 
-**24. Wall items.** Two Point has a whole category of things that hang on walls, like posters, paintings, clocks and certificates, which add decor and character without taking up floor space. We have none: every item stands on a tile. A wall slot on each wall tile of a room, with a few items to hang:
+**24. Wall items.** Two Point has a whole category of things that hang on walls, like posters, paintings, clocks and certificates, which add decor and character without taking up floor space. When this was written we had none: every item stood on a tile. Built in 0.28.0 to 0.28.2, as the top of this page says. A wall slot on each wall tile of a room, with a few items to hang:
 
 - **Framed Diploma** (from a qualification course, free, adds a little to the guests' trust in that therapist),
 - **Clock**, which makes guests lose patience a little faster when they can see it, but gets staff back from breaks sooner,

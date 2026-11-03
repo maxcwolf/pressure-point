@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 46 still to record.
+43 recorded, 50 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -119,6 +119,13 @@ As its guests start to come, one of these by whether the center is ready, or has
 ## The first accident on the floor (`ACCIDENT_NEWS` in `src/core/sim/accidents.ts`)
 
 - ⬜ A reminder that the floor is not a restroom, however grounding it may feel.
+
+## Fires, as one starts, as the brigade finish and as they go (`BLAZE_NEWS` in `src/core/data/blazes.ts`)
+
+- ⬜ There is a small fire. The fire brigade has been called. Please walk calmly away from anything glowing.
+- ⬜ The fire brigade has put the fire out. Please mind the puddles, and the firefighters.
+- ⬜ The fire brigade would like it known that the fire was already out. They are leaving, slightly disappointed.
+- ⬜ The fire brigade has gone. Normal relaxation may resume.
 
 ## Visits, as a visitor writes ahead (`VISIT_NEWS` in `src/core/data/visits.ts`)
 

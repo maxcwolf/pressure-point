@@ -52,7 +52,7 @@ The line controls work as they do today: move a robe up the second line, or over
 - Walked out between steps: "Paid for the first half. Was told the second half was the important one."
 - Packages switched off: "One session, and it worked. The Consultant seemed disappointed."
 
-**The Local Rag's headline bank,** if [The Local Rag](the-local-rag.md) is built: {LOCAL} FINISHES TWO-PART PACKAGE, IS OFFERED A THIRD.
+**The Local Rag's headline bank,** now that [The Local Rag](the-local-rag.md) is built (0.36.0): {LOCAL} FINISHES TWO-PART PACKAGE, IS OFFERED A THIRD.
 
 ## Rules and numbers
 
