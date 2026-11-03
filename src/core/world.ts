@@ -1,5 +1,5 @@
-// Grid caches derived from the game state: zones, blocking, doors, plus pathfinding. The build rules that read them
-// are in build-rules.ts.
+// Grid caches derived from the game state: zones, blocking, doors. Pathfinding over them is in pathfinding.ts, and the
+// build rules that read them are in build-rules.ts.
 
 import * as rules from './build-rules';
 import {
@@ -26,6 +26,7 @@ import {
 } from './footprint';
 import { buildingsOf, lotWidth } from './land';
 import { byId } from './lookup';
+import * as paths from './pathfinding';
 import type { Layout, PlacedLayout } from './room-layout';
 import { sameSpot } from './state/game';
 import type { GameState, Item, Room, Sketch, WallSpot, Waypoint } from './state/types';
@@ -175,21 +176,6 @@ export interface Trial extends Grid {
   items: readonly Placed[];
 }
 
-/** Steps to the eight neighbors, with the distance each one covers. The first four are the straight ones. */
-const DIRS8: readonly (readonly [dx: number, dy: number, cost: number])[] = [
-  [1, 0, 1],
-  [-1, 0, 1],
-  [0, 1, 1],
-  [0, -1, 1],
-  [1, 1, Math.SQRT2],
-  [1, -1, Math.SQRT2],
-  [-1, 1, Math.SQRT2],
-  [-1, -1, Math.SQRT2],
-];
-const DIRS4 = DIRS8.slice(0, 4);
-/** How many tiles out from a spot to look for somewhere to stand. */
-const STAND_SEARCH = 160;
-
 export class World {
   /** How wide and deep the map is, in tiles: the center's lot. */
   readonly w: number;
@@ -201,10 +187,9 @@ export class World {
   /** Bumped on every rebuild so the renderer knows to resync. */
   version = 0;
   /** Bumped on every rebuild, silent ones too, so answers worked out from the grids know when they are stale. */
-  private stamp = 0;
-  /** Standing spots already worked out, by tile and count, while the grids stay as they were. */
-  private spots = new Map<number, readonly [number, number][]>();
-  private spotsStamp = -1;
+  stamp = 0;
+  /** What pathfinding keeps from one call to the next. Public for pathfinding.ts, as is `stamp`. */
+  readonly pathfinder: paths.Pathfinder;
   /** The building's own windows, worked out once for each time the grids change. */
   private panes: BuildingWindow[] = [];
   private panesStamp = -1;
@@ -224,11 +209,7 @@ export class World {
     this.reserved = new Uint8Array(tiles);
     this.indoors = new Uint8Array(tiles);
     this.buildingNo = new Uint8Array(tiles);
-    this.g = new Float32Array(tiles);
-    this.f = new Float64Array(tiles);
-    this.came = new Int32Array(tiles);
-    this.state = new Uint8Array(tiles);
-    this.marked = new Uint32Array(tiles);
+    this.pathfinder = new paths.Pathfinder(tiles);
     this.bare = { zone: new Int32Array(tiles), reserved: new Uint8Array(tiles), doors: [] };
     this.scratch = {
       zone: new Int32Array(tiles),
@@ -459,6 +440,7 @@ export class World {
     // a generator of the center's own keeps the power on while it works
     return mishapStopsType(def, it.type, m.prepared) && !holdingOff(def, this.s.items);
   }
+
   /** Whether a tile can be walked on: in the game as it is, or on the grids `g` of a what-if. */
   walkable(x: number, y: number, g: Grid = this) {
     if (!this.onMap(x, y)) return false;
@@ -472,187 +454,23 @@ export class World {
     return g.zone[this.idx(ax, ay)] === g.zone[this.idx(bx, by)] || g.doors.has(this.edgeKey(ax, ay, bx, by));
   }
 
-  // ---- Pathfinding ---------------------------------------------------------
-  private g: Float32Array;
-  private f: Float64Array;
-  private came: Int32Array;
-  /** 1 for a tile on the open list, 2 for one done with, in the search numbered in `marked`; else not yet seen. */
-  private state: Uint8Array;
-  /** Which search last marked each tile, so a new search need not clear the marks of the last. */
-  private marked: Uint32Array;
-  private search = 0;
-
+  // ---- Pathfinding -----------------------------------------------------------
+  // Pathfinding itself is in pathfinding.ts; these pass the world along to it.
   /** A* over the tile grid. The start tile may itself be blocked. Returns tile-center waypoints. */
   findPath(sx: number, sy: number, gx: number, gy: number): Waypoint[] | null {
-    if (!this.onMap(sx, sy) || !this.walkable(gx, gy)) return null;
-    if (sx === gx && sy === gy) return [];
-    // a single step to the next tile along is what the search would find, the shortest way there being that step
-    if (Math.abs(gx - sx) + Math.abs(gy - sy) === 1 && this.canStep(sx, sy, gx, gy)) return [[gx + 0.5, gy + 0.5, 0]];
-    const { g, f, came, state, marked } = this;
-    const search = ++this.search;
-    /** Where a tile stands in this search: 0 not yet seen, 1 on the open list, 2 done with. */
-    const stateOf = (i: number) => (marked[i] === search ? at(state, i) : 0);
-    /** Mark where a tile stands in this search. */
-    const mark = (i: number, v: number) => {
-      marked[i] = search;
-      state[i] = v;
-    };
-    const start = this.idx(sx, sy);
-    const goal = this.idx(gx, gy);
-    const open: number[] = [start];
-    g[start] = 0;
-    f[start] = 0;
-    mark(start, 1);
-    while (open.length) {
-      // take the most promising tile off the open list: the first of any that are as promising as each other
-      let bi = 0;
-      let best = Infinity;
-      for (let i = 0; i < open.length; i++) {
-        const score = at(f, at(open, i));
-        if (score < best) {
-          best = score;
-          bi = i;
-        }
-      }
-      const cur = at(open, bi);
-      open[bi] = at(open, open.length - 1);
-      open.pop();
-      if (cur === goal) break;
-      mark(cur, 2);
-      const cx = cur % this.w;
-      const cy = (cur - cx) / this.w;
-      for (const [dx, dy, cost] of DIRS8) {
-        const nx = cx + dx;
-        const ny = cy + dy;
-        if (!this.onMap(nx, ny)) continue;
-        const n = this.idx(nx, ny);
-        const seen = stateOf(n);
-        if (seen === 2) continue;
-        if (dx && dy) {
-          if (
-            !this.canStep(cx, cy, nx, cy) ||
-            !this.canStep(nx, cy, nx, ny) ||
-            !this.canStep(cx, cy, cx, ny) ||
-            !this.canStep(cx, ny, nx, ny)
-          )
-            continue;
-        } else if (!this.canStep(cx, cy, nx, ny)) continue;
-        const ng = at(g, cur) + cost;
-        if (seen === 1 && ng >= at(g, n)) continue;
-        g[n] = ng;
-        came[n] = cur;
-        // the distance so far, and a lower bound on the distance left to the goal, allowing diagonal steps
-        const hx = Math.abs(nx - gx);
-        const hy = Math.abs(ny - gy);
-        f[n] = ng + (Math.max(hx, hy) + (Math.SQRT2 - 1) * Math.min(hx, hy));
-        if (seen !== 1) {
-          mark(n, 1);
-          open.push(n);
-        }
-      }
-    }
-    if (stateOf(goal) === 0) return null;
-    const path: Waypoint[] = [];
-    let c = goal;
-    while (c !== start) {
-      const x = c % this.w;
-      path.push([x + 0.5, (c - x) / this.w + 0.5, 0]);
-      c = at(came, c);
-    }
-    return path.reverse();
+    return paths.findPath(this, sx, sy, gx, gy);
   }
-
   /** Tiles reachable on foot from a start tile, in breadth-first order, in the game or on the grids `g` of a what-if. */
-  flood(sx: number, sy: number, limit = this.w * this.h, g: Grid = this): [number, number][] {
-    const seen = new Uint8Array(this.w * this.h);
-    const out: [number, number][] = [];
-    if (!this.onMap(sx, sy)) return out;
-    // a queue of tile indexes read from the front, as taking from the front of an array moves everything behind it
-    const queue = new Int32Array(this.w * this.h);
-    let head = 0;
-    let tail = 0;
-    queue[tail++] = this.idx(sx, sy);
-    seen[this.idx(sx, sy)] = 1;
-    while (head < tail && out.length < limit) {
-      const i = at(queue, head++);
-      const x = i % this.w;
-      const y = (i - x) / this.w;
-      out.push([x, y]);
-      for (const [dx, dy] of DIRS4) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (!this.onMap(nx, ny) || seen[this.idx(nx, ny)]) continue;
-        if (!this.canStep(x, y, nx, ny, g)) continue;
-        seen[this.idx(nx, ny)] = 1;
-        queue[tail++] = this.idx(nx, ny);
-      }
-    }
-    return out;
+  flood(sx: number, sy: number, limit?: number, g?: Grid): [number, number][] {
+    return paths.flood(this, sx, sy, limit, g);
   }
-
-  /**
-   * Free standing spots near a tile: same zone, not blocking a doorway or an access spot. They depend only on the
-   * grids, so each is worked out once and kept until the grids next change; the list is shared, so it is read-only.
-   */
+  /** Free standing spots near a tile, worked out once until the grids next change; the list is shared, so read-only. */
   standSpots(x: number, y: number, count: number): readonly [number, number][] {
-    if (this.spotsStamp !== this.stamp) {
-      this.spots.clear();
-      this.spotsStamp = this.stamp;
-    }
-    if (!this.onMap(x, y)) return [];
-    // the search stops 160 tiles out, so asking for more than that finds the same
-    const key = this.idx(x, y) * (STAND_SEARCH + 1) + Math.min(count, STAND_SEARCH);
-    let found = this.spots.get(key);
-    if (!found) {
-      const z = this.zoneAt(x, y);
-      found = this.flood(x, y, STAND_SEARCH)
-        .filter(([tx, ty]) => this.zone[this.idx(tx, ty)] === z && !this.reserved[this.idx(tx, ty)])
-        .slice(0, count);
-      this.spots.set(key, found);
-    }
-    return found;
+    return paths.standSpots(this, x, y, count);
   }
-
   /** Everything that needs reaching can be reached from the street: in the game as it is, or in a what-if. */
-  connected(t: Trial = this.asIs()): boolean {
-    const seen = new Uint8Array(this.w * this.h);
-    for (const [x, y] of this.flood(0, SIDEWALK_Y, undefined, t)) seen[this.idx(x, y)] = 1;
-    /** Whether a tile was reached from the street. */
-    const need = (x: number, y: number) => this.onMap(x, y) && seen[this.idx(x, y)] === 1;
-    if (!need(this.w - 1, SIDEWALK_Y)) return false;
-    // through every door: to the tile just outside, and the one past the tile inside
-    for (const e of this.building.entrances)
-      for (const {
-        inside: [x, y],
-        outside: [ox, oy],
-      } of entranceSteps(e))
-        if (!need(ox, oy) || !need(2 * x - ox, 2 * y - oy)) return false;
-    for (const r of t.rooms) {
-      if (!need(r.door.x, r.door.y) || !need(r.door.x + r.door.dx, r.door.y + r.door.dy)) return false;
-    }
-    for (const it of t.items) {
-      for (let i = 0; i < ITEMS[it.type].access.length; i++) {
-        const [x, y] = accessTile(it, i);
-        if (!need(x, y)) return false;
-      }
-    }
-    /**
-     * Whether someone on a tile inside can get out to the street: from the tile itself, or if it is the one being
-     * built on, by stepping off it onto one that is reached, not through a wall.
-     */
-    const free = (x: number, y: number) =>
-      !this.inside(x, y) ||
-      (this.walkable(x, y, t)
-        ? need(x, y)
-        : DIRS4.some(([dx, dy]) => need(x + dx, y + dy) && this.canStep(x, y, x + dx, y + dy, t)));
-    // nobody already inside may be walled in, on the tile they stand on or the one they are stepping into, as they
-    // may already be partway across into it and set off again from there
-    for (const c of [...this.s.guests, ...this.s.staff, ...this.s.visitors]) {
-      if (!free(c.tx, c.ty)) return false;
-      const ahead = c.path?.[0];
-      if (ahead && !ahead[2] && !free(Math.floor(ahead[0]), Math.floor(ahead[1]))) return false;
-    }
-    return true;
+  connected(t?: Trial): boolean {
+    return paths.connected(this, t);
   }
 
   // ---- Build rules -----------------------------------------------------------
