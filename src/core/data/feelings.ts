@@ -60,6 +60,18 @@ export const FEELINGS: Readonly<Record<FeelingId, FeelingDef>> = {
     part: 'staff',
     lines: ['So kind and attentive.', 'The staff made me feel looked after.'],
   },
+  'made-right': {
+    id: 'made-right',
+    icon: 'feeling-made-right',
+    text: 'Asked back after a complaint, and made right',
+    good: true,
+    part: 'staff',
+    lines: [
+      'They sent a gold robe to my house, which is how I knew they meant it.',
+      'Second visit was free and first in line, which I would have liked the first time.',
+      'I gave them one star and they gave me a robe.',
+    ],
+  },
   'long-wait': {
     id: 'long-wait',
     icon: 'feeling-long-wait',

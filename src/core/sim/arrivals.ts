@@ -20,7 +20,7 @@ import { random, rnd } from '../random';
 import type { Complaint, GameState, Guest, Regular } from '../state/types';
 import { lobbyTile, streetTile, streetTileNear } from './chars';
 import { newChar } from './chars';
-import { closeComplaint, dueComplaint } from './complaints';
+import { announceAskedBack, closeComplaint, dueComplaint } from './complaints';
 import type { SimContext } from './context';
 import {
   type Capacity,
@@ -159,7 +159,9 @@ export function admitGuests(ctx: SimContext, dt: number) {
 /** Bring in a guest asked back after a complaint, as a regular if they are one, and take the complaint off the list. */
 function askBack(ctx: SimContext, c: Complaint) {
   const regular = c.regular === undefined ? undefined : ctx.s.regulars.find((r) => r.id === c.regular);
-  if (spawnGuest(ctx, c.condition, false, 0, regular, c)) closeComplaint(ctx, c, true);
+  if (!spawnGuest(ctx, c.condition, false, 0, regular, c)) return;
+  closeComplaint(ctx, c, true);
+  announceAskedBack(ctx);
 }
 
 /**
@@ -267,7 +269,7 @@ export function spawnGuest(
     stressed: false,
     calmed: false,
     classDay,
-    ...(complaint && { comp: complaint.cost }),
+    ...(complaint && { comp: complaint.cost, compEnd: complaint.end }),
   };
   if (classDay) {
     decide(ctx, g);

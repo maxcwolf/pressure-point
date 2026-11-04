@@ -752,7 +752,8 @@ export type FeelingId =
   | 'freaked'
   | 'ran-out'
   | 'cider'
-  | 'blaze';
+  | 'blaze'
+  | 'made-right';
 /** A part of the center's reputation. */
 export type ReputationPart = 'results' | 'experience' | 'value' | 'staff';
 export interface FeelingDef {

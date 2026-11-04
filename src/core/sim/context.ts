@@ -35,6 +35,10 @@ export interface SimContext {
   classCallWait?: number;
   /** How many times a class has been announced since the game was loaded, to take turns with the lines. */
   classCalls?: number;
+  /** The day a complaint was last announced as left, so it is said at most once a day. */
+  complaintCallDay?: number;
+  /** How many guests asked back have been announced since the game was loaded, to take turns with the lines. */
+  askedBackCalls?: number;
   /** The lines warned about for a guest whose condition has turned poor, and the guests warned about by name. */
   poorLines?: Set<Discipline | 'consult'>;
   worseWarned?: Set<number>;

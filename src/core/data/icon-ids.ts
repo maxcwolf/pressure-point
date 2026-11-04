@@ -100,6 +100,7 @@ export const ICON_IDS = [
   'feeling-litter',
   'feeling-long-wait',
   'feeling-lucky',
+  'feeling-made-right',
   'feeling-no-class',
   'feeling-no-kit',
   'feeling-noisy',

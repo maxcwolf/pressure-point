@@ -7,6 +7,8 @@ import type { Complaint, ComplaintEnd, GameState, Guest } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
+import { feel } from './feelings';
+import { logNews, madeRightNews } from './news';
 
 /**
  * Whether a visit, as it ends, leaves a complaint: a guest who stormed out, went home worse off or went home after an
@@ -22,12 +24,33 @@ export const complains = (g: Guest) =>
 const endOf = (g: Guest): ComplaintEnd =>
   g.outcome === 'worse' ? 'worse' : g.feelings.includes('accident') ? 'accident' : 'stormed';
 
+/** What the speakers say as a complaint is left, at most once a day. */
+export const COMPLAINT_LINE = 'Complaints may be left at reception. Please release them on the way out.';
+
+/** What the speakers say as a guest asked back walks in, one line and then the other. */
+export const ASKED_BACK_LINES: readonly string[] = [
+  'Guests returning for a complimentary treatment are asked not to mention it.',
+  'Guests in the gold robe go first. Please do not ask them why.',
+];
+
+/** Say a guest asked back has come, taking turns with the lines. */
+export function announceAskedBack(ctx: SimContext) {
+  const n = ctx.askedBackCalls ?? 0;
+  emit(ctx, { type: 'announce', text: ASKED_BACK_LINES[n % ASKED_BACK_LINES.length] ?? '' });
+  ctx.askedBackCalls = n + 1;
+}
+
 /**
  * File a complaint for a guest leaving let down, with what it really cost the center's name, read before and after
  * the loss so the damping toward the ends of the scale is in it. Nothing for a visit that leaves none.
  */
 export function fileComplaint(ctx: SimContext, g: Guest, cost: number) {
   if (!complains(g)) return;
+  const today = Math.floor(ctx.s.day);
+  if (ctx.complaintCallDay !== today) {
+    emit(ctx, { type: 'announce', text: COMPLAINT_LINE });
+    ctx.complaintCallDay = today;
+  }
   ctx.s.complaints.push({
     id: g.id,
     name: g.name,
@@ -91,8 +114,11 @@ export function closeComplaint(ctx: SimContext, c: Complaint, arrived = false) {
 /**
  * A guest asked back is healed: in place of what a heal usually does for the center's name, half of what their
  * complaint cost comes back, added straight so it is never more than half, whatever the reputation or the settings.
+ * Their review says so, and the town paper may. Before the heal is counted, so the review has it.
  */
 export function madeRight(ctx: SimContext, g: Guest) {
   ctx.s.reputation = clamp(ctx.s.reputation + (g.comp ?? 0) * COMP_SHARE, 0, 100);
+  feel(g, 'made-right');
   emit(ctx, { type: 'float', text: 'Made right', x: g.x, y: g.y, kind: 'good' });
+  logNews(ctx, madeRightNews(g));
 }

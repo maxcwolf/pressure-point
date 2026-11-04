@@ -42,8 +42,8 @@ export const issueAt = (s: Pick<GameState, 'day'>) => Math.floor(Math.floor(s.da
 /** Whether two pieces of news are the same story told again: the later takes the earlier's place. */
 function sameStory(a: NewsItem, b: NewsItem): boolean {
   if (a.kind !== b.kind) return false;
-  // there is one longest wait a quarter, and one accident on the floor, however many there were
-  if (a.kind === 'wait' || a.kind === 'accident') return true;
+  // there is one longest wait a quarter, one accident on the floor and one guest made right, however many there were
+  if (a.kind === 'wait' || a.kind === 'accident' || a.kind === 'made-right') return true;
   // a failed inspection settled later, by an offer taken or turned down, is still the one inspection
   if (a.kind === 'inspection') return a.day === b.day;
   // a storm that floods a restroom as it starts is one storm
@@ -115,6 +115,7 @@ export function scoreOf(n: NewsItem): number {
     case 'sale':
       return 25;
     case 'accident':
+    case 'made-right':
       return 30;
     case 'wait':
       return Math.min(WAIT_MOST, 10 + 3 * Math.max(0, (n.n ?? 0) - WAIT_NEWS_DAYS));
@@ -251,6 +252,14 @@ export function awardsNews(results: readonly { award: AwardId; won: boolean }[],
   const center = first.award === 'center-of-the-year';
   return { kind: 'awards', ...(center && { how: 'center' }), what: first.award, n: year, of: won.length };
 }
+
+/** A guest asked back after a complaint, healed: who, and how the visit that left the complaint ended. */
+export const madeRightNews = (g: Guest): News => ({
+  kind: 'made-right',
+  how: g.compEnd ?? 'stormed',
+  who: g.name,
+  ids: { guest: g.id },
+});
 
 /** A guest's wait, once it was long enough to be news. */
 export function waitNews(g: Guest): News | null {

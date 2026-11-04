@@ -428,6 +428,8 @@ export interface Guest extends CharBase {
   wave?: boolean;
   /** Asked back, free and first in line, after a complaint: what the complaint cost the center's name. */
   comp?: number;
+  /** How the visit that left that complaint ended, for the town paper. */
+  compEnd?: ComplaintEnd;
 }
 
 /** How a visit ended that leaves a complaint: walked out of a line, home worse off, or home after an accident. */
@@ -1186,7 +1188,8 @@ export type NewsKind =
   | 'star'
   | 'awards'
   | 'wait'
-  | 'accident';
+  | 'accident'
+  | 'made-right';
 
 /**
  * How a story ended, in its kind's own terms: how a fire was put out; whether a runner found the door or was calmed,
@@ -1218,7 +1221,8 @@ export type NewsHow =
   | 'handled'
   | 'contained'
   | 'escaped'
-  | 'center';
+  | 'center'
+  | ComplaintEnd;
 
 /**
  * Something that happened this quarter that the town paper may print, with the facts its headline and story are filled

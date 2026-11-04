@@ -83,7 +83,10 @@ export type HeadlineCase =
   | 'star'
   | 'awards-center'
   | 'awards-other'
-  | 'wait';
+  | 'wait'
+  | 'made-right-stormed'
+  | 'made-right-worse'
+  | 'made-right-accident';
 
 /**
  * The headlines for each case, in sentence case with the names as they are: the lead prints in capitals, and the
@@ -148,6 +151,9 @@ export const HEADLINES: Readonly<Record<HeadlineCase, readonly string[]>> = {
   'awards-center': ['{center} is Center of the Year; ZenMart "didn\'t want it anyway"'],
   'awards-other': ['{center} wins {award}; trophy cabinet dusted'],
   wait: ['{local} waits {days} days, can now describe {thing} in detail'],
+  'made-right-stormed': ['{guest} storms out, is asked back, leaves looser'],
+  'made-right-worse': ['{guest} goes home worse off, comes back in a robe, leaves looser'],
+  'made-right-accident': ['{guest} asked back after floor incident; {center} sends robe, says no more about it'],
 };
 
 /** How each fire was put out, in the story: the Caretaker named, or the sprinklers, or the brigade and its fee. */
@@ -212,6 +218,12 @@ export const STORIES: Readonly<Record<HeadlineCase, string>> = {
   'awards-center': 'At the awards for year {year}, held on {date}, {center} won {won}.',
   'awards-other': 'At the awards for year {year}, held on {date}, {center} won {won}.',
   wait: '{guest} waited {days} days before leaving on {date}, the longest wait this quarter.',
+  'made-right-stormed':
+    '{guest} stormed out of {center} after a long wait, was asked back free, and was healed on {date}.',
+  'made-right-worse':
+    '{guest} went home from {center} worse off after a long wait, was asked back free, and was healed on {date}.',
+  'made-right-accident':
+    '{guest} went home after an accident in the waiting area, was asked back free, and was healed on {date}.',
 };
 
 /** Where stress that gets away from each center is last seen heading. */

@@ -56,12 +56,14 @@ function telling(feelings: readonly FeelingId[]): FeelingId | undefined {
 
 /**
  * What a guest writes: a line about the feeling that told them most, a bad one if the visit went badly and a good one
- * if it went well. Which of its lines is settled by who they are, so the same visit always reads the same.
+ * if it went well; a guest asked back and made right, pleased with it, says so above all. Which of its lines is settled
+ * by who they are, so the same visit always reads the same.
  */
 export function reviewText(g: Guest, stars: number): string {
   const good = g.feelings.filter((f) => FEELINGS[f].good);
   const bad = g.feelings.filter((f) => !FEELINGS[f].good);
-  const chosen = stars >= 3 ? (telling(good) ?? telling(bad)) : (telling(bad) ?? telling(good));
+  const said = good.includes('made-right') ? 'made-right' : telling(good);
+  const chosen = stars >= 3 ? (said ?? telling(bad)) : (telling(bad) ?? said);
   if (!chosen) return stars >= 3 ? 'No complaints.' : 'Not for me.';
   const lines = FEELINGS[chosen].lines;
   return at(lines, g.id % lines.length);

@@ -536,10 +536,10 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.stressed = false;
       // a ceremony that works is a good trip, which goes in their review
       if (isTrip(mod)) goodTrip(g);
-      countVisit(ctx, g, 'healed');
       // a guest asked back after a complaint pays nothing, and wins back half of what the complaint cost
       if (g.comp !== undefined) madeRight(ctx, g);
-      else {
+      countVisit(ctx, g, 'healed');
+      if (g.comp === undefined) {
         // and a loyal regular tips on top
         const fee = guestFee(ctx.s, g);
         earn(ctx, fee, 'treatment', g.x, g.y);

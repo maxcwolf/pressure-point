@@ -2,12 +2,14 @@
 // of what they cost; a complaint left unanswered lapses after a few days.
 import { describe, expect, it } from 'vitest';
 
-import { COMP_CONDITION, COMP_SHARE, COMPLAINT_DAYS, REGULAR_LOYALTY } from '../../src/core/data';
+import { COMP_CONDITION, COMP_SHARE, COMPLAINT_DAYS, FEELINGS, REGULAR_LOYALTY } from '../../src/core/data';
 import { haveAccident } from '../../src/core/sim/accidents';
 import { admitGuests, spawnGuest } from '../../src/core/sim/arrivals';
 import {
   answerComplaint,
+  ASKED_BACK_LINES,
   complains,
+  COMPLAINT_LINE,
   dropComplaint,
   dueComplaint,
   fileComplaint,
@@ -17,6 +19,7 @@ import {
 } from '../../src/core/sim/complaints';
 import type { SimContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
+import { reviewText } from '../../src/core/sim/feelings';
 import { decide } from '../../src/core/sim/lines';
 import { afterVisit, dueRegular, mindsPrice } from '../../src/core/sim/regulars';
 import type { Sim } from '../../src/core/sim/sim';
@@ -262,6 +265,63 @@ describe('a guest asked back', () => {
     worseOff(ctxOf(sim), g);
     expect(s.reputation).toBeLessThan(before);
     expect(s.complaints).toEqual([]);
+  });
+});
+
+describe('a guest made right', () => {
+  it('says so in their review, and makes the town paper', () => {
+    const { sim, s, therapist } = openCenter();
+    s.open = true;
+    s.spawnT = 1e9;
+    therapist.skill = 5;
+    const c = complaint(sim, { diagnosis: 1, end: 'worse', name: 'Bo Kettle' });
+    const g = spawnGuest(ctxOf(sim), 'slump', false, 0, undefined, c)!;
+    runUntil(sim, () => g.outcome !== '', 300);
+    expect(g.outcome).toBe('healed');
+    const review = s.reviews.at(-1)!;
+    expect(review.feelings).toContain('made-right');
+    expect(FEELINGS['made-right'].lines).toContain(review.text);
+    expect(s.news).toContainEqual(expect.objectContaining({ kind: 'made-right', how: 'worse', who: 'Bo Kettle' }));
+  });
+
+  it('writes about being made right above being seen quickly', () => {
+    const { sim } = openCenter();
+    const g = slumped(sim, { feelings: ['made-right', 'healed', 'quick'] });
+    expect(FEELINGS['made-right'].lines).toContain(reviewText(g, 5));
+    // let down by more than a robe could fix, they say what went wrong
+    const sore = slumped(sim, { feelings: ['made-right', 'healed', 'grump'] });
+    expect(FEELINGS.grump.lines).toContain(reviewText(sore, 2));
+  });
+});
+
+describe('the speakers', () => {
+  /** What the speakers have said since last asked. */
+  const said = (sim: Sim) => drainEvents(ctxOf(sim)).flatMap((e) => (e.type === 'announce' ? [e.text] : []));
+
+  it('mention complaints as one is left, once a day at most', () => {
+    const { sim, s } = openCenter();
+    s.day = 10.2;
+    worseOff(ctxOf(sim), slumped(sim, { goal: 'treat' }));
+    worseOff(ctxOf(sim), slumped(sim, { goal: 'treat' }));
+    expect(s.complaints).toHaveLength(2);
+    expect(said(sim).filter((t) => t === COMPLAINT_LINE)).toHaveLength(1);
+    s.day = 11.5;
+    worseOff(ctxOf(sim), slumped(sim, { goal: 'treat' }));
+    expect(said(sim)).toContain(COMPLAINT_LINE);
+  });
+
+  it('greet each guest asked back with the next of their lines', () => {
+    const { sim, s } = openCenter();
+    s.open = true;
+    s.spawnT = 1e9;
+    const heard: string[] = [];
+    for (const id of [901, 902, 903]) {
+      s.complaints = [complaint(sim, { id, due: 0 })];
+      drainEvents(ctxOf(sim));
+      admitGuests(ctxOf(sim), 0.1);
+      heard.push(...said(sim).filter((t) => ASKED_BACK_LINES.includes(t)));
+    }
+    expect(heard).toEqual([ASKED_BACK_LINES[0], ASKED_BACK_LINES[1], ASKED_BACK_LINES[0]]);
   });
 });
 
