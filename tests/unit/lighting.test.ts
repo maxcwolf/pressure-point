@@ -102,6 +102,7 @@ describe('a power cut', () => {
         inUse: false,
         running: 0,
         trophies: 0,
+        complaints: 0,
         shade,
       };
       animateItemParts(model, c, 0.5);

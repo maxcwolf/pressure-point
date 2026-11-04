@@ -782,6 +782,54 @@ export function detailCoat(torso: THREE.Group, cloth: THREE.Material) {
   put(torso, coatTails(), cloth).name = 'coat';
 }
 
+/** A robe's skirts, from the waist flaring out to the knee: longer and fuller than a coat's tails. */
+const robeSkirts = () =>
+  fuse('robe skirts', (n) => [
+    lathe(
+      n,
+      [
+        [0.2, -0.27],
+        [0.205, -0.262],
+        [0.196, -0.18],
+        [0.182, -0.09],
+        [0.17, 0],
+        [0.164, 0.06],
+      ],
+      SHIRT_WIDE,
+      0.95,
+      36,
+    ),
+  ]);
+
+/** How far up the torso the robe's sash is tied: at the waist. */
+const SASH_AT = 0.06;
+
+/**
+ * The sash round the robe's waist, tied at the front in a knot with its two ends hanging from it, one a little longer
+ * than the other.
+ */
+const sash = () =>
+  fuse('robe sash', (n) => {
+    const front = shirtFront(0, SASH_AT, 0.02);
+    return [
+      place(
+        bare(new THREE.TorusGeometry(0.168, 0.02, n(8), n(28))),
+        [0, SASH_AT, 0],
+        [Math.PI / 2, 0, 0],
+        [1.12, 0.9, 1],
+      ),
+      place(ball(0.034, n(12)), [0, SASH_AT, front], [0, 0, 0], [1.2, 0.85, 0.7]),
+      place(bare(new THREE.BoxGeometry(0.045, 0.17, 0.016)), [-0.03, SASH_AT - 0.1, front], [0, 0, 0.12]),
+      place(bare(new THREE.BoxGeometry(0.045, 0.2, 0.016)), [0.035, SASH_AT - 0.115, front], [0, 0, -0.1]),
+    ];
+  });
+
+/** Dress a guest asked back in the center's robe: its skirts down to the knee, and a sash tied in front. */
+export function detailRobe(torso: THREE.Group, cloth: THREE.Material, tie: THREE.Material) {
+  put(torso, robeSkirts(), cloth).name = 'coat';
+  put(torso, sash(), tie).name = 'sash';
+}
+
 // A firefighter's turnout gear: a heavy coat cut wider than the shirt and down over the hips, with a stand collar and
 // reflective bands lying flush on it, each a yellow band with a silver stripe through it, and plain bands round the
 // cuffs and the ankles.

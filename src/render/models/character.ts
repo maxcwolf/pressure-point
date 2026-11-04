@@ -20,6 +20,7 @@ import {
   detailLeg,
   detailMedallion,
   detailPoncho,
+  detailRobe,
   detailShawl,
   detailShirtFront,
   detailTorso,
@@ -204,6 +205,18 @@ const VISITOR_CLOTHES: Readonly<Record<VisitorKind, { top: number; bottom: numbe
   firefighter: { top: 0x2c3f6e, bottom: 0x23262e },
 };
 
+/**
+ * The center's gold, that a guest asked back after a complaint is dressed in head to foot: a deep amber, satin enough
+ * to catch the light, as far as a gold can be from the Shaman's poncho and the Caretaker's bib.
+ */
+export const ROBE = 0xda8f00;
+
+/** How much the robe glows of itself, so it shines gold in a dim room, as nobody else's clothes do. */
+const ROBE_GLOW = 0.22;
+
+/** The cream of the sash tied round the robe. */
+const ROBE_SASH = 0xf4f1ea;
+
 /** The band of rust woven round a Shaman's poncho. */
 const PONCHO_BAND = 0x8a3b24;
 
@@ -264,8 +277,17 @@ const helmetShield = () =>
     return geo;
   });
 
-/** Build a person: a uniformed member of staff, a guest showing their symptom, or a visitor dressed for the part. */
-export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor?: VisitorKind): CharRig {
+/**
+ * Build a person: a uniformed member of staff, a guest showing their symptom, or a visitor dressed for the part. A guest
+ * asked back after a complaint is `robed`, in the center's gold.
+ */
+export function buildCharacter(
+  look: Look,
+  role?: Role,
+  visual?: Visual,
+  visitor?: VisitorKind,
+  robed = false,
+): CharRig {
   const group = new THREE.Group();
   const body = new THREE.Group();
   // a build widens the body and everything on it, but not the head, so hats, glasses and props on it still fit
@@ -275,8 +297,8 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   const skin = mat(look.skin, 0.65);
   const clothes = visitor && VISITOR_CLOTHES[visitor];
   const topColor = role ? ROLES[role].uniform : (clothes?.top ?? look.top);
-  const top = mat(topColor, 0.7);
-  const bottom = mat((role && ROLES[role].bottom) ?? clothes?.bottom ?? look.bottom, 0.8);
+  const top = robed ? mat(ROBE, 0.38, ROBE_GLOW) : mat(topColor, 0.7);
+  const bottom = robed ? top : mat((role && ROLES[role].bottom) ?? clothes?.bottom ?? look.bottom, 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
 
   // a firefighter's boots are black whatever shoes they would wear
@@ -291,6 +313,7 @@ export function buildCharacter(look: Look, role?: Role, visual?: Visual, visitor
   detailTorso(torso, top, bottom);
   // a long white coat
   if (role === 'consultant') detailCoat(torso, top);
+  if (robed) detailRobe(torso, top, mat(ROBE_SASH, 0.8));
   if (role === 'acupuncturist') put(torso, rbox(0.09, 0.1, 0.03, 0.01), accent, -0.08, 0.26, 0.15);
   if (role === 'receptionist' || role === 'acupuncturist') {
     const scarf = put(torso, torus(0.11, 0.035), accent, 0, 0.42, 0);

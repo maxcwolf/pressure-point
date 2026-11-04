@@ -4,7 +4,7 @@ Each release's notes are taken from its section here. Keep them short.
 
 ## Unreleased
 
-- **Make it right.** A guest who storms out, goes home worse off or goes home after an accident now leaves a complaint, on a card at the side and in the Reception Desk's inspector. Press **Make it right** within 5 days and they come back the next day, free and first in every line: healed, they win back half the reputation they cost; let down again, they cost it in full, and there is no second chance.
+- **Make it right.** A guest who storms out, goes home worse off or goes home after an accident now leaves a complaint, on a card at the side and in the Reception Desk's inspector, and a pink slip on a spike on the desk. Press **Make it right** within 5 days and they come back the next day in the center's gold robe, free and first in every line: healed, they win back half the reputation they cost; let down again, they cost it in full, and there is no second chance.
 - **Held back by training.** Someone with the experience for their next rank but a qualification slot still empty now waits on a card at the side, as a raise or a promotion does, "needs training to be promoted", and has a Training Room mark on their row in the Staff menu. Their inspector says which rank they have the experience for.
 
 ## v0.36.0

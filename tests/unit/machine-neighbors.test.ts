@@ -168,6 +168,7 @@ describe('the Gong of Last Resort, next door', () => {
       inUse: false,
       running: 0,
       trophies: 0,
+      complaints: 0,
     };
     let most = 0;
     for (let k = 0; k < 40; k++) {

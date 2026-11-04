@@ -50,6 +50,8 @@ export interface ItemCondition extends CueCondition {
   scanning: boolean;
   /** How many trophies the center has won, each shown as a cup in a trophy cabinet. */
   trophies: number;
+  /** How many complaints are waiting for an answer, each a pink slip on the Reception Desk's spike. */
+  complaints: number;
 }
 
 /** The green of a plant's leaves and of a living wall's moss when watered, as red, green and blue. */
@@ -75,7 +77,7 @@ function dryColor(water: number, green: readonly [number, number, number]): THRE
  * warmth (see item-cues.ts).
  */
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
-  const { leaf, glow, ring, orb, spill, puffs, led, cups, linens, heap, flames, chimes, hands, flags, moss } =
+  const { leaf, glow, ring, orb, spill, puffs, led, cups, slips, linens, heap, flames, chimes, hands, flags, moss } =
     partsOf(model);
   if (leaf) {
     // a plant browns and droops as it dries out
@@ -115,6 +117,7 @@ export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: nu
   });
   if (led) wearLight(led, it.wear, it.id, Math.sin(t * 5 + it.id) > 0 ? 1.4 : 0.1, t, it.stopped === 'off');
   cups?.forEach((cup, i) => (cup.visible = i < it.trophies));
+  slips?.forEach((slip, i) => (slip.visible = i < it.complaints));
   if (linens) soilLinens(linens, it.dirt);
   if (heap) {
     // the soiled linens rise up the basket as it fills
@@ -278,6 +281,7 @@ export class ItemsLayer {
         running: this.running(it),
         rattled,
         trophies: this.sim.s.trophies.length,
+        complaints: it.type === 'reception_desk' ? this.sim.openComplaints().length : 0,
         stopped: this.stopped(it),
         shade,
         burning,

@@ -2,7 +2,9 @@
 
 A plan, 3 November 2026, for building [Make It Right](../planning/fun/make-it-right.md): a guest the center let down leaves a complaint, and the player can ask them back, free and first in line, to win back half of what they cost. The design doc has the reasoning, the jokes and the risks; this has the decisions, the rules as they will be built, and where each piece goes, checked against the code at `f5e3a257` (after 0.36.0).
 
-Steps 1 and 2 are built: the rule (`src/core/sim/complaints.ts`), the card at the side and the Reception Desk's Complaints (`src/ui/components/Complaints.tsx`). Each complaint also keeps how many days its guest had waited, for the card to say. Steps 3 to 5 are still to do.
+Steps 1 to 3 are built: the rule (`src/core/sim/complaints.ts`), the card at the side and the Reception Desk's Complaints (`src/ui/components/Complaints.tsx`), the gold robe (`ROBE` and `detailRobe`) and the spike of slips on the desk's model. Each complaint also keeps how many days its guest had waited, for the card to say. Steps 4 and 5 are still to do.
+
+The robe's gold is a deep amber, `0xda8f00`, with a faint glow of its own: the Shaman's poncho and the Caretaker's bib are golds already, and no gold clears them by the 15 the guests' clothes keep, so the robe stays more than 8 from every uniform, 15 from every guest's clothes, and is told apart by its shape, to the knee with a cream sash. The lab shows it on any guest with **Asked back**. The slips show only complaints still waiting for an answer, so pressing Make it right takes one off the spike.
 
 ## Words
 
