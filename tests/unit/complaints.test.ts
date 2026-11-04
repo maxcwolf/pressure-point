@@ -23,6 +23,13 @@ import type { Sim } from '../../src/core/sim/sim';
 import { worseOff } from '../../src/core/sim/worsening';
 import type { Complaint, Guest, Regular } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
+import {
+  complaintBack,
+  complaintCard,
+  complaintNote,
+  complaintSaid,
+  makeItRightNote,
+} from '../../src/ui/lib/complaints';
 import { openCenter, runUntil, toasts } from './helpers';
 
 /** The simulation's own context, for calling its parts directly. */
@@ -43,6 +50,7 @@ const complaint = (sim: Sim, over: Partial<Complaint> = {}): Complaint => ({
   condition: 'slump',
   diagnosis: 0.4,
   end: 'stormed',
+  waited: 9,
   day: sim.s.day,
   cost: 3,
   ...over,
@@ -306,5 +314,39 @@ describe('a regular who leaves a complaint', () => {
     dropComplaint(ctxOf(sim), 901);
     expect(dueRegular(s)).toBe(r);
     expect(s.regulars).toEqual([r]);
+  });
+});
+
+describe('what the interface says about a complaint', () => {
+  it('says what went wrong, with the treatment they were waiting for when there was one', () => {
+    const { sim } = openCenter();
+    expect(complaintSaid(complaint(sim, { modality: 'deep' }))).toBe(
+      'Ada Twinge stormed out of the Deep Tissue line after 9 days.',
+    );
+    expect(complaintSaid(complaint(sim, { waited: 0.2 }))).toBe('Ada Twinge stormed out after 1 day waiting.');
+    expect(complaintSaid(complaint(sim, { end: 'worse', modality: 'cupping', waited: 14 }))).toBe(
+      'Ada Twinge went home worse off after 14 days waiting for Cupping.',
+    );
+    expect(complaintSaid(complaint(sim, { end: 'accident' }))).toBe(
+      'Ada Twinge went home after an accident in the waiting area.',
+    );
+  });
+
+  it('says what asking them back does and wins back, and where it stands', () => {
+    expect(makeItRightNote({ cost: 3 })).toBe(
+      'Free, first in line. Healed: +1.5 reputation back. Let down again: the usual loss, and no second chance.',
+    );
+    expect(complaintBack({ cost: 2.37 })).toBe(1.2);
+    expect(complaintNote({ day: 10 }, 10.5)).toBe(`Lapses in ${COMPLAINT_DAYS} days`);
+    expect(complaintNote({ day: 10 }, 10 + COMPLAINT_DAYS - 0.5)).toBe('Lapses in 1 day');
+    expect(complaintNote({ day: 10, due: 12 }, 11.5)).toBe('Asked back: due tomorrow');
+    expect(complaintNote({ day: 10, due: 12 }, 12.2)).toBe('Asked back: on their way');
+  });
+
+  it('puts every complaint open on one card', () => {
+    expect(complaintCard([{ name: 'Ada Twinge' }])).toBe('Ada Twinge left a complaint');
+    expect(complaintCard([{ name: 'Ada Twinge' }, { name: 'Bo Kettle' }, { name: 'Cy Plover' }])).toBe(
+      'Ada Twinge and 2 more left complaints',
+    );
   });
 });

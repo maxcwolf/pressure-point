@@ -2,7 +2,7 @@
 
 A plan, 3 November 2026, for building [Make It Right](../planning/fun/make-it-right.md): a guest the center let down leaves a complaint, and the player can ask them back, free and first in line, to win back half of what they cost. The design doc has the reasoning, the jokes and the risks; this has the decisions, the rules as they will be built, and where each piece goes, checked against the code at `f5e3a257` (after 0.36.0).
 
-Step 1, the rule, is built (`src/core/sim/complaints.ts`, `tests/unit/complaints.test.ts`). Until step 2 brings the card, complaints are filed and lapse with nothing to show them, so it goes in the changelog with step 2.
+Steps 1 and 2 are built: the rule (`src/core/sim/complaints.ts`), the card at the side and the Reception Desk's Complaints (`src/ui/components/Complaints.tsx`). Each complaint also keeps how many days its guest had waited, for the card to say. Steps 3 to 5 are still to do.
 
 ## Words
 
@@ -48,7 +48,7 @@ The tooltip on Make it right: "Free, first in line. Healed: +1.5 reputation back
 
 ## State
 
-- `GameState.complaints: Complaint[]`, each `{ id, name, look, condition, diagnosis, modality?, end, day, cost, due? }`: `id` is the guest's, `due` is set once answered. A complaint leaves the list when its guest arrives, when it lapses, or when it is dropped.
+- `GameState.complaints: Complaint[]`, each `{ id, name, look, condition, diagnosis, modality?, end, waited, day, cost, regular?, due? }`: `id` is the guest's, `due` is set once answered. A complaint leaves the list when its guest arrives, when it lapses, or when it is dropped.
 - `Guest.comp?: number`, on the guest asked back: what the complaint cost, for the heal to know what to give back.
 - `SAVE_VERSION` goes from 48 to 49 (`src/core/state/game.ts`), and `upgradeSave` gives an older game an empty list. No sandbox switch, since it adds no pressure.
 

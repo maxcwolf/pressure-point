@@ -445,6 +445,8 @@ export interface Complaint {
   /** The treatment they were in line for, if they had got that far. */
   modality?: Modality;
   end: ComplaintEnd;
+  /** Days they had waited when they left. */
+  waited: number;
   /** The day it was left. */
   day: number;
   /** The reputation it really cost. */

@@ -16,6 +16,7 @@ import { staffingStatus } from '../../lib/upgrades';
 import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { Icon, IconText, Line } from '../common/Icon';
+import { ComplaintList } from '../Complaints';
 
 /** The line at a station, a card for each guest in it, top to bottom. */
 const lineStyle = css({
@@ -236,6 +237,19 @@ export function StationInfo({ item }: { item: Item }) {
         </ol>
       )}{' '}
       {def.goal === 'shop' && <Mushrooms />}
+      {def.goal === 'reception' && <DeskComplaints />}
+    </>
+  );
+}
+
+/** The Reception Desk's complaints: every one open, and the guests asked back who are on their way. */
+function DeskComplaints() {
+  const { sim } = useGame();
+  const complaints = sim.s.complaints;
+  return (
+    <>
+      <h4>Complaints</h4>
+      {complaints.length ? <ComplaintList complaints={complaints} /> : <p class="sub">None. Long may it last.</p>}
     </>
   );
 }

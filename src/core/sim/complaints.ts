@@ -2,7 +2,7 @@
 // can be asked back, free and first in line, to win back half of what they cost. Their arrival is in `arrivals`, the
 // front of the line in `lines`, and the visit going free in `stations`.
 
-import { COMP_SHARE, COMPLAINT_DAYS, conditionOf } from '../data';
+import { COMP_SHARE, COMPLAINT_DAYS, conditionOf, DAY_SECONDS } from '../data';
 import type { Complaint, ComplaintEnd, GameState, Guest } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
@@ -36,6 +36,7 @@ export function fileComplaint(ctx: SimContext, g: Guest, cost: number) {
     diagnosis: g.diagnosis,
     ...(g.goal === 'treat' && { modality: conditionOf(g.condition).modality }),
     end: endOf(g),
+    waited: g.waited / DAY_SECONDS,
     day: ctx.s.day,
     cost,
     ...(g.regular !== undefined && { regular: g.regular }),

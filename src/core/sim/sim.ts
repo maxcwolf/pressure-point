@@ -28,6 +28,7 @@ import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { featureOn, offeringOn } from '../state/game';
 import type {
   Char,
+  Complaint,
   FailedTreatment,
   GameState,
   Guest,
@@ -125,7 +126,7 @@ import {
   toggleClassDay,
   weeklyInterest,
 } from './classes';
-import { answerComplaint, dropComplaint, lapseComplaints } from './complaints';
+import { answerComplaint, dropComplaint, lapseComplaints, openComplaints } from './complaints';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
 import { demand, type DisciplineDemand, fadeFollowing, roomPull, type SpecialtyGap, specialtyGaps } from './demand';
@@ -845,6 +846,11 @@ export class Sim {
   /** Whether a member of staff has the experience for promotion but still needs a course for it. */
   heldBack(st: Staff): boolean {
     return heldBack(this.ctx, st);
+  }
+
+  /** The complaints still waiting for an answer, oldest first. */
+  openComplaints(): Complaint[] {
+    return openComplaints(this.ctx.s);
   }
 
   /** Ask a guest back for their complaint: free and first in line, due the next day. */

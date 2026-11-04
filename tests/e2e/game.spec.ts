@@ -4068,3 +4068,62 @@ test.describe('ailments going around', () => {
     expect(game.errors).toEqual([]);
   });
 });
+
+test.describe('complaints', () => {
+  test('a guest let down leaves a complaint on a card, to ask back or let go, and Reception keeps the list', async ({
+    game,
+    page,
+  }) => {
+    await game.start();
+    await game.buildCenter();
+    await game.eval((pp) => {
+      pp.state.speed = 0;
+      const look = pp.state.candidates[0]!.look;
+      const day = pp.state.day;
+      pp.state.complaints = [
+        {
+          id: 9001,
+          name: 'Ada Twinge',
+          look,
+          condition: 'slump',
+          diagnosis: 0.4,
+          end: 'stormed',
+          waited: 9,
+          day,
+          cost: 3,
+        },
+        {
+          id: 9002,
+          name: 'Bo Kettle',
+          look,
+          condition: 'slump',
+          diagnosis: 0.4,
+          end: 'accident',
+          waited: 2,
+          day,
+          cost: 3,
+        },
+      ];
+    });
+    const card = page.locator('#toasts .complaint');
+    await expect(card).toHaveText(/Ada Twinge and 1 more left complaints/);
+    await card.click();
+    const list = page.locator('#toasts .complaints');
+    await expect(list).toContainText('Ada Twinge stormed out after 9 days waiting.');
+    await expect(list).toContainText('Bo Kettle went home after an accident in the waiting area.');
+    await list.locator('li', { hasText: 'Ada Twinge' }).getByRole('button', { name: 'Make it right' }).click();
+    expect(await game.eval((pp) => pp.state.complaints.find((c) => c.id === 9001)?.due)).toBeGreaterThan(0);
+    await list.getByRole('button', { name: "Let Bo Kettle's complaint go" }).click();
+    // nothing left open: the card goes, and the guest asked back is still on Reception's list
+    await expect(card).toHaveCount(0);
+    expect(await game.eval((pp) => pp.state.complaints.map((c) => c.id))).toEqual([9001]);
+    await game.eval((pp) => {
+      pp.tools.select({ kind: 'item', id: pp.state.items.find((i) => i.type === 'reception_desk')!.id });
+    });
+    const insp = page.locator('#inspector');
+    await expect(insp).toContainText('Complaints');
+    await expect(insp.locator('.complaints')).toContainText('Asked back: due tomorrow');
+    await expect(insp.getByRole('button', { name: 'Make it right' })).toHaveCount(0);
+    expect(game.errors).toEqual([]);
+  });
+});
