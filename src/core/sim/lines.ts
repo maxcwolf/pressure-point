@@ -61,7 +61,12 @@ export function decide(ctx: SimContext, g: Guest) {
   g.station = st ? st.id : 0;
   g.placed = false;
   if (st) {
-    st.queue.push(g.id);
+    // a guest asked back after a complaint goes to the front of every line, and is kept there
+    if (g.comp === undefined) st.queue.push(g.id);
+    else {
+      st.queue.unshift(g.id);
+      g.placed = true;
+    }
     if (st.queue.length >= 4)
       tipOnce(
         ctx,

@@ -45,6 +45,7 @@ import { hasGeneral } from './careers';
 import { say } from './chars';
 import { claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
+import { fileComplaint } from './complaints';
 import type { SimContext } from './context';
 import { changeRep, earn } from './economy';
 import { emit, tipOnce, toast } from './events';
@@ -369,7 +370,9 @@ function stormOut(ctx: SimContext, g: Guest) {
   g.outcome = 'stormed';
   countVisit(ctx, g, 'stormed');
   noteStormed(ctx, g);
+  const before = ctx.s.reputation;
   changeRep(ctx, -STORM_REP);
+  fileComplaint(ctx, g, before - ctx.s.reputation);
   say(g, 'bubble-annoyed', 8);
   emit(ctx, { type: 'float', text: 'Fed up!', x: g.x, y: g.y, kind: 'bad' });
   tipOnce(

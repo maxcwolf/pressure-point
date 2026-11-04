@@ -125,6 +125,7 @@ import {
   toggleClassDay,
   weeklyInterest,
 } from './classes';
+import { answerComplaint, dropComplaint, lapseComplaints } from './complaints';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
 import { demand, type DisciplineDemand, fadeFollowing, roomPull, type SpecialtyGap, specialtyGaps } from './demand';
@@ -305,6 +306,7 @@ export class Sim {
       bookClasses(ctx);
       announceClasses(ctx);
       lapseInspection(ctx);
+      lapseComplaints(ctx);
       warnPayday(ctx);
       warnUnfed(ctx);
       updateInsolvency(ctx);
@@ -843,6 +845,16 @@ export class Sim {
   /** Whether a member of staff has the experience for promotion but still needs a course for it. */
   heldBack(st: Staff): boolean {
     return heldBack(this.ctx, st);
+  }
+
+  /** Ask a guest back for their complaint: free and first in line, due the next day. */
+  answerComplaint(id: number): boolean {
+    return answerComplaint(this.ctx, id);
+  }
+
+  /** Let a complaint go, unanswered. */
+  dropComplaint(id: number): boolean {
+    return dropComplaint(this.ctx, id);
   }
 
   /** How much faster a colleague who Holds Space makes someone work right now. */

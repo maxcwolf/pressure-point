@@ -24,6 +24,7 @@ import {
 } from '../data';
 import type { GameState, Guest, Regular } from '../state/types';
 import { clamp } from '../util';
+import { complains, complaintHolds } from './complaints';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
 
@@ -60,7 +61,10 @@ export const regularHere = (s: GameState, r: Regular) => s.guests.some((g) => g.
 
 /** The regular due back soonest whose day has come and who is not here already, if any. */
 export function dueRegular(s: GameState): Regular | undefined {
-  return s.regulars.filter((r) => r.due <= s.day && !regularHere(s, r)).sort((a, b) => a.due - b.due)[0];
+  // one with a complaint open, or asked back for one, comes back for that instead
+  return s.regulars
+    .filter((r) => r.due <= s.day && !regularHere(s, r) && !complaintHolds(s, r.id))
+    .sort((a, b) => a.due - b.due)[0];
 }
 
 /** How fast a guest's patience drains against usual: slower the more loyal a regular is. */
@@ -80,10 +84,11 @@ export function tipFor(s: GameState, g: Pick<Guest, 'regular'>, fee: number): nu
 
 /**
  * How much a guest minds the price of their treatment, against a new guest: a plain regular half as much, and a loyal
- * or devoted one, who knows what the center is worth, not at all. Nor does an emergency guest, who has no choice.
+ * or devoted one, who knows what the center is worth, not at all. Nor does an emergency guest, who has no choice, nor
+ * one asked back after a complaint, who pays nothing.
  */
-export function mindsPrice(s: GameState, g: Pick<Guest, 'regular' | 'emergency'>): number {
-  if (g.emergency) return 0;
+export function mindsPrice(s: GameState, g: Pick<Guest, 'regular' | 'emergency' | 'comp'>): number {
+  if (g.emergency || g.comp !== undefined) return 0;
   const r = regularOf(s, g);
   if (!r) return 1;
   return loyaltyLevel(r.loyalty) === 'regular' ? REGULAR_PUT_OFF : 0;
@@ -115,6 +120,8 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
     const before = loyaltyLevel(r.loyalty);
     r.loyalty = clamp(r.loyalty + loyaltyChange(stars), 0, 100);
     if (quest) r.loyalty = Math.max(r.loyalty, VISION_LOYALTY);
+    // let down so badly they would stop coming, a regular who leaves a complaint keeps their place until it is settled
+    if (r.loyalty <= 0 && complains(g)) return;
     if (r.loyalty <= 0) {
       s.regulars = s.regulars.filter((o) => o !== r);
       toast(ctx, `${r.name} has had enough, and will not be coming back.`, 'bad', undefined, 'ui-heart-broken');

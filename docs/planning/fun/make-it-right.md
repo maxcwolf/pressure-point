@@ -2,7 +2,7 @@
 
 Drafted 27 October 2026, after Max's notes on [the mechanics review](mechanics-review.md): "I like the make it right mechanic."
 
-An idea, not a plan: nothing here is decided. It is fourth in [the ranked list](README.md).
+It is fourth in [the ranked list](README.md). On 3 November 2026 Max settled its decisions and it became a plan to build, in [plans/make-it-right.md](../../plans/make-it-right.md), which adds guests who go home after an accident to those who leave a complaint. Where the two differ, the plan holds.
 
 A guest who storms out of a line, or waits so long they go home worse off, today costs the center 3 or 6 points of reputation, and that is the end of them. With this idea they leave a complaint at Reception: a slip on the desk and a card with **Make it right**. Pressed, the guest comes back within two days, in a gold robe the center sent round with the voucher, goes to the front of their line and is treated free. Healed, half of what they cost comes back, and their review says why. Let down a second time, they are gone for good. The verb is choosing whom to win back, and when: a free guest at the front of a line is a gift in a quiet week and a storm-out waiting to happen in a busy one. It is the one rule of the [MS Serenity](ms-serenity.md) without the ship, at every center.
 

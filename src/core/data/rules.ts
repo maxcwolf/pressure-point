@@ -516,6 +516,15 @@ export const PATIENCE_DRAIN = 0.85;
 export const NEEDY_DRAIN = 1.6;
 /** What a guest leaving fed up costs in reputation. */
 export const STORM_REP = 3;
+/** Days a complaint waits for the player to ask its guest back, before it lapses. */
+export const COMPLAINT_DAYS = 5;
+/**
+ * The condition a guest asked back after a complaint comes in at, whatever they left with: a little worse for the wait
+ * at home.
+ */
+export const COMP_CONDITION = 70;
+/** The share of what a complaint cost the center's name that healing its guest wins back. */
+export const COMP_SHARE = 0.5;
 /** How far a waiting guest sees litter from, in tiles. */
 export const LITTER_SIGHT = 2;
 /**

@@ -5,6 +5,7 @@ import {
   ARRIVAL_NEEDS,
   ARRIVAL_REP,
   ARRIVAL_SECONDS,
+  COMP_CONDITION,
   type ConditionId,
   DAY_SECONDS,
   DAYS_PER_MONTH,
@@ -16,9 +17,10 @@ import {
 import { tuning } from '../difficulty';
 import { randomLook, randomName, rollSex } from '../people';
 import { random, rnd } from '../random';
-import type { GameState, Guest, Regular } from '../state/types';
+import type { Complaint, GameState, Guest, Regular } from '../state/types';
 import { lobbyTile, streetTile, streetTileNear } from './chars';
 import { newChar } from './chars';
+import { closeComplaint, dueComplaint } from './complaints';
 import type { SimContext } from './context';
 import {
   type Capacity,
@@ -31,6 +33,7 @@ import {
   type MachineDemand,
   machineDemand,
 } from './demand';
+import { emit } from './events';
 import { decide, removeFromStations } from './lines';
 import { goTo } from './movement';
 import { arriveCarrying } from './outbreaks';
@@ -126,6 +129,9 @@ export function admitGuests(ctx: SimContext, dt: number) {
   const s = ctx.s;
   // snowed in: nobody can get up the road until it is cleared
   if (!s.open || cutOff(ctx)) return;
+  // a guest asked back after a complaint comes on top of the usual arrivals, as soon as there is room for them
+  const back = dueComplaint(s);
+  if (back && guestsCounted(s) < intakeLimit(ctx)) askBack(ctx, back);
   s.spawnT -= dt;
   if (s.spawnT > 0) return;
   // someone come with the ailment going around, while one is, who turns back at the door if nobody here can treat it
@@ -148,6 +154,12 @@ export function admitGuests(ctx: SimContext, dt: number) {
     else spawnGuest(ctx, undefined, false, 0, dueRegular(s));
   } else countTurnedAway(ctx);
   s.spawnT = arrivalPace(ctx).seconds * rnd(s, 0.7, 1.3);
+}
+
+/** Bring in a guest asked back after a complaint, as a regular if they are one, and take the complaint off the list. */
+function askBack(ctx: SimContext, c: Complaint) {
+  const regular = c.regular === undefined ? undefined : ctx.s.regulars.find((r) => r.id === c.regular);
+  if (spawnGuest(ctx, c.condition, false, 0, regular, c)) closeComplaint(ctx, c, true);
 }
 
 /**
@@ -207,7 +219,8 @@ function classEntrance(ctx: SimContext): { x: number; y: number } | undefined {
  * Add a guest on the street and send them to the lobby: come for a treatment, or with a class day, for a Qi Gong class.
  * A class-goer comes along the pavement from the end nearer their studio's way in and goes straight to it, since a
  * studio on land apart is a long way round by the lobby, and the walk could make them miss the class. A regular comes
- * back as themselves. Null if there is no way in for them.
+ * back as themselves, and so does a guest asked back after a complaint, free, with the diagnosis they had: sure
+ * enough, they go straight to their treatment, as an emergency guest does. Null if there is no way in for them.
  */
 export function spawnGuest(
   ctx: SimContext,
@@ -215,21 +228,24 @@ export function spawnGuest(
   emergency = false,
   classDay = 0,
   regular?: Regular,
+  complaint?: Complaint,
 ): Guest | null {
   const s = ctx.s;
   const way = classDay ? classEntrance(ctx) : undefined;
   const [x, y] = way
     ? streetTileNear(ctx.world.building, way.x, ctx.world.w)
     : streetTile(s, ctx.world.building, ctx.world.w);
-  const sex = regular ? regular.look.sex : rollSex(s, WOMEN_VISIT);
-  const name = regular ? regular.name : randomName(s, sex);
-  const look = regular ? { ...regular.look } : randomLook(s, sex);
+  const known = complaint ?? regular;
+  const sex = known ? known.look.sex : rollSex(s, WOMEN_VISIT);
+  const name = known ? known.name : randomName(s, sex);
+  const look = known ? { ...known.look } : randomLook(s, sex);
+  const sure = !!complaint && complaint.diagnosis >= s.policy.diagnosis;
   const g: Guest = {
     ...newChar(ctx, name, look, x, y),
     kind: 'guest',
     condition: condition ?? rollCondition(ctx),
     // emergency cases arrive already diagnosed and go straight to treatment, and class-goers booked their place
-    goal: emergency ? 'treat' : classDay ? 'class' : 'reception',
+    goal: emergency || sure ? 'treat' : classDay ? 'class' : 'reception',
     state: 'enter',
     station: 0,
     needKind: '',
@@ -238,7 +254,7 @@ export function spawnGuest(
     bladder: rnd(s, 0, ARRIVAL_NEEDS.bladder),
     patience: 100,
     lowest: 100,
-    diagnosis: emergency ? 1 : 0,
+    diagnosis: emergency ? 1 : (complaint?.diagnosis ?? 0),
     consults: 0,
     outcome: '',
     spent: 0,
@@ -247,10 +263,11 @@ export function spawnGuest(
     emergency,
     placed: false,
     feelings: [],
-    health: emergency ? EMERGENCY_CONDITION : 100,
+    health: emergency ? EMERGENCY_CONDITION : complaint ? COMP_CONDITION : 100,
     stressed: false,
     calmed: false,
     classDay,
+    ...(complaint && { comp: complaint.cost }),
   };
   if (classDay) {
     decide(ctx, g);
@@ -267,6 +284,7 @@ export function spawnGuest(
   }
   s.guests.push(g);
   if (regular) welcomeBack(ctx, g, regular);
+  else if (complaint) emit(ctx, { type: 'float', text: 'Asked back', x: g.x, y: g.y, kind: 'good' });
   // a class-goer is counted when their class is done, not as a guest come for treatment
   if (!classDay) countArrival(ctx);
   arriveCarrying(ctx, g);

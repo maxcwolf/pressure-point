@@ -426,6 +426,33 @@ export interface Guest extends CharBase {
   regular?: number;
   /** Came with the ailment going around. */
   wave?: boolean;
+  /** Asked back, free and first in line, after a complaint: what the complaint cost the center's name. */
+  comp?: number;
+}
+
+/** How a visit ended that leaves a complaint: walked out of a line, home worse off, or home after an accident. */
+export type ComplaintEnd = 'stormed' | 'worse' | 'accident';
+
+/** A guest the center let down, who can be asked back, free and first in line, to win back half of what they cost. */
+export interface Complaint {
+  /** The guest's id on the visit that went wrong. */
+  id: number;
+  name: string;
+  look: Look;
+  condition: ConditionId;
+  /** How sure their diagnosis was when they left. */
+  diagnosis: number;
+  /** The treatment they were in line for, if they had got that far. */
+  modality?: Modality;
+  end: ComplaintEnd;
+  /** The day it was left. */
+  day: number;
+  /** The reputation it really cost. */
+  cost: number;
+  /** Who they are among the regulars, if they are one. */
+  regular?: number;
+  /** The day they are due back, once they have been asked; missing until then. */
+  due?: number;
 }
 
 /** A guest who enjoyed their visit and comes back every few weeks, greeted by name. */
@@ -1056,6 +1083,8 @@ export interface GameState {
   land: Land[];
   /** Guests who come back every few weeks, whether here now or due. */
   regulars: Regular[];
+  /** Guests let down who can still be asked back, or have been and are due. */
+  complaints: Complaint[];
   /** How hard the game is, setting by setting: a sandbox setting. One left out is as usual. */
   difficulty: Difficulty;
   /** Where the game's random numbers have got to, so a loaded game draws the ones it would have drawn anyway. */
