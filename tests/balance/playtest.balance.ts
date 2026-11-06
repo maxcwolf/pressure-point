@@ -54,6 +54,15 @@ for (const { center, seed, index } of RUNS) {
             .join(', ') || 'none'
         }; quirk pay ${q.payroll ? (((q.adds - q.saves) / q.payroll) * 100).toFixed(1) : 0}% of payroll\n`,
       );
+    const c = l.complaints;
+    if (c) {
+      /** A count by how each complaint began, as `stormed 3 / worse 1 / accident 0`. */
+      const ends = (r: Record<string, number>) => `${r.stormed} / ${r.worse} / ${r.accident}`;
+      process.stdout.write(
+        `           complaints (stormed / worse / accident): left ${ends(c.filed)}, answered ${ends(c.answered)}, ` +
+          `healed ${ends(c.healed)}, let down ${ends(c.letDown)}, lapsed ${ends(c.lapsed)}\n`,
+      );
+    }
     for (const m of l.machines)
       process.stdout.write(
         m.site === 'skipped'

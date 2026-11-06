@@ -1,12 +1,22 @@
 // The moments in a game worth counting in the play statistics, found by comparing the game with how it last stood.
 
-import { type AchievementId, conditionOf, DAYS_PER_MONTH, FEATURE_ORDER, MODALITIES } from '../core/data';
+import {
+  type AchievementId,
+  COMPLAINT_DAYS,
+  conditionOf,
+  DAYS_PER_MONTH,
+  FEATURE_ORDER,
+  MODALITIES,
+} from '../core/data';
 import { incomeOf, netOf } from '../core/sim/economy';
 import { featureOn } from '../core/state/game';
 import type {
+  Complaint,
+  ComplaintEnd,
   Emergency,
   FireReport,
   GameState,
+  Guest,
   HouseCall,
   Ledger,
   Outbreak,
@@ -69,6 +79,10 @@ export interface PlayMark {
   fire: FireReport | null;
   /** The latest issue of the town paper. */
   paper: Paper | null;
+  /** The complaints on the list, open or answered, by id. */
+  complaints: ReadonlyMap<number, Complaint>;
+  /** The guests asked back whose visit has not ended yet, by id, with how the visit that left the complaint ended. */
+  askedBack: ReadonlyMap<number, { end: ComplaintEnd; cost: number }>;
 }
 
 /** The offers a game makes, which the player takes on, turns down or lets lapse. */
@@ -111,6 +125,12 @@ export function markOf(s: GameState): PlayMark {
     unsettled: s.visitReport?.bribes !== undefined,
     fire: s.fire ?? null,
     paper: s.paper ?? null,
+    complaints: new Map(s.complaints.map((c) => [c.id, c])),
+    askedBack: new Map(
+      s.guests
+        .filter((g) => g.comp !== undefined && !g.outcome)
+        .map((g) => [g.id, { end: g.compEnd ?? 'stormed', cost: g.comp ?? 0 }]),
+    ),
   };
 }
 
@@ -186,7 +206,12 @@ export function playEvents(mark: PlayMark, s: GameState, known: PlayContext = {}
     if (!mark.achieved.has(id)) out.push({ name: 'achievement_earned', props: { ...game, achievement: id } });
   for (const milestone of milestonesOf(s))
     if (!mark.milestones.has(milestone)) out.push({ name: 'milestone_reached', props: { ...game, milestone } });
-  out.push(...peopleEvents(mark, s, game), ...moneyEvents(mark, s, game), ...happenings(mark, s, game, known));
+  out.push(
+    ...peopleEvents(mark, s, game),
+    ...moneyEvents(mark, s, game),
+    ...happenings(mark, s, game, known),
+    ...complaintEvents(mark, s, game),
+  );
   return out;
 }
 
@@ -266,6 +291,36 @@ function happenings(mark: PlayMark, s: GameState, game: PlayProps, known: PlayCo
       props: { ...game, visit: r.visit, outcome: r.outcome, score: r.score, money: r.money, rep: r.rep },
     });
   return out;
+}
+
+/**
+ * Complaints closed: let go with ✕ or left to lapse as they leave the list, and a guest asked back once their visit
+ * ends, with how it went. A complaint answered leaves the list as its guest walks in, and is told of when they leave.
+ */
+function complaintEvents(mark: PlayMark, s: GameState, game: PlayProps): PlayEvent[] {
+  const out: PlayEvent[] = [];
+  const now = new Set(s.complaints.map((c) => c.id));
+  for (const [id, c] of mark.complaints) {
+    if (now.has(id) || c.due !== undefined) continue;
+    const answer = s.day >= c.day + COMPLAINT_DAYS ? 'lapsed' : 'dropped';
+    out.push({ name: 'complaint_closed', props: { ...game, end: c.end, answer, cost: round1(c.cost) } });
+  }
+  for (const [id, was] of mark.askedBack) {
+    const g = s.guests.find((x) => x.id === id);
+    if (g && !g.outcome) continue;
+    const result = g ? askedBackResult(g) : 'gone';
+    out.push({
+      name: 'complaint_closed',
+      props: { ...game, end: was.end, answer: 'asked-back', result, cost: round1(was.cost) },
+    });
+  }
+  return out;
+}
+
+/** How a guest asked back's visit ended: an accident is told apart from storming out, as it is for a complaint. */
+function askedBackResult(g: Guest): string {
+  if (g.outcome === 'stormed' && g.feelings.includes('accident')) return 'accident';
+  return g.outcome;
 }
 
 /** Items used for the first time, and staff hired, quitting or let go. */
@@ -408,6 +463,9 @@ function most(counts: Partial<Record<string, number>>): [string, number] | null 
 
 /** A share to two places. */
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** A figure to one place. */
+const round1 = (n: number) => Math.round(n * 10) / 10;
 
 /** The advisor's nudge with the names of the people in it left out, so the same nudge reads the same for anyone. */
 function withoutNames(text: string, s: GameState): string {

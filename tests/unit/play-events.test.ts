@@ -6,6 +6,8 @@ import { automated } from '../../src/app/automation';
 import { FrameStats } from '../../src/app/frames';
 import { feelProps, freshFeel, gameProps, markOf, noteFeel, playEvents } from '../../src/app/play-events';
 import { DAYS_PER_MONTH } from '../../src/core/data';
+import { spawnGuest } from '../../src/core/sim/arrivals';
+import { lapseComplaints } from '../../src/core/sim/complaints';
 import type { SimContext } from '../../src/core/sim/context';
 import { monthEnd } from '../../src/core/sim/payday';
 import type { Emergency, Outbreak, VisitReport } from '../../src/core/state/types';
@@ -290,6 +292,43 @@ describe('play events', () => {
       fee: 2500,
     });
     expect(playEvents(markOf(sim.s), sim.s).some((x) => x.name === 'fire_ended')).toBe(false);
+  });
+
+  it('count each complaint as it closes: let go, lapsed, or its guest asked back and gone', () => {
+    const sim = freshSim();
+    const s = sim.s;
+    const ctx = (sim as unknown as { ctx: SimContext }).ctx;
+    const look = s.candidates[0]!.look;
+    const base = { name: 'Ada Twinge', look, condition: 'slump', diagnosis: 1, waited: 9, cost: 3 } as const;
+    s.day = 10;
+    s.complaints = [
+      { ...base, id: 1, end: 'stormed', day: 10 },
+      { ...base, id: 2, end: 'worse', day: 4, cost: 6.04 },
+      { ...base, id: 3, end: 'accident', day: 10 },
+    ];
+    let mark = markOf(s);
+    sim.dropComplaint(1);
+    lapseComplaints(ctx);
+    sim.answerComplaint(3);
+    /** What the complaints closed since a mark say. */
+    const closed = (events: { name: string; props: object }[]) =>
+      events.filter((e) => e.name === 'complaint_closed').map((e) => e.props);
+    expect(closed(playEvents(mark, s))).toEqual([
+      expect.objectContaining({ end: 'stormed', answer: 'dropped', cost: 3 }),
+      expect.objectContaining({ end: 'worse', answer: 'lapsed', cost: 6 }),
+    ]);
+    // the guest asked back walks in: nothing to count until their visit ends
+    mark = markOf(s);
+    const g = spawnGuest(ctx, 'slump', false, 0, undefined, s.complaints[0])!;
+    s.complaints = [];
+    expect(closed(playEvents(mark, s))).toEqual([]);
+    mark = markOf(s);
+    g.outcome = 'stormed';
+    g.feelings.push('accident');
+    expect(closed(playEvents(mark, s))).toEqual([
+      expect.objectContaining({ end: 'accident', answer: 'asked-back', result: 'accident', cost: 3 }),
+    ]);
+    expect(closed(playEvents(markOf(s), s))).toEqual([]);
   });
 
   it('count how visits end, and how a failed inspection is settled', () => {

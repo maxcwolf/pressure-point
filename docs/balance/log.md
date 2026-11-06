@@ -6,6 +6,23 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 6 November 2026: Make it right, with and without the bot answering
+
+Measured with `yarn balance` on `claude/make-it-right` (on `f5e3a257`, after 0.36.0), every campaign center, seeds 1 to 6, four years a game: the good bot, and the good bot with `BOT_ON=comp`, which asks back every guest who went home worse off and a storm-out's or an accident's guest only while the line they left has three or fewer waiting. Both runs file complaints; without `comp` they all lapse, so that run plays as the game did before. A star never earned counts as month 48; differences are paired seed by seed.
+
+### 55. Make it right is no shortcut: the bot that answers is no faster, and a small center can lose by it
+
+**Kept at a half** (`COMP_SHARE` in `src/core/data/rules.ts`): the plan's bar was that `comp` earn no star more than half a month sooner and keep its lowest month's reputation no more than 3 points higher. It does neither, so the half stays and no rerun at a third was needed.
+
+| Run          | Mean star months  | Median paired star difference | Stars more than half a month sooner / later (of 30) | Lowest month's reputation, median paired difference   | Profit a month, months 13 to 47, median | Games lost                                      |
+| ------------ | ----------------- | ----------------------------- | --------------------------------------------------- | ----------------------------------------------------- | --------------------------------------- | ----------------------------------------------- |
+| without comp | 5.2 / 11.2 / 17.3 |                               |                                                     |                                                       | $10.3k                                  | 1 (High Pines 2)                                |
+| with comp    | 5.2 / 14.5 / 20.2 | 0.0 / 0.0 / +0.8              | 2 / 3, 8 / 11, 12 / 16                              | 0.0 (6 games more than 3 higher, 9 more than 3 lower) | $12.2k                                  | 3 (The Exchange 4, High Pines 1, The Orchard 3) |
+
+Over the 30 games with `comp`, guests left 708 storm-out complaints, 1,247 worse-off and 15 after an accident. The bot answered 564 storm-outs (144 lapsed with a long line), every worse-off one but four still open at the end, and 14 accidents. Asked back, 75% of the storm-outs, 78% of the worse-offs and all 14 accidents were healed; the rest were let down again and cost the usual loss once more.
+
+The means move by more than the medians because a few games ran away. At Willow Lane seed 1 the guests asked back took a small center's tables for nothing: its reputation fell from 58 to 38 in month 3 and stayed between 5 and 30 for two years, it kept four staff where the run without `comp` grew to eight, and it never earned its second star; 17 of its 35 worse-off guests asked back went home worse off again. High Pines seed 2 went the other way, from no second star to all three by month 17. So answering every worse-off complaint, the design doc's advice, is not always right: a free guest at the front of a short-staffed center's line can push it under. That is the choice the card is meant to be, but the tooltip says nothing of it, and a player who answers every card may find the same.
+
 ## 1 November 2026: the inspection warning and the three offers
 
 Measured with `yarn balance` on `claude/036-inspections-dd34ab` against `1fc72bf1` (main), every campaign center, seeds 1 to 3, four years a game. Both sides ran with the same measuring changes to the bot: each inspection logged, and the `sloppy` extra.
