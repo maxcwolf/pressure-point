@@ -149,7 +149,7 @@ const FIRES: readonly Option[] = [
  */
 function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
   const def = ITEMS[type];
-  // a full trophy cabinet to begin with, so every cup is in the picture
+  // a full trophy cabinet to begin with, so every cup is in the picture, and a few complaint slips on the spike
   const st: ItemCondition & { session: string; heating: boolean; chugging: boolean; level: number; fire: string } = {
     id: 1,
     type,
@@ -160,6 +160,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
     inUse: false,
     running: 0,
     trophies: 99,
+    complaints: 3,
     session: '',
     heating: false,
     chugging: false,
@@ -196,6 +197,7 @@ function itemSpecimen(type: ItemType, center?: CenterId): Specimen {
         st.trophies = Math.min(st.trophies, parts.cups.length);
         controls.push(range('Trophies', st, 'trophies', 0, parts.cups.length));
       }
+      if (parts.slips) controls.push(range('Complaints', st, 'complaints', 0, parts.slips.length));
       // the plate showing how far it has been upgraded, put on afresh when the level changes, as the game does
       let plate: { level: number; group: THREE.Group | null } = { level: 0, group: null };
       if (def.upgrade) controls.push(range('Upgrade level', st, 'level', 0, UPGRADE_LEVELS));
@@ -340,12 +342,20 @@ function setMood(c: Guest, mood: Mood) {
 
 /** A guest showing a condition's symptom, or cured of it, and waiting with their patience running out. */
 function guestSpecimen(def: ConditionDef): Specimen {
-  const st: PersonState & { healed: boolean; stressed: boolean; mood: string; poorly: boolean; shut: boolean } = {
+  const st: PersonState & {
+    healed: boolean;
+    robed: boolean;
+    stressed: boolean;
+    mood: string;
+    poorly: boolean;
+    shut: boolean;
+  } = {
     look: { ...LAB_LOOK },
     pose: 'stand',
     bubble: '',
     act: '',
     healed: false,
+    robed: false,
     stressed: false,
     mood: 'content',
     poorly: false,
@@ -358,7 +368,7 @@ function guestSpecimen(def: ConditionDef): Specimen {
     footprint: [1, 1],
     /** Build the guest with their symptom showing, or cured. */
     build() {
-      const rig = buildCharacter(st.look, undefined, def.visual);
+      const rig = buildCharacter(st.look, undefined, def.visual, undefined, st.robed);
       const c = demoGuest(st.look, def.id);
       // a cure cannot be undone on a model, so a guest is built afresh to bring the symptom back
       c.outcome = st.healed ? 'healed' : '';
@@ -369,6 +379,8 @@ function guestSpecimen(def: ConditionDef): Specimen {
           choice('Waiting', st, 'mood', MOODS),
           toggle('In poor condition', st, 'poorly'),
           toggle('Healed', st, 'healed', true),
+          // in the center's gold robe, asked back after a complaint
+          toggle('Asked back', st, 'robed', true),
           // healed as the game heals them, so the symptom goes in a puff; Healed builds them afresh, already well
           button('Cure now', () => (c.outcome = 'healed')),
           toggle('Stressed', st, 'stressed'),
@@ -601,6 +613,7 @@ function machineSpecimen(type: ItemType): Specimen {
         inUse: false,
         running: 0,
         trophies: 0,
+        complaints: 0,
       };
       return {
         root,

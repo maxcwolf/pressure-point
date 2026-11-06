@@ -16,6 +16,7 @@ import {
 import { CARETAKER_WANTED, staffWanted } from '../../src/core/sim/advisor';
 import { SWEAT_LODGE_OPEN } from '../../src/core/sim/ceremonies';
 import { CLASS_LINES } from '../../src/core/sim/classes';
+import { ASKED_BACK_LINES, COMPLAINT_LINE } from '../../src/core/sim/complaints';
 import { emergencyNews } from '../../src/core/sim/emergencies';
 import { OPENING_LINES, openingLine } from '../../src/core/sim/progress';
 import { RUNAWAY_LINES } from '../../src/core/sim/runaways';
@@ -37,6 +38,8 @@ function spokenLines(): string[] {
     ...emergencies,
     SWEAT_LODGE_OPEN,
     ...CLASS_LINES,
+    COMPLAINT_LINE,
+    ...ASKED_BACK_LINES,
     ...OPENING_LINES,
     ...RUNAWAY_LINES,
     ...Object.values(SEASON_LINES),

@@ -6,7 +6,7 @@ When a line is added or changed in the code, update this list.
 
 Key: ✅ recorded, ⬜ not recorded yet.
 
-43 recorded, 50 still to record.
+43 recorded, 53 still to record.
 
 ## Filler lines, now and then (`ANNOUNCEMENTS` in `src/core/data/text.ts`)
 
@@ -119,6 +119,15 @@ As its guests start to come, one of these by whether the center is ready, or has
 ## The first accident on the floor (`ACCIDENT_NEWS` in `src/core/sim/accidents.ts`)
 
 - ⬜ A reminder that the floor is not a restroom, however grounding it may feel.
+
+## Complaints, as one is left, at most once a day (`COMPLAINT_LINE` in `src/core/sim/complaints.ts`)
+
+- ⬜ Complaints may be left at reception. Please release them on the way out.
+
+## A guest asked back, as they walk in (`ASKED_BACK_LINES` in `src/core/sim/complaints.ts`, taking turns)
+
+- ⬜ Guests returning for a complimentary treatment are asked not to mention it.
+- ⬜ Guests in the gold robe go first. Please do not ask them why.
 
 ## Fires, as one starts, as the brigade finish and as they go (`BLAZE_NEWS` in `src/core/data/blazes.ts`)
 

@@ -79,6 +79,8 @@ import { worsenRate } from '../../src/core/sim/worsening';
 import { disciplineOn, newGame, offeringOn, starsEarned, unlockedUpTo } from '../../src/core/state/game';
 import type {
   Candidate,
+  Complaint,
+  ComplaintEnd,
   Emergency,
   GameState,
   Guest,
@@ -227,6 +229,12 @@ export const BOT_FLAGS = [
    * one, as a careless player's would be. An extra, so a rerun can measure what failed inspections cost.
    */
   'sloppy',
+  /**
+   * Answer every complaint as a good player would: a free treatment while the line its guest left has three or fewer
+   * waiting, and half off their next visit otherwise, which takes no table from a paying guest. An extra, so the rerun
+   * can measure what Make it right gives back against the bot without it (balance logs 55 to 57).
+   */
+  'comp',
 ] as const;
 export type BotFlag = (typeof BOT_FLAGS)[number];
 export type BotFlags = Record<BotFlag, boolean>;
@@ -246,6 +254,7 @@ const BOT_EXTRAS: readonly BotFlag[] = [
   'chase',
   'bribe',
   'sloppy',
+  'comp',
 ];
 
 /**
@@ -666,7 +675,27 @@ export interface Playtest {
   waves?: Wave[];
   /** How every guest with a wave's ailment ended, during the wave and after it, from the casebook, with `BOT_WAVES`. */
   waveCases?: GameState['casebook'];
+  /** The complaints left, answered (with `comp`), healed or let down again when asked back, and lapsed, by how each began. */
+  complaints?: ComplaintLog;
 }
+
+/** Complaints over a game, each count by how the visit that left the complaint ended. */
+export interface ComplaintLog {
+  filed: Record<ComplaintEnd, number>;
+  /** Answered with a free treatment, and how those visits went. */
+  answered: Record<ComplaintEnd, number>;
+  healed: Record<ComplaintEnd, number>;
+  /** Asked back and let down again: failed, stormed out, gone home worse off, had an accident or sent home. */
+  letDown: Record<ComplaintEnd, number>;
+  /** Answered with half off their next visit, and how those visits went; not in older logs. */
+  halfOff?: Record<ComplaintEnd, number>;
+  halfOffHealed?: Record<ComplaintEnd, number>;
+  halfOffLetDown?: Record<ComplaintEnd, number>;
+  lapsed: Record<ComplaintEnd, number>;
+}
+
+/** A count for each way a complaint begins, all nothing. */
+const byEnd = (): Record<ComplaintEnd, number> => ({ stormed: 0, worse: 0, accident: 0 });
 
 /**
  * What a hire's work is worth a month, in their pay without quirks: at a post (a desk, a consulting room, a table, a
@@ -913,6 +942,16 @@ export class Bot {
       hires: [],
       inspections: [],
       quirks: { hired: 0, flaws: 0, rares: {}, adds: 0, saves: 0, payroll: 0 },
+      complaints: {
+        filed: byEnd(),
+        answered: byEnd(),
+        healed: byEnd(),
+        letDown: byEnd(),
+        halfOff: byEnd(),
+        halfOffHealed: byEnd(),
+        halfOffLetDown: byEnd(),
+        lapsed: byEnd(),
+      },
     };
     this.watch = this.freshWatch();
   }
@@ -936,6 +975,8 @@ export class Bot {
         met = true;
         break;
       }
+      // a complaint left in the day's last moments is counted before the bot can answer it
+      this.watchComplaints();
       this.decide();
       for (let i = 0; i < ticksPerDay; i++) {
         this.sim.tick(0.1);
@@ -971,6 +1012,7 @@ export class Bot {
           // a runner's pill is at the top of the screen: any player sends someone
           this.calmRunners();
           this.watchRunners();
+          this.watchComplaints();
         }
       }
       this.noteAdverse();
@@ -1482,6 +1524,69 @@ export class Bot {
     }
   }
 
+  /** The complaints on the list when last looked, and the guests asked back whose visit is still going, by id. */
+  private complaintsSeen = new Map<number, Complaint>();
+  private askedBack = new Map<number, ComplaintEnd>();
+  private askedBackDone = new Set<number>();
+
+  /**
+   * Once a second: complaints newly left, those gone unanswered (the bot never lets one go, so they lapsed), and how
+   * each guest asked back's visit ended.
+   */
+  private watchComplaints() {
+    const log = this.log.complaints;
+    if (!log) return;
+    const s = this.s;
+    for (const c of s.complaints)
+      if (!this.complaintsSeen.has(c.id)) {
+        log.filed[c.end]++;
+        this.complaintsSeen.set(c.id, c);
+      }
+    const now = new Set(s.complaints.map((c) => c.id));
+    for (const [id, c] of this.complaintsSeen) {
+      if (now.has(id)) continue;
+      if (c.due === undefined) log.lapsed[c.end]++;
+      this.complaintsSeen.delete(id);
+    }
+    for (const g of s.guests) {
+      const half = g.halfOff !== undefined;
+      if ((g.comp === undefined && !half) || this.askedBackDone.has(g.id)) continue;
+      if (!g.outcome) {
+        this.askedBack.set(g.id, g.compEnd ?? 'stormed');
+        continue;
+      }
+      const end = this.askedBack.get(g.id) ?? g.compEnd ?? 'stormed';
+      const healed = g.outcome === 'healed';
+      const counts = half ? (healed ? log.halfOffHealed : log.halfOffLetDown) : healed ? log.healed : log.letDown;
+      if (counts) counts[end]++;
+      this.askedBack.delete(g.id);
+      this.askedBackDone.add(g.id);
+    }
+  }
+
+  /**
+   * Once a day, with `comp`: a free treatment while the line the guest left has three or fewer waiting, and half off
+   * their next visit otherwise.
+   */
+  private answerComplaints() {
+    const log = this.log.complaints;
+    for (const c of this.sim.openComplaints()) {
+      const free = this.waitingFor(c) <= 3;
+      if (!this.sim.answerComplaint(c.id, free ? 'free' : 'half-off') || !log) continue;
+      const counts = free ? log.answered : log.halfOff;
+      if (counts) counts[c.end]++;
+    }
+  }
+
+  /** How many wait in the line a complaint's guest left: their treatment's, or Reception's and the consultations'. */
+  private waitingFor(c: Complaint): number {
+    return this.s.guests.filter((g) => {
+      if (g.state !== 'waiting' && g.state !== 'toWait') return false;
+      if (!c.modality) return g.goal !== 'treat';
+      return g.goal === 'treat' && this.sim.modalityOf(g).id === c.modality;
+    }).length;
+  }
+
   /** The month's watch, discipline by discipline. */
   private sumUp(): Partial<Record<Discipline, DisciplineMonth>> {
     const w = this.watch;
@@ -1591,6 +1696,7 @@ export class Bot {
     }
     if (this.flags.modest) this.openingPrice();
     this.sampleLines();
+    if (this.flags.comp) this.answerComplaints();
     if (this.flags.throttle) this.throttle();
     if (this.flags.payroll) this.rescue();
     if (this.flags.lines) this.evenLines();

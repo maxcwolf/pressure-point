@@ -148,8 +148,9 @@ export const defaultPolicy = (): Policy => ({
  * 46: the first failed inspection let go with a warning, and a few offers to make a failed one go away in place of one.
  * 47: the Burnout Survivor quirk taken out of the game, and from anyone who has it.
  * 48: accidents on the floor, with a sandbox switch for them, on in a game saved before them.
+ * 49: complaints from guests let down, and guests asked back after one.
  */
-export const SAVE_VERSION = 48;
+export const SAVE_VERSION = 49;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -262,6 +263,7 @@ export function startingState(center: CenterId, day: number, seed: number): Game
     mushroomsStashed: false,
     land: [],
     regulars: [],
+    complaints: [],
     difficulty: {},
     rng: seed,
     practised: [],

@@ -15,6 +15,7 @@ import {
 import type { GameState, Guest } from '../state/types';
 import { clamp } from '../util';
 import { say } from './chars';
+import { fileComplaint } from './complaints';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { emit, tipOnce, toast } from './events';
@@ -106,7 +107,9 @@ export function worseOff(ctx: SimContext, g: Guest) {
   g.outcome = 'worse';
   countVisit(ctx, g, 'worse');
   noteWorse(ctx, g);
+  const before = ctx.s.reputation;
   changeRep(ctx, -WORSE_REP);
+  fileComplaint(ctx, g, before - ctx.s.reputation);
   say(g, 'bubble-hurt', 8);
   emit(ctx, { type: 'float', text: 'Got worse!', x: g.x, y: g.y, kind: 'bad' });
   emit(ctx, { type: 'sfx', name: 'fail' });

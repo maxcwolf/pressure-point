@@ -20,6 +20,10 @@ Ideas worth keeping that nobody has decided on yet. Nothing here is planned: an 
   - **Promote all promotes now, and the choice waits** on a card for each one promoted.
   - **Every perk costs something,** and the bot is rerun: if perks make the game easier, the base comes down to match, as Staff Room Politics plans for morale.
 
+## Guests
+
+- **Reviews that count, and refunds for bad ones.** A review's stars change no reputation today: the reputation moves only with how a visit ends, and the stars decide whether someone becomes a regular and fill the Reputation tab's parts, which nothing else reads. Each review could move it a little, about +0.8 for five stars, nothing for three and −0.8 for one, so a guest healed in a filthy, freezing room with a grump costs something too. A bad review from a guest who paid could then be answered with a refund: in full, and they rewrite it two stars higher; half, one star higher; with part of what it cost back and a line of its own ("Got my money back. Still knotted, but less about it."). It touches every visit's reputation, not just complaints, so it needs its own bot rerun. Raised 6 November 2026 by Max, while settling [Make It Right](fun/make-it-right.md)'s answers.
+
 ## Business
 
 - **Referral contracts.** A local firm offers a season of steady guests at a rate agreed up front, with a clause on how long they wait. At The Exchange, a bank's HR team might send six burnt-out analysts a week at 80% of the price; break the waiting clause twice and they cancel, and the Rag hears about it. It is a trade of steady money against space in the lines, an active way out of the mid-center squeeze, and a reason for a price to move. Unlike a house call, the guests come to the center, and the deal runs all season. Raised 2 November 2026 in a review of what to build next.

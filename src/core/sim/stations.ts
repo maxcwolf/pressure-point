@@ -27,6 +27,7 @@ import {
   RANKS,
   ROOMS,
   SCAN_SUCCESS,
+  SECOND_LOOK,
   SEEN_PATIENCE,
   SKILL_SUCCESS,
   STRUCTURAL_SURE,
@@ -49,6 +50,7 @@ import { badTrip, blessBonus, goodTrip, isTrip, settingWeight } from './ceremoni
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
 import { dueForSpot, isClassLead, restDue, updateClass } from './classes';
+import { feeShare, madeRight } from './complaints';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
@@ -174,6 +176,8 @@ export function chanceFactors(ctx: SimContext, it: Item, staff: Staff, g: Guest)
       amount: weight > 1 ? -discomfort(warmthAt(ctx, g.tx, g.ty)) * TRIP_DISCOMFORT : 0,
     },
     { cause: 'rest', amount: -restPenalty(ctx, g) },
+    // a guest asked back free after a complaint: what went wrong the first time is known now
+    { cause: 'second-look', amount: g.comp !== undefined ? SECOND_LOOK : 0 },
   ];
 }
 
@@ -389,9 +393,12 @@ function completeScan(ctx: SimContext, it: Item, g: Guest) {
   g.diagnosis = 1;
   g.scanned = true;
   g.scanLevel = it.level;
-  const fee = Math.round(ASSESS_FEE * ctx.s.priceLevel);
-  earn(ctx, fee, 'consult', g.x, g.y);
-  g.spent += fee;
+  // free for a guest asked back after a complaint, and half for one offered half off
+  if (feeShare(g) > 0) {
+    const fee = Math.round(ASSESS_FEE * ctx.s.priceLevel * feeShare(g));
+    earn(ctx, fee, 'consult', g.x, g.y);
+    g.spent += fee;
+  }
   emit(ctx, { type: 'sfx', name: 'blip' });
   goForTreatment(ctx, g);
   decide(ctx, g);
@@ -466,9 +473,11 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const structural = !!conditionOf(g.condition).structural;
     const gain = CONSULT_GAIN.base + staff.skill * CONSULT_GAIN.rank + rnd(ctx.s, 0, CONSULT_GAIN.luck);
     g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? STRUCTURAL_SURE : 1);
-    const fee = Math.round(CONSULT_FEE * price);
-    earn(ctx, fee, 'consult', g.x, g.y);
-    g.spent += fee;
+    if (feeShare(g) > 0) {
+      const fee = Math.round(CONSULT_FEE * price * feeShare(g));
+      earn(ctx, fee, 'consult', g.x, g.y);
+      g.spent += fee;
+    }
     if (structural) {
       // only a scan makes it sure, and without one working, the Consultant makes their best guess
       if (canScan(ctx)) {
@@ -530,13 +539,19 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.stressed = false;
       // a ceremony that works is a good trip, which goes in their review
       if (isTrip(mod)) goodTrip(g);
+      // a guest asked back free after a complaint pays nothing, and wins back what the complaint cost
+      if (g.comp !== undefined) madeRight(ctx, g);
+      // one back for half off finds it good value, and says so in their review
+      if (g.halfOff !== undefined) feel(g, 'bargain');
       countVisit(ctx, g, 'healed');
-      // and a loyal regular tips on top
-      const fee = guestFee(ctx.s, g);
-      earn(ctx, fee, 'treatment', g.x, g.y);
-      g.spent += fee;
-      // good value earns a better name than a steep bill does
-      changeRep(ctx, (HEAL_REP + kept / 100) * (1 + PRICE_REP - PRICE_REP * treatPrice) * (grump ? GRUMP_REP : 1));
+      if (g.comp === undefined) {
+        // and a loyal regular tips on top; a guest back for half off pays half of it all
+        const fee = Math.round(guestFee(ctx.s, g) * feeShare(g));
+        earn(ctx, fee, 'treatment', g.x, g.y);
+        g.spent += fee;
+        // good value earns a better name than a steep bill does
+        changeRep(ctx, (HEAL_REP + kept / 100) * (1 + PRICE_REP - PRICE_REP * treatPrice) * (grump ? GRUMP_REP : 1));
+      }
       postAboutIt(ctx, staff);
       if (g.emergency && ctx.s.emergency) ctx.s.emergency.healed++;
       // and a machine may send them off with something, a glass of cider, say

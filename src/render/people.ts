@@ -82,8 +82,14 @@ export class PeopleLayer {
             ? buildCharacter(c.look, c.role)
             : c.kind === 'visitor'
               ? buildCharacter(c.look, undefined, undefined, c.visit)
-              : // a class-goer is here for a class, and shows no symptoms
-                buildCharacter(c.look, undefined, c.classDay ? undefined : conditionOf(c.condition).visual);
+              : // a class-goer is here for a class, and shows no symptoms; a guest asked back comes in the center's robe
+                buildCharacter(
+                  c.look,
+                  undefined,
+                  c.classDay ? undefined : conditionOf(c.condition).visual,
+                  undefined,
+                  c.comp !== undefined,
+                );
         rig.pick.userData.charId = c.id;
         rig.pick.userData.charKind = c.kind;
         this.scene.add(rig.group);

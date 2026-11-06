@@ -182,7 +182,7 @@ export class HudState {
   /** What each member of staff asking for a raise, a promotion or training said when they asked, for the list under its card. */
   readonly asked = new Map<number, string>();
   /** The card whose list of the staff asking is open, if one is. */
-  requestsOpen: StaffRequest | null = null;
+  requestsOpen: StaffRequest | 'complaint' | null = null;
   /** Whether the pointer is over a message, which holds their clock while it is read. */
   toastsHeld = false;
   floaters: Floater[] = [];
@@ -595,7 +595,7 @@ export class HudState {
   }
 
   /** Open the list of the staff asking for a raise, a promotion or training under its card, or close it. */
-  toggleRequests(which: StaffRequest) {
+  toggleRequests(which: StaffRequest | 'complaint') {
     this.requestsOpen = this.requestsOpen === which ? null : which;
     this.update();
   }

@@ -23,6 +23,7 @@ import type { GameState, Guest, Item, Litter, Room } from '../state/types';
 import { worksAt } from './assignments';
 import { onDuty } from './careers';
 import { say } from './chars';
+import { fileComplaint } from './complaints';
 import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { announceOnce, emit, tipOnce } from './events';
@@ -283,7 +284,9 @@ function goHomeMortified(ctx: SimContext, g: Guest) {
   if (g.goal !== 'shop') {
     g.outcome = 'stormed';
     countVisit(ctx, g, 'stormed');
+    const before = ctx.s.reputation;
     changeRep(ctx, -ACCIDENT_REP);
+    fileComplaint(ctx, g, before - ctx.s.reputation);
   }
   leave(ctx, g);
   say(g, 'bubble-going-home', 6);

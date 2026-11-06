@@ -99,6 +99,10 @@ export function casesOf(n: NewsItem, center: GameState['center']): HeadlineCase[
       return [n.how === 'escaped' ? 'outbreak-escaped' : 'outbreak-contained'];
     case 'awards':
       return [n.how === 'center' ? 'awards-center' : 'awards-other'];
+    case 'made-right':
+      return [
+        n.how === 'worse' ? 'made-right-worse' : n.how === 'accident' ? 'made-right-accident' : 'made-right-stormed',
+      ];
     case 'overload':
     case 'sale':
     case 'expert':
@@ -225,7 +229,7 @@ function knownOf(s: GameState, n: NewsItem): Record<string, string | undefined> 
       : n.kind === 'left' || n.kind === 'expert' || n.kind === 'amanda'
         ? n.who
         : undefined;
-  const guest = n.kind === 'runaway' || n.kind === 'wait' ? n.who : undefined;
+  const guest = n.kind === 'runaway' || n.kind === 'wait' || n.kind === 'made-right' ? n.who : undefined;
   const mishap = n.kind === 'mishap' ? MISHAPS[n.what as MishapId] : undefined;
   const award = n.kind === 'awards' ? AWARDS[n.what as AwardId] : undefined;
   const sex = guest && sexOfName(guest);

@@ -28,6 +28,8 @@ import { type Layout, layoutOf, type PlacedLayout } from '../room-layout';
 import { featureOn, offeringOn } from '../state/game';
 import type {
   Char,
+  Complaint,
+  ComplaintAnswer,
   FailedTreatment,
   GameState,
   Guest,
@@ -125,6 +127,7 @@ import {
   toggleClassDay,
   weeklyInterest,
 } from './classes';
+import { answerComplaint, dropComplaint, lapseComplaints, openComplaints } from './complaints';
 import { createContext, type SimContext } from './context';
 import { decorateRoom } from './decor';
 import { demand, type DisciplineDemand, fadeFollowing, roomPull, type SpecialtyGap, specialtyGaps } from './demand';
@@ -305,6 +308,7 @@ export class Sim {
       bookClasses(ctx);
       announceClasses(ctx);
       lapseInspection(ctx);
+      lapseComplaints(ctx);
       warnPayday(ctx);
       warnUnfed(ctx);
       updateInsolvency(ctx);
@@ -843,6 +847,21 @@ export class Sim {
   /** Whether a member of staff has the experience for promotion but still needs a course for it. */
   heldBack(st: Staff): boolean {
     return heldBack(this.ctx, st);
+  }
+
+  /** The complaints still waiting for an answer, oldest first. */
+  openComplaints(): Complaint[] {
+    return openComplaints(this.ctx.s);
+  }
+
+  /** Answer a complaint: a free treatment, first in line, the next day; or half off their next visit, in a few days. */
+  answerComplaint(id: number, answer: ComplaintAnswer = 'free'): boolean {
+    return answerComplaint(this.ctx, id, answer);
+  }
+
+  /** Let a complaint go, unanswered. */
+  dropComplaint(id: number): boolean {
+    return dropComplaint(this.ctx, id);
   }
 
   /** How much faster a colleague who Holds Space makes someone work right now. */

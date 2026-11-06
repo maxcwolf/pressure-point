@@ -6,6 +6,58 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 6 November 2026, evening: the free treatment wins a guest back
+
+Measured as entries 55 and 56, against the same games without `comp`: every campaign center, seeds 1 to 6, four years a game, the bot answering with both answers as in entry 56.
+
+### 57. All of it back and a loyal regular: still no shortcut, and the money a won-back guest brings
+
+**Done** (`src/core/data/rules.ts`, `src/core/data/regulars.ts`, `src/core/sim/regulars.ts`, `src/core/sim/arrivals.ts`, `src/core/sim/stations.ts`): Max's third decision for the free treatment. A guest asked back free comes sure of their diagnosis, a "Second look" adds 10 points to the chance (`SECOND_LOOK`), and healed, all of what the complaint cost comes back (`COMP_SHARE` from a half to 1) and they become a regular at loyalty 60 (`WON_BACK_LOYALTY`), past the twelve as a vision quest's guest is.
+
+| Run                           | Mean star months  | Median paired star difference | Mean paired star difference | Lowest month's reputation, mean paired difference | Profit a month, months 13 to 47, median | Games lost                  |
+| ----------------------------- | ----------------- | ----------------------------- | --------------------------- | ------------------------------------------------- | --------------------------------------- | --------------------------- |
+| without comp                  | 5.2 / 11.2 / 17.3 |                               |                             |                                                   | $10.5k                                  | 1 (High Pines 2)            |
+| both answers (entry 56)       | 5.5 / 13.7 / 19.4 | 0.0 / 0.0 / −0.1              | +0.3 / +2.6 / +2.1          | −0.3                                              | $11.0k                                  | 2 (High Pines 3, Orchard 3) |
+| both, free treatment won back | 4.9 / 11.7 / 18.3 | 0.0 / 0.0 / 0.0               | −0.3 / +0.5 / +1.0          | +0.4                                              | $14.9k                                  | 1 (High Pines 2)            |
+
+Of 1,919 guests given a free treatment whose visit ended, 1,602 were healed (83%, from 77%); half off is unchanged, 291 of 409 (71%). The stars come no sooner for the typical game, the first a third of a month sooner on average, within entry 55's half a month, and the lowest month's reputation is less than half a point higher, within its 3. So all of it back is no shortcut to a star, since what it wins back was lost first. The guests won back are worth money, though: about $4,400 a month more in the second to fourth years, as loyal regulars who come back sooner and tip. The Orchard seed 3, lost in every run of entries 55 and 56, now earns all three stars by month 16.4. Willow Lane seed 1 swings again, its second star at month 26.6 (13.8 in entry 56, 11.7 without `comp`), so a free treatment at a small center is still a risk, as its tooltip says.
+
+## 6 November 2026, later: half off next visit
+
+Measured as entry 55, against the same games without `comp`: every campaign center, seeds 1 to 6, four years a game. `comp` now answers every complaint: a free treatment while the line its guest left has three or fewer waiting, and half off their next visit otherwise. Half off was run twice: first with its guests back at condition 70, as a free guest comes, then at full condition.
+
+### 56. Half off brings a small center back, once its guests come as well as anyone does
+
+**Done** (`src/core/sim/complaints.ts`, `src/core/sim/arrivals.ts`, `src/core/data/rules.ts`): Max's second answer, half off next visit, a quarter of the cost back at once and the guest back in 3 to 10 days in a new guest's place, paying half. Its guests come at full condition.
+
+| Run                           | Mean star months  | Median paired star difference | Stars more than half a month sooner / later (of 30) | Lowest month's reputation, mean paired difference | Profit a month, months 13 to 47, median | Games lost                                  |
+| ----------------------------- | ----------------- | ----------------------------- | --------------------------------------------------- | ------------------------------------------------- | --------------------------------------- | ------------------------------------------- |
+| without comp                  | 5.2 / 11.2 / 17.3 |                               |                                                     |                                                   | $10.5k                                  | 1 (High Pines 2)                            |
+| free only (entry 55)          | 5.2 / 14.5 / 20.2 | 0.0 / 0.0 / +0.8              | 2 / 3, 8 / 11, 12 / 16                              | −1.3                                              | $12.2k                                  | 3 (The Exchange 4, High Pines 1, Orchard 3) |
+| both, half off at 70          | 5.2 / 15.3 / 20.9 | 0.0 / 0.0 / +0.4              | 2 / 3, 10 / 11, 14 / 15                             | −3.6                                              | $12.2k                                  | 3 (Willow Lane 1, High Pines 1, Orchard 3)  |
+| both, half off at full health | 5.5 / 13.7 / 19.4 | 0.0 / 0.0 / −0.1              | 2 / 3, 10 / 12, 14 / 14                             | −0.3                                              | $11.0k                                  | 2 (High Pines 3, Orchard 3)                 |
+
+**At condition 70, half off was a trap.** Its guests wait in line as anyone does, and the bot offers it when the line is long: 145 of the 262 whose visit ended were let down again (55%), 60 of 93 worse-off guests going home worse off once more, after waits of 12 to 20 days. Ordinary guests in the same games go home worse off 6% of the time. A free guest goes first, so condition 70 costs them little. At full condition, 294 of 407 guests offered half off were healed (72%), close to the free treatment's 77% (1,266 of 1,646).
+
+**Neither answer is a shortcut.** With both, no star comes measurably sooner: the median paired difference is nothing for the first two stars and a tenth of a month sooner for the third, and the lowest month's reputation is a third of a point lower on average. **Half off saved Willow Lane seed 1**, the game entry 55 sank: it earned its stars at months 13.8 and 16.3 (11.7 and 13.7 without `comp`), where free treatments alone never earned the second. A free treatment still sinks a center now and then: Willow Lane seed 3 earned its second star at month 17.9 in both runs with `comp` (5.9 without), and The Orchard seed 3 was lost in all three. The bot's rule of three waiting is generous to the free treatment at a center with few tables; its tooltip now says it takes a turn from a paying guest.
+
+## 6 November 2026: Make it right, with and without the bot answering
+
+Measured with `yarn balance` on `claude/make-it-right` (on `f5e3a257`, after 0.36.0), every campaign center, seeds 1 to 6, four years a game: the good bot, and the good bot with `BOT_ON=comp`, which asks back every guest who went home worse off and a storm-out's or an accident's guest only while the line they left has three or fewer waiting. Both runs file complaints; without `comp` they all lapse, so that run plays as the game did before. A star never earned counts as month 48; differences are paired seed by seed.
+
+### 55. Make it right is no shortcut: the bot that answers is no faster, and a small center can lose by it
+
+**Kept at a half** (`COMP_SHARE` in `src/core/data/rules.ts`): the plan's bar was that `comp` earn no star more than half a month sooner and keep its lowest month's reputation no more than 3 points higher. It does neither, so the half stays and no rerun at a third was needed.
+
+| Run          | Mean star months  | Median paired star difference | Stars more than half a month sooner / later (of 30) | Lowest month's reputation, median paired difference   | Profit a month, months 13 to 47, median | Games lost                                      |
+| ------------ | ----------------- | ----------------------------- | --------------------------------------------------- | ----------------------------------------------------- | --------------------------------------- | ----------------------------------------------- |
+| without comp | 5.2 / 11.2 / 17.3 |                               |                                                     |                                                       | $10.3k                                  | 1 (High Pines 2)                                |
+| with comp    | 5.2 / 14.5 / 20.2 | 0.0 / 0.0 / +0.8              | 2 / 3, 8 / 11, 12 / 16                              | 0.0 (6 games more than 3 higher, 9 more than 3 lower) | $12.2k                                  | 3 (The Exchange 4, High Pines 1, The Orchard 3) |
+
+Over the 30 games with `comp`, guests left 708 storm-out complaints, 1,247 worse-off and 15 after an accident. The bot answered 564 storm-outs (144 lapsed with a long line), every worse-off one but four still open at the end, and 14 accidents. Asked back, 75% of the storm-outs, 78% of the worse-offs and all 14 accidents were healed; the rest were let down again and cost the usual loss once more.
+
+The means move by more than the medians because a few games ran away. At Willow Lane seed 1 the guests asked back took a small center's tables for nothing: its reputation fell from 58 to 38 in month 3 and stayed between 5 and 30 for two years, it kept four staff where the run without `comp` grew to eight, and it never earned its second star; 17 of its 35 worse-off guests asked back went home worse off again. High Pines seed 2 went the other way, from no second star to all three by month 17. So answering every worse-off complaint, the design doc's advice, is not always right: a free guest at the front of a short-staffed center's line can push it under. That is the choice the card is meant to be, but the tooltip says nothing of it, and a player who answers every card may find the same.
+
 ## 1 November 2026: the inspection warning and the three offers
 
 Measured with `yarn balance` on `claude/036-inspections-dd34ab` against `1fc72bf1` (main), every campaign center, seeds 1 to 3, four years a game. Both sides ran with the same measuring changes to the bot: each inspection logged, and the `sloppy` extra.

@@ -2,9 +2,24 @@
 
 Drafted 27 October 2026, after Max's notes on [the mechanics review](mechanics-review.md): "I like the make it right mechanic."
 
-An idea, not a plan: nothing here is decided. It is fourth in [the ranked list](README.md).
+It is fourth in [the ranked list](README.md). On 3 November 2026 Max settled its decisions and it became a plan to build, in [plans/make-it-right.md](../../plans/make-it-right.md), which adds guests who go home after an accident to those who leave a complaint. Where the two differ, the plan holds.
 
 A guest who storms out of a line, or waits so long they go home worse off, today costs the center 3 or 6 points of reputation, and that is the end of them. With this idea they leave a complaint at Reception: a slip on the desk and a card with **Make it right**. Pressed, the guest comes back within two days, in a gold robe the center sent round with the voucher, goes to the front of their line and is treated free. Healed, half of what they cost comes back, and their review says why. Let down a second time, they are gone for good. The verb is choosing whom to win back, and when: a free guest at the front of a line is a gift in a quiet week and a storm-out waiting to happen in a busy one. It is the one rule of the [MS Serenity](ms-serenity.md) without the ship, at every center.
+
+## Two answers, 6 November 2026
+
+The first slice had one answer: a free treatment, first in line, healed for half back. Measured with the bot ([balance log](../../balance/log.md), entry 55), it made no center faster, and it could sink a small one: at Willow Lane the free guests took the tables from paying guests for months. Max asked for a choice of answers instead, each paid for in something different, and settled it the same day:
+
+| Answer                  | What it costs                                                                                 | What it gives                                                                                                                                                                                             | The risk                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **Half off next visit** | half of the fees on their next visit, which comes in a new guest's place, as a regular's does | a quarter of what the complaint cost back at once; they come back in 3 to 10 days, always, join the line as anyone does, and pay half; healed, a heal's usual reputation, and they feel it was good value | let down again, the usual loss                   |
+| **Free treatment**      | a table's time and a whole fee: free, first in line                                           | healed, all of what the complaint cost back, and they become a regular with high loyalty; they come back sure of their diagnosis, and a "Second look" adds 10 points to the chance, for what was learned  | let down again, the usual loss, and nothing back |
+
+A quiet week suits the free treatment, and a busy or a small center half off, which takes no table from anyone. Letting a guest down on purpose still never pays: the best a free treatment does is undo the loss, after a table and a fee that a guest treated well the first time would have earned.
+
+**No refunds, here.** A refund fits neither a storm-out nor a guest gone home worse off, who paid little or nothing: a treatment is paid for only when it works, and a failed one pays the consultation alone. A refund fits a guest who paid and left a bad review, and a review's stars change no reputation today, so a refund would win nothing back. It waits for reviews that count, an idea of its own in [ideas.md](../ideas.md).
+
+Both are built: half off first, then the free treatment's new terms. A guest won back becomes a regular even past the twelve, as a guest healed by a vision quest does.
 
 ## The gap it fills
 

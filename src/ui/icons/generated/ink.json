@@ -1,5 +1,5 @@
 {
-  "hash": "67d84ece88483237",
+  "hash": "4870bed0b83b9120",
   "boxes": {
     "achievement-busted": [1.9, 3.1, 30.1, 28.9],
     "achievement-called-in": [1.9, 3.1, 30.1, 28.9],
@@ -98,6 +98,7 @@
     "feeling-litter": [2.35, 1.75, 29.95, 28.6],
     "feeling-long-wait": [6.85, 2.35, 25.15, 29.65],
     "feeling-lucky": [6.4, 1.75, 29.65, 28.15],
+    "feeling-made-right": [2.35, 3.4, 29.65, 28.6],
     "feeling-no-class": [2.8, 2.8, 29.2, 29.2],
     "feeling-no-kit": [2.8, 2.95, 29.2, 29.05],
     "feeling-noisy": [1.6, 3.55, 31.15, 28.45],

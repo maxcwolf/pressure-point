@@ -1,0 +1,153 @@
+// Complaints: a guest the center let down, by a wait that ran out or an accident in the waiting area, leaves one, and
+// can be asked back, free and first in line, to win back what they cost, or offered half off their next visit. Their arrival is in `arrivals`, the
+// front of the line in `lines`, and the visit going free in `stations`.
+
+import {
+  COMP_SHARE,
+  COMPLAINT_DAYS,
+  conditionOf,
+  DAY_SECONDS,
+  HALF_OFF_DAYS,
+  HALF_OFF_PAY,
+  HALF_OFF_SHARE,
+} from '../data';
+import { rnd } from '../random';
+import type { Complaint, ComplaintAnswer, ComplaintEnd, GameState, Guest } from '../state/types';
+import { clamp } from '../util';
+import type { SimContext } from './context';
+import { emit, toast } from './events';
+import { feel } from './feelings';
+import { logNews, madeRightNews } from './news';
+
+/**
+ * Whether a visit, as it ends, leaves a complaint: a guest who stormed out, went home worse off or went home after an
+ * accident. Not one put off by a price, an emergency guest, a class-goer, or someone already asked back once.
+ */
+export const complains = (g: Guest) =>
+  g.comp === undefined &&
+  g.halfOff === undefined &&
+  !g.emergency &&
+  !g.classDay &&
+  (g.outcome === 'worse' || (g.outcome === 'stormed' && !g.feelings.includes('pricey')));
+
+/** How the visit that left a complaint ended. */
+const endOf = (g: Guest): ComplaintEnd =>
+  g.outcome === 'worse' ? 'worse' : g.feelings.includes('accident') ? 'accident' : 'stormed';
+
+/** What the speakers say as a complaint is left, at most once a day. */
+export const COMPLAINT_LINE = 'Complaints may be left at reception. Please release them on the way out.';
+
+/** What the speakers say as a guest asked back walks in, one line and then the other. */
+export const ASKED_BACK_LINES: readonly string[] = [
+  'Guests returning for a complimentary treatment are asked not to mention it.',
+  'Guests in the gold robe go first. Please do not ask them why.',
+];
+
+/** Say a guest asked back has come, taking turns with the lines. */
+export function announceAskedBack(ctx: SimContext) {
+  const n = ctx.askedBackCalls ?? 0;
+  emit(ctx, { type: 'announce', text: ASKED_BACK_LINES[n % ASKED_BACK_LINES.length] ?? '' });
+  ctx.askedBackCalls = n + 1;
+}
+
+/**
+ * File a complaint for a guest leaving let down, with what it really cost the center's name, read before and after
+ * the loss so the damping toward the ends of the scale is in it. Nothing for a visit that leaves none.
+ */
+export function fileComplaint(ctx: SimContext, g: Guest, cost: number) {
+  if (!complains(g)) return;
+  const today = Math.floor(ctx.s.day);
+  if (ctx.complaintCallDay !== today) {
+    emit(ctx, { type: 'announce', text: COMPLAINT_LINE });
+    ctx.complaintCallDay = today;
+  }
+  ctx.s.complaints.push({
+    id: g.id,
+    name: g.name,
+    look: { ...g.look },
+    condition: g.condition,
+    diagnosis: g.diagnosis,
+    ...(g.goal === 'treat' && { modality: conditionOf(g.condition).modality }),
+    end: endOf(g),
+    waited: g.waited / DAY_SECONDS,
+    day: ctx.s.day,
+    cost,
+    ...(g.regular !== undefined && { regular: g.regular }),
+  });
+}
+
+/** The complaints still waiting for an answer, oldest first. */
+export const openComplaints = (s: GameState) => s.complaints.filter((c) => c.due === undefined);
+
+/** The guest asked back, free or for half off as asked, who is due soonest, if any is due by now. */
+export const dueComplaint = (s: GameState, answer: ComplaintAnswer = 'free'): Complaint | undefined =>
+  s.complaints
+    .filter((c) => c.due !== undefined && c.due <= s.day && (c.answer ?? 'free') === answer)
+    .sort((a, b) => (a.due ?? 0) - (b.due ?? 0))[0];
+
+/** What a guest pays of their fees: nothing asked back free, half offered half off, and otherwise all of them. */
+export const feeShare = (g: Pick<Guest, 'comp' | 'halfOff'>) =>
+  g.comp !== undefined ? 0 : g.halfOff !== undefined ? HALF_OFF_PAY : 1;
+
+/** Whether a regular has a complaint open or is due back for one, which holds their place and their next visit. */
+export const complaintHolds = (s: GameState, regular: number) => s.complaints.some((c) => c.regular === regular);
+
+/**
+ * Answer a complaint still open. Free, the guest is due the next day; half off, a quarter of what it cost comes back
+ * at once, added straight as the free treatment's half is, and they are due in a few days. False if there is no such
+ * complaint.
+ */
+export function answerComplaint(ctx: SimContext, id: number, answer: ComplaintAnswer = 'free'): boolean {
+  const s = ctx.s;
+  const c = openComplaints(s).find((x) => x.id === id);
+  if (!c) return false;
+  c.answer = answer;
+  if (answer === 'free') {
+    c.due = Math.floor(s.day) + 1;
+    return true;
+  }
+  // a whole number of days from today, from the fewest to the most
+  c.due = Math.floor(s.day) + Math.floor(rnd(s, HALF_OFF_DAYS.min, HALF_OFF_DAYS.max + 1));
+  s.reputation = clamp(s.reputation + c.cost * HALF_OFF_SHARE, 0, 100);
+  return true;
+}
+
+/** Let a complaint still open go. False if there is no such complaint. */
+export function dropComplaint(ctx: SimContext, id: number): boolean {
+  const c = openComplaints(ctx.s).find((x) => x.id === id);
+  if (!c) return false;
+  closeComplaint(ctx, c);
+  return true;
+}
+
+/** Let go every complaint left unanswered for `COMPLAINT_DAYS`. Once a day. */
+export function lapseComplaints(ctx: SimContext) {
+  for (const c of openComplaints(ctx.s)) if (ctx.s.day >= c.day + COMPLAINT_DAYS) closeComplaint(ctx, c);
+}
+
+/**
+ * Take a complaint off the list, its guest arrived or never asked back. A regular whose loyalty that visit took to
+ * nothing, kept for their complaint, goes now if they were never asked back, as they would have gone then.
+ */
+export function closeComplaint(ctx: SimContext, c: Complaint, arrived = false) {
+  const s = ctx.s;
+  s.complaints = s.complaints.filter((x) => x !== c);
+  if (arrived || c.regular === undefined) return;
+  const r = s.regulars.find((x) => x.id === c.regular);
+  if (!r || r.loyalty > 0) return;
+  s.regulars = s.regulars.filter((x) => x !== r);
+  toast(ctx, `${r.name} has had enough, and will not be coming back.`, 'bad', undefined, 'ui-heart-broken');
+}
+
+/**
+ * A guest asked back free is healed: in place of what a heal usually does for the center's name, all of what their
+ * complaint cost comes back, added straight so it is never more than that, whatever the reputation or the settings.
+ * Their review says so, and the town paper may; and they become a loyal regular, as their review is filed
+ * (`afterVisit`). Before the heal is counted, so the review has it.
+ */
+export function madeRight(ctx: SimContext, g: Guest) {
+  ctx.s.reputation = clamp(ctx.s.reputation + (g.comp ?? 0) * COMP_SHARE, 0, 100);
+  feel(g, 'made-right');
+  emit(ctx, { type: 'float', text: 'Made right', x: g.x, y: g.y, kind: 'good' });
+  logNews(ctx, madeRightNews(g));
+}

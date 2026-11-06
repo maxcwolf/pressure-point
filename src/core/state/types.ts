@@ -426,6 +426,44 @@ export interface Guest extends CharBase {
   regular?: number;
   /** Came with the ailment going around. */
   wave?: boolean;
+  /** Asked back, free and first in line, after a complaint: what the complaint cost the center's name. */
+  comp?: number;
+  /** Back after a complaint for half off this visit, in the line as anyone is: what the complaint cost. */
+  halfOff?: number;
+  /** How the visit that left that complaint ended, for the town paper and the play statistics. */
+  compEnd?: ComplaintEnd;
+}
+
+/** How a visit ended that leaves a complaint: walked out of a line, home worse off, or home after an accident. */
+export type ComplaintEnd = 'stormed' | 'worse' | 'accident';
+
+/** How a complaint is answered: a free treatment, first in line, or half off the guest's next visit. */
+export type ComplaintAnswer = 'free' | 'half-off';
+
+/** A guest the center let down, who can be asked back, free and first in line or for half off, to win back what they cost. */
+export interface Complaint {
+  /** The guest's id on the visit that went wrong. */
+  id: number;
+  name: string;
+  look: Look;
+  condition: ConditionId;
+  /** How sure their diagnosis was when they left. */
+  diagnosis: number;
+  /** The treatment they were in line for, if they had got that far. */
+  modality?: Modality;
+  end: ComplaintEnd;
+  /** Days they had waited when they left. */
+  waited: number;
+  /** The day it was left. */
+  day: number;
+  /** The reputation it really cost. */
+  cost: number;
+  /** Who they are among the regulars, if they are one. */
+  regular?: number;
+  /** The day they are due back, once they have been asked; missing until then. */
+  due?: number;
+  /** How they were asked back, once they have been: free, unless they were offered half off. */
+  answer?: ComplaintAnswer;
 }
 
 /** A guest who enjoyed their visit and comes back every few weeks, greeted by name. */
@@ -1056,6 +1094,8 @@ export interface GameState {
   land: Land[];
   /** Guests who come back every few weeks, whether here now or due. */
   regulars: Regular[];
+  /** Guests let down who can still be asked back, or have been and are due. */
+  complaints: Complaint[];
   /** How hard the game is, setting by setting: a sandbox setting. One left out is as usual. */
   difficulty: Difficulty;
   /** Where the game's random numbers have got to, so a loaded game draws the ones it would have drawn anyway. */
@@ -1155,7 +1195,8 @@ export type NewsKind =
   | 'star'
   | 'awards'
   | 'wait'
-  | 'accident';
+  | 'accident'
+  | 'made-right';
 
 /**
  * How a story ended, in its kind's own terms: how a fire was put out; whether a runner found the door or was calmed,
@@ -1187,7 +1228,8 @@ export type NewsHow =
   | 'handled'
   | 'contained'
   | 'escaped'
-  | 'center';
+  | 'center'
+  | ComplaintEnd;
 
 /**
  * Something that happened this quarter that the town paper may print, with the facts its headline and story are filled

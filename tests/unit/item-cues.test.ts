@@ -65,6 +65,7 @@ const condition = (type: ItemType, over: Partial<ItemCondition> = {}): ItemCondi
   inUse: false,
   running: 0,
   trophies: 0,
+  complaints: 0,
   ...over,
 });
 

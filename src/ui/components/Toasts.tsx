@@ -1,20 +1,22 @@
 // Right side: a downloaded update, a card each for the raises, the promotions and the training waiting on an answer,
-// then messages, newest first, that fade once there has been time to read them. Past the first few they pile up
+// and one for the complaints guests have left, then messages, newest first, that fade once there has been time to read them. Past the first few they pile up
 // underneath, to open out or dismiss at once. One about someone or something takes you there when clicked. While the
 // inspector is open the newest two show above it in a band of their own, the rest counted, so the inspector keeps its
 // place.
 
 import type { StaffRequest } from '../../core/sim/events';
 import type { Sim } from '../../core/sim/sim';
-import type { Staff } from '../../core/state/types';
+import type { Complaint, Staff } from '../../core/state/types';
 import { css } from '../../styled-system/css';
 import { useGame, useHud } from '../hooks/use-hud';
 import type { Toast } from '../hud';
+import { complaintCard } from '../lib/complaints';
 import { cx } from '../lib/cx';
 import { pileUp } from '../lib/messages';
 import { promotionRequests, raiseRequests } from '../lib/status';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
+import { ComplaintList } from './Complaints';
 import { inspecting } from './inspector/Inspector';
 
 /** How many messages show above an open inspector. */
@@ -110,6 +112,9 @@ const requestList = css({
   borderBottomRadius: '10',
   pointerEvents: 'auto',
 });
+
+/** The complaints under their card, a little roomier than a list of names. */
+const complaintList = css({ py: '8', px: '12' });
 
 /** One of them, by name. */
 const requestName = css({
@@ -225,6 +230,7 @@ export function Toasts() {
       raiseRequests(sim.s.staff)[0],
       promotionRequests(sim.s.staff)[0],
       heldBack(sim)[0],
+      sim.openComplaints()[0],
     ].filter(Boolean).length;
     return <Strip newest={[...shown, ...piled]} requests={requests} />;
   }
@@ -245,6 +251,7 @@ export function Toasts() {
       <RequestCard which="raise" staff={raiseRequests(sim.s.staff)} />
       <RequestCard which="promotion" staff={promotionRequests(sim.s.staff)} />
       <RequestCard which="training" staff={heldBack(sim)} />
+      <ComplaintCard complaints={sim.openComplaints()} />
       <div class={cx('messages', messages)}>
         {(open ? [...shown, ...piled] : shown).map((t) => (
           <Message key={t.id} toast={t} />
@@ -350,6 +357,35 @@ function RequestCard({ which, staff }: { which: StaffRequest; staff: readonly St
             </li>
           ))}
         </ul>
+      )}
+    </>
+  );
+}
+
+/**
+ * One card for every complaint still open, which stays until each is answered or lapses: "Ada Twinge and 2 more left
+ * complaints". It opens a list of them under it, each with Make it right and a way to let it go, as their guests have
+ * gone and there is nobody to take you to.
+ */
+function ComplaintCard({ complaints }: { complaints: readonly Complaint[] }) {
+  const hud = useHud();
+  if (!complaints.length) return null;
+  const open = hud.requestsOpen === 'complaint';
+  return (
+    <>
+      <Button
+        class={cx('toast', 'request', 'complaint', requestCard, open && 'open')}
+        title={open ? 'Hide them' : 'Show them'}
+        onPress={() => {
+          hud.toggleRequests('complaint');
+        }}
+      >
+        <IconText id="bubble-annoyed">{complaintCard(complaints)}</IconText>
+      </Button>
+      {open && (
+        <div class={cx(requestList, complaintList)}>
+          <ComplaintList complaints={complaints} />
+        </div>
       )}
     </>
   );

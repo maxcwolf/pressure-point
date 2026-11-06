@@ -331,6 +331,8 @@ export interface ItemParts {
   flies?: THREE.Sprite;
   /** A trophy cabinet's cups, shown one for each award the center has won. */
   cups?: THREE.Object3D[];
+  /** The Reception Desk's pink slips on their spike, one shown for each complaint waiting for an answer. */
+  slips?: THREE.Object3D[];
   /** A treatment table's linens, which grow grubby with use until they are changed. */
   linens?: THREE.MeshStandardMaterial;
   /** The soiled linens heaped in a hamper, which rise as it fills. */

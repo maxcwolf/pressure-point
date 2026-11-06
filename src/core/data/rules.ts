@@ -516,6 +516,23 @@ export const PATIENCE_DRAIN = 0.85;
 export const NEEDY_DRAIN = 1.6;
 /** What a guest leaving fed up costs in reputation. */
 export const STORM_REP = 3;
+/** Days a complaint waits for the player to ask its guest back, before it lapses. */
+export const COMPLAINT_DAYS = 5;
+/**
+ * The condition a guest asked back after a complaint comes in at, whatever they left with: a little worse for the wait
+ * at home.
+ */
+export const COMP_CONDITION = 70;
+/** The share of what a complaint cost the center's name that healing its guest, asked back free, wins back: all of it. */
+export const COMP_SHARE = 1;
+/** What a "Second look" adds to the chance of a free treatment working, for what was learned the first time. */
+export const SECOND_LOOK = 0.1;
+/** The share of what a complaint cost that comes back at once when its guest is offered half off their next visit. */
+export const HALF_OFF_SHARE = 0.25;
+/** What a guest offered half off pays of their next visit's fees. */
+export const HALF_OFF_PAY = 0.5;
+/** The days, fewest and most, before a guest offered half off comes back. */
+export const HALF_OFF_DAYS = { min: 3, max: 10 } as const;
 /** How far a waiting guest sees litter from, in tiles. */
 export const LITTER_SIGHT = 2;
 /**
