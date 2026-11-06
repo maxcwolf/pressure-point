@@ -72,7 +72,7 @@ test.describe('performance', () => {
     const few = await rendererInfo(page);
     // forty guests arrive at once, each with a condition and a look of their own
     await game.eval(async (pp) => {
-      const guests = (await import(/* @vite-ignore */ `${location.origin}/src/core/sim/guests.ts`)) as {
+      const guests = (await import(/* @vite-ignore */ `${location.origin}/src/core/sim/arrivals.ts`)) as {
         spawnGuest: (ctx: unknown) => unknown;
       };
       const ctx = (pp.sim as unknown as { ctx: unknown }).ctx;
