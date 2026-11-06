@@ -1,5 +1,5 @@
 // Complaints: a guest the center let down, by a wait that ran out or an accident in the waiting area, leaves one, and
-// can be asked back, free and first in line, to win back half of what they cost. Their arrival is in `arrivals`, the
+// can be asked back, free and first in line, to win back what they cost, or offered half off their next visit. Their arrival is in `arrivals`, the
 // front of the line in `lines`, and the visit going free in `stations`.
 
 import {
@@ -140,9 +140,10 @@ export function closeComplaint(ctx: SimContext, c: Complaint, arrived = false) {
 }
 
 /**
- * A guest asked back is healed: in place of what a heal usually does for the center's name, half of what their
- * complaint cost comes back, added straight so it is never more than half, whatever the reputation or the settings.
- * Their review says so, and the town paper may. Before the heal is counted, so the review has it.
+ * A guest asked back free is healed: in place of what a heal usually does for the center's name, all of what their
+ * complaint cost comes back, added straight so it is never more than that, whatever the reputation or the settings.
+ * Their review says so, and the town paper may; and they become a loyal regular, as their review is filed
+ * (`afterVisit`). Before the heal is counted, so the review has it.
  */
 export function madeRight(ctx: SimContext, g: Guest) {
   ctx.s.reputation = clamp(ctx.s.reputation + (g.comp ?? 0) * COMP_SHARE, 0, 100);

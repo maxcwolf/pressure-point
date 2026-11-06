@@ -440,7 +440,7 @@ export type ComplaintEnd = 'stormed' | 'worse' | 'accident';
 /** How a complaint is answered: a free treatment, first in line, or half off the guest's next visit. */
 export type ComplaintAnswer = 'free' | 'half-off';
 
-/** A guest the center let down, who can be asked back, free and first in line, to win back half of what they cost. */
+/** A guest the center let down, who can be asked back, free and first in line or for half off, to win back what they cost. */
 export interface Complaint {
   /** The guest's id on the visit that went wrong. */
   id: number;

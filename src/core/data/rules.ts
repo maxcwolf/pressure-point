@@ -523,8 +523,10 @@ export const COMPLAINT_DAYS = 5;
  * at home.
  */
 export const COMP_CONDITION = 70;
-/** The share of what a complaint cost the center's name that healing its guest wins back. */
-export const COMP_SHARE = 0.5;
+/** The share of what a complaint cost the center's name that healing its guest, asked back free, wins back: all of it. */
+export const COMP_SHARE = 1;
+/** What a "Second look" adds to the chance of a free treatment working, for what was learned the first time. */
+export const SECOND_LOOK = 0.1;
 /** The share of what a complaint cost that comes back at once when its guest is offered half off their next visit. */
 export const HALF_OFF_SHARE = 0.25;
 /** What a guest offered half off pays of their next visit's fees. */

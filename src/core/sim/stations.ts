@@ -27,6 +27,7 @@ import {
   RANKS,
   ROOMS,
   SCAN_SUCCESS,
+  SECOND_LOOK,
   SEEN_PATIENCE,
   SKILL_SUCCESS,
   STRUCTURAL_SURE,
@@ -175,6 +176,8 @@ export function chanceFactors(ctx: SimContext, it: Item, staff: Staff, g: Guest)
       amount: weight > 1 ? -discomfort(warmthAt(ctx, g.tx, g.ty)) * TRIP_DISCOMFORT : 0,
     },
     { cause: 'rest', amount: -restPenalty(ctx, g) },
+    // a guest asked back free after a complaint: what went wrong the first time is known now
+    { cause: 'second-look', amount: g.comp !== undefined ? SECOND_LOOK : 0 },
   ];
 }
 
@@ -536,7 +539,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       g.stressed = false;
       // a ceremony that works is a good trip, which goes in their review
       if (isTrip(mod)) goodTrip(g);
-      // a guest asked back after a complaint pays nothing, and wins back half of what the complaint cost
+      // a guest asked back free after a complaint pays nothing, and wins back what the complaint cost
       if (g.comp !== undefined) madeRight(ctx, g);
       // one back for half off finds it good value, and says so in their review
       if (g.halfOff !== undefined) feel(g, 'bargain');

@@ -16,6 +16,8 @@ export const REGULAR_GAP_DAYS = [12, 24] as const;
 /** A new regular's loyalty, from 0 to 100, and a regular's after a vision quest. */
 export const REGULAR_LOYALTY = 30;
 export const VISION_LOYALTY = 60;
+/** A guest won back by a free treatment, healed, becomes a regular at least this loyal, as a vision quest makes one. */
+export const WON_BACK_LOYALTY = 60;
 
 /** How a visit changes a regular's loyalty, by the stars they gave it, from one star to five. */
 export const LOYALTY_BY_STARS: readonly number[] = [-35, -20, 0, 12, 20];

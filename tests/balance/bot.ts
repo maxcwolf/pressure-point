@@ -232,7 +232,7 @@ export const BOT_FLAGS = [
   /**
    * Answer every complaint as a good player would: a free treatment while the line its guest left has three or fewer
    * waiting, and half off their next visit otherwise, which takes no table from a paying guest. An extra, so the rerun
-   * can measure what Make it right gives back against the bot without it (balance logs 55 and 56).
+   * can measure what Make it right gives back against the bot without it (balance logs 55 to 57).
    */
   'comp',
 ] as const;

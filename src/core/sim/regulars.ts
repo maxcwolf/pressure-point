@@ -21,6 +21,7 @@ import {
   REGULAR_STARS,
   REGULARS_MAX,
   VISION_LOYALTY,
+  WON_BACK_LOYALTY,
 } from '../data';
 import type { GameState, Guest, Regular } from '../state/types';
 import { clamp } from '../util';
@@ -115,11 +116,14 @@ const questDone = (g: Guest, healed: boolean) => healed && conditionOf(g.conditi
 export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boolean) {
   const s = ctx.s;
   const quest = questDone(g, healed);
+  // a guest asked back free and healed is won back: a regular from now on, and a loyal one, as a vision quest makes
+  const wonBack = healed && g.comp !== undefined;
   const r = regularOf(s, g);
   if (r) {
     const before = loyaltyLevel(r.loyalty);
     r.loyalty = clamp(r.loyalty + loyaltyChange(stars), 0, 100);
     if (quest) r.loyalty = Math.max(r.loyalty, VISION_LOYALTY);
+    if (wonBack) r.loyalty = Math.max(r.loyalty, WON_BACK_LOYALTY);
     // let down so badly they would stop coming, a regular who leaves a complaint keeps their place until it is settled
     if (r.loyalty <= 0 && complains(g)) return;
     if (r.loyalty <= 0) {
@@ -141,13 +145,13 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
       );
     return;
   }
-  if (!quest && (!takesToPlace(g.id, stars) || s.regulars.length >= REGULARS_MAX)) return;
+  if (!quest && !wonBack && (!takesToPlace(g.id, stars) || s.regulars.length >= REGULARS_MAX)) return;
   const added: Regular = {
     id: g.id,
     name: g.name,
     look: { ...g.look },
     visits: 1,
-    loyalty: quest ? VISION_LOYALTY : REGULAR_LOYALTY,
+    loyalty: quest ? VISION_LOYALTY : wonBack ? WON_BACK_LOYALTY : REGULAR_LOYALTY,
     due: 0,
   };
   added.due = s.day + returnGap(added);

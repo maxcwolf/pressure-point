@@ -19,7 +19,7 @@ A quiet week suits the free treatment, and a busy or a small center half off, wh
 
 **No refunds, here.** A refund fits neither a storm-out nor a guest gone home worse off, who paid little or nothing: a treatment is paid for only when it works, and a failed one pays the consultation alone. A refund fits a guest who paid and left a bad review, and a review's stars change no reputation today, so a refund would win nothing back. It waits for reviews that count, an idea of its own in [ideas.md](../ideas.md).
 
-Half off is built first. The free treatment's new terms are settled but not built yet: it still wins back half, at the guest's diagnosis as it was.
+Both are built: half off first, then the free treatment's new terms. A guest won back becomes a regular even past the twelve, as a guest healed by a vision quest does.
 
 ## The gap it fills
 

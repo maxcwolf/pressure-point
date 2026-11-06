@@ -290,7 +290,7 @@ export const LESSONS: Readonly<Record<LessonId, Lesson>> = {
         note: "A station's inspector moves guests up or sends them home.",
       },
     ],
-    body: 'The Patience overlay shows where guests are wearing thin. More staff on a busy station shortens the wait. A guest you let down can be asked back, free. Healed, half the reputation comes back.',
+    body: 'The Patience overlay shows where guests are wearing thin. More staff on a busy station shortens the wait. A guest you let down can be asked back, free. Healed, the reputation comes back.',
   },
   raise: {
     title: 'A raise',

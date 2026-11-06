@@ -23,12 +23,12 @@ export function complaintSaid(c: Complaint): string {
 /** A share of what a complaint cost, in reputation to a tenth. */
 const shareOf = (c: Pick<Complaint, 'cost'>, share: number) => Math.round(c.cost * share * 10) / 10;
 
-/** The reputation healing a guest asked back wins back, to a tenth. */
+/** The reputation healing a guest asked back free wins back, to a tenth. */
 export const complaintBack = (c: Pick<Complaint, 'cost'>) => shareOf(c, COMP_SHARE);
 
 /** What asking a guest back free does, for the tooltip on Free treatment. */
 export const makeItRightNote = (c: Pick<Complaint, 'cost'>) =>
-  `Free, first in line, tomorrow. Healed: +${complaintBack(c)} reputation back. Takes a turn from a paying guest. Let down again: the usual loss, and no second chance.`;
+  `Free, first in line, tomorrow, sure of what they have and likelier to work. Healed: +${complaintBack(c)} reputation back, and they become a loyal regular. Takes a turn from a paying guest. Let down again: the usual loss, and no second chance.`;
 
 /** What offering half off does, for the tooltip on Half off next visit. */
 export const halfOffNote = (c: Pick<Complaint, 'cost'>) =>

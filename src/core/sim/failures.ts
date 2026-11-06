@@ -45,7 +45,8 @@ export type ChanceCause =
   | 'noise'
   | 'linens'
   | 'temperature'
-  | 'rest';
+  | 'rest'
+  | 'second-look';
 
 /**
  * One term in a treatment's chance of working: what it added (or, below zero, took off), and the most it could have

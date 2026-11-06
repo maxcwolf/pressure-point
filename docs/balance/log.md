@@ -6,6 +6,22 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 6 November 2026, evening: the free treatment wins a guest back
+
+Measured as entries 55 and 56, against the same games without `comp`: every campaign center, seeds 1 to 6, four years a game, the bot answering with both answers as in entry 56.
+
+### 57. All of it back and a loyal regular: still no shortcut, and the money a won-back guest brings
+
+**Done** (`src/core/data/rules.ts`, `src/core/data/regulars.ts`, `src/core/sim/regulars.ts`, `src/core/sim/arrivals.ts`, `src/core/sim/stations.ts`): Max's third decision for the free treatment. A guest asked back free comes sure of their diagnosis, a "Second look" adds 10 points to the chance (`SECOND_LOOK`), and healed, all of what the complaint cost comes back (`COMP_SHARE` from a half to 1) and they become a regular at loyalty 60 (`WON_BACK_LOYALTY`), past the twelve as a vision quest's guest is.
+
+| Run                           | Mean star months  | Median paired star difference | Mean paired star difference | Lowest month's reputation, mean paired difference | Profit a month, months 13 to 47, median | Games lost                  |
+| ----------------------------- | ----------------- | ----------------------------- | --------------------------- | ------------------------------------------------- | --------------------------------------- | --------------------------- |
+| without comp                  | 5.2 / 11.2 / 17.3 |                               |                             |                                                   | $10.5k                                  | 1 (High Pines 2)            |
+| both answers (entry 56)       | 5.5 / 13.7 / 19.4 | 0.0 / 0.0 / −0.1              | +0.3 / +2.6 / +2.1          | −0.3                                              | $11.0k                                  | 2 (High Pines 3, Orchard 3) |
+| both, free treatment won back | 4.9 / 11.7 / 18.3 | 0.0 / 0.0 / 0.0               | −0.3 / +0.5 / +1.0          | +0.4                                              | $14.9k                                  | 1 (High Pines 2)            |
+
+Of 1,919 guests given a free treatment whose visit ended, 1,602 were healed (83%, from 77%); half off is unchanged, 291 of 409 (71%). The stars come no sooner for the typical game, the first a third of a month sooner on average, within entry 55's half a month, and the lowest month's reputation is less than half a point higher, within its 3. So all of it back is no shortcut to a star, since what it wins back was lost first. The guests won back are worth money, though: about $4,400 a month more in the second to fourth years, as loyal regulars who come back sooner and tip. The Orchard seed 3, lost in every run of entries 55 and 56, now earns all three stars by month 16.4. Willow Lane seed 1 swings again, its second star at month 26.6 (13.8 in entry 56, 11.7 without `comp`), so a free treatment at a small center is still a risk, as its tooltip says.
+
 ## 6 November 2026, later: half off next visit
 
 Measured as entry 55, against the same games without `comp`: every campaign center, seeds 1 to 6, four years a game. `comp` now answers every complaint: a free treatment while the line its guest left has three or fewer waiting, and half off their next visit otherwise. Half off was run twice: first with its guests back at condition 70, as a free guest comes, then at full condition.

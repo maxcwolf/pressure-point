@@ -1,5 +1,5 @@
-// Complaints: a guest let down by the wait or an accident can be asked back, free and first in line, to win back half
-// of what they cost; a complaint left unanswered lapses after a few days.
+// Complaints: a guest let down by the wait or an accident can be asked back, free and first in line, to win back what
+// they cost, or offered half off their next visit; a complaint left unanswered lapses after a few days.
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +11,9 @@ import {
   HALF_OFF_PAY,
   HALF_OFF_SHARE,
   REGULAR_LOYALTY,
+  REGULARS_MAX,
+  SECOND_LOOK,
+  WON_BACK_LOYALTY,
 } from '../../src/core/data';
 import { haveAccident } from '../../src/core/sim/accidents';
 import { admitGuests, spawnGuest } from '../../src/core/sim/arrivals';
@@ -32,7 +35,7 @@ import { reviewText } from '../../src/core/sim/feelings';
 import { decide } from '../../src/core/sim/lines';
 import { afterVisit, dueRegular, mindsPrice } from '../../src/core/sim/regulars';
 import type { Sim } from '../../src/core/sim/sim';
-import { guestFee } from '../../src/core/sim/stations';
+import { chanceFactors, guestFee } from '../../src/core/sim/stations';
 import { worseOff } from '../../src/core/sim/worsening';
 import type { Complaint, Guest, Regular } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
@@ -216,9 +219,13 @@ describe('a guest asked back', () => {
 
   it('goes straight to treatment with a sure diagnosis, and through Reception without one', () => {
     const { sim, s } = openCenter();
-    const sure = spawnGuest(ctxOf(sim), 'slump', false, 0, undefined, complaint(sim, { diagnosis: 0.9 }))!;
+    // asked back free, they come sure; offered half off, as sure as they were
+    const free = spawnGuest(ctxOf(sim), 'slump', false, 0, undefined, complaint(sim, { diagnosis: 0.4 }))!;
+    expect(free).toMatchObject({ goal: 'treat', diagnosis: 1 });
+    const half = { answer: 'half-off' } as const;
+    const sure = spawnGuest(ctxOf(sim), 'slump', false, 0, undefined, complaint(sim, { ...half, diagnosis: 0.9 }))!;
     expect(sure).toMatchObject({ goal: 'treat', diagnosis: 0.9 });
-    const unsure = spawnGuest(ctxOf(sim), 'slump', false, 0, undefined, complaint(sim, { diagnosis: 0.4 }))!;
+    const unsure = spawnGuest(ctxOf(sim), 'slump', false, 0, undefined, complaint(sim, { ...half, diagnosis: 0.4 }))!;
     expect(unsure).toMatchObject({ goal: 'reception', diagnosis: 0.4 });
     expect(s.policy.diagnosis).toBeGreaterThan(0.4);
   });
@@ -244,7 +251,7 @@ describe('a guest asked back', () => {
     expect(mindsPrice(sim.s, { emergency: false, comp: 3 })).toBe(0);
   });
 
-  it('pays nothing, and healed, wins back exactly half of what the complaint cost', () => {
+  it('pays nothing, and healed, wins back exactly what the complaint cost', () => {
     const { sim, s, therapist } = openCenter();
     s.open = true;
     s.spawnT = 1e9;
@@ -258,7 +265,7 @@ describe('a guest asked back', () => {
     expect(s.reputation).toBeCloseTo(40 + 4 * COMP_SHARE, 6);
   });
 
-  it('wins back half at either end of the scale, never more', () => {
+  it('wins back what it cost at either end of the scale, never more', () => {
     const { sim, s } = openCenter();
     const g = slumped(sim, { comp: 6 });
     s.reputation = 99;
@@ -333,6 +340,38 @@ describe('the speakers', () => {
       heard.push(...said(sim).filter((t) => ASKED_BACK_LINES.includes(t)));
     }
     expect(heard).toEqual([ASKED_BACK_LINES[0], ASKED_BACK_LINES[1], ASKED_BACK_LINES[0]]);
+  });
+});
+
+describe('a guest won back by a free treatment', () => {
+  it('comes sure of what they have, and a second look makes it likelier to work', () => {
+    const { sim, s, therapist } = openCenter();
+    const ctx = ctxOf(sim);
+    const g = spawnGuest(ctx, 'slump', false, 0, undefined, complaint(sim, { diagnosis: 0.3 }))!;
+    expect(g).toMatchObject({ diagnosis: 1, goal: 'treat' });
+    const table = s.items.find((i) => i.type === 'massage_table')!;
+    const look = chanceFactors(ctx, table, therapist, g).find((f) => f.cause === 'second-look');
+    expect(look?.amount).toBe(SECOND_LOOK);
+    const plain = slumped(sim, { diagnosis: 1 });
+    expect(chanceFactors(ctx, table, therapist, plain).find((f) => f.cause === 'second-look')?.amount).toBe(0);
+  });
+
+  it('becomes a loyal regular when healed, even with the regulars full', () => {
+    const { sim, s } = openCenter();
+    s.regulars = Array.from({ length: REGULARS_MAX }, (_, i) => regular(sim, { id: 100 + i, due: 1e9 }));
+    const g = slumped(sim, { comp: 3 });
+    afterVisit(ctxOf(sim), g, 3, true);
+    expect(s.regulars).toHaveLength(REGULARS_MAX + 1);
+    expect(s.regulars.at(-1)).toMatchObject({ id: g.id, name: g.name, loyalty: WON_BACK_LOYALTY });
+    // a regular already, they are loyal now, whatever they had come down to
+    const r = regular(sim, { id: 7, loyalty: 5 });
+    s.regulars = [r];
+    afterVisit(ctxOf(sim), slumped(sim, { comp: 3, regular: 7 }), 3, true);
+    expect(r.loyalty).toBe(WON_BACK_LOYALTY);
+    // let down again, nothing of the kind
+    s.regulars = [];
+    afterVisit(ctxOf(sim), slumped(sim, { comp: 3 }), 1, false);
+    expect(s.regulars).toEqual([]);
   });
 });
 
@@ -487,12 +526,12 @@ describe('what the interface says about a complaint', () => {
 
   it('says what asking them back does and wins back, and where it stands', () => {
     expect(makeItRightNote({ cost: 3 })).toBe(
-      'Free, first in line, tomorrow. Healed: +1.5 reputation back. Takes a turn from a paying guest. Let down again: the usual loss, and no second chance.',
+      'Free, first in line, tomorrow, sure of what they have and likelier to work. Healed: +3 reputation back, and they become a loyal regular. Takes a turn from a paying guest. Let down again: the usual loss, and no second chance.',
     );
     expect(halfOffNote({ cost: 6 })).toBe(
       "+1.5 reputation back now. They come back in 3 to 10 days in a new guest's place, wait in line as usual and pay half. Let down again: the usual loss.",
     );
-    expect(complaintBack({ cost: 2.37 })).toBe(1.2);
+    expect(complaintBack({ cost: 2.37 })).toBe(2.4);
     expect(complaintNote({ day: 10 }, 10.5)).toBe(`Lapses in ${COMPLAINT_DAYS} days`);
     expect(complaintNote({ day: 10 }, 10 + COMPLAINT_DAYS - 0.5)).toBe('Lapses in 1 day');
     expect(complaintNote({ day: 10, due: 12 }, 11.5)).toBe('Asked back: due tomorrow');

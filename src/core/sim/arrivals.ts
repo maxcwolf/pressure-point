@@ -247,7 +247,10 @@ export function spawnGuest(
   const sex = known ? known.look.sex : rollSex(s, WOMEN_VISIT);
   const name = known ? known.name : randomName(s, sex);
   const look = known ? { ...known.look } : randomLook(s, sex);
-  const sure = !!complaint && complaint.diagnosis >= s.policy.diagnosis;
+  // asked back free, they come sure of what they have, from the first visit; offered half off, with what they knew
+  const free = !!complaint && complaint.answer !== 'half-off';
+  const diagnosis = free ? 1 : (complaint?.diagnosis ?? 0);
+  const sure = !!complaint && diagnosis >= s.policy.diagnosis;
   const g: Guest = {
     ...newChar(ctx, name, look, x, y),
     kind: 'guest',
@@ -262,7 +265,7 @@ export function spawnGuest(
     bladder: rnd(s, 0, ARRIVAL_NEEDS.bladder),
     patience: 100,
     lowest: 100,
-    diagnosis: emergency ? 1 : (complaint?.diagnosis ?? 0),
+    diagnosis: emergency ? 1 : diagnosis,
     consults: 0,
     outcome: '',
     spent: 0,
