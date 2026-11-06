@@ -2,7 +2,16 @@
 // of what they cost; a complaint left unanswered lapses after a few days.
 import { describe, expect, it } from 'vitest';
 
-import { COMP_CONDITION, COMP_SHARE, COMPLAINT_DAYS, FEELINGS, REGULAR_LOYALTY } from '../../src/core/data';
+import {
+  COMP_CONDITION,
+  COMP_SHARE,
+  COMPLAINT_DAYS,
+  FEELINGS,
+  HALF_OFF_DAYS,
+  HALF_OFF_PAY,
+  HALF_OFF_SHARE,
+  REGULAR_LOYALTY,
+} from '../../src/core/data';
 import { haveAccident } from '../../src/core/sim/accidents';
 import { admitGuests, spawnGuest } from '../../src/core/sim/arrivals';
 import {
@@ -23,6 +32,7 @@ import { reviewText } from '../../src/core/sim/feelings';
 import { decide } from '../../src/core/sim/lines';
 import { afterVisit, dueRegular, mindsPrice } from '../../src/core/sim/regulars';
 import type { Sim } from '../../src/core/sim/sim';
+import { guestFee } from '../../src/core/sim/stations';
 import { worseOff } from '../../src/core/sim/worsening';
 import type { Complaint, Guest, Regular } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
@@ -31,6 +41,7 @@ import {
   complaintCard,
   complaintNote,
   complaintSaid,
+  halfOffNote,
   makeItRightNote,
 } from '../../src/ui/lib/complaints';
 import { openCenter, runUntil, toasts } from './helpers';
@@ -325,6 +336,88 @@ describe('the speakers', () => {
   });
 });
 
+describe('a guest offered half off', () => {
+  it('wins a quarter back at once, and is due in 3 to 10 days', () => {
+    const { sim, s } = openCenter();
+    s.reputation = 40;
+    s.day = 20.4;
+    const days: number[] = [];
+    for (let id = 1; id <= 40; id++) {
+      s.complaints = [complaint(sim, { id, cost: 4 })];
+      expect(answerComplaint(ctxOf(sim), id, 'half-off')).toBe(true);
+      expect(s.complaints[0]).toMatchObject({ answer: 'half-off' });
+      days.push(s.complaints[0]!.due! - 20);
+    }
+    expect(s.reputation).toBeCloseTo(Math.min(100, 40 + 40 * 4 * HALF_OFF_SHARE), 6);
+    expect(Math.min(...days)).toBeGreaterThanOrEqual(HALF_OFF_DAYS.min);
+    expect(Math.max(...days)).toBeLessThanOrEqual(HALF_OFF_DAYS.max);
+    expect(new Set(days).size).toBeGreaterThan(3);
+  });
+
+  it("comes in a new guest's place, not on top, and waits in line as anyone does", () => {
+    const { sim, s } = openCenter();
+    s.open = true;
+    s.complaints = [complaint(sim, { answer: 'half-off', due: 0, diagnosis: 0.4 })];
+    // nobody new is due yet: nor are they
+    s.spawnT = 1e9;
+    const before = s.guests.length;
+    admitGuests(ctxOf(sim), 0.1);
+    expect(s.guests).toHaveLength(before);
+    expect(s.complaints).toHaveLength(1);
+    // a new guest's turn comes, and it is theirs
+    s.spawnT = 0;
+    admitGuests(ctxOf(sim), 0.1);
+    expect(s.guests).toHaveLength(before + 1);
+    const g = s.guests.at(-1)!;
+    expect(g).toMatchObject({ name: 'Ada Twinge', halfOff: 3, health: 100, goal: 'reception' });
+    expect(g.comp).toBeUndefined();
+    expect(s.complaints).toEqual([]);
+    const said = drainEvents(ctxOf(sim)).flatMap((e) => (e.type === 'announce' ? [e.text] : []));
+    expect(said.filter((t) => ASKED_BACK_LINES.includes(t))).toEqual([]);
+    // at the back of the line, not the front
+    const ctx = ctxOf(sim);
+    const waiting = slumped(sim, { goal: 'treat', diagnosis: 1 });
+    decide(ctx, waiting);
+    const back = slumped(sim, { goal: 'treat', diagnosis: 1, halfOff: 3 });
+    decide(ctx, back);
+    const table = s.items.find((i) => i.id === back.station)!;
+    if (waiting.station === table.id)
+      expect(table.queue.indexOf(back.id)).toBeGreaterThan(table.queue.indexOf(waiting.id));
+    expect(back.placed).toBe(false);
+  });
+
+  it('pays half, never balks at a price, and finds it good value when healed', () => {
+    const { sim, s, therapist } = openCenter();
+    s.open = true;
+    s.spawnT = 1e9;
+    therapist.skill = 5;
+    s.reputation = 40;
+    const g = spawnGuest(
+      ctxOf(sim),
+      'slump',
+      false,
+      0,
+      undefined,
+      complaint(sim, { answer: 'half-off', diagnosis: 1 }),
+    )!;
+    expect(mindsPrice(s, g)).toBe(0);
+    const full = guestFee(s, g);
+    runUntil(sim, () => g.outcome !== '', 300);
+    expect(g.outcome).toBe('healed');
+    expect(s.ledger.treatment).toBe(Math.round(full * HALF_OFF_PAY));
+    // the heal's own reputation, not the free treatment's half back
+    expect(s.reputation).toBeGreaterThan(40);
+    expect(s.reviews.at(-1)!.feelings).toContain('bargain');
+    expect(s.reviews.at(-1)!.feelings).not.toContain('made-right');
+  });
+
+  it('leaves no second complaint if let down again', () => {
+    const { sim, s } = openCenter();
+    worseOff(ctxOf(sim), slumped(sim, { goal: 'treat', halfOff: 3 }));
+    expect(s.complaints).toEqual([]);
+  });
+});
+
 describe('a regular who leaves a complaint', () => {
   it('keeps their place while it is open, though the visit took their loyalty to nothing', () => {
     const { sim, s } = openCenter();
@@ -394,13 +487,19 @@ describe('what the interface says about a complaint', () => {
 
   it('says what asking them back does and wins back, and where it stands', () => {
     expect(makeItRightNote({ cost: 3 })).toBe(
-      'Free, first in line. Healed: +1.5 reputation back. Let down again: the usual loss, and no second chance.',
+      'Free, first in line, tomorrow. Healed: +1.5 reputation back. Takes a turn from a paying guest. Let down again: the usual loss, and no second chance.',
+    );
+    expect(halfOffNote({ cost: 6 })).toBe(
+      "+1.5 reputation back now. They come back in 3 to 10 days in a new guest's place, wait in line as usual and pay half. Let down again: the usual loss.",
     );
     expect(complaintBack({ cost: 2.37 })).toBe(1.2);
     expect(complaintNote({ day: 10 }, 10.5)).toBe(`Lapses in ${COMPLAINT_DAYS} days`);
     expect(complaintNote({ day: 10 }, 10 + COMPLAINT_DAYS - 0.5)).toBe('Lapses in 1 day');
     expect(complaintNote({ day: 10, due: 12 }, 11.5)).toBe('Asked back: due tomorrow');
     expect(complaintNote({ day: 10, due: 12 }, 12.2)).toBe('Asked back: on their way');
+    expect(complaintNote({ day: 10, due: 16, answer: 'half-off' }, 11.5)).toBe('Half off: due in 5 days');
+    expect(complaintNote({ day: 10, due: 16, answer: 'half-off' }, 15.5)).toBe('Half off: due tomorrow');
+    expect(complaintNote({ day: 10, due: 16, answer: 'half-off' }, 16)).toBe('Half off: on their way');
   });
 
   it('puts every complaint open on one card', () => {

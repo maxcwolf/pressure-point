@@ -428,12 +428,17 @@ export interface Guest extends CharBase {
   wave?: boolean;
   /** Asked back, free and first in line, after a complaint: what the complaint cost the center's name. */
   comp?: number;
-  /** How the visit that left that complaint ended, for the town paper. */
+  /** Back after a complaint for half off this visit, in the line as anyone is: what the complaint cost. */
+  halfOff?: number;
+  /** How the visit that left that complaint ended, for the town paper and the play statistics. */
   compEnd?: ComplaintEnd;
 }
 
 /** How a visit ended that leaves a complaint: walked out of a line, home worse off, or home after an accident. */
 export type ComplaintEnd = 'stormed' | 'worse' | 'accident';
+
+/** How a complaint is answered: a free treatment, first in line, or half off the guest's next visit. */
+export type ComplaintAnswer = 'free' | 'half-off';
 
 /** A guest the center let down, who can be asked back, free and first in line, to win back half of what they cost. */
 export interface Complaint {
@@ -457,6 +462,8 @@ export interface Complaint {
   regular?: number;
   /** The day they are due back, once they have been asked; missing until then. */
   due?: number;
+  /** How they were asked back, once they have been: free, unless they were offered half off. */
+  answer?: ComplaintAnswer;
 }
 
 /** A guest who enjoyed their visit and comes back every few weeks, greeted by name. */

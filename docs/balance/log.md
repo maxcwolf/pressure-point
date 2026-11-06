@@ -6,6 +6,25 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 6 November 2026, later: half off next visit
+
+Measured as entry 55, against the same games without `comp`: every campaign center, seeds 1 to 6, four years a game. `comp` now answers every complaint: a free treatment while the line its guest left has three or fewer waiting, and half off their next visit otherwise. Half off was run twice: first with its guests back at condition 70, as a free guest comes, then at full condition.
+
+### 56. Half off brings a small center back, once its guests come as well as anyone does
+
+**Done** (`src/core/sim/complaints.ts`, `src/core/sim/arrivals.ts`, `src/core/data/rules.ts`): Max's second answer, half off next visit, a quarter of the cost back at once and the guest back in 3 to 10 days in a new guest's place, paying half. Its guests come at full condition.
+
+| Run                           | Mean star months  | Median paired star difference | Stars more than half a month sooner / later (of 30) | Lowest month's reputation, mean paired difference | Profit a month, months 13 to 47, median | Games lost                                  |
+| ----------------------------- | ----------------- | ----------------------------- | --------------------------------------------------- | ------------------------------------------------- | --------------------------------------- | ------------------------------------------- |
+| without comp                  | 5.2 / 11.2 / 17.3 |                               |                                                     |                                                   | $10.5k                                  | 1 (High Pines 2)                            |
+| free only (entry 55)          | 5.2 / 14.5 / 20.2 | 0.0 / 0.0 / +0.8              | 2 / 3, 8 / 11, 12 / 16                              | −1.3                                              | $12.2k                                  | 3 (The Exchange 4, High Pines 1, Orchard 3) |
+| both, half off at 70          | 5.2 / 15.3 / 20.9 | 0.0 / 0.0 / +0.4              | 2 / 3, 10 / 11, 14 / 15                             | −3.6                                              | $12.2k                                  | 3 (Willow Lane 1, High Pines 1, Orchard 3)  |
+| both, half off at full health | 5.5 / 13.7 / 19.4 | 0.0 / 0.0 / −0.1              | 2 / 3, 10 / 12, 14 / 14                             | −0.3                                              | $11.0k                                  | 2 (High Pines 3, Orchard 3)                 |
+
+**At condition 70, half off was a trap.** Its guests wait in line as anyone does, and the bot offers it when the line is long: 145 of the 262 whose visit ended were let down again (55%), 60 of 93 worse-off guests going home worse off once more, after waits of 12 to 20 days. Ordinary guests in the same games go home worse off 6% of the time. A free guest goes first, so condition 70 costs them little. At full condition, 294 of 407 guests offered half off were healed (72%), close to the free treatment's 77% (1,266 of 1,646).
+
+**Neither answer is a shortcut.** With both, no star comes measurably sooner: the median paired difference is nothing for the first two stars and a tenth of a month sooner for the third, and the lowest month's reputation is a third of a point lower on average. **Half off saved Willow Lane seed 1**, the game entry 55 sank: it earned its stars at months 13.8 and 16.3 (11.7 and 13.7 without `comp`), where free treatments alone never earned the second. A free treatment still sinks a center now and then: Willow Lane seed 3 earned its second star at month 17.9 in both runs with `comp` (5.9 without), and The Orchard seed 3 was lost in all three. The bot's rule of three waiting is generous to the free treatment at a center with few tables; its tooltip now says it takes a turn from a paying guest.
+
 ## 6 November 2026: Make it right, with and without the bot answering
 
 Measured with `yarn balance` on `claude/make-it-right` (on `f5e3a257`, after 0.36.0), every campaign center, seeds 1 to 6, four years a game: the good bot, and the good bot with `BOT_ON=comp`, which asks back every guest who went home worse off and a storm-out's or an accident's guest only while the line they left has three or fewer waiting. Both runs file complaints; without `comp` they all lapse, so that run plays as the game did before. A star never earned counts as month 48; differences are paired seed by seed.

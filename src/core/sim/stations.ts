@@ -49,7 +49,7 @@ import { badTrip, blessBonus, goodTrip, isTrip, settingWeight } from './ceremoni
 import { guestById, say, staffById } from './chars';
 import { accessIndex, findAccess, release } from './claims';
 import { dueForSpot, isClassLead, restDue, updateClass } from './classes';
-import { madeRight } from './complaints';
+import { feeShare, madeRight } from './complaints';
 import type { SimContext } from './context';
 import { changeRep, earn, priceFor, putOffChance } from './economy';
 import { emit, tipOnce } from './events';
@@ -390,9 +390,9 @@ function completeScan(ctx: SimContext, it: Item, g: Guest) {
   g.diagnosis = 1;
   g.scanned = true;
   g.scanLevel = it.level;
-  // free for a guest asked back after a complaint
-  if (g.comp === undefined) {
-    const fee = Math.round(ASSESS_FEE * ctx.s.priceLevel);
+  // free for a guest asked back after a complaint, and half for one offered half off
+  if (feeShare(g) > 0) {
+    const fee = Math.round(ASSESS_FEE * ctx.s.priceLevel * feeShare(g));
     earn(ctx, fee, 'consult', g.x, g.y);
     g.spent += fee;
   }
@@ -470,8 +470,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const structural = !!conditionOf(g.condition).structural;
     const gain = CONSULT_GAIN.base + staff.skill * CONSULT_GAIN.rank + rnd(ctx.s, 0, CONSULT_GAIN.luck);
     g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? STRUCTURAL_SURE : 1);
-    if (g.comp === undefined) {
-      const fee = Math.round(CONSULT_FEE * price);
+    if (feeShare(g) > 0) {
+      const fee = Math.round(CONSULT_FEE * price * feeShare(g));
       earn(ctx, fee, 'consult', g.x, g.y);
       g.spent += fee;
     }
@@ -538,10 +538,12 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (isTrip(mod)) goodTrip(g);
       // a guest asked back after a complaint pays nothing, and wins back half of what the complaint cost
       if (g.comp !== undefined) madeRight(ctx, g);
+      // one back for half off finds it good value, and says so in their review
+      if (g.halfOff !== undefined) feel(g, 'bargain');
       countVisit(ctx, g, 'healed');
       if (g.comp === undefined) {
-        // and a loyal regular tips on top
-        const fee = guestFee(ctx.s, g);
+        // and a loyal regular tips on top; a guest back for half off pays half of it all
+        const fee = Math.round(guestFee(ctx.s, g) * feeShare(g));
         earn(ctx, fee, 'treatment', g.x, g.y);
         g.spent += fee;
         // good value earns a better name than a steep bill does

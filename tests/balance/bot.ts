@@ -230,9 +230,9 @@ export const BOT_FLAGS = [
    */
   'sloppy',
   /**
-   * Answer complaints as the design doc's good player does: every one left by a guest who went home worse off, the
-   * dearest, and a storm-out's or an accident's only while the line its guest left has three or fewer waiting. An
-   * extra, so the rerun can measure what Make it right gives back against the bot without it (balance log 55).
+   * Answer every complaint as a good player would: a free treatment while the line its guest left has three or fewer
+   * waiting, and half off their next visit otherwise, which takes no table from a paying guest. An extra, so the rerun
+   * can measure what Make it right gives back against the bot without it (balance logs 55 and 56).
    */
   'comp',
 ] as const;
@@ -682,10 +682,15 @@ export interface Playtest {
 /** Complaints over a game, each count by how the visit that left the complaint ended. */
 export interface ComplaintLog {
   filed: Record<ComplaintEnd, number>;
+  /** Answered with a free treatment, and how those visits went. */
   answered: Record<ComplaintEnd, number>;
   healed: Record<ComplaintEnd, number>;
   /** Asked back and let down again: failed, stormed out, gone home worse off, had an accident or sent home. */
   letDown: Record<ComplaintEnd, number>;
+  /** Answered with half off their next visit, and how those visits went; not in older logs. */
+  halfOff?: Record<ComplaintEnd, number>;
+  halfOffHealed?: Record<ComplaintEnd, number>;
+  halfOffLetDown?: Record<ComplaintEnd, number>;
   lapsed: Record<ComplaintEnd, number>;
 }
 
@@ -937,7 +942,16 @@ export class Bot {
       hires: [],
       inspections: [],
       quirks: { hired: 0, flaws: 0, rares: {}, adds: 0, saves: 0, payroll: 0 },
-      complaints: { filed: byEnd(), answered: byEnd(), healed: byEnd(), letDown: byEnd(), lapsed: byEnd() },
+      complaints: {
+        filed: byEnd(),
+        answered: byEnd(),
+        healed: byEnd(),
+        letDown: byEnd(),
+        halfOff: byEnd(),
+        halfOffHealed: byEnd(),
+        halfOffLetDown: byEnd(),
+        lapsed: byEnd(),
+      },
     };
     this.watch = this.freshWatch();
   }
@@ -1535,27 +1549,32 @@ export class Bot {
       this.complaintsSeen.delete(id);
     }
     for (const g of s.guests) {
-      if (g.comp === undefined || this.askedBackDone.has(g.id)) continue;
+      const half = g.halfOff !== undefined;
+      if ((g.comp === undefined && !half) || this.askedBackDone.has(g.id)) continue;
       if (!g.outcome) {
         this.askedBack.set(g.id, g.compEnd ?? 'stormed');
         continue;
       }
       const end = this.askedBack.get(g.id) ?? g.compEnd ?? 'stormed';
-      if (g.outcome === 'healed') log.healed[end]++;
-      else log.letDown[end]++;
+      const healed = g.outcome === 'healed';
+      const counts = half ? (healed ? log.halfOffHealed : log.halfOffLetDown) : healed ? log.healed : log.letDown;
+      if (counts) counts[end]++;
       this.askedBack.delete(g.id);
       this.askedBackDone.add(g.id);
     }
   }
 
   /**
-   * Once a day, with `comp`: ask back every guest who went home worse off, and one who stormed out or had an accident
-   * only while the line they left has three or fewer waiting.
+   * Once a day, with `comp`: a free treatment while the line the guest left has three or fewer waiting, and half off
+   * their next visit otherwise.
    */
   private answerComplaints() {
+    const log = this.log.complaints;
     for (const c of this.sim.openComplaints()) {
-      if (c.end !== 'worse' && this.waitingFor(c) > 3) continue;
-      if (this.sim.answerComplaint(c.id) && this.log.complaints) this.log.complaints.answered[c.end]++;
+      const free = this.waitingFor(c) <= 3;
+      if (!this.sim.answerComplaint(c.id, free ? 'free' : 'half-off') || !log) continue;
+      const counts = free ? log.answered : log.halfOff;
+      if (counts) counts[c.end]++;
     }
   }
 

@@ -87,8 +87,8 @@ export function tipFor(s: GameState, g: Pick<Guest, 'regular'>, fee: number): nu
  * or devoted one, who knows what the center is worth, not at all. Nor does an emergency guest, who has no choice, nor
  * one asked back after a complaint, who pays nothing.
  */
-export function mindsPrice(s: GameState, g: Pick<Guest, 'regular' | 'emergency' | 'comp'>): number {
-  if (g.emergency || g.comp !== undefined) return 0;
+export function mindsPrice(s: GameState, g: Pick<Guest, 'regular' | 'emergency' | 'comp' | 'halfOff'>): number {
+  if (g.emergency || g.comp !== undefined || g.halfOff !== undefined) return 0;
   const r = regularOf(s, g);
   if (!r) return 1;
   return loyaltyLevel(r.loyalty) === 'regular' ? REGULAR_PUT_OFF : 0;

@@ -1,6 +1,6 @@
 // What the interface says about a complaint: what went wrong, what asking the guest back does, and when they are due.
 
-import { COMP_SHARE, COMPLAINT_DAYS, MODALITIES } from '../../core/data';
+import { COMP_SHARE, COMPLAINT_DAYS, HALF_OFF_DAYS, HALF_OFF_SHARE, MODALITIES } from '../../core/data';
 import type { Complaint } from '../../core/state/types';
 
 /** A count of days, in words: "1 day", "9 days". */
@@ -20,16 +20,28 @@ export function complaintSaid(c: Complaint): string {
     : `${c.name} stormed out after ${days} waiting.`;
 }
 
-/** The reputation healing a guest asked back wins back, to a tenth. */
-export const complaintBack = (c: Pick<Complaint, 'cost'>) => Math.round(c.cost * COMP_SHARE * 10) / 10;
+/** A share of what a complaint cost, in reputation to a tenth. */
+const shareOf = (c: Pick<Complaint, 'cost'>, share: number) => Math.round(c.cost * share * 10) / 10;
 
-/** What asking a guest back does, for the tooltip on Make it right. */
+/** The reputation healing a guest asked back wins back, to a tenth. */
+export const complaintBack = (c: Pick<Complaint, 'cost'>) => shareOf(c, COMP_SHARE);
+
+/** What asking a guest back free does, for the tooltip on Free treatment. */
 export const makeItRightNote = (c: Pick<Complaint, 'cost'>) =>
-  `Free, first in line. Healed: +${complaintBack(c)} reputation back. Let down again: the usual loss, and no second chance.`;
+  `Free, first in line, tomorrow. Healed: +${complaintBack(c)} reputation back. Takes a turn from a paying guest. Let down again: the usual loss, and no second chance.`;
+
+/** What offering half off does, for the tooltip on Half off next visit. */
+export const halfOffNote = (c: Pick<Complaint, 'cost'>) =>
+  `+${shareOf(c, HALF_OFF_SHARE)} reputation back now. They come back in ${HALF_OFF_DAYS.min} to ${HALF_OFF_DAYS.max} days in a new guest's place, wait in line as usual and pay half. Let down again: the usual loss.`;
 
 /** Where a complaint stands: how long it has left for an answer, or when its guest is due back. */
-export function complaintNote(c: Pick<Complaint, 'day' | 'due'>, day: number): string {
-  if (c.due !== undefined) return c.due <= day ? 'Asked back: on their way' : 'Asked back: due tomorrow';
+export function complaintNote(c: Pick<Complaint, 'day' | 'due' | 'answer'>, day: number): string {
+  if (c.due !== undefined) {
+    const asked = c.answer === 'half-off' ? 'Half off' : 'Asked back';
+    if (c.due <= day) return `${asked}: on their way`;
+    const days = Math.ceil(c.due - day);
+    return `${asked}: due ${days <= 1 ? 'tomorrow' : `in ${dayCount(days)}`}`;
+  }
   const left = Math.max(1, Math.ceil(c.day + COMPLAINT_DAYS - day));
   return `Lapses in ${dayCount(left)}`;
 }

@@ -2,8 +2,17 @@
 // can be asked back, free and first in line, to win back half of what they cost. Their arrival is in `arrivals`, the
 // front of the line in `lines`, and the visit going free in `stations`.
 
-import { COMP_SHARE, COMPLAINT_DAYS, conditionOf, DAY_SECONDS } from '../data';
-import type { Complaint, ComplaintEnd, GameState, Guest } from '../state/types';
+import {
+  COMP_SHARE,
+  COMPLAINT_DAYS,
+  conditionOf,
+  DAY_SECONDS,
+  HALF_OFF_DAYS,
+  HALF_OFF_PAY,
+  HALF_OFF_SHARE,
+} from '../data';
+import { rnd } from '../random';
+import type { Complaint, ComplaintAnswer, ComplaintEnd, GameState, Guest } from '../state/types';
 import { clamp } from '../util';
 import type { SimContext } from './context';
 import { emit, toast } from './events';
@@ -16,6 +25,7 @@ import { logNews, madeRightNews } from './news';
  */
 export const complains = (g: Guest) =>
   g.comp === undefined &&
+  g.halfOff === undefined &&
   !g.emergency &&
   !g.classDay &&
   (g.outcome === 'worse' || (g.outcome === 'stormed' && !g.feelings.includes('pricey')));
@@ -69,18 +79,36 @@ export function fileComplaint(ctx: SimContext, g: Guest, cost: number) {
 /** The complaints still waiting for an answer, oldest first. */
 export const openComplaints = (s: GameState) => s.complaints.filter((c) => c.due === undefined);
 
-/** The guest asked back who is due soonest, if any is due by now. */
-export const dueComplaint = (s: GameState): Complaint | undefined =>
-  s.complaints.filter((c) => c.due !== undefined && c.due <= s.day).sort((a, b) => (a.due ?? 0) - (b.due ?? 0))[0];
+/** The guest asked back, free or for half off as asked, who is due soonest, if any is due by now. */
+export const dueComplaint = (s: GameState, answer: ComplaintAnswer = 'free'): Complaint | undefined =>
+  s.complaints
+    .filter((c) => c.due !== undefined && c.due <= s.day && (c.answer ?? 'free') === answer)
+    .sort((a, b) => (a.due ?? 0) - (b.due ?? 0))[0];
+
+/** What a guest pays of their fees: nothing asked back free, half offered half off, and otherwise all of them. */
+export const feeShare = (g: Pick<Guest, 'comp' | 'halfOff'>) =>
+  g.comp !== undefined ? 0 : g.halfOff !== undefined ? HALF_OFF_PAY : 1;
 
 /** Whether a regular has a complaint open or is due back for one, which holds their place and their next visit. */
 export const complaintHolds = (s: GameState, regular: number) => s.complaints.some((c) => c.regular === regular);
 
-/** Ask a guest back for a complaint still open: they are due the next day. False if there is no such complaint. */
-export function answerComplaint(ctx: SimContext, id: number): boolean {
-  const c = openComplaints(ctx.s).find((x) => x.id === id);
+/**
+ * Answer a complaint still open. Free, the guest is due the next day; half off, a quarter of what it cost comes back
+ * at once, added straight as the free treatment's half is, and they are due in a few days. False if there is no such
+ * complaint.
+ */
+export function answerComplaint(ctx: SimContext, id: number, answer: ComplaintAnswer = 'free'): boolean {
+  const s = ctx.s;
+  const c = openComplaints(s).find((x) => x.id === id);
   if (!c) return false;
-  c.due = Math.floor(ctx.s.day) + 1;
+  c.answer = answer;
+  if (answer === 'free') {
+    c.due = Math.floor(s.day) + 1;
+    return true;
+  }
+  // a whole number of days from today, from the fewest to the most
+  c.due = Math.floor(s.day) + Math.floor(rnd(s, HALF_OFF_DAYS.min, HALF_OFF_DAYS.max + 1));
+  s.reputation = clamp(s.reputation + c.cost * HALF_OFF_SHARE, 0, 100);
   return true;
 }
 

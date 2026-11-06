@@ -329,6 +329,20 @@ describe('play events', () => {
       expect.objectContaining({ end: 'accident', answer: 'asked-back', result: 'accident', cost: 3 }),
     ]);
     expect(closed(playEvents(markOf(s), s))).toEqual([]);
+    // one offered half off is counted as theirs once their visit ends
+    const half = spawnGuest(ctx, 'slump', false, 0, undefined, {
+      ...base,
+      id: 4,
+      end: 'worse',
+      day: 10,
+      cost: 6,
+      answer: 'half-off',
+    })!;
+    mark = markOf(s);
+    half.outcome = 'healed';
+    expect(closed(playEvents(mark, s))).toEqual([
+      expect.objectContaining({ end: 'worse', answer: 'half-off', result: 'healed', cost: 6 }),
+    ]);
   });
 
   it('count how visits end, and how a failed inspection is settled', () => {

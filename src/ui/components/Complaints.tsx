@@ -1,11 +1,12 @@
-// The complaints guests have left, each with what went wrong and, while it is open, Make it right and a way to let it
-// go: under their card at the side, and in the Reception Desk's inspector.
+// The complaints guests have left, each with what went wrong and, while it is open, the two ways to make it right (a
+// free treatment or half off their next visit) and a way to let it go: under their card at the side, and in the
+// Reception Desk's inspector.
 
 import type { Complaint } from '../../core/state/types';
 import { css } from '../../styled-system/css';
 import { goButton } from '../../styled-system/recipes';
 import { useGame } from '../hooks/use-hud';
-import { complaintNote, complaintSaid, makeItRightNote } from '../lib/complaints';
+import { complaintNote, complaintSaid, halfOffNote, makeItRightNote } from '../lib/complaints';
 import { cx } from '../lib/cx';
 import { Button } from './common/Button';
 import { smallButton } from './inspector/looks';
@@ -21,8 +22,8 @@ const list = css({
 /** What went wrong, and below it where it stands. */
 const said = css({ display: 'block', fontSize: '14', '& small': { display: 'block', opacity: 'muted' } });
 
-/** Make it right and the ✕ beside it. */
-const answers = css({ display: 'flex', alignItems: 'center', gap: '6' });
+/** The two answers and the ✕ beside them, wrapping onto a second line where the list is narrow. */
+const answers = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6' });
 
 /** The ✕ that lets a complaint go: a small round button. */
 const letGo = css({ px: '8' });
@@ -48,7 +49,16 @@ export function ComplaintList({ complaints }: { complaints: readonly Complaint[]
                   sim.answerComplaint(c.id);
                 }}
               >
-                Make it right
+                Free treatment
+              </Button>
+              <Button
+                class={cx(smallButton, 'half-off')}
+                title={halfOffNote(c)}
+                onPress={() => {
+                  sim.answerComplaint(c.id, 'half-off');
+                }}
+              >
+                Half off next visit
               </Button>
               <Button
                 class={cx(smallButton, letGo, 'let-go')}

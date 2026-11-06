@@ -60,7 +60,11 @@ for (const { center, seed, index } of RUNS) {
       const ends = (r: Record<string, number>) => `${r.stormed} / ${r.worse} / ${r.accident}`;
       process.stdout.write(
         `           complaints (stormed / worse / accident): left ${ends(c.filed)}, answered ${ends(c.answered)}, ` +
-          `healed ${ends(c.healed)}, let down ${ends(c.letDown)}, lapsed ${ends(c.lapsed)}\n`,
+          `healed ${ends(c.healed)}, let down ${ends(c.letDown)}, lapsed ${ends(c.lapsed)}` +
+          (c.halfOff && c.halfOffHealed && c.halfOffLetDown
+            ? `; half off ${ends(c.halfOff)}, healed ${ends(c.halfOffHealed)}, let down ${ends(c.halfOffLetDown)}`
+            : '') +
+          '\n',
       );
     }
     for (const m of l.machines)

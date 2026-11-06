@@ -525,6 +525,12 @@ export const COMPLAINT_DAYS = 5;
 export const COMP_CONDITION = 70;
 /** The share of what a complaint cost the center's name that healing its guest wins back. */
 export const COMP_SHARE = 0.5;
+/** The share of what a complaint cost that comes back at once when its guest is offered half off their next visit. */
+export const HALF_OFF_SHARE = 0.25;
+/** What a guest offered half off pays of their next visit's fees. */
+export const HALF_OFF_PAY = 0.5;
+/** The days, fewest and most, before a guest offered half off comes back. */
+export const HALF_OFF_DAYS = { min: 3, max: 10 } as const;
 /** How far a waiting guest sees litter from, in tiles. */
 export const LITTER_SIGHT = 2;
 /**

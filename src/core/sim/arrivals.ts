@@ -151,7 +151,12 @@ export function admitGuests(ctx: SimContext, dt: number) {
         if (s.wave) s.wave.came++;
       }
     } else if (forMachine) spawnGuest(ctx, forMachine);
-    else spawnGuest(ctx, undefined, false, 0, dueRegular(s));
+    else {
+      // a guest offered half off comes back in a new guest's place, as a regular due back does, and before one
+      const halfOff = dueComplaint(s, 'half-off');
+      if (halfOff) askBack(ctx, halfOff);
+      else spawnGuest(ctx, undefined, false, 0, dueRegular(s));
+    }
   } else countTurnedAway(ctx);
   s.spawnT = arrivalPace(ctx).seconds * rnd(s, 0.7, 1.3);
 }
@@ -161,7 +166,8 @@ function askBack(ctx: SimContext, c: Complaint) {
   const regular = c.regular === undefined ? undefined : ctx.s.regulars.find((r) => r.id === c.regular);
   if (!spawnGuest(ctx, c.condition, false, 0, regular, c)) return;
   closeComplaint(ctx, c, true);
-  announceAskedBack(ctx);
+  // the speakers' lines are about the robe and the front of the line, which half off has neither of
+  if (c.answer !== 'half-off') announceAskedBack(ctx);
 }
 
 /**
@@ -265,11 +271,14 @@ export function spawnGuest(
     emergency,
     placed: false,
     feelings: [],
-    health: emergency ? EMERGENCY_CONDITION : complaint ? COMP_CONDITION : 100,
+    // one asked back free comes the next day, a little worse for the wait at home, and goes first; one offered half
+    // off waits in line as anyone does, so comes as well as anyone does
+    health: emergency ? EMERGENCY_CONDITION : complaint && complaint.answer !== 'half-off' ? COMP_CONDITION : 100,
     stressed: false,
     calmed: false,
     classDay,
-    ...(complaint && { comp: complaint.cost, compEnd: complaint.end }),
+    ...(complaint && (complaint.answer === 'half-off' ? { halfOff: complaint.cost } : { comp: complaint.cost })),
+    ...(complaint && { compEnd: complaint.end }),
   };
   if (classDay) {
     decide(ctx, g);
@@ -286,7 +295,14 @@ export function spawnGuest(
   }
   s.guests.push(g);
   if (regular) welcomeBack(ctx, g, regular);
-  else if (complaint) emit(ctx, { type: 'float', text: 'Asked back', x: g.x, y: g.y, kind: 'good' });
+  else if (complaint)
+    emit(ctx, {
+      type: 'float',
+      text: g.halfOff !== undefined ? 'Half off' : 'Asked back',
+      x: g.x,
+      y: g.y,
+      kind: 'good',
+    });
   // a class-goer is counted when their class is done, not as a guest come for treatment
   if (!classDay) countArrival(ctx);
   arriveCarrying(ctx, g);

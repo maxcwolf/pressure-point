@@ -81,8 +81,11 @@ export interface PlayMark {
   paper: Paper | null;
   /** The complaints on the list, open or answered, by id. */
   complaints: ReadonlyMap<number, Complaint>;
-  /** The guests asked back whose visit has not ended yet, by id, with how the visit that left the complaint ended. */
-  askedBack: ReadonlyMap<number, { end: ComplaintEnd; cost: number }>;
+  /**
+   * The guests back after a complaint whose visit has not ended yet, by id: how the visit that left the complaint
+   * ended, what it cost, and whether they were asked back free or offered half off.
+   */
+  askedBack: ReadonlyMap<number, { end: ComplaintEnd; cost: number; answer: 'asked-back' | 'half-off' }>;
 }
 
 /** The offers a game makes, which the player takes on, turns down or lets lapse. */
@@ -128,8 +131,15 @@ export function markOf(s: GameState): PlayMark {
     complaints: new Map(s.complaints.map((c) => [c.id, c])),
     askedBack: new Map(
       s.guests
-        .filter((g) => g.comp !== undefined && !g.outcome)
-        .map((g) => [g.id, { end: g.compEnd ?? 'stormed', cost: g.comp ?? 0 }]),
+        .filter((g) => (g.comp !== undefined || g.halfOff !== undefined) && !g.outcome)
+        .map((g) => [
+          g.id,
+          {
+            end: g.compEnd ?? 'stormed',
+            cost: g.comp ?? g.halfOff ?? 0,
+            answer: g.halfOff !== undefined ? 'half-off' : 'asked-back',
+          },
+        ]),
     ),
   };
 }
@@ -311,7 +321,7 @@ function complaintEvents(mark: PlayMark, s: GameState, game: PlayProps): PlayEve
     const result = g ? askedBackResult(g) : 'gone';
     out.push({
       name: 'complaint_closed',
-      props: { ...game, end: was.end, answer: 'asked-back', result, cost: round1(was.cost) },
+      props: { ...game, end: was.end, answer: was.answer, result, cost: round1(was.cost) },
     });
   }
   return out;

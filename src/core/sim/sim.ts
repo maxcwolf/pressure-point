@@ -29,6 +29,7 @@ import { featureOn, offeringOn } from '../state/game';
 import type {
   Char,
   Complaint,
+  ComplaintAnswer,
   FailedTreatment,
   GameState,
   Guest,
@@ -853,9 +854,9 @@ export class Sim {
     return openComplaints(this.ctx.s);
   }
 
-  /** Ask a guest back for their complaint: free and first in line, due the next day. */
-  answerComplaint(id: number): boolean {
-    return answerComplaint(this.ctx, id);
+  /** Answer a complaint: a free treatment, first in line, the next day; or half off their next visit, in a few days. */
+  answerComplaint(id: number, answer: ComplaintAnswer = 'free'): boolean {
+    return answerComplaint(this.ctx, id, answer);
   }
 
   /** Let a complaint go, unanswered. */

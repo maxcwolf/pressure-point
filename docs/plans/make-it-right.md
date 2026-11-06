@@ -2,7 +2,7 @@
 
 A plan, 3 November 2026, for building [Make It Right](../planning/fun/make-it-right.md): a guest the center let down leaves a complaint, and the player can ask them back, free and first in line, to win back half of what they cost. The design doc has the reasoning, the jokes and the risks; this has the decisions, the rules as they will be built, and where each piece goes, checked against the code at `f5e3a257` (after 0.36.0).
 
-Steps 1 to 3 are built: the rule (`src/core/sim/complaints.ts`), the card at the side and the Reception Desk's Complaints (`src/ui/components/Complaints.tsx`), the gold robe (`ROBE` and `detailRobe`) and the spike of slips on the desk's model. Each complaint also keeps how many days its guest had waited, for the card to say. Step 4 is built too: the `made-right` feeling, with a gold robe for its icon, which a guest made right writes about above anything else that pleased them; the Rag's `made-right` story, one a quarter, which keeps how the complaint's visit ended on the guest as `Guest.compEnd`; the lesson line, at the end of the stormed lesson's words, since its four pictures are the most a card has; and the three PA lines, in the game and listed in [announcements.md](../dev/announcements.md) but not recorded yet. Step 5 is built too: the `complaint_closed` play statistic, the bot's `comp` extra and its rerun, [balance log entry 55](../balance/log.md), which kept the half.
+Steps 1 to 3 are built: the rule (`src/core/sim/complaints.ts`), the card at the side and the Reception Desk's Complaints (`src/ui/components/Complaints.tsx`), the gold robe (`ROBE` and `detailRobe`) and the spike of slips on the desk's model. Each complaint also keeps how many days its guest had waited, for the card to say. Step 4 is built too: the `made-right` feeling, with a gold robe for its icon, which a guest made right writes about above anything else that pleased them; the Rag's `made-right` story, one a quarter, which keeps how the complaint's visit ended on the guest as `Guest.compEnd`; the lesson line, at the end of the stormed lesson's words, since its four pictures are the most a card has; and the three PA lines, in the game and listed in [announcements.md](../dev/announcements.md) but not recorded yet. Step 5 is built too: the `complaint_closed` play statistic, the bot's `comp` extra and its rerun, [balance log entry 55](../balance/log.md), which kept the half. Half off next visit is built too, from decisions 8 and 9, and measured in [entry 56](../balance/log.md). The free treatment's new terms (decision 10) are still to build.
 
 The robe's gold is a deep amber, `0xda8f00`, with a faint glow of its own: the Shaman's poncho and the Caretaker's bib are golds already, and no gold clears them by the 15 the guests' clothes keep, so the robe stays more than 8 from every uniform, 15 from every guest's clothes, and is told apart by its shape, to the knee with a cream sash. The lab shows it on any guest with **Asked back**. The slips show only complaints still waiting for an answer, so pressing Make it right takes one off the spike.
 
@@ -21,6 +21,12 @@ Settled by Max on 3 November 2026, unless marked as the design doc's default:
 5. **In addition to the usual arrivals** (the design doc's default), so what a complaint costs is the table's time, not a paying guest.
 6. **One chance a guest** (default): a guest asked back who is let down again pays the usual loss, and raises no second complaint.
 7. **Emergencies still go first** (default): with Emergencies First on, as it is in new games since 0.36.0, an emergency guest goes ahead of a guest asked back.
+
+Settled by Max on 6 November 2026, after the bot's rerun (balance log 55), in the design doc's [Two answers](../planning/fun/make-it-right.md#two-answers-6-november-2026):
+
+8. **Two answers on every complaint:** **Half off next visit** and **Free treatment**, beside ✕. No refunds: they wait for reviews that count, in [ideas.md](../planning/ideas.md).
+9. **Half off always brings them back,** in 3 to 10 days, in a new guest's place.
+10. **The free treatment, healed, wins back all of it** and makes them a regular with high loyalty, with a sure diagnosis and a "Second look" of 10 points on the chance. Settled, not built yet.
 
 ## Rules
 
@@ -45,6 +51,8 @@ The tooltip on Make it right: "Free, first in line. Healed: +1.5 reputation back
 **Made right.** Healed, they float "Made right", `COMP_SHARE` (0.5) of the complaint's cost comes back, and their review gains the `made-right` feeling. The heal counts everywhere else as a heal: the month's tally, goals, the casebook, the discipline's following, a staff member's experience.
 
 **Let down again.** A failed treatment, a storm-out, going worse off or an accident costs what it always costs, and raises no complaint.
+
+**Half off next visit.** Pressed, `HALF_OFF_SHARE` (a quarter) of the complaint's cost comes back at once, added straight as the free treatment's half is, and the guest is due in 3 to 10 days (`HALF_OFF_DAYS`). They come in a new guest's place, as a regular due back does, ahead of one, with the same ailment, the diagnosis they had and full patience, in their own clothes, and at full condition: they wait in line as anyone does, and at condition 70, as a free guest comes, 65% of the worse-off guests the bot offered half off went home worse off again (balance log 56). They join each line at the back, pay `HALF_OFF_PAY` (half) of the consultation, the scan and the treatment, tip included, and never balk at a price. Healed, the heal's usual reputation, and they feel it was good value (`bargain`). Let down again, the usual loss, and no second complaint. The card says "Half off: due in 4 days", then "Half off: on their way".
 
 **Regulars.** An open complaint holds a regular's place among the `REGULARS_MAX` (12) and their due day, even if the visit took their loyalty to 0, so they come back as themselves. The visit they are asked back for moves their loyalty by its stars, as any visit does. A complaint that lapses or is dropped lets the regulars' own rule apply as today.
 
