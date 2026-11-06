@@ -2,9 +2,9 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.36.1
 
-- **Make it right.** A guest who storms out, goes home worse off or goes home after an accident now leaves a complaint, on a card at the side and in the Reception Desk's inspector, and a pink slip on a spike on the desk. Within 5 days, answer it one of two ways. **Free treatment:** they come back the next day in the center's gold robe, free and first in every line, sure of what they have and likelier to be healed, and healed, they win back all the reputation they cost and become a loyal regular. **Half off next visit:** a quarter of it comes back at once, and they come back in 3 to 10 days in a new guest's place, wait in line as anyone does and pay half. Let down again, they cost it in full, and there is no second chance. Their review says they were made right, and the town paper may print it.
+- **Make it right.** A guest who storms out, goes home worse off or has an accident now leaves a complaint, on a card at the side, in the Reception Desk's inspector and as a pink slip on the desk. Answer it within 5 days with a **free treatment**: they come back the next day in a gold robe, first in line and likelier to be healed, and healed, they win back all the reputation they cost and become a loyal regular. Or offer **half off their next visit**: a quarter comes back at once, and they return in 3 to 10 days and pay half. Let down again, they cost it in full.
 - **Held back by training.** Someone with the experience for their next rank but a qualification slot still empty now waits on a card at the side, as a raise or a promotion does, "needs training to be promoted", and has a Training Room mark on their row in the Staff menu. Their inspector says which rank they have the experience for.
 
 ## v0.36.0
