@@ -56,6 +56,16 @@ export const mishapCarrier = (s: GameState) => (mishapOn(s) && !s.mishap?.prepar
 /** Whether the mishap coming or under way is taken care of: prepared for, or kept at bay by something here. */
 export const mishapCovered = (s: GameState) => !!s.mishap && (s.mishap.prepared || !!mishapHolder(s));
 
+/**
+ * The mishap coming or under way that was prepared for at its price, so the work shows, or undefined. A save from
+ * before `paid` was kept: prepared for with no ward asked, as nobody can ask for a ward once it is prepared for.
+ */
+export function paidFor(s: GameState): MishapId | undefined {
+  const m = s.mishap;
+  if (!m?.prepared) return undefined;
+  return (m.paid ?? !m.ward) ? m.kind : undefined;
+}
+
 /** The mishap under way, if it has taken anything out of action as things stand. */
 export function mishapStopping(s: GameState): MishapDef | undefined {
   const def = mishapOn(s);
@@ -106,6 +116,7 @@ export function prepareMishap(ctx: SimContext): boolean {
   }
   spend(ctx, def.prepare.cost, 'building');
   m.prepared = true;
+  m.paid = true;
   toast(ctx, `Prepared for the ${def.name.toLowerCase()}. ${def.prepare.effect}`, 'good', undefined, def.icon);
   emit(ctx, { type: 'sfx', name: 'cash' });
   return true;

@@ -21,6 +21,7 @@ import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
 import { PeopleLayer } from './people';
 import { Picker, type Selection } from './picking';
+import { PreparationsLayer } from './preparations';
 import { RainLayer } from './rain';
 import { RoomsLayer } from './rooms';
 import { buildScenery, buildShell } from './scenery';
@@ -92,6 +93,7 @@ export class View {
   private snow: SnowfallLayer;
   private rain: RainLayer;
   private storefront: StorefrontLayer;
+  private preparations: PreparationsLayer;
   private brigade: BrigadeLayer;
   readonly overlays: Overlays;
   private heat: Heatmap;
@@ -144,6 +146,7 @@ export class View {
     this.snow = new SnowfallLayer(this.scene, sim);
     this.rain = new RainLayer(this.scene, sim);
     this.storefront = new StorefrontLayer(this.scene, sim);
+    this.preparations = new PreparationsLayer(this.scene, sim);
     this.brigade = new BrigadeLayer(this.scene, sim);
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
@@ -194,6 +197,7 @@ export class View {
     if (turn === this.facing) return;
     this.facing = turn;
     this.rooms.setTurn(turn);
+    this.preparations.setTurn(turn);
     // what hangs on the walls now cut low shows as a ghost of itself, and on the walls now standing tall as itself
     this.items.setTurn(turn);
     this.overlays.turn = turn;
@@ -262,6 +266,7 @@ export class View {
     this.snow.update(this.time);
     this.rain.update(this.time);
     this.storefront.update();
+    this.preparations.update();
     this.brigade.update(this.time, this.rig.reduceMotion());
     this.land.update();
     this.items.animate(this.time);

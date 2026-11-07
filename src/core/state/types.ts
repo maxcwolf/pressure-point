@@ -848,6 +848,11 @@ export interface Mishap {
   starts: number;
   ends: number;
   prepared: boolean;
+  /**
+   * Prepared for at its price, rather than by a ward that held, so the work shows in the center, such as boards over
+   * the windows before a storm. Left out in a save from before: worked out from the rest (see `paidFor`).
+   */
+  paid?: boolean;
   started: boolean;
   /** A Shaman's ward against it: asked for, or performed. It holds, or not, as the mishap starts. */
   ward?: 'asked' | 'done';
