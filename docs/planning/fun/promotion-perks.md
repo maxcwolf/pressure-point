@@ -2,7 +2,7 @@
 
 Drafted 2 November 2026 with Max, from the review of what to build next ([planning/ideas.md](../ideas.md), under Staff). Max settled the frame the same day: which promotions bring a choice, what applicants bring, and what Promote all does. He then changed what applicants bring: a perk from a hire is rare, and a Senior or Expert hire earns their choices by settling in. The perks and every number are first guesses.
 
-An idea, not a plan: nothing here is built.
+Built on 7 November 2026 (branch `feat/promotion-perks`), all but one piece: Name on the Door's regulars do not yet ask for them by name, though in their line they wait and tip as the perk says. On the same day Max asked for every upside a little stronger and every cost a little lower, so the numbers in the game are about a fifth better and a third cheaper than those below (`src/core/data/perks.ts` has them). The bot has not been rerun with perks, so they are still guesses.
 
 At the promotions to Senior and to Expert, the player picks one of two perks for the person promoted. Each perk is a trade-off, and which one is right depends on something the player can see in their own center. An applicant above Experienced almost never brings a perk. A Senior or Expert hire earns the choices their rank owes them by settling in: once they have earned as much experience in the center as the promotion would have taken, the same choice card comes. So someone raised in the center has their perks the day they are promoted, and a hire has them only after a while. The verb is shaping a person, and the reason to keep someone is what they have become, not a penalty on letting them go.
 

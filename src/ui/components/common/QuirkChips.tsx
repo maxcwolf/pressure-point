@@ -1,6 +1,6 @@
-// Chips naming someone's quirks, and on an applicant's card and in the inspector, what each one does.
+// Chips naming someone's quirks and perks, and on an applicant's card and in the inspector, what each one does.
 
-import { type TraitId, traitOf } from '../../../core/data';
+import { type PerkId, perkOf, type TraitId, traitOf } from '../../../core/data';
 import { css } from '../../../styled-system/css';
 import { cx } from '../../lib/cx';
 import { rareFirst } from '../../lib/quirks';
@@ -22,6 +22,7 @@ const chip = css({
   '&.good': { bg: 'good.bg', color: 'good' },
   '&.bad': { bg: 'bad.bg', color: 'bad' },
   '&.rare': { bg: 'highlight.bg', color: 'warn', borderColor: 'highlight' },
+  '&.perk': { bg: 'info.bg', color: 'info', borderColor: 'info.light' },
 });
 
 /** The chips in a row, as on a row of the Staff menu. */
@@ -53,6 +54,55 @@ function Chip({ id, spelled = false }: { id: TraitId; spelled?: boolean }) {
     >
       {def.rare ? `★ ${def.name}` : def.name}
     </span>
+  );
+}
+
+/** The chip for a perk, blue and ringed, with what it does as its tooltip unless that is written out beside it. */
+function PerkChip({ id, spelled = false }: { id: PerkId; spelled?: boolean }) {
+  const def = perkOf(id);
+  return (
+    <span class={cx('perk', 'chip', chip)} title={spelled ? undefined : def.desc}>
+      {`◆ ${def.name}`}
+    </span>
+  );
+}
+
+/** The word that marks a perk brought from someone's last job, between its chip and what it does. */
+const broughtWord = css({ fontSize: '12', fontWeight: 'bold', color: 'info' });
+
+/**
+ * Someone's perks as chips after their quirks, each with what it does on hover, or with `spell`, on a line of its own
+ * with what it does after it, and for one they brought from their last job, a word saying so.
+ */
+export function PerkChips({
+  perks,
+  brought,
+  spell = false,
+}: {
+  perks: readonly PerkId[];
+  brought?: PerkId | undefined;
+  spell?: boolean;
+}) {
+  if (!perks.length) return null;
+  if (!spell)
+    return (
+      <div class={cx('perks', row)}>
+        {perks.map((p) => (
+          <PerkChip key={p} id={p} />
+        ))}
+      </div>
+    );
+  return (
+    <div class={cx('perks', 'spelled', lines)}>
+      {perks.map((p) => (
+        <div key={p} class="perk-line">
+          <PerkChip id={p} spelled />
+          {p === brought && <span class={broughtWord}>{'from their last job\u00a0·\u00a0'}</span>}
+          {perkOf(p).desc}
+          {perkOf(p).joke && <em>{` ${perkOf(p).joke ?? ''}`}</em>}
+        </div>
+      ))}
+    </div>
   );
 }
 

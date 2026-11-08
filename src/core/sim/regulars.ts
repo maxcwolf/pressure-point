@@ -25,9 +25,11 @@ import {
 } from '../data';
 import type { GameState, Guest, Regular } from '../state/types';
 import { clamp } from '../util';
+import { staffById } from './chars';
 import { complains, complaintHolds } from './complaints';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
+import { perkProduct } from './perks';
 
 /** The technique whose guests all come back as regulars. */
 export const VISION_QUEST: Modality = 'quest';
@@ -39,8 +41,15 @@ export function loyaltyLevel(loyalty: number): LoyaltyLevel {
   return 'regular';
 }
 
-/** Whether a guest who gave their visit these stars takes to the place: one in a few of those who enjoyed it. */
-export const takesToPlace = (id: number, stars: number) => stars >= REGULAR_STARS && id % REGULAR_ODDS === 0;
+/**
+ * Whether a guest who gave their visit these stars takes to the place: one in a few of those who enjoyed it, settled by
+ * their id, and `odds` times as many as that for a class-goer whose Instructor's perk changes it.
+ */
+export const takesToPlace = (id: number, stars: number, odds = 1) =>
+  stars >= REGULAR_STARS &&
+  (odds >= 1
+    ? id % REGULAR_ODDS < Math.min(REGULAR_ODDS, Math.round(odds))
+    : id % Math.round(REGULAR_ODDS / odds) === 0);
 
 /** How a visit changes a regular's loyalty, by the stars they gave it. */
 export const loyaltyChange = (stars: number) => LOYALTY_BY_STARS[clamp(Math.round(stars), 1, 5) - 1] ?? 0;
@@ -145,7 +154,9 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
       );
     return;
   }
-  if (!quest && !wonBack && (!takesToPlace(g.id, stars) || s.regulars.length >= REGULARS_MAX)) return;
+  // the Instructor who led a class-goer's class makes a regular of them more often or less, as their perk has it
+  const odds = g.ledBy ? perkProduct(staffById(ctx, g.ledBy), 'regulars') : 1;
+  if (!quest && !wonBack && (!takesToPlace(g.id, stars, odds) || s.regulars.length >= REGULARS_MAX)) return;
   const added: Regular = {
     id: g.id,
     name: g.name,

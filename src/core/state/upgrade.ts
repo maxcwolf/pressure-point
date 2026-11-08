@@ -12,6 +12,7 @@ import {
   FEELINGS,
   FOLLOWING,
   type ItemType,
+  knownPerk,
   type Land,
   type Modality,
   quirkFits,
@@ -20,6 +21,7 @@ import {
   type Role,
   ROLES,
   ROOMS,
+  tiersOwed,
   TRAITS,
 } from '../data';
 import { tuning } from '../difficulty';
@@ -361,7 +363,19 @@ export function upgradeSave(save: GameState) {
   if (s.version < 44) fitQuirks(save);
   if (s.version < 45) fixAmanda(save);
   if (s.version < 46) offerBribes(save);
+  if (s.version < 50) owePerks(save);
+  // a perk from a newer version means nothing here
+  for (const st of s.staff) st.perks = st.perks.filter(knownPerk);
+  for (const c of s.candidates) if (c.perk !== undefined && !knownPerk(c.perk)) delete c.perk;
   s.version = SAVE_VERSION;
+}
+
+/**
+ * Perks came with version 50. Nobody can tell who was raised here and who was hired in an older save, so every Senior
+ * and Expert already working counts as settled in: the choices their rank owes them wait on a card from today.
+ */
+function owePerks(s: GameState) {
+  for (const st of s.staff) st.perkDue = tiersOwed(st.skill).map((tier) => ({ tier, since: s.day }));
 }
 
 /** Whether the game still knows a quirk a save holds. */

@@ -9,6 +9,7 @@ import type { SimContext } from './context';
 import { spend } from './economy';
 import { emit, toast } from './events';
 import { mishapCarrier } from './mishaps';
+import { PIPES_WEAR } from './perks';
 import { upgradeWear } from './upgrades';
 import { stoneCooling, warmthAt } from './warmth';
 
@@ -31,7 +32,8 @@ export function wantsTending(it: Item): boolean {
 /** Add wear to an item after a use, or as much as `wear` would add. At full wear it breaks down. */
 export function addWear(ctx: SimContext, it: Item, wear = ITEMS[it.type].wear ?? 0) {
   // the sea air is hard on equipment, and upgraded equipment stands up to it better
-  const add = wear * (centerOf(ctx.s).wear ?? 1) * upgradeWear(it.level) * tuning(ctx.s, 'wear');
+  const add =
+    wear * (centerOf(ctx.s).wear ?? 1) * upgradeWear(it.level) * tuning(ctx.s, 'wear') * (it.pipes ? PIPES_WEAR : 1);
   if (!add || it.wear >= 100) return;
   it.wear = Math.min(100, it.wear + add);
   if (it.wear < 100) return;

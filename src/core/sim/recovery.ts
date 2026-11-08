@@ -2,7 +2,7 @@
 // With no free Lounger to go to, those treatments work less often and the guest leaves woozy.
 
 import { NO_REST_PENALTY, REST_SECONDS } from '../data';
-import type { Guest, Item } from '../state/types';
+import type { Guest, Item, Staff } from '../state/types';
 import { accessPose, accessTile } from '../world';
 import { say } from './chars';
 import { claim, findAccess, release } from './claims';
@@ -11,10 +11,14 @@ import { tipOnce } from './events';
 import { feel } from './feelings';
 import { useLinens } from './linens';
 import { canWalkTo, goTo } from './movement';
+import { perkRest } from './perks';
 import { modalityOf } from './treatments';
 
-/** Whether a guest's treatment leaves them needing a rest afterwards. */
-export const needsRest = (g: Guest) => !!modalityOf(g).rest;
+/**
+ * Whether a guest's treatment leaves them needing a rest afterwards, given by this member of staff: a Firm Hand's
+ * massages always do, and a Light Touch's never.
+ */
+export const needsRest = (g: Guest, st?: Staff) => perkRest(st, !!modalityOf(g).rest);
 
 /** The nearest free Lounger for a guest to rest on, if any. */
 export function restSpot(ctx: SimContext, g: Guest): { item: Item; idx: number } | null {
@@ -22,16 +26,16 @@ export function restSpot(ctx: SimContext, g: Guest): { item: Item; idx: number }
 }
 
 /** What a guest's treatment loses for want of somewhere to rest after it: nothing if it needs none or one is free. */
-export function restPenalty(ctx: SimContext, g: Guest): number {
-  return needsRest(g) && !restSpot(ctx, g) ? NO_REST_PENALTY : 0;
+export function restPenalty(ctx: SimContext, g: Guest, st?: Staff): number {
+  return needsRest(g, st) && !restSpot(ctx, g) ? NO_REST_PENALTY : 0;
 }
 
 /**
  * How a guest who needs a rest feels about where they rest, as their treatment ends: glad of a Lounger, noticing its
  * blanket, or woozy with nowhere to lie down. Returns the Lounger they will rest on, if any.
  */
-export function settleRest(ctx: SimContext, g: Guest): { item: Item; idx: number } | null {
-  if (!needsRest(g)) return null;
+export function settleRest(ctx: SimContext, g: Guest, st?: Staff): { item: Item; idx: number } | null {
+  if (!needsRest(g, st)) return null;
   const spot = restSpot(ctx, g);
   // a Lounger they cannot get to is none: they are not glad of it, and its blanket stays fresh for someone who can
   const [x, y] = spot ? accessTile(spot.item, spot.idx) : [g.tx, g.ty];

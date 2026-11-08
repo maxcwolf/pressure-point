@@ -1,7 +1,7 @@
 // Who staffs a station and who is in line at it, with the player's hand in the order.
 
 import { conditionOf, ITEMS, MODALITIES, ROLES } from '../../../core/data';
-import { matsPlayed } from '../../../core/sim/sessions';
+import { healerMats } from '../../../core/sim/sessions';
 import type { Guest, Item } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
 import { useGame, useHud } from '../../hooks/use-hud';
@@ -218,7 +218,7 @@ export function StationInfo({ item }: { item: Item }) {
         {staffed} <p class="sub">{sessionNote(session.lying, session.mats, session.playing)}</p>
         {staff && (
           <p class="sub">
-            <Line line={matsNote(session.mats, matsPlayed(staff.skill), staff.skill)} />
+            <Line line={matsNote(session.mats, healerMats(staff), staff.skill)} />
           </p>
         )}
       </>

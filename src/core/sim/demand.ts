@@ -38,7 +38,7 @@ import { practicable, signatureMachine } from './machines';
 import { campaignBoost } from './marketing';
 import { itemNoise } from './noise';
 import type { VisitEnd } from './records';
-import { isGroupStation, matsPlayed } from './sessions';
+import { healerMats, isGroupStation } from './sessions';
 import { offered, unlocked } from './treatments';
 import { openedEarly, waveReady } from './waves';
 
@@ -59,7 +59,7 @@ function roomCalm(ctx: SimContext, room: Room): number {
 /** How many mats the most senior Sound Healer on the payroll can play for: two with nobody yet. */
 function matsUsable(ctx: SimContext): number {
   const healers = ctx.s.staff.filter((st) => st.role === DISCIPLINES.sound.role && st.state !== 'leaving');
-  return healers.length ? Math.max(...healers.map((st) => matsPlayed(st.skill))) : 2;
+  return healers.length ? Math.max(...healers.map((st) => healerMats(st))) : 2;
 }
 
 /**

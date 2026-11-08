@@ -149,8 +149,9 @@ export const defaultPolicy = (): Policy => ({
  * 47: the Burnout Survivor quirk taken out of the game, and from anyone who has it.
  * 48: accidents on the floor, with a sandbox switch for them, on in a game saved before them.
  * 49: complaints from guests let down, and guests asked back after one.
+ * 50: perks chosen at the promotions to Senior and Expert. Every Senior and Expert already working is owed theirs.
  */
-export const SAVE_VERSION = 49;
+export const SAVE_VERSION = 50;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;
@@ -306,6 +307,9 @@ export const staffStart = (skill: number) =>
     rooms: [],
     offer: 0,
     call: null,
+    perks: [],
+    perkDue: [],
+    settling: [],
   }) satisfies Partial<Staff>;
 
 /** How an item starts out, new and on the floor. */

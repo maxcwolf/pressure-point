@@ -10,11 +10,12 @@ import { buttonRow, goButton, guideRing, panelCard, tabButton, tabStrip } from '
 import { useGame, useHud } from '../../hooks/use-hud';
 import { hireableRoles } from '../../lib/catalog';
 import { cx } from '../../lib/cx';
+import { applicantPerkNote } from '../../lib/perks';
 import { APPLICANT_SORTS, sorted } from '../../lib/sorts';
 import { Button } from '../common/Button';
 import { IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
-import { QuirkChips } from '../common/QuirkChips';
+import { PerkChips, QuirkChips } from '../common/QuirkChips';
 import { SortBy } from '../common/SortBy';
 import { Stars } from '../common/Stars';
 import { cardLook, cards, menuHead, menuPanel } from './looks';
@@ -89,6 +90,8 @@ export function HireMenu() {
             <QualChips quals={c.quals} />
             {/* an applicant from an older game can have none */}
             {c.traits.length ? <QuirkChips traits={c.traits} spell /> : <em class="none">No notable quirks</em>}{' '}
+            {c.perk && <PerkChips perks={[c.perk]} brought={c.perk} spell />}
+            {applicantPerkNote(c) && <p class="sub settling">{applicantPerkNote(c)}</p>}
             <div class="foot">
               <span class="cost">
                 {money(c.salary)}

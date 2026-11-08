@@ -42,7 +42,7 @@ import { accessPose, accessTile, itemCenter } from '../world';
 import { accidentDue, haveAccident, holdOn, messNear, startHolding } from './accidents';
 import { drainFactor } from './ambience';
 import { hasGeneral } from './careers';
-import { say } from './chars';
+import { say, staffById } from './chars';
 import { claim, findAccess, release } from './claims';
 import { missClass, missToast } from './classes';
 import { fileComplaint } from './complaints';
@@ -65,6 +65,7 @@ import {
 import { roomForModality } from './machines';
 import { goTo, moveAlong } from './movement';
 import { fizzOver, puddleSlow, tellFortune } from './novelties';
+import { perkProduct } from './perks';
 import { countVisit } from './records';
 import { updateRest } from './recovery';
 import { regularPatience } from './regulars';
@@ -260,7 +261,13 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     let drain = PATIENCE_DRAIN * drainFactor(ctx, g.tx, g.ty) * impatience(ctx);
     // the one they are waiting for has a good bedside manner: at a mat, the Sound Healer at the bowls
     const station = ctx.world.item(g.station);
-    if (station && hasGeneral(stationStaff(ctx, station), 'bedside')) drain *= BEDSIDE_PATIENCE;
+    const serving = station && stationStaff(ctx, station);
+    if (hasGeneral(serving, 'bedside')) drain *= BEDSIDE_PATIENCE;
+    // and their perks: a Gentle Needles' line is calmer, and a Name on the Door's regulars calmer still
+    drain *= perkProduct(serving, 'patience');
+    if (g.regular !== undefined) drain *= perkProduct(serving, 'regularPatience');
+    // a Charmer who checked them in leaves them in a better frame of mind for the wait, and an Upseller a worse one
+    if (g.checkedInBy) drain *= perkProduct(staffById(ctx, g.checkedInBy), 'checkedIn');
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= NEEDY_DRAIN;
     if (g.stressed) drain *= STRESS_DRAIN;

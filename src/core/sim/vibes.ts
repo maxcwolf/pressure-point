@@ -10,6 +10,7 @@ import { hasGeneral } from './careers';
 import type { SimContext } from './context';
 import { tipOnce } from './events';
 import { goTo } from './movement';
+import { perkDefs } from './perks';
 
 /**
  * Whether a member of staff can clear bad vibes: any Reiki Practitioner or Shaman, and a Caretaker who has learned
@@ -27,9 +28,9 @@ export function vibesAt(ctx: SimContext, it: Item): Room | undefined {
   return room && room.vibes > 0 ? room : undefined;
 }
 
-/** Leave bad vibes in a room after a failed treatment there. */
-export function addVibes(ctx: SimContext, room: Room) {
-  room.vibes = Math.min(100, room.vibes + VIBES_PER_FAIL);
+/** Leave bad vibes in a room after a failed treatment there: `times` as many for an Unbothered practitioner's. */
+export function addVibes(ctx: SimContext, room: Room, times = 1) {
+  room.vibes = Math.min(100, room.vibes + VIBES_PER_FAIL * times);
   const someone = ctx.s.staff.some((st) => st.state !== 'leaving' && canSmudge(st));
   tipOnce(
     ctx,
@@ -40,15 +41,33 @@ export function addVibes(ctx: SimContext, room: Room) {
   );
 }
 
-/** Let bad vibes fade a little with time, wherever they hang: faster where Wind Chimes hang too. */
+/**
+ * Let bad vibes fade a little with time, wherever they hang: faster where Wind Chimes hang too, and where someone who
+ * Clears as They Go waits at their post between guests.
+ */
 export function fadeVibes(ctx: SimContext, dt: number) {
   if (!ctx.s.rooms.some((r) => r.vibes > 0)) return;
+  clearAsTheyGo(ctx, dt);
   const chimed = new Set<number>();
   for (const it of ctx.s.items) if (ITEMS[it.type].chimes) chimed.add(ctx.world.zoneAt(it.x, it.y));
   for (const room of ctx.s.rooms) {
     if (room.vibes <= 0) continue;
     const fade = VIBES_FADE * (chimed.has(room.id) ? CHIMES_FADE : 1);
     room.vibes = Math.max(0, room.vibes - fade * dt);
+  }
+}
+
+/** How fast someone who Clears as They Go clears their own room between guests, in vibes a second. */
+const CLEARS_RATE = 100 / SMUDGE_SECONDS;
+
+/** Those who Clear as They Go, at their post with nobody on the table, clear their room at their share of a smudger's pace. */
+function clearAsTheyGo(ctx: SimContext, dt: number) {
+  for (const st of ctx.s.staff) {
+    const share = perkDefs(st).reduce((x, p) => Math.max(x, p.clears ?? 0), 0);
+    if (!share || st.state !== 'atPost' || st.busy) continue;
+    const post = ctx.world.item(st.post);
+    const room = post && ctx.world.roomOfItem(post);
+    if (room && room.vibes > 0) room.vibes = Math.max(0, room.vibes - CLEARS_RATE * share * dt);
   }
 }
 

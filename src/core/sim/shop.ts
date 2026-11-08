@@ -4,8 +4,10 @@ import { ITEMS, SHOP_CHANCE, SHOP_LINE_SKIP, SHOP_SPEND } from '../data';
 import { random, rnd, type Rng } from '../random';
 import type { Guest, Item } from '../state/types';
 import { at, clamp } from '../util';
+import { staffById } from './chars';
 import type { SimContext } from './context';
 import { reviewStars } from './feelings';
+import { perkProduct } from './perks';
 
 /** Whether an item is a Shop Counter, where guests stop to buy something on the way out. */
 export const isCounter = (it: Item) => ITEMS[it.type].station?.goal === 'shop';
@@ -27,5 +29,7 @@ export function wantsToShop(ctx: SimContext, g: Guest): boolean {
   const counters = ctx.s.items.filter((i) => isCounter(i) && ctx.world.usable(i));
   if (!counters.length) return false;
   if (Math.min(...counters.map((i) => i.queue.length)) >= SHOP_LINE_SKIP) return false;
-  return random(ctx.s) < at(SHOP_CHANCE, clamp(visitStars(g), 0, SHOP_CHANCE.length - 1));
+  // an Upseller working a counter talks more of them into it
+  const upsell = Math.max(...counters.map((i) => perkProduct(staffById(ctx, i.staffId), 'shop')));
+  return random(ctx.s) < at(SHOP_CHANCE, clamp(visitStars(g), 0, SHOP_CHANCE.length - 1)) * upsell;
 }

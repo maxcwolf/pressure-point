@@ -43,6 +43,7 @@ import { decide, leave, removeFromStations } from './lines';
 import { goTo, halt } from './movement';
 import { logNews, runnerNews } from './news';
 import { catchable } from './outbreaks';
+import { perkProduct } from './perks';
 import { staffIdle } from './posts';
 import { within } from './souls';
 
@@ -64,10 +65,10 @@ export const stripped = (g: Guest) => running(g) || (g.state === 'leaving' && g.
 /**
  * A guest whose ceremony failed may have a really bad trip: a small chance, rolled as it fails. The roll is drawn
  * aside from the game's own stream, from where the stream stands and who the guest is, so a game in which nobody runs
- * plays out exactly as it did before there were runaways.
+ * plays out exactly as it did before there were runaways. A guide's perk makes it `times` as likely.
  */
-export function rollRunaway(ctx: SimContext, g: Guest) {
-  if (random(stream(ctx.s.rng ^ Math.imul(g.id, 0x9e3779b9))) < RUNAWAY_CHANCE) g.runaway = RUNAWAY_SECONDS;
+export function rollRunaway(ctx: SimContext, g: Guest, times = 1) {
+  if (random(stream(ctx.s.rng ^ Math.imul(g.id, 0x9e3779b9))) < RUNAWAY_CHANCE * times) g.runaway = RUNAWAY_SECONDS;
 }
 
 /** Set a guest on a really bad trip running round the institute, and tell the player who it is. */
@@ -197,7 +198,7 @@ export function calmerFor(ctx: SimContext, g: Guest): Staff | undefined {
 
 /** How long a member of staff takes to talk a runner down: half as long for a Shaman, and less with Bedside Manner. */
 export const calmSeconds = (st: Staff) =>
-  (CALM_SECONDS / traitSpeed(st.traits)) *
+  (CALM_SECONDS / (traitSpeed(st.traits) * perkProduct(st, 'calm'))) *
   (st.role === 'shaman' ? CALM_SHAMAN : 1) *
   (hasGeneral(st, 'bedside') ? CALM_BEDSIDE : 1);
 

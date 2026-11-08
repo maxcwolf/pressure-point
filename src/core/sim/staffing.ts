@@ -89,6 +89,7 @@ import { changeLinens, hamperFull, hamperWithRoom, hasLinens, launder, wantsLaun
 import { startWard, wardStep, wardWanted } from './mishaps';
 import { goTo, moveAlong, standBeside } from './movement';
 import { hireNews, logNews } from './news';
+import { knowsPipes, perkDefs, perkJobSpeed, perkRaiseStep, perkSum, settlingFor } from './perks';
 import { dropJob, leavePost, staffIdle, takePost } from './posts';
 import { calmStep, followRunner } from './runaways';
 import { isLeadStation, matsOf, sessionState } from './sessions';
@@ -124,7 +125,10 @@ export function hire(ctx: SimContext, candidateId: number): Staff | null {
     served: 0,
     quals: [...c.quals],
     ...staffStart(c.skill),
+    ...(c.perk && { perks: [c.perk], brought: c.perk }),
   };
+  // a Senior or Expert earns the choices their rank owes them by settling in
+  st.settling = settlingFor(st.skill, st.xp, c.perk);
   const [lx, ly] = lobbyTile(s, ctx.world.building);
   if (!goTo(ctx, st, lx, ly)) return null;
   s.staff.push(st);
@@ -166,9 +170,9 @@ export function fire(ctx: SimContext, id: number, how: 'fired' | 'quit' | 'poach
   emit(ctx, { type: 'sfx', name: 'fail' });
 }
 
-/** The salary a raise would take them to: the going rate, or 10% more if they already earn it. */
+/** The salary a raise would take them to: the going rate, or 10% more if they already earn it (20% for a Name on the Door). */
 export function raiseTo(st: Staff, scale = 1): number {
-  return Math.max(fairPay(st, scale), Math.round((st.salary * RAISE_STEP) / 10) * 10);
+  return Math.max(fairPay(st, scale), Math.round((st.salary * perkRaiseStep(st, RAISE_STEP)) / 10) * 10);
 }
 
 /** Give a member of staff the raise they are due, which lifts their morale. */
@@ -241,6 +245,7 @@ export function moraleTarget(ctx: SimContext, st: Staff): number {
   if (ctx.s.litter.length > LITTER_STAFF) target -= LITTER_MORALE;
   if (st.promotion) target -= PROMOTION_SULK;
   if (cheeredUp(ctx.s, st)) target += CHEER_MORALE;
+  target += perkSum(st, 'morale');
   // with the bank in the red they worry about their wages, and more so once it has been there a month
   if (ctx.s.bankruptcyOn && ctx.s.money < 0) target -= longInRed(ctx.s) ? RED_MONTH_MORALE : RED_MORALE;
   return target;
@@ -427,6 +432,9 @@ function tryBreak(ctx: SimContext, st: Staff): boolean {
   return true;
 }
 
+/** How urgent a repair is to a Fixer: before anything but a fire. */
+const FIXER_URGENCY = 2.9;
+
 /** How long a Caretaker takes over a chore. */
 export function jobSeconds(kind: Job['kind'] | undefined): number {
   if (kind === 'repair') return REPAIR_SECONDS;
@@ -528,7 +536,12 @@ function findWork(ctx: SimContext, st: Staff) {
     const add = (kind: Job['kind'], id: number, x: number, y: number, urgency: number) => {
       if (!onDuty(st, jobDuty(kind, kind === 'litter' ? undefined : ctx.world.item(id)))) return;
       if (!worksAt(ctx, st, x, y)) return;
-      tasks.push({ kind, id, x, y, urgency: urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0) });
+      // someone who Knows Every Pipe will not do litter again, whatever their duties say
+      if (kind === 'litter' && knowsPipes(st)) return;
+      let u = urgency + (inPriorityRoom(ctx, x, y) ? 0.5 : 0);
+      // a Fixer sees to repairs before anything else but a fire
+      if (kind === 'repair' && perkDefs(st).some((p) => p.repairsFirst)) u = Math.max(u, FIXER_URGENCY);
+      tasks.push({ kind, id, x, y, urgency: u });
     };
     // a fire before anything else, whatever their duties or the rooms they keep to
     for (const b of s.blazes) {
@@ -750,7 +763,7 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
           }
           st.timer = douseSeconds(ctx, p) / caretakerSpeed(st);
           say(st, 'bubble-sweaty', 2);
-        } else st.timer = jobSeconds(st.job?.kind) / caretakerSpeed(st);
+        } else st.timer = jobSeconds(st.job?.kind) / (caretakerSpeed(st) * perkJobSpeed(st, st.job?.kind ?? ''));
         if (st.job?.kind === 'install') say(st, 'bubble-installing', 2);
         if (st.job && st.job.kind !== 'litter') {
           const p = ctx.world.item(st.job.id);
@@ -799,6 +812,9 @@ export function updateStaff(ctx: SimContext, st: Staff, dt: number) {
               p.wear = 0;
               delete p.overloaded;
               delete p.burnt;
+              // it wears more slowly until its next repair, if whoever repaired it Knows Every Pipe
+              if (knowsPipes(st)) p.pipes = true;
+              else delete p.pipes;
             } else if (job.kind === 'douse') douse(ctx, st, p);
             else if (job.kind === 'install') installUpgrade(ctx, p);
             else if (job.kind === 'clean') {

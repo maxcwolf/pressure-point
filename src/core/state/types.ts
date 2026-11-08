@@ -20,6 +20,8 @@ import type {
   MishapId,
   Modality,
   Offering,
+  PerkId,
+  PerkTier,
   Pose,
   Priced,
   Role,
@@ -183,6 +185,8 @@ export interface Item {
   overloaded?: boolean;
   /** Burnt out in a fire, and broken until a Caretaker has repaired it. */
   burnt?: boolean;
+  /** Last repaired by a Caretaker who Knows Every Pipe: it wears more slowly until it is next repaired. */
+  pipes?: boolean;
 }
 
 export interface Look {
@@ -322,6 +326,28 @@ export interface Staff extends CharBase {
   rescued?: number;
   /** Heals a Former Influencer has posted about, each worth a little reputation. Missing until the first. */
   posts?: number;
+  /** The perks they have, chosen at their promotions, or brought from their last job. */
+  perks: PerkId[];
+  /** The choices of perk waiting on a card, each with the day it came: past `PERK_WAIT_DAYS`, they choose for themselves. */
+  perkDue: PerkDue[];
+  /** A hire's choices still to be earned by settling in, each with the experience it comes at. */
+  settling: Settling[];
+  /** The perk they brought from their last job, if they did, rather than chose here. */
+  brought?: PerkId;
+}
+
+/** A choice of perk waiting on a card: which promotion's, and the day it came. */
+export interface PerkDue {
+  tier: PerkTier;
+  since: number;
+  /** Owed a hire for settling in, rather than for a promotion here. */
+  settled?: boolean;
+}
+
+/** A choice of perk a hire above Experienced is owed, once their experience here reaches `at`. */
+export interface Settling {
+  tier: PerkTier;
+  at: number;
 }
 
 /**
@@ -432,6 +458,10 @@ export interface Guest extends CharBase {
   halfOff?: number;
   /** How the visit that left that complaint ended, for the town paper and the play statistics. */
   compEnd?: ComplaintEnd;
+  /** The Receptionist who checked them in, for a Charmer or an Upseller. */
+  checkedInBy?: number;
+  /** The Instructor who led their class, for a Crowd-Pleaser or a Devotee-Maker. */
+  ledBy?: number;
 }
 
 /** How a visit ended that leaves a complaint: walked out of a line, home worse off, or home after an accident. */
@@ -633,6 +663,8 @@ export interface Candidate {
   traits: TraitId[];
   quals: Modality[];
   look: Look;
+  /** A perk from their last job, which about one Senior or Expert applicant in ten brings. */
+  perk?: PerkId;
 }
 
 export interface Ledger {
