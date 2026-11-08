@@ -2,9 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.36.2
 
 - **Promotion perks.** Promoted to Senior, and again to Expert, a member of staff waits on a card at the side, "has a perk to choose", and their inspector offers two ways of working, each with what it gives and what it costs, and each making them a specialist: a Receptionist an **Upseller** for the Shop Counter or a **Charmer** at the desk, a Consultant a **Diagnostician** for structural conditions or a **Triage** for everyday ones, a Massage Therapist a **Firm Hand** for the deep techniques or a **Light Touch** for Swedish and Hot Stone, a Caretaker a **Fixer** or a **Neat Freak**, and so on for every role. At Expert anyone who sees guests becomes a **Mentor**, whose juniors nearby earn experience 60% faster, or a **Name on the Door**, whom the regulars they heal ask for by name, waiting a little longer to see them, patient in their line and tipping; a Caretaker a Mentor or one who **Knows Every Pipe**. Left 30 days, they choose for themselves. A Senior or Expert hire earns their choices by settling in, after 35 experience here, and about one in ten brings a perk from their last job. Seniors and Experts in a game under way have theirs to choose at once.
+- **See what preparing did.** A mishap you paid to prepare for now shows in the center until it is over: planks over the windows and sandbags at the entrances before a storm, a hired generator puffing outside the door before a power cut, lagged pipes and a tarp on the koi pond before a freeze, and wasp traps by the snacks, mesh over the bins and the pest control van at the curb before the wasps. A Shaman's ward shows as a chalk sigil inside the door, and smears if it fails.
 
 ## v0.36.1
 
