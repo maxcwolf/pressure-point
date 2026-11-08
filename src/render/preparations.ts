@@ -5,13 +5,32 @@
 
 import * as THREE from 'three';
 
+import { ITEMS, type ItemType, type MishapId, MISHAPS, ROAD_Y } from '../core/data';
 import { entranceSpan, type Footprint, inFootprint, type Side, spotInWall } from '../core/footprint';
 import { paidFor } from '../core/sim/mishaps';
 import type { Sim } from '../core/sim/sim';
-import type { Room } from '../core/state/types';
+import type { GameState, Item, Room } from '../core/state/types';
+import { must } from '../core/util';
+import { itemCenter } from '../core/world';
 import { disposeOwned, owned } from './disposal';
+import { buildItem } from './models/items';
 import { mergeStill } from './models/merge';
 import { mat, put, rbox } from './models/parts';
+import {
+  buildCable,
+  buildCableRamp,
+  buildDecoyNest,
+  buildGrit,
+  buildGritBin,
+  buildHiredGenerator,
+  buildJunctionBox,
+  buildLagging,
+  buildMeshLid,
+  buildPestVan,
+  buildSigil,
+  buildTarp,
+  buildWaspTrap,
+} from './models/preparations';
 import { hash, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T } from './shared';
 import { nearSides, type Sides, type Turn } from './turn';
 import { LOW_INLAY, windowSpans } from './windows';
@@ -217,15 +236,153 @@ function buildPreparations(prep: ReturnType<typeof stormPreparations>): THREE.Gr
   return root;
 }
 
+/** Which way a side of the building faces out, as a turn about the upright of something built facing +z. */
+const yawOut = (side: Side) => ({ south: 0, north: Math.PI, east: Math.PI / 2, west: -Math.PI / 2 })[side];
+
+/** The front entrance: its span along its wall, which way is out, and whether the wall runs along x. */
+function frontDoor(fp: Footprint) {
+  const span = entranceSpan(must(fp.entrances[0], 'front entrance'));
+  return { ...span, outward: outwardOf(span.side), horizontal: span.side === 'north' || span.side === 'south' };
+}
+type Door = ReturnType<typeof frontDoor>;
+
+/** A point by a door: `along` its wall, `out` from the wall's inside face (negative inside), `y` up. */
+const byDoor = (d: Door, along: number, out: number, y = 0): [number, number, number] =>
+  d.horizontal ? [along, y, d.line + d.outward * out] : [d.line + d.outward * out, y, along];
+
+/** Put a model by a door, turned so its front faces `face` (a turn about the upright) from facing out. */
+function placeByDoor(root: THREE.Object3D, model: THREE.Object3D, d: Door, along: number, out: number, face = 0) {
+  model.position.set(...byDoor(d, along, out));
+  model.rotation.y = yawOut(d.side) + face;
+  root.add(model);
+  return model;
+}
+
+/** Each item's model's bounds in its own frame, its front toward +z, worked out once for each kind. */
+const bounds = new Map<ItemType, THREE.Box3>();
+/** An item's model's bounds, from the cache or measured now. */
+function boundsOf(type: ItemType): THREE.Box3 {
+  let b = bounds.get(type);
+  if (!b) {
+    const model = buildItem(type);
+    b = new THREE.Box3().setFromObject(model);
+    bounds.set(type, b);
+  }
+  return b;
+}
+
+/** Put a model where an item stands, in the item's own frame, as the items layer places the item. */
+function placeOnItem(root: THREE.Object3D, model: THREE.Object3D, it: Item) {
+  const [cx, cy] = itemCenter(it);
+  model.position.set(cx, 0, cy);
+  model.rotation.y = (-it.rot * Math.PI) / 2;
+  root.add(model);
+}
+
+/** A power cut: the hired generator outside the door, its cable in through the doorway to a junction box. */
+function buildPowerPrep(fp: Footprint): THREE.Group {
+  const root = new THREE.Group();
+  const d = frontDoor(fp);
+  const T = OUTER_T;
+  const genAt = d.b + 0.36 + 1.3;
+  const genOut = T + 0.72;
+  // long along the wall, its socket end toward the door
+  placeByDoor(root, buildHiredGenerator(), d, genAt, genOut, Math.PI);
+  const socket = genAt - 0.72;
+  // in through the doorway under a ramp, and along the inside of the wall to the junction box
+  const lane = d.b - 0.42;
+  root.add(
+    buildCable([
+      byDoor(d, socket, genOut, 0.6),
+      byDoor(d, socket - 0.1, genOut, 0.3),
+      byDoor(d, socket - 0.2, genOut - 0.05, 0.03),
+      byDoor(d, lane + 0.1, T + 0.45, 0.03),
+      byDoor(d, lane, T + 0.25, 0.02),
+      byDoor(d, lane, -0.15, 0.02),
+      byDoor(d, lane + 0.15, -0.32, 0.03),
+      byDoor(d, d.b + 0.4, -0.3, 0.03),
+      byDoor(d, d.b + 0.6, -0.22, 0.12),
+    ]),
+  );
+  placeByDoor(root, buildCableRamp(0.9), d, lane, T / 2 + 0.05, Math.PI / 2);
+  placeByDoor(root, buildJunctionBox(), d, d.b + 0.75, -0.2, Math.PI);
+  return root;
+}
+
+/** A big freeze: lagging on every pipe the freeze would stop, a tarp over the koi pond, and a grit bin and grit. */
+function buildFreezePrep(fp: Footprint, items: readonly Item[]): THREE.Group {
+  const root = new THREE.Group();
+  for (const it of items) {
+    if (!MISHAPS.freeze.stops?.includes(it.type)) continue;
+    const b = boundsOf(it.type);
+    if (it.type === 'koi_pond') {
+      const [w, h] = [ITEMS[it.type].w, ITEMS[it.type].h];
+      placeOnItem(root, buildTarp(w - 0.1, h - 0.1, b.max.y), it);
+    } else {
+      // a toilet's pipes run up inside its stall, between the bowl and the partitions
+      const inset = it.type === 'toilet' ? 0.24 : 0;
+      placeOnItem(root, buildLagging(b.min.z, b.max.x - b.min.x, b.max.y, inset), it);
+    }
+  }
+  const d = frontDoor(fp);
+  placeByDoor(root, buildGritBin(), d, d.a - 0.36 - 0.55, OUTER_T + 0.4);
+  const grit = buildGrit(2.6, 2.2, d.a);
+  placeByDoor(root, grit, d, (d.a + d.b) / 2, OUTER_T + 1.2);
+  return root;
+}
+
+/** Wasps: a trap beside each snack and drink, a mesh lid on each bin, a decoy nest by the door, and the van. */
+function buildWaspPrep(fp: Footprint, items: readonly Item[]): THREE.Group {
+  const root = new THREE.Group();
+  for (const it of items) {
+    if (!MISHAPS.wasps.stops?.includes(it.type)) continue;
+    const b = boundsOf(it.type);
+    if (ITEMS[it.type].bin) {
+      const r = Math.min(b.max.x - b.min.x, b.max.z - b.min.z) / 2;
+      placeOnItem(root, buildMeshLid(r, b.max.y), it);
+    } else {
+      const trap = buildWaspTrap();
+      trap.position.set(b.max.x + 0.12, 0, b.max.z - 0.1);
+      const holder = new THREE.Group();
+      holder.add(trap);
+      placeOnItem(root, holder, it);
+    }
+  }
+  const d = frontDoor(fp);
+  const nest = buildDecoyNest();
+  placeByDoor(root, nest, d, d.b + 0.16, OUTER_T / 2 + 0.17);
+  nest.position.y = 1.32;
+  const van = buildPestVan();
+  van.position.set(fp.door[0] + 4.5, 0, ROAD_Y[0] + 0.55);
+  root.add(van);
+  return root;
+}
+
+/** A Shaman's ward: the sigil chalked on the floor just inside the door, held or smeared. */
+function buildWardPrep(fp: Footprint, smeared: boolean): THREE.Group {
+  const root = new THREE.Group();
+  const d = frontDoor(fp);
+  placeByDoor(root, buildSigil(smeared), d, (d.a + d.b) / 2, -1.7);
+  return root;
+}
+
+/** What a mishap prepared for shows now, as a key: the mishap paid for, if any, and a ward, held or smeared. */
+export function preparationsShown(s: GameState): { paid: MishapId | undefined; ward: 'held' | 'smeared' | undefined } {
+  const m = s.mishap;
+  const ward = m?.ward === 'done' ? (m.started && !m.prepared ? 'smeared' : 'held') : undefined;
+  return { paid: paidFor(s), ward };
+}
+
 /**
  * The preparations made for the mishap coming or under way, shown from the day they are paid for until it is over,
- * and built again when the camera turns, cutting other walls low, or the windows change.
+ * and built again when the camera turns, cutting other walls low, or the windows or the things they cover change.
  */
 export class PreparationsLayer {
   private root: THREE.Group | null = null;
   private key = '';
-  /** The world's version the windows were last looked at for, and the camera's turn. */
+  /** The world's version the windows were last looked at for, and what was shown. */
   private seen = -1;
+  private showing = '';
   private turn: Turn = 0;
 
   constructor(
@@ -241,20 +398,40 @@ export class PreparationsLayer {
 
   /** Show the preparations while a mishap paid for is coming or under way, built again if what they cover changed. */
   update() {
-    const storm = paidFor(this.sim.s) === 'storm';
-    if (!storm) {
+    const show = preparationsShown(this.sim.s);
+    const showing = `${show.paid ?? ''}|${show.ward ?? ''}`;
+    if (!show.paid && !show.ward) {
       if (this.root) this.clear();
       return;
     }
     const world = this.sim.world;
-    if (this.root && this.seen === world.version) return;
+    if (this.root && this.seen === world.version && this.showing === showing) return;
     this.seen = world.version;
+    this.showing = showing;
     const windows = outerWindows(world.building, this.sim.s.rooms, world.buildingWindows());
-    const key = `${this.turn}|${windows.map((w) => `${w.side}${w.line}.${w.a}.${w.b}`).join('|')}|${world.building.entrances.map((e) => `${e.side}${e.x},${e.y}`).join('|')}`;
+    const items = this.sim.s.items;
+    const key = [
+      showing,
+      this.turn,
+      windows.map((w) => `${w.side}${w.line}.${w.a}.${w.b}`).join('|'),
+      world.building.entrances.map((e) => `${e.side}${e.x},${e.y}`).join('|'),
+      show.paid === 'freeze' || show.paid === 'wasps' ? items.map((it) => `${it.type}${it.x},${it.y},${it.rot}`) : '',
+    ].join('#');
     if (this.root && key === this.key) return;
     this.clear();
     this.key = key;
-    this.root = buildPreparations(stormPreparations(windows, world.building, nearSides(this.turn)));
+    const fp = world.building;
+    const root = new THREE.Group();
+    if (show.paid === 'storm') root.add(buildPreparations(stormPreparations(windows, fp, nearSides(this.turn))));
+    if (show.paid === 'power') root.add(buildPowerPrep(fp));
+    if (show.paid === 'freeze') root.add(buildFreezePrep(fp, items));
+    if (show.paid === 'wasps') root.add(buildWaspPrep(fp, items));
+    if (show.ward) root.add(buildWardPrep(fp, show.ward === 'smeared'));
+    root.traverse((o) => {
+      /** Nothing to hit. */
+      o.raycast = () => undefined;
+    });
+    this.root = root;
     this.scene.add(this.root);
   }
 
