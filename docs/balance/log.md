@@ -6,6 +6,28 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 7 November 2026: promotion perks, with the bot choosing
+
+Measured with `yarn balance` on main at `f9d8d7c3` (perks, Name on the Door asked for by name, the bot choosing each perk the day it is owed) against `4ff2fbf5`, the same game without perks: every campaign center, seeds 1 to 72, four years a game. The bot chooses as a staff member left to wait would (`ownChoice`: the perk their traits and courses suit, else one by their id), not the perk best for their post, so this measures perks taken as they come. A star never earned counts as month 48; differences are paired seed by seed and given with two standard errors, for seeds 1 to 36 and 37 to 72 apart.
+
+### 58. Perks are no shortcut: a point more guests healed, and the Exchange's third star a little sooner
+
+**Kept as merged** (`src/core/data/perks.ts`): no center is measurably easier in profit, stars or games lost.
+
+| Center             | Profit a month, after − before (1–36 / 37–72) | Third star, months (1–36 / 37–72) | Healed share, points (1–36 / 37–72) | Games lost, before → after | Perks a game |
+| ------------------ | --------------------------------------------- | --------------------------------- | ----------------------------------- | -------------------------- | ------------ |
+| Willow Lane        | +$1.4k ±2.8k / −$0.7k ±1.8k                   | +0.3 ±0.7 / −0.5 ±0.5             | −0.1 ±1.4 / −0.4 ±1.1               | 0 → 0                      | 20.6         |
+| The Exchange       | +$2.7k ±2.9k / +$1.9k ±4.1k                   | −1.7 ±1.8 / −2.9 ±3.3             | +1.9 ±1.4 / +1.4 ±2.4               | 3 → 2                      | 29.2         |
+| The Boardwalk      | +$2.8k ±1.9k / −$0.1k ±3.2k                   | +1.0 ±2.1 / −0.7 ±2.9             | +1.2 ±1.0 / +0.2 ±1.3               | 0 → 1                      | 25.1         |
+| High Pines         | −$0.2k ±4.6k / +$0.3k ±3.8k                   | +1.4 ±3.7 / −1.4 ±2.3             | +0.5 ±1.9 / +1.4 ±1.3               | 8 → 6                      | 28.3         |
+| The Orchard Estate | −$0.3k ±5.8k / +$1.0k ±5.5k                   | −1.0 ±2.0 / +0.3 ±2.2             | +1.7 ±1.4 / +0.5 ±1.5               | 4 → 4                      | 31.8         |
+
+Mean star months moved by a few tenths at most, but for the Exchange's third star, 21.4 to 19.2. The first two stars moved by less than half a month everywhere. **What perks do show is about a point more guests healed** at four of the five centers, both halves agreeing at the Exchange, the Orchard and High Pines, as the technique specialists' +8 points would give. **The Exchange's third star comes about 2.3 months sooner** (±1.9), both halves the same way: the one place perks plausibly help, and still well within a good player's spread. Games lost, 15 before and 13 after, are the same seeds give or take, as the halves disagree.
+
+The first perk comes at a median of day 182 (Willow Lane, the Orchard) to 247 (the Exchange), so perks shape the second year onward. The bot took 6,275 Senior and 3,593 Expert perks; Mentor was 62% of the Expert ones (2,228), Name on the Door 32% (1,167) and Every Pipe 6%. Of the Senior perks, Light Touch (1,046) and Triage (944) led; the Shaman's, Instructor's and Sound Healer's were rare, as few of them reach Senior.
+
+**Still open:** a player who chooses for the post, a Light Touch on the Swedish table and a Firm Hand by the Recovery Lounge, should get more than the bot does here. Max's own play is the reference for that, not a second bot run.
+
 ## 6 November 2026, evening: the free treatment wins a guest back
 
 Measured as entries 55 and 56, against the same games without `comp`: every campaign center, seeds 1 to 6, four years a game, the bot answering with both answers as in entry 56.
