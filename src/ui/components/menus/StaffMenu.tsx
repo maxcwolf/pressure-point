@@ -19,7 +19,7 @@ import { Button } from '../common/Button';
 import { Dropdown } from '../common/Dropdown';
 import { Icon, IconText } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
-import { QuirkChips } from '../common/QuirkChips';
+import { PerkChips, QuirkChips } from '../common/QuirkChips';
 import { SortBy } from '../common/SortBy';
 import { menuHead, menuPanel, tabRow } from './looks';
 
@@ -329,7 +329,12 @@ export function StaffMenu() {
             {/* the whole row selects them, from a button stretched over its cells, as a button cannot hold another */}
             <Button
               class={pick}
-              label={[`Show ${st.name}.`, sim.heldBack(st) && heldBackSaid(st), quirksSaid(st.traits)]
+              label={[
+                `Show ${st.name}.`,
+                sim.heldBack(st) && heldBackSaid(st),
+                st.perkDue.length > 0 && 'Has a perk to choose.',
+                quirksSaid(st.traits),
+              ]
                 .filter(Boolean)
                 .join(' ')}
               onPress={() => {
@@ -346,7 +351,9 @@ export function StaffMenu() {
                       ? 'bubble-raise'
                       : sim.heldBack(st)
                         ? 'room-training'
-                        : undefined
+                        : st.perkDue.length
+                          ? 'bubble-idea'
+                          : undefined
                 }
               >
                 {st.name}
@@ -366,6 +373,7 @@ export function StaffMenu() {
                 <span class="role">{ROLES[st.role].name}</span>
               )}
               <QuirkChips traits={st.traits} />
+              <PerkChips perks={st.perks} />
             </span>
           </div>
         ))

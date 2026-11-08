@@ -3,7 +3,7 @@
 // people in it would crash them instead.
 import { describe, expect, it } from 'vitest';
 
-import { CENTERS, CONDITIONS, ITEMS, MODALITIES, ROLES, ROOMS, TRAITS } from '../../src/core/data';
+import { CENTERS, CONDITIONS, ITEMS, MODALITIES, PERKS, ROLES, ROOMS, TRAITS } from '../../src/core/data';
 import { SAVE_VERSION } from '../../src/core/state/game';
 
 /** Every id a save can hold, by kind, sorted. */
@@ -13,6 +13,7 @@ function contentIds(): string {
     conditions: CONDITIONS.map((c) => c.id),
     items: Object.keys(ITEMS),
     modalities: Object.keys(MODALITIES),
+    perks: Object.keys(PERKS),
     roles: Object.keys(ROLES),
     rooms: Object.keys(ROOMS),
     traits: TRAITS.map((t) => t.id),
@@ -33,6 +34,6 @@ describe('the save version', () => {
   it('goes up with the content a save can hold', () => {
     // When this fails because content was added: raise SAVE_VERSION in src/core/state/game.ts, then put the new
     // version and the fingerprint this test reports here.
-    expect({ version: SAVE_VERSION, content: fingerprint(contentIds()) }).toEqual({ version: 49, content: '03ba3c6c' });
+    expect({ version: SAVE_VERSION, content: fingerprint(contentIds()) }).toEqual({ version: 50, content: '1caf622b' });
   });
 });

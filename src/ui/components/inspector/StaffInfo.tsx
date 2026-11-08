@@ -1,9 +1,10 @@
 // The inspector for a member of staff.
 
-import { DUTIES, DUTY_NAMES, ROLES } from '../../../core/data';
+import { DUTIES, DUTY_NAMES, perkOf, perkPair, ROLES } from '../../../core/data';
 import { money } from '../../../core/format';
 import { assignableRole, roomLabels } from '../../../core/sim/assignments';
 import { rankName, rankProgress, xpToNext } from '../../../core/sim/careers';
+import { knowsPipes } from '../../../core/sim/perks';
 import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
@@ -11,6 +12,7 @@ import { dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterPercent, meterTone } from '../../lib/meters';
+import { choiceDeadline, choiceHeading, settlingNote } from '../../lib/perks';
 import { quirkNotes } from '../../lib/quirks';
 import { soulNote } from '../../lib/souls';
 import { offerWarning } from '../../lib/standing';
@@ -19,7 +21,7 @@ import { Bar } from '../common/Bar';
 import { Button } from '../common/Button';
 import { IconText, Line } from '../common/Icon';
 import { QualChips } from '../common/QualChips';
-import { QuirkChips } from '../common/QuirkChips';
+import { PerkChips, QuirkChips } from '../common/QuirkChips';
 import { Stars } from '../common/Stars';
 import { Courses } from './Courses';
 import { duty, dutyRow, smallButton } from './looks';
@@ -63,6 +65,66 @@ function Career({ staff: st }: { staff: Staff }) {
   );
 }
 
+/** The two perks of a choice waiting, each a button with what it does and costs, and how long it can wait. */
+const choice = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6',
+  my: '6',
+  p: '8',
+  border: 'outline.thin',
+  borderColor: 'info.light',
+  borderRadius: '10',
+  bg: 'info.bg',
+  '& h4': { m: '0' },
+  '& button': { textAlign: 'left', whiteSpace: 'normal' },
+  '& button b': { display: 'block', fontWeight: 'bold' },
+  '& button .desc': { display: 'block', fontWeight: 'regular' },
+});
+
+/**
+ * The choice of perk they are owed, for each promotion whose choice waits, with the two to pick between and how long
+ * before they pick for themselves; then the perks they have, and how far a hire is from the next they are owed.
+ */
+function Perks({ staff: st }: { staff: Staff }) {
+  const { sim } = useGame();
+  const settling = settlingNote(st);
+  const leaving = st.state === 'leaving';
+  return (
+    <>
+      {!leaving &&
+        st.perkDue.map((d) => (
+          <div key={d.tier} class={cx('perk-choice', choice)}>
+            <h4>{choiceHeading(d)}</h4>
+            {perkPair(st.role, d.tier).map((id) => (
+              <Button
+                key={id}
+                class={cx(smallButton, 'choose-perk', goButton())}
+                onPress={() => {
+                  sim.choosePerk(st.id, id);
+                }}
+              >
+                <b>{`◆ ${perkOf(id).name}`}</b>
+                <span class="desc">{perkOf(id).desc}</span>
+              </Button>
+            ))}
+            <p class="sub">{choiceDeadline(d, sim.s.day)}</p>
+          </div>
+        ))}
+      <PerkChips perks={st.perks} brought={st.brought} spell />
+      {settling && !leaving && (
+        <label class="settling">
+          {settling.text}
+          <Bar value={settling.progress * 100} tone="blue" show={meterPercent(settling.progress * 100)} />
+        </label>
+      )}
+      {sim.mentored(st) > 1 && (
+        <p class="sub">{`A Mentor nearby: earning experience ${Math.round((sim.mentored(st) - 1) * 100)}% faster.`}</p>
+      )}
+    </>
+  );
+}
+
 /** Switches for the duties a member of staff can be kept to, for the roles that have a choice. */
 function Duties({ staff: st }: { staff: Staff }) {
   const { sim } = useGame();
@@ -74,15 +136,22 @@ function Duties({ staff: st }: { staff: Staff }) {
       <div class={dutyRow}>
         {duties.map((d) => {
           const on = !st.off.includes(d);
-          // there has to be something left for them to do
+          // there has to be something left for them to do, and someone who Knows Every Pipe is done with litter
           const last = on && st.off.length === duties.length - 1;
+          const pipes = !on && d === 'litter' && knowsPipes(st);
           return (
             <Button
               key={d}
               class={cx(duty, on && 'on')}
-              locked={last}
+              locked={last || pipes}
               title={
-                last ? 'Their only duty left' : on ? 'Click to keep them from this' : 'Click to put them back on this'
+                pipes
+                  ? 'Knows Every Pipe: will not do litter again'
+                  : last
+                    ? 'Their only duty left'
+                    : on
+                      ? 'Click to keep them from this'
+                      : 'Click to put them back on this'
               }
               onPress={() => {
                 sim.setDuty(st.id, d, !on);
@@ -205,7 +274,8 @@ export function StaffInfo({ staff: st }: { staff: Staff }) {
       <StaffCompare staff={st} />
       <Career staff={st} />
       <QuirkChips traits={st.traits} spell />
-      <QuirkNotes staff={st} />{' '}
+      <QuirkNotes staff={st} />
+      <Perks staff={st} />{' '}
       {st.training && (
         <label>
           Course progress

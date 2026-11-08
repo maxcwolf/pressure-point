@@ -14,13 +14,14 @@ import {
   WALL_DAMPING,
   WINDOW_LEAK,
 } from '../data';
-import type { Guest, Item, Room } from '../state/types';
+import type { Guest, Item, Room, Staff } from '../state/types';
 import { at, clamp } from '../util';
 import { itemCenter } from '../world';
 import type { SimContext } from './context';
 import { feel } from './feelings';
 import { rattling, running } from './machines';
-import { playingFor } from './sessions';
+import { perkDefs, perkSum } from './perks';
+import { leadOf, playingFor, stationStaff } from './sessions';
 import { gridAt, spreader } from './spread';
 
 /** How much of the noise outside a room gets in through its walls: more with each window, up to a point. */
@@ -35,6 +36,15 @@ export function guestNoise(g: Guest): number {
 /** Whether an item that sounds in a group session is sounding now: a session is playing in its room. */
 export const sessionHeard = (ctx: SimContext, it: Item) => playingFor(ctx, it);
 
+/** The Sound Healer working the room an item is in, if any is at its lead station. */
+function studioHealer(ctx: SimContext, it: Item): Staff | undefined {
+  const lead = leadOf(ctx, it);
+  return lead ? stationStaff(ctx, lead) : undefined;
+}
+
+/** Whether a healer lets no noise out of their studio. */
+const hushed = (st: Staff | undefined) => !!st && perkDefs(st).some((p) => p.hushed);
+
 /** Work out afresh how noisy each tile is. */
 export function updateNoise(ctx: SimContext) {
   const grid = ctx.noise;
@@ -45,9 +55,13 @@ export function updateNoise(ctx: SimContext) {
     const { noise, sessionNoise } = ITEMS[it.type];
     const [cx, cy] = itemCenter(it);
     if (noise) spread(grid, Math.floor(cx), Math.floor(cy), noise, NOISE_RADIUS);
-    // a gong is part of the treatment in its own room, and only noise to everyone else
-    if (sessionNoise && sessionHeard(ctx, it))
-      spread(grid, Math.floor(cx), Math.floor(cy), sessionNoise, NOISE_RADIUS, 0);
+    // a gong is part of the treatment in its own room, and only noise to everyone else: none from a Hushed healer's,
+    // and more from a Big Gong's
+    if (sessionNoise && sessionHeard(ctx, it)) {
+      const healer = studioHealer(ctx, it);
+      if (!hushed(healer))
+        spread(grid, Math.floor(cx), Math.floor(cy), sessionNoise + perkSum(healer, 'noise'), NOISE_RADIUS, 0);
+    }
     // and so is a machine with someone inside it
     const runNoise = ITEMS[it.type].machine?.runNoise;
     if (runNoise && running(it)) spread(grid, Math.floor(cx), Math.floor(cy), runNoise, NOISE_RADIUS, 0);
@@ -59,7 +73,7 @@ export function updateNoise(ctx: SimContext) {
   for (const it of ctx.s.items) {
     const rattle = ITEMS[it.type].machine?.rattle;
     const home = rattle ? ctx.world.roomOfItem(it) : undefined;
-    if (!rattle || !home) continue;
+    if (!rattle || !home || hushed(studioHealer(ctx, it))) continue;
     for (const room of rattling(ctx, it)) rattleRoom(ctx, grid, room, home, rattle);
   }
 }

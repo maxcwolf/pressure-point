@@ -71,6 +71,7 @@ import {
 import { goTo } from './movement';
 import { sellMushrooms } from './mushrooms';
 import { feelNoise, itemNoise, noisePenalty } from './noise';
+import { consultPace, guessesSure, perkProduct, perkSuccess, perkSum, structuralSure } from './perks';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
 import { greeting, mindsPrice, tipFor } from './regulars';
@@ -98,6 +99,12 @@ export function guestFee(s: GameState, g: Pick<Guest, 'condition' | 'regular'>):
   const cond = conditionOf(g.condition);
   const base = treatmentFee(s, cond.fee, priceFor(s, cond.modality));
   return base + tipFor(s, g, base);
+}
+
+/** What a regular in a Name on the Door's line tips on top: a share of the fee, before any loyal regular's tip. */
+export function doorTip(ctx: SimContext, g: Pick<Guest, 'condition' | 'regular'>, st: Staff): number {
+  const share = perkSum(st, 'regularTip');
+  return g.regular !== undefined && share > 0 ? Math.round(guestFee(ctx.s, { condition: g.condition }) * share) : 0;
 }
 
 /** The most stars of prestige a room can have. */
@@ -168,14 +175,15 @@ export function chanceFactors(ctx: SimContext, it: Item, staff: Staff, g: Guest)
     { cause: 'difficulty', amount: -mod.difficulty },
     { cause: 'tired', amount: staff.energy < TIRED_ENERGY ? -TIRED_PENALTY : 0 },
     { cause: 'worse', amount: -conditionPenalty(g.health) },
-    { cause: 'vibes', amount: -vibesPenalty(vibesAt(ctx, it)) * weight },
+    { cause: 'vibes', amount: -vibesPenalty(vibesAt(ctx, it)) * weight * perkProduct(staff, 'vibesTaken') },
     { cause: 'noise', amount: -noisePenalty(itemNoise(ctx, it)) * weight },
     { cause: 'linens', amount: -linensPenalty(it) * weight },
     {
       cause: 'temperature',
       amount: weight > 1 ? -discomfort(warmthAt(ctx, g.tx, g.ty)) * TRIP_DISCOMFORT : 0,
     },
-    { cause: 'rest', amount: -restPenalty(ctx, g) },
+    { cause: 'rest', amount: -restPenalty(ctx, g, staff) },
+    { cause: 'perk', amount: perkSuccess(staff, mod.id) },
     // a guest asked back free after a complaint: what went wrong the first time is known now
     { cause: 'second-look', amount: g.comp !== undefined ? SECOND_LOOK : 0 },
   ];
@@ -298,8 +306,10 @@ export function updateStations(ctx: SimContext, dt: number) {
       staff.busy = !!served;
       staff.strain = (mod ? mod.strain : 1) * machineStrain(it);
       if (served) {
+        // a Consultant's perk speeds up one kind of condition, and slows the other
+        const pace = def.goal === 'consult' ? consultPace(staff, served.condition) : 1;
         it.progress +=
-          dt /
+          (dt * pace) /
           (serviceSeconds(mod ? mod.seconds : def.seconds, staff, heldSpace(ctx, staff)) * machineSeconds(ctx, it));
         if (it.progress >= 1) completeService(ctx, it, served, staff);
       }
@@ -369,9 +379,14 @@ export function goForTreatment(ctx: SimContext, g: Guest) {
 
 /**
  * Send a guest with a structural condition for treatment on the Consultant's best guess, there being no scanner
- * working to make it sure: it is less likely to work.
+ * working to make it sure: it is less likely to work, unless the Consultant is a Diagnostician.
  */
-export function goOnGuess(ctx: SimContext, g: Guest) {
+export function goOnGuess(ctx: SimContext, g: Guest, consultant?: Staff) {
+  // a Diagnostician's best guess is as good as a scan would have been, near enough
+  if (guessesSure(consultant)) {
+    goForTreatment(ctx, g);
+    return;
+  }
   g.guessed = true;
   tipOnce(
     ctx,
@@ -455,6 +470,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   const treatPrice = priceFor(ctx.s, conditionOf(g.condition).modality);
   if (def.goal === 'reception') {
     g.goal = 'consult';
+    g.checkedInBy = staff.id;
     say(g, 'bubble-checkin');
     // a regular is greeted by name
     if (g.regular) emit(ctx, { type: 'float', text: greeting(g.name), x: staff.x, y: staff.y, kind: 'good' });
@@ -472,7 +488,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     // a structural condition is plain to see but not to pin down: a consultation gets no surer of it than this
     const structural = !!conditionOf(g.condition).structural;
     const gain = CONSULT_GAIN.base + staff.skill * CONSULT_GAIN.rank + rnd(ctx.s, 0, CONSULT_GAIN.luck);
-    g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? STRUCTURAL_SURE : 1);
+    g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? structuralSure(staff, STRUCTURAL_SURE) : 1);
     if (feeShare(g) > 0) {
       const fee = Math.round(CONSULT_FEE * price * feeShare(g));
       earn(ctx, fee, 'consult', g.x, g.y);
@@ -483,7 +499,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (canScan(ctx)) {
         g.goal = 'assess';
         say(g, 'bubble-question');
-      } else goOnGuess(ctx, g);
+      } else goOnGuess(ctx, g, staff);
     } else if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= CONSULTS_MAX) goForTreatment(ctx, g);
     else {
       // unsure: a scan settles it if there is a scanner working, otherwise it is back to the Consultant
@@ -502,7 +518,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     const odds = successChance(ctx, it, staff, g);
     const { chance, problem } = odds;
     // the harder treatments need a lie-down after, if there is a Lounger free
-    const rest = settleRest(ctx, g);
+    const rest = settleRest(ctx, g, staff);
     if (problem === 'unqualified') feel(g, 'unqualified');
     else if (problem) feel(g, 'no-kit');
     const room = ctx.world.roomOfItem(it);
@@ -546,7 +562,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       countVisit(ctx, g, 'healed');
       if (g.comp === undefined) {
         // and a loyal regular tips on top; a guest back for half off pays half of it all
-        const fee = Math.round(guestFee(ctx.s, g) * feeShare(g));
+        const fee = Math.round((guestFee(ctx.s, g) + doorTip(ctx, g, staff)) * feeShare(g));
         earn(ctx, fee, 'treatment', g.x, g.y);
         g.spent += fee;
         // good value earns a better name than a steep bill does
@@ -562,12 +578,12 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     } else {
       g.outcome = 'failed';
       // a ceremony that fails is a bad trip, whatever went wrong, and that goes in their review too
-      if (isTrip(mod)) badTrip(ctx, g, it);
+      if (isTrip(mod)) badTrip(ctx, g, it, staff);
       countVisit(ctx, g, 'failed');
       // why it failed, from the terms the roll used, before the failure's own bad vibes cloud the room
       noteFailure(ctx, it, staff, g, recordFailure(ctx, it, staff, g, odds, handsSave(staff)));
       changeRep(ctx, -FAIL_REP);
-      if (room) addVibes(ctx, room);
+      if (room) addVibes(ctx, room, perkProduct(staff, 'vibesLeft'));
       // a thumb down: not the hourglass of a guest about to walk out
       say(g, 'bubble-failed', 6);
       const why = {

@@ -3,6 +3,7 @@
 import { ROLES } from '../../../core/data';
 import { buttonRow, dangerButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
+import { chosenHereNote } from '../../lib/perks';
 import { Button } from '../common/Button';
 import { Dialog } from './Dialog';
 
@@ -33,6 +34,7 @@ export function ConfirmFire() {
     <Dialog>
       <h2>{`Are you sure you want to fire ${st.name}?`}</h2>
       <p>{`Your ${ROLES[st.role].name} packs up and leaves the center for good.`}</p>{' '}
+      {chosenHereNote(st) && <p>{chosenHereNote(st)}</p>}
       <div class={buttonRow()}>
         <Button
           onPress={() => {

@@ -36,6 +36,7 @@ import { emit, tipOnce, toast } from './events';
 import { feel, writeReview } from './feelings';
 import { decide, leave } from './lines';
 import { feelNoise, itemNoise } from './noise';
+import { perkSum } from './perks';
 import { breakDue } from './policy';
 import { isGroupStation, isLeadStation, matsOf, stationStaff } from './sessions';
 import { wantsToShop } from './shop';
@@ -76,6 +77,10 @@ export function classSize(interest: number, perWeek: number, spots: number, roll
 
 /** How many Practice Spots an Instructor of a rank can lead a class on: a more senior one leads a bigger class. */
 export const classPlaces = (skill: number) => at(CLASS_PLACES, clamp(Math.round(skill), 1, CLASS_PLACES.length) - 1);
+
+/** How many Practice Spots this Instructor leads: their rank's, and more for a Crowd-Pleaser, fewer for a Devotee-Maker. */
+export const instructorPlaces = (st: Pick<Staff, 'skill' | 'perks'>) =>
+  Math.max(1, classPlaces(st.skill) + perkSum(st, 'places'));
 
 /** Whether an item is a Qi Gong Instructor's Mat, which leads a class rather than a sound bath. */
 export const isClassLead = (it: Item) => isLeadStation(it) && ITEMS[it.type].station?.staff === 'instructor';
@@ -199,7 +204,7 @@ export function bookClasses(ctx: SimContext) {
   const today = Math.floor(s.day);
   const day = today + BOOK_AHEAD;
   const places = new Map(
-    studios(ctx).map((room) => [room, Math.min(spotsIn(ctx, room).length, classPlaces(instructor.skill))]),
+    studios(ctx).map((room) => [room, Math.min(spotsIn(ctx, room).length, instructorPlaces(instructor))]),
   );
   let free = [...places].reduce((sum, [room, spots]) => sum + spots * classesThrough(ctx, room, today, day), 0);
   free -= s.arrivals.length + s.guests.filter((g) => g.classDay && g.goal === 'class' && g.state !== 'leaving').length;
@@ -336,6 +341,7 @@ export function completeClass(ctx: SimContext, spot: Item, g: Guest, staff: Staf
   earn(ctx, fee, 'classes', g.x, g.y);
   g.spent += fee;
   g.outcome = 'class';
+  g.ledBy = staff.id;
   ctx.s.stats.classgoers++;
   ctx.s.tally.classgoers++;
   writeReview(ctx, g, 'class');

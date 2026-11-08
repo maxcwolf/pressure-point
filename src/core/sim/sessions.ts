@@ -8,6 +8,7 @@ import { at, clamp } from '../util';
 import { guestById, staffById } from './chars';
 import type { SimContext } from './context';
 import { tipOnce } from './events';
+import { perkSum } from './perks';
 
 /** Whether an item is a group station, served from its room's lead station. */
 export const isGroupStation = (it: Item) => !!ITEMS[it.type].station?.group;
@@ -48,9 +49,13 @@ export function sessionWait(waited: number, lying: number, mats: number, dt: num
 /** How many mats a Sound Healer of a rank can play for at once: a more senior one, more. */
 export const matsPlayed = (skill: number) => at(SOUND_MATS, clamp(Math.round(skill), 1, SOUND_MATS.length) - 1);
 
+/** How many mats this Sound Healer plays for: their rank's, and one more for a Big Gong. */
+export const healerMats = (st: Pick<Staff, 'skill' | 'perks'>) =>
+  Math.max(1, matsPlayed(st.skill) + perkSum(st, 'mats'));
+
 /** Whether a healer already has as many guests on the mats, lying down or on their way, as they can play for. */
 export const matsFull = (ctx: SimContext, lead: Item, staff: Staff) =>
-  matsOf(ctx, lead).filter((m) => m.serving).length >= matsPlayed(staff.skill);
+  matsOf(ctx, lead).filter((m) => m.serving).length >= healerMats(staff);
 
 /** Whether a session is playing, from how long it has waited. */
 export const sessionPlaying = (waited: number) => waited >= SESSION_WAIT;
@@ -81,7 +86,7 @@ export function updateSession(
     return g?.state === 'served' ? [g] : [];
   });
   // full once every mat the healer can play for is taken
-  const played = staff ? Math.min(mats.length, matsPlayed(staff.skill)) : mats.length;
+  const played = staff ? Math.min(mats.length, healerMats(staff)) : mats.length;
   const starting = going && !now && !sessionPlaying(lead.progress);
   const waited = now && lying.length ? SESSION_WAIT : sessionWait(lead.progress, lying.length, played, dt);
   lead.progress = staff && !starting ? waited : 0;

@@ -9,6 +9,7 @@ import type { SimContext } from './context';
 import { changeRep } from './economy';
 import { announceOnce, emit, tipOnce } from './events';
 import { feel } from './feelings';
+import { perkProduct } from './perks';
 import { rollRunaway } from './runaways';
 import { addVibes } from './vibes';
 
@@ -30,11 +31,12 @@ export function goodTrip(g: Guest) {
 
 /**
  * A guest whose ceremony failed has a bad trip: a worse review, a worse name, and bad vibes left all over the lodge. Now
- * and then it is a really bad one, and they run round the institute once they are off the mat.
+ * and then it is a really bad one, and they run round the institute once they are off the mat: half as often for a
+ * Steady Guide, twice as often for a Deep Diver.
  */
-export function badTrip(ctx: SimContext, g: Guest, it: Item) {
+export function badTrip(ctx: SimContext, g: Guest, it: Item, guide?: Staff) {
   feel(g, 'bad-trip');
-  rollRunaway(ctx, g);
+  rollRunaway(ctx, g, perkProduct(guide, 'runaway'));
   changeRep(ctx, -BAD_TRIP_REP);
   const room = ctx.world.roomOfItem(it);
   if (room) addVibes(ctx, room);

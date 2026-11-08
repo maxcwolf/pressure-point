@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Promotion perks.** Promoted to Senior, and again to Expert, a member of staff waits on a card at the side, "has a perk to choose", and their inspector offers two ways of working, each with what it gives and what it costs, and each making them a specialist: a Receptionist an **Upseller** for the Shop Counter or a **Charmer** at the desk, a Consultant a **Diagnostician** for structural conditions or a **Triage** for everyday ones, a Massage Therapist a **Firm Hand** for the deep techniques or a **Light Touch** for Swedish and Hot Stone, a Caretaker a **Fixer** or a **Neat Freak**, and so on for every role. At Expert anyone who sees guests becomes a **Mentor**, whose juniors nearby earn experience 60% faster, or a **Name on the Door**, whose regulars wait happily and tip; a Caretaker a Mentor or one who **Knows Every Pipe**. Left 30 days, they choose for themselves. A Senior or Expert hire earns their choices by settling in, after 35 experience here, and about one in ten brings a perk from their last job. Seniors and Experts in a game under way have theirs to choose at once.
+
 ## v0.36.1
 
 - **Make it right.** A guest who storms out, goes home worse off or has an accident now leaves a complaint, on a card at the side, in the Reception Desk's inspector and as a pink slip on the desk. Answer it within 5 days with a **free treatment**: they come back the next day in a gold robe, first in line and likelier to be healed, and healed, they win back all the reputation they cost and become a loyal regular. Or offer **half off their next visit**: a quarter comes back at once, and they return in 3 to 10 days and pay half. Let down again, they cost it in full.

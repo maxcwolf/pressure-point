@@ -2,6 +2,7 @@
 
 import {
   AMANDA,
+  broughtPerk,
   CAMEO_CHANCE,
   CAMEOS,
   clashes,
@@ -264,7 +265,10 @@ export function makeCandidate(s: GameState, role: Role): Candidate {
   // her quirks are always the same ones; those rolled above go unused, so everyone else's random numbers stay put
   if (amanda) return amandaIn(s, look, Math.round(reach) + drive);
   const salary = scalePay(fairSalary(role, skill, traits, quals), tuning(s, 'salaries'));
-  return { id: s.nextId++, name: randomName(s, sex), role, skill, salary, traits, quals, look };
+  const id = s.nextId++;
+  // a perk from their last job, settled by their id after every roll, so it moves nobody's random numbers
+  const perk = broughtPerk(id, role, skill);
+  return { id, name: randomName(s, sex), role, skill, salary, traits, quals, look, ...(perk && { perk }) };
 }
 
 /** Amanda Jablonsky applying, now, whether or not the pool would bring her: for the console's amanda. */

@@ -104,6 +104,9 @@ export function demoStaff(look: Look, role: Role): Staff {
     rooms: [],
     offer: 0,
     call: null,
+    perks: [],
+    perkDue: [],
+    settling: [],
   };
 }
 

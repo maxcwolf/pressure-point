@@ -16,6 +16,7 @@ import {
   type Modality,
   type ModalityDef,
   type Offering,
+  type PerkId,
   type Priced,
   type RoomType,
   type RugPatternId,
@@ -102,6 +103,7 @@ import {
   heldBack,
   heldSpace,
   holdingSpaceFor,
+  mentored,
   promote,
   promoteAll,
   reject,
@@ -119,9 +121,9 @@ import {
   announceClasses,
   bestInstructor,
   bookClasses,
-  classPlaces,
   classPlaying,
   giveUp,
+  instructorPlaces,
   noteMissedClasses,
   setClasses,
   toggleClassDay,
@@ -181,6 +183,7 @@ import { itemNoise, noiseAt } from './noise';
 import { acceptOutbreak, calm, type CalmResult, declineOutbreak, offerOutbreak, updateOutbreak } from './outbreaks';
 import { updateOutdoors } from './outdoors';
 import { monthEnd, payIntoRed, takePayrollLoan, updateInsolvency } from './payday';
+import { choosePerk, lapsePerks } from './perks';
 import { pausedToPlace, type PlacingNow, setSpeed, watchPlacing } from './placing';
 import { type PolicyChange, setDiscipline, setPolicy, setRoomPriority } from './policy';
 import { type PlacePreview, previewItem, previewMove } from './preview';
@@ -309,6 +312,7 @@ export class Sim {
       announceClasses(ctx);
       lapseInspection(ctx);
       lapseComplaints(ctx);
+      lapsePerks(ctx);
       warnPayday(ctx);
       warnUnfed(ctx);
       updateInsolvency(ctx);
@@ -748,6 +752,14 @@ export class Sim {
   /** Promote everyone ready and waiting. How many were promoted. */
   promoteAll(): number {
     return promoteAll(this.ctx);
+  }
+  /** Give a member of staff one of the two perks their promotion's choice is between. False if it is not theirs. */
+  choosePerk(id: number, perk: PerkId): boolean {
+    return choosePerk(this.ctx, id, perk);
+  }
+  /** How much faster a Mentor nearby makes a member of staff earn experience: 1 with none. */
+  mentored(st: Staff): number {
+    return mentored(this.ctx, st);
   }
   /** Add a room to the rooms a member of staff works in, or take it away. False if there is no work for them there. */
   assignRoom(staffId: number, roomId: number): boolean {
@@ -1357,7 +1369,7 @@ export class Sim {
     return (
       staff && {
         staff,
-        places: classPlaces(staff.skill),
+        places: instructorPlaces(staff),
         interest: weeklyInterest(this.s.reputation, staff.skill),
       }
     );

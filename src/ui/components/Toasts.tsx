@@ -13,6 +13,7 @@ import type { Toast } from '../hud';
 import { complaintCard } from '../lib/complaints';
 import { cx } from '../lib/cx';
 import { pileUp } from '../lib/messages';
+import { perkRequests } from '../lib/perks';
 import { promotionRequests, raiseRequests } from '../lib/status';
 import { Button } from './common/Button';
 import { IconText } from './common/Icon';
@@ -215,7 +216,7 @@ const chevron = css({ ml: '6', opacity: 'quiet' });
 const warningCount = css({ color: 'bad' });
 
 /**
- * Raise requests, promotions and training still waiting, and the messages on screen with any piled under them.
+ * Raise requests, promotions, training and perks still waiting, and the messages on screen with any piled under them.
  */
 export function Toasts() {
   const hud = useHud();
@@ -230,6 +231,7 @@ export function Toasts() {
       raiseRequests(sim.s.staff)[0],
       promotionRequests(sim.s.staff)[0],
       heldBack(sim)[0],
+      perkRequests(sim.s.staff)[0],
       sim.openComplaints()[0],
     ].filter(Boolean).length;
     return <Strip newest={[...shown, ...piled]} requests={requests} />;
@@ -251,6 +253,7 @@ export function Toasts() {
       <RequestCard which="raise" staff={raiseRequests(sim.s.staff)} />
       <RequestCard which="promotion" staff={promotionRequests(sim.s.staff)} />
       <RequestCard which="training" staff={heldBack(sim)} />
+      <RequestCard which="perk" staff={perkRequests(sim.s.staff)} />
       <ComplaintCard complaints={sim.openComplaints()} />
       <div class={cx('messages', messages)}>
         {(open ? [...shown, ...piled] : shown).map((t) => (
@@ -307,6 +310,7 @@ const REQUEST_CARDS = {
   raise: { icon: 'bubble-raise', one: 'wants a raise', many: 'want a raise' },
   promotion: { icon: 'ui-upgrade', one: 'is ready for promotion', many: 'are ready for promotion' },
   training: { icon: 'room-training', one: 'needs training to be promoted', many: 'need training to be promoted' },
+  perk: { icon: 'bubble-idea', one: 'has a perk to choose', many: 'have perks to choose' },
 } as const;
 
 /** The staff with the experience for promotion who still need a course for it, in payroll order. */

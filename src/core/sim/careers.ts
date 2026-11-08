@@ -17,6 +17,9 @@ import {
   type Modality,
   MODALITY_ORDER,
   MOTIVATION_SPEED,
+  PERK_RANKS,
+  PERK_TIERS,
+  perkOf,
   PROMOTION_CHEER,
   RANK_XP,
   RANKS,
@@ -45,6 +48,7 @@ import type { SimContext } from './context';
 import { emit, staffRequest, toast } from './events';
 import { running } from './marketing';
 import { logNews } from './news';
+import { hasPerk, knowsPipes, owePerk, perkSpeed, settleIn } from './perks';
 import { unlocked } from './treatments';
 
 /** The name of a rank, from 1 to 5. */
@@ -113,11 +117,36 @@ export const fullyTrained = (ctx: SimContext, st: Staff) =>
 export const heldBack = (ctx: SimContext, st: Staff) =>
   st.state !== 'leaving' && !st.promotion && !st.training && xpToNext(st) === 0 && !fullyTrained(ctx, st);
 
-/** Add experience for work done, and see whether it has earned a promotion. */
+/**
+ * Add experience for work done, faster with a Mentor nearby, and see whether it has earned a promotion, or, for a hire,
+ * a choice they are owed for settling in.
+ */
 export function gainXp(ctx: SimContext, st: Staff, amount: number) {
-  st.xp += amount;
+  st.xp += amount * mentored(ctx, st);
   offerPromotion(ctx, st);
+  settleIn(ctx, st);
 }
+
+/**
+ * How much faster a Mentor makes someone earn experience: one of a higher rank, at work within a Ray of Sunshine's
+ * reach, a Caretaker for a Caretaker and anyone else for anyone else. Two Mentors do not add up.
+ */
+export function mentored(ctx: SimContext, st: Staff): number {
+  const caretaker = st.role === 'caretaker';
+  const mentor = ctx.s.staff.find(
+    (o) =>
+      o !== st &&
+      hasPerk(o, 'mentor') &&
+      o.skill > st.skill &&
+      (o.role === 'caretaker') === caretaker &&
+      atWork(o) &&
+      withinReach(o, st),
+  );
+  return mentor ? MENTOR_XP : 1;
+}
+
+/** How much faster a Mentor makes colleagues of a lower rank nearby earn experience. */
+export const MENTOR_XP = perkOf('mentor').mentor ?? 1;
 
 /**
  * Ask for promotion once there is the experience for it and they are fully trained, or ask to be trained first, for
@@ -166,6 +195,7 @@ export function promote(ctx: SimContext, id: number, { sound = true } = {}): boo
     id: st.id,
   });
   if (expert(st)) logNews(ctx, { kind: 'expert', who: st.name, role: st.role, ids: { staff: st.id } });
+  for (const tier of PERK_TIERS) if (st.skill === PERK_RANKS[tier]) owePerk(ctx, st, tier);
   return true;
 }
 
@@ -201,7 +231,8 @@ export function caretakerSpeed(st: Staff): number {
   return (
     (hasGeneral(st, 'maintenance') ? MAINTENANCE_SPEED : 1) *
     (hasGeneral(st, 'motivation') ? MOTIVATION_SPEED : 1) *
-    traitSpeed(st.traits)
+    traitSpeed(st.traits) *
+    perkSpeed(st)
   );
 }
 
@@ -211,7 +242,7 @@ export function caretakerSpeed(st: Staff): number {
  */
 export function serviceSeconds(base: number, st: Staff, held = 1) {
   let speed = SERVICE_PACE.base + st.skill * SERVICE_PACE.rank;
-  speed *= traitSpeed(st.traits) * held;
+  speed *= traitSpeed(st.traits) * perkSpeed(st) * held;
   if (hasGeneral(st, 'motivation')) speed *= MOTIVATION_SPEED;
   if (hasGeneral(st, 'service')) speed *= SERVICE_SPEED;
   if (st.energy < TIRED_ENERGY) speed *= TIRED_PACE;
@@ -240,11 +271,16 @@ export function jobDuty(kind: Job['kind'], it: Item | undefined): Duty | null {
 /** Whether a member of staff does a duty: true unless it is one their role can be kept from and they are. */
 export const onDuty = (st: Staff, duty: Duty | null) => !duty || !st.off.includes(duty);
 
-/** Keep a member of staff from a duty, or put them back on it. Their role's last duty cannot be taken away. */
+/**
+ * Keep a member of staff from a duty, or put them back on it. Their role's last duty cannot be taken away, and litter
+ * cannot be given back to someone who Knows Every Pipe.
+ */
 export function setDuty(ctx: SimContext, id: number, duty: Duty, on: boolean): boolean {
   const st = staffById(ctx, id);
   const duties = st ? (DUTIES[st.role] ?? []) : [];
   if (!st || !duties.includes(duty)) return false;
+  // someone who Knows Every Pipe is done with litter for good
+  if (on && duty === 'litter' && knowsPipes(st)) return false;
   const off = on ? st.off.filter((d) => d !== duty) : [...new Set([...st.off, duty])];
   if (off.length >= duties.length) return false;
   st.off = off;

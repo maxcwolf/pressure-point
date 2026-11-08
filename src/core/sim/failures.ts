@@ -24,6 +24,7 @@ import { roomLabels, worksIn } from './assignments';
 import { rankName } from './careers';
 import type { SimContext } from './context';
 import { toast } from './events';
+import { perkDefs } from './perks';
 import { AWAY, type DeliveryProblem } from './treatments';
 import { warmthAt } from './warmth';
 
@@ -46,7 +47,8 @@ export type ChanceCause =
   | 'linens'
   | 'temperature'
   | 'rest'
-  | 'second-look';
+  | 'second-look'
+  | 'perk';
 
 /**
  * One term in a treatment's chance of working: what it added (or, below zero, took off), and the most it could have
@@ -312,6 +314,10 @@ function wordsFor(ctx: SimContext, it: Item, staff: Staff, g: Guest): (cause: Ch
         return `Too ${warmthAt(ctx, g.tx, g.ty) > IDEAL_TEMP ? 'hot' : 'cold'} for a ceremony`;
       case 'rest':
         return 'Nowhere to lie down afterwards';
+      case 'perk': {
+        const perk = perkDefs(staff).find((p) => p.success && (!p.techniques || p.techniques.includes(mod.id)));
+        return `${staff.name}’s ${perk?.name ?? 'way of working'} costs ${technique} a little`;
+      }
       default:
         return technique;
     }
