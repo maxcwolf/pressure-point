@@ -1,17 +1,20 @@
 // What preparing for a mishap looks like in the center, from the day it is paid for until the mishap is over: before a
-// storm, planks nailed across every window in the building's outer walls, and sandbags banked either side of each
-// entrance. A ward that held does its work unseen, so it shows nothing here. The pure parts, where each plank and bag
-// goes, are worked out apart from the drawing, so they can be tested without a renderer.
+// storm, planks nailed across every window in the building's outer walls and sandbags banked either side of each
+// entrance; before a power cut, a hired generator outside the door with its cable run in; before a freeze, lagging on
+// the pipes and a tarp over the koi pond; before the wasps, traps beside the snacks and drinks, mesh over the bins and
+// the pest control van at the curb. Each sits on what the mishap would stop, so the player sees what they protected. A
+// Shaman's ward shows as a chalk sigil inside the door, smeared if it fails. The pure parts, where each piece goes,
+// are worked out apart from the drawing, so they can be tested without a renderer.
 
 import * as THREE from 'three';
 
 import { ITEMS, type ItemType, type MishapId, MISHAPS, ROAD_Y } from '../core/data';
 import { entranceSpan, type Footprint, inFootprint, type Side, spotInWall } from '../core/footprint';
-import { paidFor } from '../core/sim/mishaps';
+import { mishapOn, paidFor } from '../core/sim/mishaps';
 import type { Sim } from '../core/sim/sim';
 import type { GameState, Item, Room } from '../core/state/types';
 import { must } from '../core/util';
-import { itemCenter } from '../core/world';
+import { itemCenter, itemDims, type Placed, rotVec } from '../core/world';
 import { disposeOwned, owned } from './disposal';
 import { buildItem } from './models/items';
 import { mergeStill } from './models/merge';
@@ -19,17 +22,16 @@ import { mat, put, rbox } from './models/parts';
 import {
   buildCable,
   buildCableRamp,
-  buildDecoyNest,
-  buildGrit,
-  buildGritBin,
   buildHiredGenerator,
-  buildJunctionBox,
   buildLagging,
   buildMeshLid,
   buildPestVan,
   buildSigil,
   buildTarp,
+  buildWallSocket,
   buildWaspTrap,
+  EXHAUST,
+  puffExhaust,
 } from './models/preparations';
 import { hash, OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T } from './shared';
 import { nearSides, type Sides, type Turn } from './turn';
@@ -240,14 +242,14 @@ function buildPreparations(prep: ReturnType<typeof stormPreparations>): THREE.Gr
 const yawOut = (side: Side) => ({ south: 0, north: Math.PI, east: Math.PI / 2, west: -Math.PI / 2 })[side];
 
 /** The front entrance: its span along its wall, which way is out, and whether the wall runs along x. */
-function frontDoor(fp: Footprint) {
+export function frontDoor(fp: Pick<Footprint, 'entrances'>) {
   const span = entranceSpan(must(fp.entrances[0], 'front entrance'));
   return { ...span, outward: outwardOf(span.side), horizontal: span.side === 'north' || span.side === 'south' };
 }
 type Door = ReturnType<typeof frontDoor>;
 
-/** A point by a door: `along` its wall, `out` from the wall's inside face (negative inside), `y` up. */
-const byDoor = (d: Door, along: number, out: number, y = 0): [number, number, number] =>
+/** A point by a door, in the scene: `along` its wall, `out` from the wall's inside face (negative inside), `y` up. */
+export const byDoor = (d: Door, along: number, out: number, y = 0): [number, number, number] =>
   d.horizontal ? [along, y, d.line + d.outward * out] : [d.line + d.outward * out, y, along];
 
 /** Put a model by a door, turned so its front faces `face` (a turn about the upright) from facing out. */
@@ -258,14 +260,56 @@ function placeByDoor(root: THREE.Object3D, model: THREE.Object3D, d: Door, along
   return model;
 }
 
+/**
+ * Where the hired generator stands, by the front door: its middle along the wall, past the right-hand pillar and clear
+ * of it, and out from the wall's inside face, on the paving outside. It is 2.4 m long with its tow bar, the socket end
+ * toward the door, and 1 m wide with its wheels.
+ */
+export const generatorSpot = (d: Door) => ({ along: d.b + 1.65, out: OUTER_T + 0.72 });
+
+/** Where the pest control van parks: at the curb, in the lane nearer the center, past the door from the fire engine's spot. */
+export const vanSpot = (door: readonly [number, number]) => ({ x: door[0] + 4.5, z: ROAD_Y[0] + 0.55 });
+
+/** Where a ward's sigil is chalked: on the floor in the middle of the doorway, a tile and a half inside. */
+export const sigilSpot = (d: Door) => ({ along: (d.a + d.b) / 2, out: -1.7 });
+
+/** What a mishap prepared for puts on one of the things it would stop. */
+export type Covering = 'lagging' | 'tarp' | 'trap' | 'lid';
+
+/**
+ * What preparing for a mishap puts on an item of a kind it would stop: lagging on the pipes for a freeze, or a tarp
+ * over a koi pond; a wasp trap beside a snack or drink, or a mesh lid on a bin. Nothing for anything else.
+ */
+export function coveringOf(kind: MishapId, type: ItemType): Covering | undefined {
+  if (!MISHAPS[kind].stops?.includes(type)) return undefined;
+  if (kind === 'freeze') return type === 'koi_pond' ? 'tarp' : 'lagging';
+  if (kind === 'wasps') return ITEMS[type].bin ? 'lid' : 'trap';
+  return undefined;
+}
+
+/**
+ * Which side of an item its wasp trap stands, in the item's own frame: its right (1) if the tile there is free, else
+ * its left (-1), else 0, tucked in at its right on its own tile. `free` says whether a tile is open floor in the same
+ * room or corridor as the item, with nothing on it.
+ */
+export function trapSide(it: Placed, free: (x: number, y: number) => boolean): 1 | -1 | 0 {
+  const [w, h] = itemDims(it.type, it.rot);
+  const [cx, cy] = itemCenter(it);
+  for (const side of [1, -1] as const) {
+    const [dx, dy] = rotVec(it.rot, side, 0);
+    const reach = (dx ? w : h) / 2 + 0.5;
+    if (free(Math.floor(cx + dx * reach), Math.floor(cy + dy * reach))) return side;
+  }
+  return 0;
+}
+
 /** Each item's model's bounds in its own frame, its front toward +z, worked out once for each kind. */
 const bounds = new Map<ItemType, THREE.Box3>();
 /** An item's model's bounds, from the cache or measured now. */
 function boundsOf(type: ItemType): THREE.Box3 {
   let b = bounds.get(type);
   if (!b) {
-    const model = buildItem(type);
-    b = new THREE.Box3().setFromObject(model);
+    b = new THREE.Box3().setFromObject(buildItem(type));
     bounds.set(type, b);
   }
   return b;
@@ -279,81 +323,75 @@ function placeOnItem(root: THREE.Object3D, model: THREE.Object3D, it: Item) {
   root.add(model);
 }
 
-/** A power cut: the hired generator outside the door, its cable in through the doorway to a junction box. */
+/** A power cut: the hired generator outside the door, its cable in through the doorway under a ramp to a socket. */
 function buildPowerPrep(fp: Footprint): THREE.Group {
   const root = new THREE.Group();
   const d = frontDoor(fp);
   const T = OUTER_T;
-  const genAt = d.b + 0.36 + 1.3;
-  const genOut = T + 0.72;
-  // long along the wall, its socket end toward the door
-  placeByDoor(root, buildHiredGenerator(), d, genAt, genOut, Math.PI);
-  const socket = genAt - 0.72;
-  // in through the doorway under a ramp, and along the inside of the wall to the junction box
+  const gen = generatorSpot(d);
+  placeByDoor(root, buildHiredGenerator(), d, gen.along, gen.out, Math.PI);
+  const socket = gen.along - 0.72;
+  // in through the doorway, close by its right-hand side, under a ramp, then along the inside of the wall to a socket
   const lane = d.b - 0.42;
   root.add(
     buildCable([
-      byDoor(d, socket, genOut, 0.6),
-      byDoor(d, socket - 0.1, genOut, 0.3),
-      byDoor(d, socket - 0.2, genOut - 0.05, 0.03),
+      byDoor(d, socket, gen.out, 0.6),
+      byDoor(d, socket - 0.1, gen.out, 0.3),
+      byDoor(d, socket - 0.2, gen.out - 0.05, 0.03),
       byDoor(d, lane + 0.1, T + 0.45, 0.03),
       byDoor(d, lane, T + 0.25, 0.02),
       byDoor(d, lane, -0.15, 0.02),
-      byDoor(d, lane + 0.15, -0.32, 0.03),
-      byDoor(d, d.b + 0.4, -0.3, 0.03),
-      byDoor(d, d.b + 0.6, -0.22, 0.12),
+      byDoor(d, lane + 0.15, -0.3, 0.03),
+      byDoor(d, d.b + 0.35, -0.3, 0.03),
+      byDoor(d, d.b + 0.52, -0.1, 0.08),
+      byDoor(d, d.b + 0.55, -0.05, 0.18),
     ]),
   );
   placeByDoor(root, buildCableRamp(0.9), d, lane, T / 2 + 0.05, Math.PI / 2);
-  placeByDoor(root, buildJunctionBox(), d, d.b + 0.75, -0.2, Math.PI);
+  const plug = placeByDoor(root, buildWallSocket(), d, d.b + 0.55, 0, Math.PI);
+  plug.position.y = 0.2;
   return root;
 }
 
-/** A big freeze: lagging on every pipe the freeze would stop, a tarp over the koi pond, and a grit bin and grit. */
-function buildFreezePrep(fp: Footprint, items: readonly Item[]): THREE.Group {
+/** A big freeze: lagging on the pipes of everything the freeze would stop, and a tarp over each koi pond. */
+function buildFreezePrep(items: readonly Item[]): THREE.Group {
   const root = new THREE.Group();
   for (const it of items) {
-    if (!MISHAPS.freeze.stops?.includes(it.type)) continue;
+    const covering = coveringOf('freeze', it.type);
+    if (!covering) continue;
     const b = boundsOf(it.type);
-    if (it.type === 'koi_pond') {
-      const [w, h] = [ITEMS[it.type].w, ITEMS[it.type].h];
-      placeOnItem(root, buildTarp(w - 0.1, h - 0.1, b.max.y), it);
-    } else {
-      // a toilet's pipes run up inside its stall, between the bowl and the partitions
-      const inset = it.type === 'toilet' ? 0.24 : 0;
-      placeOnItem(root, buildLagging(b.min.z, b.max.x - b.min.x, b.max.y, inset), it);
-    }
+    if (covering === 'tarp') placeOnItem(root, buildTarp(ITEMS[it.type].w - 0.1, ITEMS[it.type].h - 0.1, b.max.y), it);
+    // a toilet's pipes run up inside its stall, between the bowl and the partitions
+    else placeOnItem(root, buildLagging(b.min.z, b.max.x - b.min.x, b.max.y, it.type === 'toilet' ? 0.24 : 0), it);
   }
-  const d = frontDoor(fp);
-  placeByDoor(root, buildGritBin(), d, d.a - 0.36 - 0.55, OUTER_T + 0.4);
-  const grit = buildGrit(2.6, 2.2, d.a);
-  placeByDoor(root, grit, d, (d.a + d.b) / 2, OUTER_T + 1.2);
   return root;
 }
 
-/** Wasps: a trap beside each snack and drink, a mesh lid on each bin, a decoy nest by the door, and the van. */
-function buildWaspPrep(fp: Footprint, items: readonly Item[]): THREE.Group {
+/** Wasps: a trap beside each snack and drink, a mesh lid on each bin, and the pest control van at the curb. */
+function buildWaspPrep(fp: Footprint, items: readonly Item[], free: (it: Item, x: number, y: number) => boolean) {
   const root = new THREE.Group();
   for (const it of items) {
-    if (!MISHAPS.wasps.stops?.includes(it.type)) continue;
+    const covering = coveringOf('wasps', it.type);
+    if (!covering) continue;
     const b = boundsOf(it.type);
-    if (ITEMS[it.type].bin) {
-      const r = Math.min(b.max.x - b.min.x, b.max.z - b.min.z) / 2;
-      placeOnItem(root, buildMeshLid(r, b.max.y), it);
-    } else {
+    const holder = new THREE.Group();
+    if (covering === 'lid') holder.add(buildMeshLid(Math.min(b.max.x - b.min.x, b.max.z - b.min.z) / 2, b.max.y));
+    else {
+      const side = trapSide(it, (x, y) => free(it, x, y));
       const trap = buildWaspTrap();
-      trap.position.set(b.max.x + 0.12, 0, b.max.z - 0.1);
-      const holder = new THREE.Group();
+      const half = ITEMS[it.type].w / 2;
+      if (side === 1) trap.position.set(b.max.x + 0.12, 0, b.max.z - 0.1);
+      else if (side === -1) trap.position.set(b.min.x - 0.12, 0, b.max.z - 0.1);
+      else trap.position.set(half - 0.04, 0, b.max.z - 0.02);
+      // the jar hangs away from the item, or out in front of it when tucked in on its own tile
+      trap.rotation.y = side === -1 ? Math.PI : side === 0 ? -Math.PI / 2 : 0;
       holder.add(trap);
-      placeOnItem(root, holder, it);
     }
+    placeOnItem(root, holder, it);
   }
-  const d = frontDoor(fp);
-  const nest = buildDecoyNest();
-  placeByDoor(root, nest, d, d.b + 0.16, OUTER_T / 2 + 0.17);
-  nest.position.y = 1.32;
   const van = buildPestVan();
-  van.position.set(fp.door[0] + 4.5, 0, ROAD_Y[0] + 0.55);
+  const spot = vanSpot(fp.door);
+  van.position.set(spot.x, 0, spot.z);
   root.add(van);
   return root;
 }
@@ -362,11 +400,15 @@ function buildWaspPrep(fp: Footprint, items: readonly Item[]): THREE.Group {
 function buildWardPrep(fp: Footprint, smeared: boolean): THREE.Group {
   const root = new THREE.Group();
   const d = frontDoor(fp);
-  placeByDoor(root, buildSigil(smeared), d, (d.a + d.b) / 2, -1.7);
+  const spot = sigilSpot(d);
+  placeByDoor(root, buildSigil(smeared), d, spot.along, spot.out);
   return root;
 }
 
-/** What a mishap prepared for shows now, as a key: the mishap paid for, if any, and a ward, held or smeared. */
+/**
+ * What a mishap prepared for shows now: the mishap paid for, if any, and a Shaman's ward once it is performed, held,
+ * or smeared once it has failed. Nothing for a ward only asked for.
+ */
 export function preparationsShown(s: GameState): { paid: MishapId | undefined; ward: 'held' | 'smeared' | undefined } {
   const m = s.mishap;
   const ward = m?.ward === 'done' ? (m.started && !m.prepared ? 'smeared' : 'held') : undefined;
@@ -396,9 +438,22 @@ export class PreparationsLayer {
     this.seen = -1;
   }
 
-  /** Show the preparations while a mishap paid for is coming or under way, built again if what they cover changed. */
-  update() {
-    const show = preparationsShown(this.sim.s);
+  /**
+   * Show the preparations while a mishap paid for is coming or under way, built again if what they cover changed, and
+   * puff the hired generator's exhaust while it carries the center through the cut.
+   */
+  update(t: number) {
+    this.sync();
+    const exhaust = this.root?.getObjectByName(EXHAUST);
+    if (!exhaust) return;
+    exhaust.visible = mishapOn(this.sim.s)?.id === 'power';
+    if (exhaust.visible) puffExhaust(exhaust, t);
+  }
+
+  /** Build the preparations again if what they show, or what they stand on, has changed. */
+  private sync() {
+    const s = this.sim.s;
+    const show = preparationsShown(s);
     const showing = `${show.paid ?? ''}|${show.ward ?? ''}`;
     if (!show.paid && !show.ward) {
       if (this.root) this.clear();
@@ -408,31 +463,34 @@ export class PreparationsLayer {
     if (this.root && this.seen === world.version && this.showing === showing) return;
     this.seen = world.version;
     this.showing = showing;
-    const windows = outerWindows(world.building, this.sim.s.rooms, world.buildingWindows());
-    const items = this.sim.s.items;
+    const windows = outerWindows(world.building, s.rooms, world.buildingWindows());
+    const covers = show.paid === 'freeze' || show.paid === 'wasps';
     const key = [
       showing,
       this.turn,
       windows.map((w) => `${w.side}${w.line}.${w.a}.${w.b}`).join('|'),
       world.building.entrances.map((e) => `${e.side}${e.x},${e.y}`).join('|'),
-      show.paid === 'freeze' || show.paid === 'wasps' ? items.map((it) => `${it.type}${it.x},${it.y},${it.rot}`) : '',
+      covers ? s.items.map((it) => `${it.type}${it.x},${it.y},${it.rot}`).join('|') : '',
     ].join('#');
     if (this.root && key === this.key) return;
     this.clear();
     this.key = key;
     const fp = world.building;
+    /** Whether a tile beside an item is open floor on its side of any wall, with nothing standing on it. */
+    const free = (it: Item, x: number, y: number) =>
+      world.walkable(x, y) && !world.itemAt(x, y) && world.zoneAt(x, y) === world.zoneAt(it.x, it.y);
     const root = new THREE.Group();
     if (show.paid === 'storm') root.add(buildPreparations(stormPreparations(windows, fp, nearSides(this.turn))));
     if (show.paid === 'power') root.add(buildPowerPrep(fp));
-    if (show.paid === 'freeze') root.add(buildFreezePrep(fp, items));
-    if (show.paid === 'wasps') root.add(buildWaspPrep(fp, items));
+    if (show.paid === 'freeze') root.add(buildFreezePrep(s.items));
+    if (show.paid === 'wasps') root.add(buildWaspPrep(fp, s.items, free));
     if (show.ward) root.add(buildWardPrep(fp, show.ward === 'smeared'));
     root.traverse((o) => {
-      /** Nothing to hit. */
+      /** Not there to be clicked: a click goes through to what is under it. */
       o.raycast = () => undefined;
     });
     this.root = root;
-    this.scene.add(this.root);
+    this.scene.add(root);
   }
 
   /** Take the preparations away, and free what was built for them alone. */
