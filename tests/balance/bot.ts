@@ -38,6 +38,7 @@ import {
   MODALITIES,
   type Modality,
   NOISE_NOTICE,
+  type PerkId,
   type Role,
   ROLE_ORDER,
   ROLES,
@@ -69,6 +70,7 @@ import {
   wagesDue,
 } from '../../src/core/sim/economy';
 import type { SimEvent, Subject } from '../../src/core/sim/events';
+import { ownChoice } from '../../src/core/sim/perks';
 import { rivalPoints } from '../../src/core/sim/rival';
 import { matsPlayed } from '../../src/core/sim/sessions';
 import { Sim } from '../../src/core/sim/sim';
@@ -667,6 +669,8 @@ export interface Playtest {
   swaps?: SwapLog[];
   /** Everyone the bot took on, in order, with their quirks; not in older logs. */
   hires?: HireLog[];
+  /** Every perk chosen, by the bot or by staff left to choose: the day, the role and the perk; not in older logs. */
+  perks?: { day: number; role: Role; perk: PerkId }[];
   /** Every inspection: the day, how it ended once settled, and what it cost; not in older logs. */
   inspections?: { day: number; outcome: string; money: number }[];
   /** What their quirks came to over the game (`QuirkLog`); not in older logs. */
@@ -940,6 +944,7 @@ export class Bot {
       machines: [],
       ...(flags.swap ? { swaps: [] } : {}),
       hires: [],
+      perks: [],
       inspections: [],
       quirks: { hired: 0, flaws: 0, rares: {}, adds: 0, saves: 0, payroll: 0 },
       complaints: {
@@ -2066,11 +2071,19 @@ export class Bot {
     this.heed(signal, `let a ${go.st.role} go (busy ${Math.round(go.busy * 100)}%), saving ${go.st.salary}`);
   }
 
-  /** Promotions, and raises for anyone asking, tempted away or about to quit. */
+  /**
+   * Promotions, a perk chosen the moment one is owed (by the rule staff left to choose follow, until the bot has a
+   * better one), and raises for anyone asking, tempted away or about to quit.
+   */
   private keepStaffHappy() {
     for (const st of this.s.staff) {
       if (st.state === 'leaving') continue;
       if (st.promotion) this.sim.promote(st.id);
+      for (const d of [...st.perkDue]) {
+        const perk = ownChoice(st, d.tier);
+        if (this.sim.choosePerk(st.id, perk))
+          this.log.perks?.push({ day: Math.floor(this.s.day), role: st.role, perk });
+      }
       if (st.raiseAsked || st.offer > 0 || this.sim.aboutToQuit(st)) this.sim.giveRaise(st.id);
     }
   }
