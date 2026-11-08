@@ -514,6 +514,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
   } else {
     const cond = conditionOf(g.condition);
     const mod = MODALITIES[cond.modality];
+    g.treatedBy = staff.id;
     // the wrong hands or missing equipment: they try anyway, and it rarely works
     const odds = successChance(ctx, it, staff, g);
     const { chance, problem } = odds;

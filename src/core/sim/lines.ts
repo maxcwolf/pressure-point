@@ -13,6 +13,7 @@ import { tipOnce } from './events';
 import { MACHINE_PULL } from './machines';
 import { goTo, halt } from './movement';
 import { carriedOut } from './outbreaks';
+import { askedFor } from './regulars';
 import { stationStaff } from './sessions';
 import { deliveryProblem, leftForSpecialist, modalityOf, treatsHere } from './treatments';
 
@@ -34,12 +35,17 @@ export function pickStation(ctx: SimContext, g: Guest): Item | null {
   return best;
 }
 
+/** How many more guests a regular will wait behind to be seen by the Name on the Door they ask for. */
+export const ASKED_FOR_PULL = 3;
+
 /** Lower is better. Guests steer toward tables that can actually deliver what they need. */
 export function stationScore(ctx: SimContext, it: Item, g: Guest) {
   const staff = stationStaff(ctx, it);
   // a station that runs itself is never short of someone to work it
   let score = it.queue.length + (it.serving ? 1 : 0) + (staff || !ITEMS[it.type].station?.staff ? 0 : 2.5);
   if (ITEMS[it.type].station?.goal === 'treat') {
+    // a regular waits behind a few more guests for the Name on the Door they ask for
+    if (staff && askedFor(ctx, g) === staff.id) score -= ASKED_FOR_PULL;
     const problem = deliveryProblem(ctx, it, staff, modalityOf(g));
     // someone untrained is a last resort, and no resort at all while a colleague trained for it is about
     // and a table without the specialty item can never do it properly, whoever comes to work it

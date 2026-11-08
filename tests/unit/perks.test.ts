@@ -21,6 +21,7 @@ import { gainXp, mentored, promote, promoteAll, serviceSeconds, setDuty } from '
 import { instructorPlaces } from '../../src/core/sim/classes';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
+import { ASKED_FOR_PULL, stationScore } from '../../src/core/sim/lines';
 import {
   choosePerk,
   consultPace,
@@ -32,7 +33,7 @@ import {
   structuralSure,
 } from '../../src/core/sim/perks';
 import { needsRest } from '../../src/core/sim/recovery';
-import { takesToPlace } from '../../src/core/sim/regulars';
+import { afterVisit, askedFor, askingFor, takesToPlace } from '../../src/core/sim/regulars';
 import { healerMats } from '../../src/core/sim/sessions';
 import { raiseTo } from '../../src/core/sim/staffing';
 import { addWear } from '../../src/core/sim/upkeep';
@@ -355,5 +356,38 @@ describe('what perks do', () => {
     expect(count(1)).toBe(20);
     expect(count(0.75)).toBe(15);
     expect(count(2)).toBe(40);
+  });
+
+  it('a regular a Name on the Door heals asks for them by name, and waits a little longer to see them', () => {
+    const { s, therapist, receptionist } = openCenter(1);
+    const ctx = createContext(s);
+    therapist.perks = ['name-on-door'];
+    s.regulars.push({ id: 9001, name: 'Ada Twinge', look: therapist.look, visits: 1, loyalty: 50, due: 0 });
+    const guest = {
+      id: 9001,
+      name: 'Ada Twinge',
+      regular: 9001,
+      condition: 'slump',
+      feelings: [],
+      x: 0,
+      y: 0,
+    } as unknown as Guest;
+    afterVisit(ctx, { ...guest, treatedBy: therapist.id }, 5, true);
+    expect(s.regulars[s.regulars.length - 1]?.asksFor).toBe(therapist.id);
+    expect(askingFor(s, therapist)).toBe(1);
+    expect(askedFor(ctx, guest)).toBe(therapist.id);
+    // a table they work scores as if its line were shorter, for that regular and nobody else
+    const table = must(
+      s.items.find((it) => it.type === 'massage_table'),
+      'a massage table',
+    );
+    table.staffId = therapist.id;
+    therapist.post = table.id;
+    const stranger = { ...guest, id: 1 } as Guest;
+    delete stranger.regular;
+    expect(stationScore(ctx, table, stranger) - stationScore(ctx, table, guest)).toBe(ASKED_FOR_PULL);
+    // healed by someone else, they forget; and a perk lost stops the asking
+    afterVisit(ctx, { ...guest, treatedBy: receptionist.id }, 5, true);
+    expect(askedFor(ctx, guest)).toBeUndefined();
   });
 });

@@ -307,7 +307,7 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
     id: 'name-on-door',
     name: 'Name on the Door',
     tier: 'expert',
-    desc: 'Regulars in their line lose patience 60% more slowly, and tip 12% more. Their morale settles 3 lower, and each raise they ask for is 15%, not 10%.',
+    desc: 'Regulars they heal ask for them by name, and will wait behind 3 more guests to see them. Regulars in their line lose patience 60% more slowly, and tip 12% more. Their morale settles 3 lower, and each raise they ask for is 15%, not 10%.',
     regularPatience: 0.4,
     regularTip: 0.12,
     morale: -3,

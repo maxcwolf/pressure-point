@@ -4,7 +4,8 @@ import { DUTIES, DUTY_NAMES, perkOf, perkPair, ROLES } from '../../../core/data'
 import { money } from '../../../core/format';
 import { assignableRole, roomLabels } from '../../../core/sim/assignments';
 import { rankName, rankProgress, xpToNext } from '../../../core/sim/careers';
-import { knowsPipes } from '../../../core/sim/perks';
+import { hasPerk, knowsPipes } from '../../../core/sim/perks';
+import { askingFor } from '../../../core/sim/regulars';
 import { burntOut } from '../../../core/sim/souls';
 import type { Staff } from '../../../core/state/types';
 import { css } from '../../../styled-system/css';
@@ -12,7 +13,7 @@ import { dangerButton, goButton } from '../../../styled-system/recipes';
 import { useGame, useHud } from '../../hooks/use-hud';
 import { cx } from '../../lib/cx';
 import { meterPercent, meterTone } from '../../lib/meters';
-import { choiceDeadline, choiceHeading, settlingNote } from '../../lib/perks';
+import { askedForNote, choiceDeadline, choiceHeading, settlingNote } from '../../lib/perks';
 import { quirkNotes } from '../../lib/quirks';
 import { soulNote } from '../../lib/souls';
 import { offerWarning } from '../../lib/standing';
@@ -118,6 +119,7 @@ function Perks({ staff: st }: { staff: Staff }) {
           <Bar value={settling.progress * 100} tone="blue" show={meterPercent(settling.progress * 100)} />
         </label>
       )}
+      {hasPerk(st, 'name-on-door') && <p class="sub asked-for">{askedForNote(askingFor(sim.s, st))}</p>}
       {sim.mentored(st) > 1 && (
         <p class="sub">{`A Mentor nearby: earning experience ${Math.round((sim.mentored(st) - 1) * 100)}% faster.`}</p>
       )}

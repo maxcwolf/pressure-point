@@ -45,6 +45,12 @@ export function applicantPerkNote(c: Pick<Candidate, 'skill' | 'perk'>): string 
   return `Will choose ${aRank(first.tier)} perk once settled in (${first.at} experience)${rest}.`;
 }
 
+/** How many regulars ask for a Name on the Door by name, in words. */
+export function askedForNote(n: number): string {
+  if (n === 0) return 'No regulars ask for them by name yet: those they heal will.';
+  return `${n} regular${n === 1 ? ' asks' : 's ask'} for them by name.`;
+}
+
 /** What the Let Go dialog says goes with them: the perks chosen here, by name. */
 export function chosenHereNote(st: Pick<Staff, 'name' | 'perks' | 'brought'>): string {
   const here = st.perks.filter((p) => p !== st.brought).map((p) => perkOf(p).name);

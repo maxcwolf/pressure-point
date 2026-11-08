@@ -23,13 +23,13 @@ import {
   VISION_LOYALTY,
   WON_BACK_LOYALTY,
 } from '../data';
-import type { GameState, Guest, Regular } from '../state/types';
+import type { GameState, Guest, Regular, Staff } from '../state/types';
 import { clamp } from '../util';
 import { staffById } from './chars';
 import { complains, complaintHolds } from './complaints';
 import type { SimContext } from './context';
 import { emit, tipOnce, toast } from './events';
-import { perkProduct } from './perks';
+import { hasPerk, perkProduct } from './perks';
 
 /** The technique whose guests all come back as regulars. */
 export const VISION_QUEST: Modality = 'quest';
@@ -114,6 +114,31 @@ export function welcomeBack(ctx: SimContext, g: Guest, r: Regular) {
   emit(ctx, { type: 'float', text: 'Back again', x: g.x, y: g.y, kind: 'good' });
 }
 
+/**
+ * A regular healed by a Name on the Door remembers who it was, and asks for them by name from then on: they will wait
+ * behind a few more guests to be seen by them again. Healed by anyone else, they forget.
+ */
+function rememberName(ctx: SimContext, r: Regular, g: Guest, healed: boolean) {
+  if (!healed || !g.treatedBy) return;
+  const st = staffById(ctx, g.treatedBy);
+  if (!st || !hasPerk(st, 'name-on-door')) {
+    delete r.asksFor;
+    return;
+  }
+  if (r.asksFor !== st.id)
+    emit(ctx, { type: 'float', text: `Asks for ${st.name.split(' ')[0] ?? st.name}`, x: g.x, y: g.y, kind: 'good' });
+  r.asksFor = st.id;
+}
+
+/** The member of staff a regular asks for by name, if they still have the perk that earns it. */
+export function askedFor(ctx: SimContext, g: Pick<Guest, 'regular'>): number | undefined {
+  const id = regularOf(ctx.s, g)?.asksFor;
+  return id !== undefined && hasPerk(staffById(ctx, id), 'name-on-door') ? id : undefined;
+}
+
+/** How many regulars ask for this member of staff by name. */
+export const askingFor = (s: GameState, st: Pick<Staff, 'id'>) => s.regulars.filter((r) => r.asksFor === st.id).length;
+
 /** Whether a guest's visit was a vision quest that worked. */
 const questDone = (g: Guest, healed: boolean) => healed && conditionOf(g.condition).modality === VISION_QUEST;
 
@@ -141,6 +166,7 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
       return;
     }
     r.due = s.day + returnGap(r);
+    rememberName(ctx, r, g, healed);
     const after = loyaltyLevel(r.loyalty);
     if (after !== before && after !== 'regular' && (before === 'regular' || after === 'devoted'))
       toast(
@@ -166,6 +192,7 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
     due: 0,
   };
   added.due = s.day + returnGap(added);
+  rememberName(ctx, added, g, healed);
   s.regulars.push(added);
   emit(ctx, { type: 'float', text: 'Will be back', x: g.x, y: g.y, kind: 'good' });
   tipOnce(

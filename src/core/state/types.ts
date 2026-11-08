@@ -462,6 +462,8 @@ export interface Guest extends CharBase {
   checkedInBy?: number;
   /** The Instructor who led their class, for a Crowd-Pleaser or a Devotee-Maker. */
   ledBy?: number;
+  /** Who gave them their treatment, for a regular a Name on the Door has healed. */
+  treatedBy?: number;
 }
 
 /** How a visit ended that leaves a complaint: walked out of a line, home worse off, or home after an accident. */
@@ -509,6 +511,8 @@ export interface Regular {
   loyalty: number;
   /** The game day they are due back. */
   due: number;
+  /** The Name on the Door who last healed them, whose line they will wait a little longer to be seen in. */
+  asksFor?: number;
 }
 
 /** Who writes ahead to call and judge the center: a VIP, or the health inspector. */
