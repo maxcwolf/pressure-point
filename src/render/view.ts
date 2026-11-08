@@ -266,7 +266,7 @@ export class View {
     this.snow.update(this.time);
     this.rain.update(this.time);
     this.storefront.update();
-    this.preparations.update();
+    this.preparations.update(this.time);
     this.brigade.update(this.time, this.rig.reduceMotion());
     this.land.update();
     this.items.animate(this.time);

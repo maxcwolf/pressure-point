@@ -2,8 +2,8 @@
 // it is paid for until it is over, and nothing for a ward that held.
 import { describe, expect, it } from 'vitest';
 
-import { SANDBOX_PLOT } from '../../src/core/data';
-import { entranceSpan, footprintOf } from '../../src/core/footprint';
+import { CAMPAIGN, CENTERS, ROAD_Y, SANDBOX_PLOT, TRUCK_PARK } from '../../src/core/data';
+import { entranceSpan, footprintOf, inFootprint } from '../../src/core/footprint';
 import { createContext } from '../../src/core/sim/context';
 import { newMishap, paidFor, prepareMishap } from '../../src/core/sim/mishaps';
 import type { WallSpot } from '../../src/core/state/types';
@@ -13,10 +13,18 @@ import {
   BAG_ROWS,
   BAG_W,
   BAGS_LOW,
+  byDoor,
+  coveringOf,
   entranceBags,
+  frontDoor,
+  generatorSpot,
   type OuterWindow,
   outerWindows,
   PLANKS,
+  preparationsShown,
+  sigilSpot,
+  trapSide,
+  vanSpot,
   windowPlanks,
 } from '../../src/render/preparations';
 import { OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T } from '../../src/render/shared';
@@ -121,5 +129,83 @@ describe('what shows a mishap was prepared for', () => {
     const c = openCenter(1);
     c.s.mishap = { ...newMishap(c.s.day, 'storm'), prepared: true };
     expect(paidFor(c.s)).toBe('storm');
+  });
+});
+
+describe('what preparing puts on the things a mishap would stop', () => {
+  it('is lagging on pipes and a tarp on the koi pond for a freeze, traps and mesh lids for wasps', () => {
+    expect(coveringOf('freeze', 'toilet')).toBe('lagging');
+    expect(coveringOf('freeze', 'radiator')).toBe('lagging');
+    expect(coveringOf('freeze', 'koi_pond')).toBe('tarp');
+    expect(coveringOf('wasps', 'snack_machine')).toBe('trap');
+    expect(coveringOf('wasps', 'bin')).toBe('lid');
+  });
+
+  it('is nothing on what the mishap leaves alone, or for a mishap that covers nothing', () => {
+    expect(coveringOf('freeze', 'snack_machine')).toBeUndefined();
+    expect(coveringOf('wasps', 'toilet')).toBeUndefined();
+    expect(coveringOf('power', 'coffee_machine')).toBeUndefined();
+    expect(coveringOf('storm', 'aura_wash')).toBeUndefined();
+  });
+});
+
+describe('the side a wasp trap stands', () => {
+  const machine = { type: 'snack_machine' as const, x: 5, y: 5, rot: 0 };
+  it("is the item's right where that tile is free, else its left, else on its own tile", () => {
+    expect(trapSide(machine, () => true)).toBe(1);
+    expect(trapSide(machine, (x) => x !== 6)).toBe(-1);
+    expect(trapSide(machine, () => false)).toBe(0);
+  });
+
+  it('turns with the item: turned round, its right is the other way', () => {
+    expect(trapSide({ ...machine, rot: 2 }, (x, y) => x === 4 && y === 5)).toBe(1);
+    expect(trapSide({ ...machine, rot: 1 }, (x, y) => x === 5 && y === 6)).toBe(1);
+  });
+});
+
+describe('where the pieces stand in each campaign center', () => {
+  for (const id of CAMPAIGN) {
+    const center = footprintOf(CENTERS[id].plot);
+    const d = frontDoor(center);
+
+    it(`${id}: the hired generator is outside, past the pillar, clear of the road`, () => {
+      const gen = generatorSpot(d);
+      // its door end, with the socket, 0.69 m from its middle, and its wheels half a meter either side
+      expect(gen.along - 0.69).toBeGreaterThan(d.b + 0.33);
+      expect(gen.out - 0.53).toBeGreaterThan(OUTER_T);
+      const [, , z] = byDoor(d, gen.along, gen.out + 0.53);
+      expect(z).toBeLessThan(ROAD_Y[0]);
+    });
+
+    it(`${id}: the van is in the near lane, clear of where the fire engine parks`, () => {
+      const van = vanSpot(center.door);
+      expect(van.z).toBeGreaterThan(ROAD_Y[0]);
+      expect(van.z).toBeLessThan(ROAD_Y[0] + 1);
+      // the van is 2.6 m long and the fire engine about as long
+      expect(van.x - (center.door[0] - TRUCK_PARK)).toBeGreaterThan(3);
+    });
+
+    it(`${id}: the ward's sigil is inside, in front of the doorway`, () => {
+      const spot = sigilSpot(d);
+      const [x, , z] = byDoor(d, spot.along, spot.out);
+      expect(inFootprint(center, Math.floor(x), Math.floor(z))).toBe(true);
+      expect(spot.along).toBeGreaterThan(d.a);
+      expect(spot.along).toBeLessThan(d.b);
+    });
+  }
+});
+
+describe("what a Shaman's ward shows", () => {
+  it('is nothing while only asked for, the sigil once performed, and smeared once it has failed', () => {
+    const c = openCenter(1);
+    const base = newMishap(c.s.day, 'wasps');
+    c.s.mishap = { ...base, ward: 'asked' };
+    expect(preparationsShown(c.s).ward).toBeUndefined();
+    c.s.mishap = { ...base, ward: 'done' };
+    expect(preparationsShown(c.s).ward).toBe('held');
+    c.s.mishap = { ...base, ward: 'done', started: true, prepared: true };
+    expect(preparationsShown(c.s)).toEqual({ paid: undefined, ward: 'held' });
+    c.s.mishap = { ...base, ward: 'done', started: true };
+    expect(preparationsShown(c.s).ward).toBe('smeared');
   });
 });
