@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.36.3
 
 - **An Expert perk for those who heal nobody.** Receptionists, Consultants and Instructors were offered Name on the Door at Expert, which did nothing for them. They now weigh a perk of their own against Mentor: a Receptionist who **Knows Every Face**, whose regulars wait more patiently all visit and tip more; a Consultant who **Knows Their History**, whom regulars they have consulted ask for, consulted twice as fast and made sure of their diagnosis; and an Instructor with a **Waiting List**, whose class-goers turned away from a full class come to the next and pay a quarter more. Any who chose Name on the Door have their own instead.
 
