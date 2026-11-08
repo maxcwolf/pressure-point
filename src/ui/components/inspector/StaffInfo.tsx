@@ -119,7 +119,9 @@ function Perks({ staff: st }: { staff: Staff }) {
           <Bar value={settling.progress * 100} tone="blue" show={meterPercent(settling.progress * 100)} />
         </label>
       )}
-      {hasPerk(st, 'name-on-door') && <p class="sub asked-for">{askedForNote(askingFor(sim.s, st))}</p>}
+      {(hasPerk(st, 'name-on-door') || hasPerk(st, 'their-history')) && (
+        <p class="sub asked-for">{askedForNote(askingFor(sim.s, st), hasPerk(st, 'their-history'))}</p>
+      )}
       {sim.mentored(st) > 1 && (
         <p class="sub">{`A Mentor nearby: earning experience ${Math.round((sim.mentored(st) - 1) * 100)}% faster.`}</p>
       )}

@@ -36,7 +36,7 @@ import { emit, tipOnce, toast } from './events';
 import { feel, writeReview } from './feelings';
 import { decide, leave } from './lines';
 import { feelNoise, itemNoise } from './noise';
-import { perkSum } from './perks';
+import { hasPerk, perkProduct, perkSum } from './perks';
 import { breakDue } from './policy';
 import { isGroupStation, isLeadStation, matsOf, stationStaff } from './sessions';
 import { wantsToShop } from './shop';
@@ -67,11 +67,11 @@ export function weeklyInterest(reputation: number, skill: number): number {
 }
 
 /**
- * How one class fills: the week's interest shared among its classes, give or take a little (`roll`), as many as there
- * are places, and the rest turned away.
+ * How one class fills: the week's interest shared among its classes, give or take a little (`roll`), and any `waiting`
+ * on a Waiting List from the class before, as many as there are places, and the rest turned away.
  */
-export function classSize(interest: number, perWeek: number, spots: number, roll: number) {
-  const want = Math.max(0, Math.round((interest / Math.max(1, perWeek)) * roll));
+export function classSize(interest: number, perWeek: number, spots: number, roll: number, waiting = 0) {
+  const want = Math.max(0, Math.round((interest / Math.max(1, perWeek)) * roll)) + waiting;
   return { count: Math.min(spots, want), turned: Math.max(0, want - spots) };
 }
 
@@ -230,8 +230,15 @@ export function bookClasses(ctx: SimContext) {
         { kind: 'staff', id: instructor.id },
       );
     const interest = weeklyInterest(s.reputation, instructor.skill);
-    const size = classSize(interest, classDays(room).length, Math.max(0, Math.min(spots, free)), rnd(s, 0.8, 1.2));
+    // an Instructor with a Waiting List fits those turned away last time in first, and keeps a list of who is turned
+    // away this time, up to a class's worth
+    const listed = hasPerk(instructor, 'waiting-list');
+    const waiting = listed ? (room.waitlist ?? 0) : 0;
+    const roll = rnd(s, 0.8, 1.2);
+    const size = classSize(interest, classDays(room).length, Math.max(0, Math.min(spots, free)), roll, waiting);
     free -= size.count;
+    if (listed && size.turned > 0) room.waitlist = Math.min(size.turned, spots);
+    else delete room.waitlist;
     if (size.turned > 0 && classDays(room).length < 7)
       tipOnce(
         ctx,
@@ -241,7 +248,10 @@ export function bookClasses(ctx: SimContext) {
         { kind: 'room', id: room.id },
       );
     room.booked = { day, ...size };
-    for (let i = 0; i < size.count; i++) s.arrivals.push({ at: today + rnd(s, 0.05, 0.6), day });
+    for (let i = 0; i < size.count; i++) {
+      const at = today + rnd(s, 0.05, 0.6);
+      s.arrivals.push(i < waiting ? { at, day, waited: true } : { at, day });
+    }
   }
 }
 
@@ -265,7 +275,10 @@ export function admitClassgoers(ctx: SimContext) {
   if (!s.open || cutOff(ctx)) return;
   const instructor = bestInstructor(ctx);
   if (instructor && instructorAway(instructor)) return;
-  for (const a of due) spawnGuest(ctx, undefined, false, a.day);
+  for (const a of due) {
+    const g = spawnGuest(ctx, undefined, false, a.day);
+    if (g && a.waited) g.waitListed = true;
+  }
 }
 
 /**
@@ -337,7 +350,10 @@ export function completeClass(ctx: SimContext, spot: Item, g: Guest, staff: Staf
   staff.yearServed++;
   gainXp(ctx, staff, XP_PER_GUEST);
   feelClass(ctx, g, spot, staff);
-  const fee = Math.round(CLASS_FEE * priceFor(ctx.s, 'qigong'));
+  // someone off a Waiting List pays more, having waited for their place
+  const fee = Math.round(
+    CLASS_FEE * priceFor(ctx.s, 'qigong') * (g.waitListed ? perkProduct(staff, 'waitingList') : 1),
+  );
   earn(ctx, fee, 'classes', g.x, g.y);
   g.spent += fee;
   g.outcome = 'class';

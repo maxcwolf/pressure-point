@@ -180,6 +180,27 @@ describe('how many an Instructor can lead', () => {
     expect(classPlaces(9)).toBe(12);
   });
 
+  it('with a Waiting List, fits those turned away from a full class into the next, and they pay a quarter more', () => {
+    const { sim, s, room, teacher } = studio();
+    room.classDays = [4];
+    s.reputation = 100;
+    if (!teacher) throw new Error('no Instructor');
+    teacher.skill = 1;
+    teacher.perks = ['waiting-list'];
+    run(sim, 1);
+    const turned = room.booked?.turned ?? 0;
+    expect(turned).toBeGreaterThan(0);
+    // up to a class's worth: the studio's three spots
+    expect(room.waitlist).toBe(Math.min(turned, s.items.filter((it) => it.type === 'practice_spot').length));
+    expect(s.arrivals.some((a) => a.waited)).toBe(false);
+    const listed = room.waitlist ?? 0;
+    runUntil(sim, () => room.booked?.day === 11, 6 * DAY_SECONDS + 60);
+    const next = s.arrivals.filter((a) => a.day === 11);
+    expect(next.filter((a) => a.waited)).toHaveLength(Math.min(listed, next.length));
+    expect(classSize(6, 1, 6, 1, 2)).toEqual({ count: 6, turned: 2 });
+    expect(classSize(3, 1, 6, 1, 2)).toEqual({ count: 5, turned: 0 });
+  });
+
   it('caps the places in a class, and the class-goers its spots draw, leaving the rest of the spots empty', () => {
     const { sim, s, room, teacher } = studio();
     for (const [x, y] of [

@@ -9,6 +9,7 @@ import {
   DAYS_PER_MONTH,
   type Discipline,
   DISCIPLINES,
+  EXPERT_PERKS,
   FEELINGS,
   FOLLOWING,
   type ItemType,
@@ -364,6 +365,7 @@ export function upgradeSave(save: GameState) {
   if (s.version < 45) fixAmanda(save);
   if (s.version < 46) offerBribes(save);
   if (s.version < 50) owePerks(save);
+  if (s.version < 51) ownExpertPerks(save);
   // a perk from a newer version means nothing here
   for (const st of s.staff) st.perks = st.perks.filter(knownPerk);
   for (const c of s.candidates) if (c.perk !== undefined && !knownPerk(c.perk)) delete c.perk;
@@ -376,6 +378,15 @@ export function upgradeSave(save: GameState) {
  */
 function owePerks(s: GameState) {
   for (const st of s.staff) st.perkDue = tiersOwed(st.skill).map((tier) => ({ tier, since: s.day }));
+}
+
+/**
+ * Name on the Door was once every Expert's choice against Mentor, but a Receptionist, Consultant or Instructor heals
+ * nobody, so it did nothing for them. Any of theirs who chose it, or are applying with it, have their role's own.
+ */
+function ownExpertPerks(s: GameState) {
+  for (const st of s.staff) st.perks = st.perks.map((p) => (p === 'name-on-door' ? EXPERT_PERKS[st.role] : p));
+  for (const c of s.candidates) if (c.perk === 'name-on-door') c.perk = EXPERT_PERKS[c.role];
 }
 
 /** Whether the game still knows a quirk a save holds. */

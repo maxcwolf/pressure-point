@@ -26,6 +26,9 @@ export type PerkId =
   | 'neat-freak'
   | 'mentor'
   | 'name-on-door'
+  | 'every-face'
+  | 'their-history'
+  | 'waiting-list'
   | 'every-pipe';
 
 /** The promotion a perk comes with: the one to Senior, or the one to Expert. */
@@ -91,6 +94,13 @@ export interface PerkDef {
   /** How fast a regular in their line loses patience, against the usual, and the share of the fee they tip on top. */
   regularPatience?: number;
   regularTip?: number;
+  /** How fast a regular they checked in loses patience in every line that visit, and the share of the fee they tip. */
+  checkedInRegulars?: number;
+  checkedInTip?: number;
+  /** Regulars they have consulted before ask for them, and are consulted this much faster and made sure. */
+  history?: number;
+  /** Class-goers turned away from their full class come to the next, and pay this much more for having waited. */
+  waitingList?: number;
   /** Morale they settle at, against the usual, and the raise they ask for. */
   morale?: number;
   raiseStep?: number;
@@ -314,6 +324,40 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
     raiseStep: 1.15,
     suits: ['influencer'],
   },
+  'every-face': {
+    id: 'every-face',
+    name: 'Knows Every Face',
+    tier: 'expert',
+    desc: 'Regulars they check in lose patience 50% more slowly in every line that visit, and tip 12% more. Their morale settles 3 lower, and each raise they ask for is 15%, not 10%.',
+    checkedInRegulars: 0.5,
+    checkedInTip: 0.12,
+    morale: -3,
+    raiseStep: 1.15,
+    suits: ['influencer'],
+    joke: 'Asks after your mother. By name. Has never met your mother.',
+  },
+  'their-history': {
+    id: 'their-history',
+    name: 'Knows Their History',
+    tier: 'expert',
+    desc: 'Regulars they have consulted before ask for them by name, and will wait behind 3 more guests to see them. Their consultations go twice as fast and always end sure of the diagnosis, even a structural one. Their morale settles 3 lower, and each raise they ask for is 15%, not 10%.',
+    history: 2,
+    morale: -3,
+    raiseStep: 1.15,
+    suits: ['influencer'],
+    joke: 'Keeps a file on everyone. The file is mostly doodles.',
+  },
+  'waiting-list': {
+    id: 'waiting-list',
+    name: 'Waiting List',
+    tier: 'expert',
+    desc: 'Class-goers turned away from a full class of theirs come to the next one instead of going home, and pay 25% more for it, having waited. Their morale settles 3 lower, and each raise they ask for is 15%, not 10%.',
+    waitingList: 1.25,
+    morale: -3,
+    raiseStep: 1.15,
+    suits: ['influencer'],
+    joke: 'The list is a napkin. The napkin is laminated.',
+  },
   'every-pipe': {
     id: 'every-pipe',
     name: 'Knows Every Pipe',
@@ -337,9 +381,25 @@ export const SENIOR_PERKS: Readonly<Record<Role, readonly [PerkId, PerkId]>> = {
   caretaker: ['fixer', 'neat-freak'],
 };
 
-/** The two perks a role chooses between at a promotion: Mentor, and for a Caretaker, who sees no guests, the pipes. */
+/**
+ * The perk each role weighs against Mentor at the promotion to Expert: Name on the Door for those who heal, and for
+ * the rest, who heal nobody, one for the work they do.
+ */
+export const EXPERT_PERKS: Readonly<Record<Role, PerkId>> = {
+  receptionist: 'every-face',
+  consultant: 'their-history',
+  therapist: 'name-on-door',
+  acupuncturist: 'name-on-door',
+  practitioner: 'name-on-door',
+  healer: 'name-on-door',
+  instructor: 'waiting-list',
+  shaman: 'name-on-door',
+  caretaker: 'every-pipe',
+};
+
+/** The two perks a role chooses between at a promotion. */
 export const perkPair = (role: Role, tier: PerkTier): readonly [PerkId, PerkId] =>
-  tier === 'senior' ? SENIOR_PERKS[role] : ['mentor', role === 'caretaker' ? 'every-pipe' : 'name-on-door'];
+  tier === 'senior' ? SENIOR_PERKS[role] : ['mentor', EXPERT_PERKS[role]];
 
 /** Days a choice waits on its card before they choose for themselves. */
 export const PERK_WAIT_DAYS = 30;

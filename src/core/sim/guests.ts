@@ -267,6 +267,9 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     if (g.regular !== undefined) drain *= perkProduct(serving, 'regularPatience');
     // a Charmer who checked them in leaves them in a better frame of mind for the wait, and an Upseller a worse one
     if (g.checkedInBy) drain *= perkProduct(staffById(ctx, g.checkedInBy), 'checkedIn');
+    // and a regular whose face the Receptionist knew is calmer in every line that visit
+    if (g.checkedInBy && g.regular !== undefined)
+      drain *= perkProduct(staffById(ctx, g.checkedInBy), 'checkedInRegulars');
     if (g.pose === 'sit') drain *= seatDrain(ctx, g);
     if (g.bladder >= 100 || g.thirst >= 100 || g.hunger >= 100) drain *= NEEDY_DRAIN;
     if (g.stressed) drain *= STRESS_DRAIN;

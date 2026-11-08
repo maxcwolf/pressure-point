@@ -74,7 +74,7 @@ import { feelNoise, itemNoise, noisePenalty } from './noise';
 import { consultPace, guessesSure, perkProduct, perkSuccess, perkSum, structuralSure } from './perks';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
-import { greeting, mindsPrice, tipFor } from './regulars';
+import { greeting, knowsHistory, mindsPrice, tipFor } from './regulars';
 import { startRunning } from './runaways';
 import { leadOf, matsFull, sessionPlaying, stationStaff, updateSession } from './sessions';
 import { shopSpend, visitStars, wantsToShop } from './shop';
@@ -101,9 +101,13 @@ export function guestFee(s: GameState, g: Pick<Guest, 'condition' | 'regular'>):
   return base + tipFor(s, g, base);
 }
 
-/** What a regular in a Name on the Door's line tips on top: a share of the fee, before any loyal regular's tip. */
-export function doorTip(ctx: SimContext, g: Pick<Guest, 'condition' | 'regular'>, st: Staff): number {
-  const share = perkSum(st, 'regularTip');
+/**
+ * What a regular tips on top, before any loyal regular's tip: a share of the fee in a Name on the Door's line, and
+ * another if a Receptionist who Knows Every Face checked them in.
+ */
+export function doorTip(ctx: SimContext, g: Pick<Guest, 'condition' | 'regular' | 'checkedInBy'>, st: Staff): number {
+  const desk = g.checkedInBy === undefined ? 0 : perkSum(staffById(ctx, g.checkedInBy), 'checkedInTip');
+  const share = perkSum(st, 'regularTip') + desk;
   return g.regular !== undefined && share > 0 ? Math.round(guestFee(ctx.s, { condition: g.condition }) * share) : 0;
 }
 
@@ -306,8 +310,13 @@ export function updateStations(ctx: SimContext, dt: number) {
       staff.busy = !!served;
       staff.strain = (mod ? mod.strain : 1) * machineStrain(it);
       if (served) {
-        // a Consultant's perk speeds up one kind of condition, and slows the other
-        const pace = def.goal === 'consult' ? consultPace(staff, served.condition) : 1;
+        // a Consultant's perk speeds up one kind of condition, and slows the other, and one who knows a regular's
+        // history goes faster still
+        const pace =
+          def.goal === 'consult'
+            ? consultPace(staff, served.condition) *
+              (knowsHistory(ctx, served, staff) ? perkProduct(staff, 'history') : 1)
+            : 1;
         it.progress +=
           (dt * pace) /
           (serviceSeconds(mod ? mod.seconds : def.seconds, staff, heldSpace(ctx, staff)) * machineSeconds(ctx, it));
@@ -485,10 +494,14 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.goal = 'leave';
   } else if (def.goal === 'consult') {
     g.consults++;
-    // a structural condition is plain to see but not to pin down: a consultation gets no surer of it than this
-    const structural = !!conditionOf(g.condition).structural;
+    g.consultedBy = staff.id;
+    // a structural condition is plain to see but not to pin down: a consultation gets no surer of it than this, unless
+    // the Consultant knows this regular's history, who leaves sure of whatever it is
+    const known = knowsHistory(ctx, g, staff);
+    const structural = !!conditionOf(g.condition).structural && !known;
     const gain = CONSULT_GAIN.base + staff.skill * CONSULT_GAIN.rank + rnd(ctx.s, 0, CONSULT_GAIN.luck);
     g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? structuralSure(staff, STRUCTURAL_SURE) : 1);
+    if (known) g.diagnosis = 1;
     if (feeShare(g) > 0) {
       const fee = Math.round(CONSULT_FEE * price * feeShare(g));
       earn(ctx, fee, 'consult', g.x, g.y);

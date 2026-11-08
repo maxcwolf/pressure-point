@@ -28,19 +28,21 @@ import {
   guessesSure,
   lapsePerks,
   ownChoice,
+  perkProduct,
   perkSuccess,
   settlingFor,
   structuralSure,
 } from '../../src/core/sim/perks';
 import { needsRest } from '../../src/core/sim/recovery';
-import { afterVisit, askedFor, askingFor, takesToPlace } from '../../src/core/sim/regulars';
+import { afterVisit, askedFor, askingFor, knowsHistory, takesToPlace } from '../../src/core/sim/regulars';
 import { healerMats } from '../../src/core/sim/sessions';
 import { raiseTo } from '../../src/core/sim/staffing';
+import { doorTip, guestFee } from '../../src/core/sim/stations';
 import { addWear } from '../../src/core/sim/upkeep';
 import type { GameState, Guest, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
 import { must } from '../../src/core/util';
-import { applicantPerkNote, chosenHereNote, perkRequests, settlingNote } from '../../src/ui/lib/perks';
+import { applicantPerkNote, askedForNote, chosenHereNote, perkRequests, settlingNote } from '../../src/ui/lib/perks';
 import { hire, openCenter } from './helpers';
 
 /** A structural condition, which a consultation can only make so sure. */
@@ -134,17 +136,23 @@ describe('the choice at a promotion', () => {
     expect(ownChoice({ ...base, id: 2, traits: ['speedy'] }, 'senior')).toBe('triage');
     expect(ownChoice({ ...base, id: 2 }, 'senior')).toBe('diagnostician');
     expect(ownChoice({ ...base, id: 3 }, 'senior')).toBe('triage');
-    expect(ownChoice({ ...base, id: 4, traits: ['influencer'] }, 'expert')).toBe('name-on-door');
+    expect(ownChoice({ ...base, id: 4, traits: ['influencer'] }, 'expert')).toBe('their-history');
   });
 
-  it('is offered to every role at Senior, and a Caretaker the pipes at Expert where the rest have Name on the Door', () => {
+  it('is offered to every role at Senior, and at Expert weighs Mentor against a perk for the work they do', () => {
     for (const role of ROLE_ORDER) {
       const [a, b] = SENIOR_PERKS[role];
       expect(PERKS[a].tier).toBe('senior');
       expect(PERKS[b].tier).toBe('senior');
     }
     expect(perkPair('caretaker', 'expert')).toEqual(['mentor', 'every-pipe']);
-    expect(perkPair('healer', 'expert')).toEqual(['mentor', 'name-on-door']);
+    for (const role of ['therapist', 'acupuncturist', 'practitioner', 'healer', 'shaman'] as const)
+      expect(perkPair(role, 'expert')).toEqual(['mentor', 'name-on-door']);
+    // nobody who heals nobody is offered Name on the Door
+    expect(perkPair('receptionist', 'expert')).toEqual(['mentor', 'every-face']);
+    expect(perkPair('consultant', 'expert')).toEqual(['mentor', 'their-history']);
+    expect(perkPair('instructor', 'expert')).toEqual(['mentor', 'waiting-list']);
+    for (const role of ROLE_ORDER) expect(PERKS[perkPair(role, 'expert')[1]].tier).toBe('expert');
   });
 });
 
@@ -235,6 +243,25 @@ describe('an older save', () => {
     expect(up.staff.find((st) => st.id === therapist.id)?.perkDue.map((d) => d.tier)).toEqual(['senior', 'expert']);
     expect(up.staff.find((st) => st.id === consultant.id)?.perkDue).toEqual([]);
     expect(up.staff.every((st) => Array.isArray(st.perks) && Array.isArray(st.settling))).toBe(true);
+  });
+});
+
+describe('a save from 0.36.2', () => {
+  it('gives a Receptionist, Consultant or Instructor with Name on the Door their own perk, and keeps a healer’s', () => {
+    const { s, therapist, consultant, receptionist } = openCenter(1);
+    therapist.perks = ['light-touch', 'name-on-door'];
+    receptionist.perks = ['charmer', 'name-on-door'];
+    consultant.perks = ['name-on-door'];
+    s.candidates.push({ ...makeCandidate(s, 'instructor'), perk: 'name-on-door' });
+    const old = JSON.parse(JSON.stringify(s)) as GameState;
+    old.version = 50;
+    upgradeSave(old);
+    /** The perks of the member of staff with this id, after the upgrade. */
+    const perksOf = (id: number) => old.staff.find((st) => st.id === id)?.perks;
+    expect(perksOf(therapist.id)).toEqual(['light-touch', 'name-on-door']);
+    expect(perksOf(receptionist.id)).toEqual(['charmer', 'every-face']);
+    expect(perksOf(consultant.id)).toEqual(['their-history']);
+    expect(old.candidates.at(-1)?.perk).toBe('waiting-list');
   });
 });
 
@@ -389,5 +416,50 @@ describe('what perks do', () => {
     // healed by someone else, they forget; and a perk lost stops the asking
     afterVisit(ctx, { ...guest, treatedBy: receptionist.id }, 5, true);
     expect(askedFor(ctx, guest)).toBeUndefined();
+  });
+
+  it('a regular checked in by one who Knows Every Face tips 12% more, wherever they are treated', () => {
+    const { s, therapist, receptionist } = openCenter(1);
+    const ctx = createContext(s);
+    receptionist.perks = ['every-face'];
+    therapist.perks = [];
+    const guest = { regular: 9001, condition: 'slump', checkedInBy: receptionist.id } as unknown as Guest;
+    const fee = guestFee(s, { condition: 'slump' });
+    expect(doorTip(ctx, guest, therapist)).toBe(Math.round(fee * 0.12));
+    // and with a Name on the Door treating them, both tips
+    therapist.perks = ['name-on-door'];
+    expect(doorTip(ctx, guest, therapist)).toBe(Math.round(fee * 0.24));
+    // nobody new tips, and nobody the Receptionist did not check in
+    expect(doorTip(ctx, { condition: 'slump', checkedInBy: receptionist.id }, { ...therapist, perks: [] })).toBe(0);
+    expect(doorTip(ctx, { regular: 9001, condition: 'slump' }, { ...therapist, perks: [] })).toBe(0);
+    expect(perkProduct(receptionist, 'checkedInRegulars')).toBe(0.5);
+  });
+
+  it('a regular consulted by one who Knows Their History asks for them, and is seen faster and made sure', () => {
+    const { s, consultant } = openCenter(1);
+    const ctx = createContext(s);
+    consultant.perks = ['their-history'];
+    s.regulars.push({ id: 9002, name: 'Bo Kink', look: consultant.look, visits: 1, loyalty: 50, due: 0 });
+    const guest = { id: 9002, name: 'Bo Kink', regular: 9002, condition: 'slump', feelings: [], x: 0, y: 0 };
+    const regular = guest as unknown as Guest;
+    expect(knowsHistory(ctx, regular, consultant)).toBe(false);
+    afterVisit(ctx, { ...regular, consultedBy: consultant.id }, 3, false);
+    expect(knowsHistory(ctx, regular, consultant)).toBe(true);
+    expect(askingFor(s, consultant)).toBe(1);
+    expect(askedForNote(0, true)).toContain('those they consult will');
+    expect(perkProduct(consultant, 'history')).toBe(2);
+    // their desk scores as if its line were shorter, for that regular and nobody else
+    const desk = must(
+      s.items.find((it) => it.type === 'consult_desk'),
+      'a consultation desk',
+    );
+    desk.staffId = consultant.id;
+    consultant.post = desk.id;
+    const stranger = { ...regular, id: 1 } as Guest;
+    delete stranger.regular;
+    expect(stationScore(ctx, desk, stranger) - stationScore(ctx, desk, regular)).toBe(ASKED_FOR_PULL);
+    // without the perk, nobody is known
+    consultant.perks = [];
+    expect(knowsHistory(ctx, regular, consultant)).toBe(false);
   });
 });

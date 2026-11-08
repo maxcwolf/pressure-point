@@ -150,8 +150,10 @@ export const defaultPolicy = (): Policy => ({
  * 48: accidents on the floor, with a sandbox switch for them, on in a game saved before them.
  * 49: complaints from guests let down, and guests asked back after one.
  * 50: perks chosen at the promotions to Senior and Expert. Every Senior and Expert already working is owed theirs.
+ * 51: Receptionists, Consultants and Instructors weigh a perk of their own against Mentor at Expert, in place of Name on
+ *     the Door, which they had no use for. Any who chose it, or bring it, have their own instead.
  */
-export const SAVE_VERSION = 50;
+export const SAVE_VERSION = 51;
 
 /** What Singing Bowls cost when they were reiki equipment, given back for any left in a Reiki Studio. */
 export const SOLD_BOWLS = 1500;

@@ -45,9 +45,9 @@ export function applicantPerkNote(c: Pick<Candidate, 'skill' | 'perk'>): string 
   return `Will choose ${aRank(first.tier)} perk once settled in (${first.at} experience)${rest}.`;
 }
 
-/** How many regulars ask for a Name on the Door by name, in words. */
-export function askedForNote(n: number): string {
-  if (n === 0) return 'No regulars ask for them by name yet: those they heal will.';
+/** How many regulars ask for a Name on the Door, or a Consultant who Knows Their History, by name, in words. */
+export function askedForNote(n: number, consults = false): string {
+  if (n === 0) return `No regulars ask for them by name yet: those they ${consults ? 'consult' : 'heal'} will.`;
   return `${n} regular${n === 1 ? ' asks' : 's ask'} for them by name.`;
 }
 

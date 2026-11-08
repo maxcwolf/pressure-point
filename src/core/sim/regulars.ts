@@ -130,14 +130,37 @@ function rememberName(ctx: SimContext, r: Regular, g: Guest, healed: boolean) {
   r.asksFor = st.id;
 }
 
+/**
+ * A regular consulted by a Consultant who Knows Their History remembers them, and asks for them from then on, until
+ * consulted by another who does.
+ */
+function rememberHistory(ctx: SimContext, r: Regular, g: Guest) {
+  if (!g.consultedBy) return;
+  const st = staffById(ctx, g.consultedBy);
+  if (!st || !hasPerk(st, 'their-history') || r.historyWith === st.id) return;
+  r.historyWith = st.id;
+  emit(ctx, { type: 'float', text: `Asks for ${st.name.split(' ')[0] ?? st.name}`, x: g.x, y: g.y, kind: 'good' });
+}
+
+/** The Consultant a regular asks for, having been consulted by them, if they still Know Their History. */
+export function historyFor(ctx: SimContext, g: Pick<Guest, 'regular'>): number | undefined {
+  const id = regularOf(ctx.s, g)?.historyWith;
+  return id !== undefined && hasPerk(staffById(ctx, id), 'their-history') ? id : undefined;
+}
+
+/** Whether this Consultant knows this guest's history: a regular they have consulted before, and still have the perk. */
+export const knowsHistory = (ctx: SimContext, g: Pick<Guest, 'regular'>, st: Pick<Staff, 'id'>) =>
+  historyFor(ctx, g) === st.id;
+
 /** The member of staff a regular asks for by name, if they still have the perk that earns it. */
 export function askedFor(ctx: SimContext, g: Pick<Guest, 'regular'>): number | undefined {
   const id = regularOf(ctx.s, g)?.asksFor;
   return id !== undefined && hasPerk(staffById(ctx, id), 'name-on-door') ? id : undefined;
 }
 
-/** How many regulars ask for this member of staff by name. */
-export const askingFor = (s: GameState, st: Pick<Staff, 'id'>) => s.regulars.filter((r) => r.asksFor === st.id).length;
+/** How many regulars ask for this member of staff by name: healed by them, or consulted. */
+export const askingFor = (s: GameState, st: Pick<Staff, 'id'>) =>
+  s.regulars.filter((r) => r.asksFor === st.id || r.historyWith === st.id).length;
 
 /** Whether a guest's visit was a vision quest that worked. */
 const questDone = (g: Guest, healed: boolean) => healed && conditionOf(g.condition).modality === VISION_QUEST;
@@ -167,6 +190,7 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
     }
     r.due = s.day + returnGap(r);
     rememberName(ctx, r, g, healed);
+    rememberHistory(ctx, r, g);
     const after = loyaltyLevel(r.loyalty);
     if (after !== before && after !== 'regular' && (before === 'regular' || after === 'devoted'))
       toast(
@@ -193,6 +217,7 @@ export function afterVisit(ctx: SimContext, g: Guest, stars: number, healed: boo
   };
   added.due = s.day + returnGap(added);
   rememberName(ctx, added, g, healed);
+  rememberHistory(ctx, added, g);
   s.regulars.push(added);
   emit(ctx, { type: 'float', text: 'Will be back', x: g.x, y: g.y, kind: 'good' });
   tipOnce(

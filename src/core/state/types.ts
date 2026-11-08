@@ -69,6 +69,8 @@ export interface Room {
   classDays?: number[];
   /** A Qi Gong Studio's next or latest class: its day, how many booked a place, and how many found it full. */
   booked?: ClassBooking;
+  /** Class-goers turned away from its last full class, kept on a Waiting List for the next. */
+  waitlist?: number;
   /** The day a Qi Gong Studio last started a class, so each class day has one class. */
   lastClass?: number;
   /** A Qi Gong Studio's latest class days that passed without a class, and why, to tell its class-goers. */
@@ -103,10 +105,11 @@ export interface ClassBooking {
   away?: boolean;
 }
 
-/** A class-goer due to arrive: when, and the day of the class they booked. */
+/** A class-goer due to arrive: when, the day of the class they booked, and whether they came off a Waiting List. */
 export interface Arrival {
   at: number;
   day: number;
+  waited?: boolean;
 }
 
 /** A room's floor and walls, where they are not standard. */
@@ -464,6 +467,10 @@ export interface Guest extends CharBase {
   ledBy?: number;
   /** Who gave them their treatment, for a regular a Name on the Door has healed. */
   treatedBy?: number;
+  /** The Consultant who last consulted them, for a regular one who Knows Their History has seen. */
+  consultedBy?: number;
+  /** Turned away from a full class and come to the next off a Waiting List, so they pay more for it. */
+  waitListed?: boolean;
 }
 
 /** How a visit ended that leaves a complaint: walked out of a line, home worse off, or home after an accident. */
@@ -513,6 +520,8 @@ export interface Regular {
   due: number;
   /** The Name on the Door who last healed them, whose line they will wait a little longer to be seen in. */
   asksFor?: number;
+  /** The Consultant who Knows Their History who has consulted them, whom they ask for in the same way. */
+  historyWith?: number;
 }
 
 /** Who writes ahead to call and judge the center: a VIP, or the health inspector. */

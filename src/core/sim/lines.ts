@@ -13,7 +13,7 @@ import { tipOnce } from './events';
 import { MACHINE_PULL } from './machines';
 import { goTo, halt } from './movement';
 import { carriedOut } from './outbreaks';
-import { askedFor } from './regulars';
+import { askedFor, historyFor } from './regulars';
 import { stationStaff } from './sessions';
 import { deliveryProblem, leftForSpecialist, modalityOf, treatsHere } from './treatments';
 
@@ -43,6 +43,8 @@ export function stationScore(ctx: SimContext, it: Item, g: Guest) {
   const staff = stationStaff(ctx, it);
   // a station that runs itself is never short of someone to work it
   let score = it.queue.length + (it.serving ? 1 : 0) + (staff || !ITEMS[it.type].station?.staff ? 0 : 2.5);
+  // a regular waits behind a few more guests for the Consultant who knows their history
+  if (ITEMS[it.type].station?.goal === 'consult' && staff && historyFor(ctx, g) === staff.id) score -= ASKED_FOR_PULL;
   if (ITEMS[it.type].station?.goal === 'treat') {
     // a regular waits behind a few more guests for the Name on the Door they ask for
     if (staff && askedFor(ctx, g) === staff.id) score -= ASKED_FOR_PULL;

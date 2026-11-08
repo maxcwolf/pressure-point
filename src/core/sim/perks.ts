@@ -39,13 +39,24 @@ export const perkDefs = (st: Pick<Staff, 'perks'>): PerkDef[] => st.perks.map(pe
 export const perkProduct = (
   st: Pick<Staff, 'perks'> | undefined,
   key:
-    'speed' | 'checkedIn' | 'shop' | 'vibesTaken' | 'vibesLeft' | 'runaway' | 'calm' | 'regulars' | 'regularPatience',
+    | 'speed'
+    | 'checkedIn'
+    | 'shop'
+    | 'vibesTaken'
+    | 'vibesLeft'
+    | 'runaway'
+    | 'calm'
+    | 'regulars'
+    | 'regularPatience'
+    | 'checkedInRegulars'
+    | 'history'
+    | 'waitingList',
 ) => (st ? perkDefs(st).reduce((x, p) => x * (p[key] ?? 1), 1) : 1);
 
 /** The sum of one number their perks each add, with 0 for a perk that leaves it alone. */
 export const perkSum = (
   st: Pick<Staff, 'perks'> | undefined,
-  key: 'mats' | 'noise' | 'places' | 'morale' | 'regularTip',
+  key: 'mats' | 'noise' | 'places' | 'morale' | 'regularTip' | 'checkedInTip',
 ) => (st ? perkDefs(st).reduce((x, p) => x + (p[key] ?? 0), 0) : 0);
 
 /** The perk they hold from a promotion, if any. */
