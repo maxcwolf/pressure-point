@@ -6,6 +6,24 @@ What was found to be off in how the game plays, how it was measured, and what wa
 
 A month is 180 seconds of game time (30 days of 6 seconds).
 
+## 7 November 2026, night: an Expert perk for those who heal nobody
+
+Measured as entry 58, on main at `a37d9464` against entry 58's run with perks (`f9d8d7c3`, the same game as 0.36.2): every campaign center, seeds 1 to 72, four years a game, the bot choosing as a staff member left to wait would.
+
+### 59. Knows Every Face, Knows Their History and Waiting List: about $1k a month more, and no star sooner
+
+**Kept as built** (`EXPERT_PERKS` in `src/core/data/perks.ts`): Receptionists, Consultants and Instructors weigh a perk of their own against Mentor at Expert, in place of Name on the Door, which did nothing for them.
+
+| Center             | Profit a month, after − before (1–36 / 37–72) | Median profit before | Mean star months, before → after | Games lost |
+| ------------------ | --------------------------------------------- | -------------------- | -------------------------------- | ---------- |
+| Willow Lane        | +$0.9k ±0.5k / +$1.4k ±0.8k                   | $26.7k               | 0.9 / 6.8 / 9.9 (unchanged)      | 0 → 0      |
+| The Exchange       | +$0.8k ±0.7k / +$0.7k ±1.0k                   | $24.0k               | 7.5 / 12.2 / 19.2 → 19.4         | 2 → 2      |
+| The Boardwalk      | +$0.9k ±0.8k / +$0.4k ±1.0k                   | $15.8k               | 6.5 / 13.7 / 20.6 → 13.3 / 20.1  | 1 → 1      |
+| High Pines         | +$2.1k ±1.6k / +$0.2k ±1.5k                   | $16.2k               | 6.6 / 16.1 / 24.5 (unchanged)    | 6 → 6      |
+| The Orchard Estate | +$2.2k ±1.8k / +$2.2k ±2.5k                   | $59.2k               | 6.0 / 11.0 / 16.5 → 16.6         | 4 → 4      |
+
+Profit is up at every center in both halves, by $0.6k to $2.2k a month, 3 to 5% of the median: the tips and patience of Knows Every Face's regulars and the faster consultations of Knows Their History, where Name on the Door had given those roles nothing. No star comes measurably sooner, the healed share moves by less than half a point, and the same games are lost. The bot took Knows Every Face 209 times against Mentor's 442 for Receptionists, Knows Their History 292 against 676 for Consultants, and Waiting List 9 against 24, as few Instructors reach Expert. Name on the Door now goes only to those who heal (646 times, from 1,167).
+
 ## 7 November 2026: promotion perks, with the bot choosing
 
 Measured with `yarn balance` on main at `f9d8d7c3` (perks, Name on the Door asked for by name, the bot choosing each perk the day it is owed) against `4ff2fbf5`, the same game without perks: every campaign center, seeds 1 to 72, four years a game. The bot chooses as a staff member left to wait would (`ownChoice`: the perk their traits and courses suit, else one by their id), not the perk best for their post, so this measures perks taken as they come. A star never earned counts as month 48; differences are paired seed by seed and given with two standard errors, for seeds 1 to 36 and 37 to 72 apart.
