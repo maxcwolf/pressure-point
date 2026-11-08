@@ -71,7 +71,7 @@ import {
 import { goTo } from './movement';
 import { sellMushrooms } from './mushrooms';
 import { feelNoise, itemNoise, noisePenalty } from './noise';
-import { perkProduct, perkSuccess, perkSum } from './perks';
+import { consultPace, guessesSure, perkProduct, perkSuccess, perkSum, structuralSure } from './perks';
 import { countVisit } from './records';
 import { goRest, restPenalty, settleRest } from './recovery';
 import { greeting, mindsPrice, tipFor } from './regulars';
@@ -306,8 +306,10 @@ export function updateStations(ctx: SimContext, dt: number) {
       staff.busy = !!served;
       staff.strain = (mod ? mod.strain : 1) * machineStrain(it);
       if (served) {
+        // a Consultant's perk speeds up one kind of condition, and slows the other
+        const pace = def.goal === 'consult' ? consultPace(staff, served.condition) : 1;
         it.progress +=
-          dt /
+          (dt * pace) /
           (serviceSeconds(mod ? mod.seconds : def.seconds, staff, heldSpace(ctx, staff)) * machineSeconds(ctx, it));
         if (it.progress >= 1) completeService(ctx, it, served, staff);
       }
@@ -377,9 +379,14 @@ export function goForTreatment(ctx: SimContext, g: Guest) {
 
 /**
  * Send a guest with a structural condition for treatment on the Consultant's best guess, there being no scanner
- * working to make it sure: it is less likely to work.
+ * working to make it sure: it is less likely to work, unless the Consultant is a Diagnostician.
  */
-export function goOnGuess(ctx: SimContext, g: Guest) {
+export function goOnGuess(ctx: SimContext, g: Guest, consultant?: Staff) {
+  // a Diagnostician's best guess is as good as a scan would have been, near enough
+  if (guessesSure(consultant)) {
+    goForTreatment(ctx, g);
+    return;
+  }
   g.guessed = true;
   tipOnce(
     ctx,
@@ -480,12 +487,8 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
     g.consults++;
     // a structural condition is plain to see but not to pin down: a consultation gets no surer of it than this
     const structural = !!conditionOf(g.condition).structural;
-    const gain =
-      CONSULT_GAIN.base +
-      staff.skill * CONSULT_GAIN.rank +
-      rnd(ctx.s, 0, CONSULT_GAIN.luck) +
-      perkSum(staff, 'consult');
-    g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? STRUCTURAL_SURE : 1);
+    const gain = CONSULT_GAIN.base + staff.skill * CONSULT_GAIN.rank + rnd(ctx.s, 0, CONSULT_GAIN.luck);
+    g.diagnosis = clamp(g.diagnosis + gain + nice, 0, structural ? structuralSure(staff, STRUCTURAL_SURE) : 1);
     if (feeShare(g) > 0) {
       const fee = Math.round(CONSULT_FEE * price * feeShare(g));
       earn(ctx, fee, 'consult', g.x, g.y);
@@ -496,7 +499,7 @@ function completeService(ctx: SimContext, it: Item, g: Guest, staff: Staff) {
       if (canScan(ctx)) {
         g.goal = 'assess';
         say(g, 'bubble-question');
-      } else goOnGuess(ctx, g);
+      } else goOnGuess(ctx, g, staff);
     } else if (g.diagnosis >= ctx.s.policy.diagnosis || g.consults >= CONSULTS_MAX) goForTreatment(ctx, g);
     else {
       // unsure: a scan settles it if there is a scanner working, otherwise it is back to the Consultant

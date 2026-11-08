@@ -15,10 +15,10 @@ import { perkRest } from './perks';
 import { modalityOf } from './treatments';
 
 /**
- * Whether a guest's treatment leaves them needing a rest afterwards, given by this member of staff: a Firm Hand's
- * massages always do, and a Light Touch's never.
+ * Whether a guest's treatment leaves them needing a rest afterwards, given by this member of staff: one in three of a
+ * Firm Hand's massages that would need none does, and a Light Touch's never do.
  */
-export const needsRest = (g: Guest, st?: Staff) => perkRest(st, !!modalityOf(g).rest);
+export const needsRest = (g: Guest, st?: Staff) => perkRest(st, !!modalityOf(g).rest, g.id);
 
 /** The nearest free Lounger for a guest to rest on, if any. */
 export function restSpot(ctx: SimContext, g: Guest): { item: Item; idx: number } | null {

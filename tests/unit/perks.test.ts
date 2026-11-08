@@ -5,20 +5,32 @@ import { describe, expect, it } from 'vitest';
 import {
   BROUGHT_PERK_CHANCE,
   broughtPerk,
+  CONDITIONS,
   PERK_WAIT_DAYS,
+  type PerkId,
   perkPair,
   PERKS,
   RAISE_STEP,
   RANK_XP,
   ROLE_ORDER,
   SENIOR_PERKS,
+  STRUCTURAL_SURE,
 } from '../../src/core/data';
 import { makeCandidate } from '../../src/core/people';
 import { gainXp, mentored, promote, promoteAll, serviceSeconds, setDuty } from '../../src/core/sim/careers';
 import { instructorPlaces } from '../../src/core/sim/classes';
 import { createContext } from '../../src/core/sim/context';
 import { drainEvents } from '../../src/core/sim/events';
-import { choosePerk, lapsePerks, ownChoice, perkSuccess, settlingFor } from '../../src/core/sim/perks';
+import {
+  choosePerk,
+  consultPace,
+  guessesSure,
+  lapsePerks,
+  ownChoice,
+  perkSuccess,
+  settlingFor,
+  structuralSure,
+} from '../../src/core/sim/perks';
 import { needsRest } from '../../src/core/sim/recovery';
 import { takesToPlace } from '../../src/core/sim/regulars';
 import { healerMats } from '../../src/core/sim/sessions';
@@ -26,8 +38,15 @@ import { raiseTo } from '../../src/core/sim/staffing';
 import { addWear } from '../../src/core/sim/upkeep';
 import type { GameState, Guest, Staff } from '../../src/core/state/types';
 import { upgradeSave } from '../../src/core/state/upgrade';
+import { must } from '../../src/core/util';
 import { applicantPerkNote, chosenHereNote, perkRequests, settlingNote } from '../../src/ui/lib/perks';
 import { hire, openCenter } from './helpers';
+
+/** A structural condition, which a consultation can only make so sure. */
+const structuralCondition = must(
+  CONDITIONS.find((c) => c.structural),
+  'a structural condition',
+).id;
 
 /** Someone with no perks and nothing owed, at a rank, ready for promotion. */
 function ready(st: Staff, skill: number) {
@@ -70,7 +89,7 @@ describe('the choice at a promotion', () => {
     ready(therapist, 3);
     promote(ctx, therapist.id);
     // a perk of another role, or another promotion, is not theirs to choose
-    expect(choosePerk(ctx, therapist.id, 'quick-read')).toBe(false);
+    expect(choosePerk(ctx, therapist.id, 'triage')).toBe(false);
     expect(choosePerk(ctx, therapist.id, 'mentor')).toBe(false);
     expect(choosePerk(ctx, therapist.id, 'light-touch')).toBe(true);
     expect(therapist.perks).toEqual(['light-touch']);
@@ -101,19 +120,19 @@ describe('the choice at a promotion', () => {
     s.day += 1;
     drainEvents(ctx);
     lapsePerks(ctx);
-    expect(consultant.perks).toEqual(['quick-read']);
+    expect(consultant.perks).toEqual(['triage']);
     expect(drainEvents(ctx)).toContainEqual(
-      expect.objectContaining({ text: expect.stringContaining('got tired of waiting and chose Quick Read') }),
+      expect.objectContaining({ text: expect.stringContaining('got tired of waiting and chose Triage') }),
     );
   });
 
   it('chosen by themselves, goes the way their quirks and courses lean, or with a tie, the way their id falls', () => {
     const base = { role: 'consultant' as const, traits: [], general: [] };
-    expect(ownChoice({ ...base, id: 1, traits: ['tireless'] }, 'senior')).toBe('thorough');
-    expect(ownChoice({ ...base, id: 1, general: ['bedside'] }, 'senior')).toBe('thorough');
-    expect(ownChoice({ ...base, id: 2, traits: ['speedy'] }, 'senior')).toBe('quick-read');
-    expect(ownChoice({ ...base, id: 2 }, 'senior')).toBe('thorough');
-    expect(ownChoice({ ...base, id: 3 }, 'senior')).toBe('quick-read');
+    expect(ownChoice({ ...base, id: 1, traits: ['tireless'] }, 'senior')).toBe('diagnostician');
+    expect(ownChoice({ ...base, id: 1, general: ['bedside'] }, 'senior')).toBe('diagnostician');
+    expect(ownChoice({ ...base, id: 2, traits: ['speedy'] }, 'senior')).toBe('triage');
+    expect(ownChoice({ ...base, id: 2 }, 'senior')).toBe('diagnostician');
+    expect(ownChoice({ ...base, id: 3 }, 'senior')).toBe('triage');
     expect(ownChoice({ ...base, id: 4, traits: ['influencer'] }, 'expert')).toBe('name-on-door');
   });
 
@@ -220,34 +239,58 @@ describe('an older save', () => {
 
 describe('what perks do', () => {
   it('change how fast a service is given', () => {
-    const { consultant } = openCenter(1);
-    consultant.perks = [];
-    const usual = serviceSeconds(6, consultant);
-    consultant.perks = ['quick-read'];
-    expect(serviceSeconds(6, consultant)).toBeCloseTo(usual / 1.3);
-    consultant.perks = ['thorough'];
-    expect(serviceSeconds(6, consultant)).toBeCloseTo(usual * 1.2);
+    const { receptionist } = openCenter(1);
+    receptionist.perks = [];
+    const usual = serviceSeconds(3.5, receptionist);
+    receptionist.perks = ['charmer'];
+    expect(serviceSeconds(3.5, receptionist)).toBeCloseTo(usual / 0.93);
   });
 
-  it('change the chance of the techniques they name, and only those', () => {
+  it('speed a Consultant up on one kind of condition and slow them on the other', () => {
+    const st = { perks: ['triage'] as PerkId[] };
+    expect(consultPace(st, 'slump')).toBeCloseTo(1.3);
+    expect(consultPace(st, structuralCondition)).toBeCloseTo(1 / 1.2);
+    st.perks = ['diagnostician'];
+    expect(consultPace(st, 'slump')).toBeCloseTo(1 / 1.1);
+    expect(consultPace(st, structuralCondition)).toBe(1);
+    expect(structuralSure(st, STRUCTURAL_SURE)).toBe(0.8);
+    expect(guessesSure(st)).toBe(true);
+    expect(structuralSure({ perks: [] }, STRUCTURAL_SURE)).toBe(STRUCTURAL_SURE);
+  });
+
+  it('favor their own techniques, at a small cost to the rest of the discipline, and never a machine', () => {
     const { therapist } = openCenter(1);
     therapist.perks = ['light-touch'];
+    expect(perkSuccess(therapist, 'swedish')).toBeCloseTo(0.08);
     expect(perkSuccess(therapist, 'deep')).toBeCloseTo(-0.03);
-    expect(perkSuccess(therapist, 'swedish')).toBe(0);
+    expect(perkSuccess(therapist, 'kneading')).toBe(0);
     therapist.perks = ['firm-hand'];
-    expect(perkSuccess(therapist, 'swedish')).toBeCloseTo(0.06);
+    expect(perkSuccess(therapist, 'cranio')).toBeCloseTo(0.08);
+    expect(perkSuccess(therapist, 'stone')).toBeCloseTo(-0.03);
+    // Hushed costs only the technique it names, and does nothing for another discipline's
+    expect(perkSuccess({ role: 'healer', perks: ['hushed'] }, 'gong')).toBeCloseTo(-0.03);
+    expect(perkSuccess({ role: 'healer', perks: ['hushed'] }, 'crystalbowls')).toBe(0);
+    expect(perkSuccess({ role: 'healer', perks: ['hushed'] }, 'swedish')).toBe(0);
   });
 
-  it('decide whether a massage needs a rest after', () => {
+  it('decide whether a massage needs a rest after: one in three more for a Firm Hand, none for a Light Touch', () => {
     const { therapist } = openCenter(1);
-    const guest = { condition: 'slump' } as Guest;
+    // Swedish needs no rest, and Deep Tissue always does
+    /** A guest come for a Swedish massage. */
+    const swedish = (id: number) => ({ id, condition: 'slump' }) as Guest;
+    const deep = { id: 1, condition: 'knotted' } as Guest;
     therapist.perks = [];
-    const usual = needsRest(guest, therapist);
+    expect(needsRest(swedish(3), therapist)).toBe(false);
+    expect(needsRest(deep, therapist)).toBe(true);
+    // a Firm Hand's: one in three of those that need none, by the guest, and still every one that does
     therapist.perks = ['firm-hand'];
-    expect(needsRest(guest, therapist)).toBe(true);
+    const ids = [...Array(30).keys()];
+    expect(ids.filter((id) => needsRest(swedish(id), therapist))).toHaveLength(10);
+    expect(needsRest(deep, therapist)).toBe(true);
+    // a Light Touch's never
     therapist.perks = ['light-touch'];
-    expect(needsRest(guest, therapist)).toBe(false);
-    expect(needsRest(guest)).toBe(usual);
+    expect(needsRest(deep, therapist)).toBe(false);
+    expect(needsRest(deep)).toBe(true);
   });
 
   it('a Mentor speeds the experience of colleagues of a lower rank nearby, and not of a Caretaker', () => {

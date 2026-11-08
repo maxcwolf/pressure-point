@@ -3,6 +3,8 @@
 // to the numbers the rest of the sim reads.
 
 import {
+  type ConditionId,
+  conditionOf,
   MODALITIES,
   type Modality,
   PERK_RANKS,
@@ -37,22 +39,13 @@ export const perkDefs = (st: Pick<Staff, 'perks'>): PerkDef[] => st.perks.map(pe
 export const perkProduct = (
   st: Pick<Staff, 'perks'> | undefined,
   key:
-    | 'speed'
-    | 'patience'
-    | 'checkedIn'
-    | 'shop'
-    | 'vibesTaken'
-    | 'vibesLeft'
-    | 'runaway'
-    | 'calm'
-    | 'regulars'
-    | 'regularPatience',
+    'speed' | 'checkedIn' | 'shop' | 'vibesTaken' | 'vibesLeft' | 'runaway' | 'calm' | 'regulars' | 'regularPatience',
 ) => (st ? perkDefs(st).reduce((x, p) => x * (p[key] ?? 1), 1) : 1);
 
 /** The sum of one number their perks each add, with 0 for a perk that leaves it alone. */
 export const perkSum = (
   st: Pick<Staff, 'perks'> | undefined,
-  key: 'consult' | 'mats' | 'noise' | 'places' | 'morale' | 'regularTip',
+  key: 'mats' | 'noise' | 'places' | 'morale' | 'regularTip',
 ) => (st ? perkDefs(st).reduce((x, p) => x + (p[key] ?? 0), 0) : 0);
 
 /** The perk they hold from a promotion, if any. */
@@ -155,18 +148,44 @@ export const daysToChoose = (d: { since: number }, day: number) =>
 /** How much faster (above 1) or slower their perks make them give a service. */
 export const perkSpeed = (st: Pick<Staff, 'perks'>) => perkProduct(st, 'speed');
 
-/** Chance their perks add to (or take off) a treatment they give, for the technique it is. */
+/**
+ * Chance their perks add to (or take off) a treatment they give, for the technique it is: the techniques a perk
+ * favors, and what it costs the others of their discipline it names, or every other one given by hand.
+ */
 export function perkSuccess(st: Pick<Staff, 'perks' | 'role'>, m: Modality): number {
   const discipline = ROLES[st.role].discipline;
-  if (!discipline || MODALITIES[m].discipline !== discipline) return 0;
-  return perkDefs(st).reduce((x, p) => x + (!p.techniques || p.techniques.includes(m) ? (p.success ?? 0) : 0), 0);
+  const def = MODALITIES[m];
+  if (!discipline || def.discipline !== discipline) return 0;
+  return perkDefs(st).reduce((x, p) => {
+    if (!p.techniques || p.techniques.includes(m)) return x + (p.success ?? 0);
+    const off = p.offTechniques ? p.offTechniques.includes(m) : !def.machine;
+    return x + (off ? (p.offSuccess ?? 0) : 0);
+  }, 0);
 }
 
-/** Whether a treatment they give needs a rest after, their perks considered: `usual` is what the technique asks. */
-export function perkRest(st: Pick<Staff, 'perks' | 'role'> | undefined, usual: boolean): boolean {
+/** How much faster (above 1) or slower their perks make them consult on a condition, structural or everyday. */
+export function consultPace(st: Pick<Staff, 'perks'>, condition: ConditionId): number {
+  const kind = conditionOf(condition).structural ? 'structural' : 'everyday';
+  return perkDefs(st).reduce((x, p) => x * (p.consultSpeed?.[kind] ?? 1), 1);
+}
+
+/** How sure a consultation of theirs can make a structural condition: the usual, or a Diagnostician's. */
+export const structuralSure = (st: Pick<Staff, 'perks'>, usual: number) =>
+  perkDefs(st).reduce((x, p) => Math.max(x, p.structuralSure ?? 0), usual);
+
+/** Whether a best guess of theirs at a structural condition costs a treatment nothing. */
+export const guessesSure = (st: Pick<Staff, 'perks'> | undefined) => !!st && perkDefs(st).some((p) => p.sureGuess);
+
+/**
+ * Whether a treatment they give this guest needs a rest after, their perks considered: `usual` is what the technique
+ * asks. A Firm Hand's share of the rest is settled by the guest's id, so no random number is drawn.
+ */
+export function perkRest(st: Pick<Staff, 'perks' | 'role'> | undefined, usual: boolean, guestId: number): boolean {
   if (st?.role !== 'therapist') return usual;
-  const rest = perkDefs(st).find((p) => p.rest)?.rest;
-  return rest === 'always' ? true : rest === 'never' ? false : usual;
+  const rest = perkDefs(st).find((p) => p.rest !== undefined)?.rest;
+  if (rest === undefined) return usual;
+  if (rest === 'never') return false;
+  return usual || guestId % Math.round(1 / rest) === 0;
 }
 
 /** How much faster (above 1) or slower their perks make a Caretaker at a kind of job. */

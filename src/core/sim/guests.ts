@@ -263,8 +263,7 @@ export function updateGuest(ctx: SimContext, g: Guest, dt: number) {
     const station = ctx.world.item(g.station);
     const serving = station && stationStaff(ctx, station);
     if (hasGeneral(serving, 'bedside')) drain *= BEDSIDE_PATIENCE;
-    // and their perks: a Gentle Needles' line is calmer, and a Name on the Door's regulars calmer still
-    drain *= perkProduct(serving, 'patience');
+    // and a Name on the Door's regulars are calmer in their line
     if (g.regular !== undefined) drain *= perkProduct(serving, 'regularPatience');
     // a Charmer who checked them in leaves them in a better frame of mind for the wait, and an Upseller a worse one
     if (g.checkedInBy) drain *= perkProduct(staffById(ctx, g.checkedInBy), 'checkedIn');

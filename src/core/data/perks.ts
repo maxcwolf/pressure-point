@@ -8,20 +8,20 @@ import type { GeneralId, Modality, Role, TraitId } from './types';
 export type PerkId =
   | 'charmer'
   | 'upseller'
-  | 'thorough'
-  | 'quick-read'
+  | 'diagnostician'
+  | 'triage'
   | 'firm-hand'
   | 'light-touch'
-  | 'gentle-needles'
-  | 'rapid-points'
+  | 'needle-artist'
+  | 'fire-and-glass'
   | 'clears'
   | 'unbothered'
   | 'big-gong'
   | 'hushed'
   | 'crowd-pleaser'
   | 'devotee-maker'
-  | 'steady-guide'
-  | 'deep-diver'
+  | 'trip-sitter'
+  | 'earth-keeper'
   | 'fixer'
   | 'neat-freak'
   | 'mentor'
@@ -48,16 +48,24 @@ export interface PerkDef {
   /** Chance added to (or, below zero, taken off) a treatment of theirs: every one, or those `techniques` names. */
   success?: number;
   techniques?: readonly Modality[];
-  /** How fast guests waiting in their line lose patience, against the usual. */
-  patience?: number;
+  /**
+   * Chance added to (or taken off) the techniques of their discipline that `techniques` leaves out: those
+   * `offTechniques` names, or every other one given by hand.
+   */
+  offSuccess?: number;
+  offTechniques?: readonly Modality[];
   /** How fast guests they checked in lose patience while they wait, against the usual. */
   checkedIn?: number;
   /** How much more often guests buy at a Shop Counter they work. */
   shop?: number;
-  /** Certainty a consultation of theirs adds, on top of the usual (or, below zero, short of it). */
-  consult?: number;
-  /** Whether every massage of theirs needs a rest after, or none does. */
-  rest?: 'always' | 'never';
+  /** How much faster (above 1) or slower they consult on everyday conditions, and on structural ones. */
+  consultSpeed?: { everyday?: number; structural?: number };
+  /** How sure a consultation of theirs can make a structural condition, in place of `STRUCTURAL_SURE`. */
+  structuralSure?: number;
+  /** A best guess of theirs at a structural condition, unscanned, costs a treatment nothing. */
+  sureGuess?: boolean;
+  /** The share of their massages that need a rest after though the technique needs none, or `never` for none at all. */
+  rest?: number | 'never';
   /** How much of a room's bad vibes count against a treatment of theirs, and how many their failures leave. */
   vibesTaken?: number;
   vibesLeft?: number;
@@ -120,32 +128,34 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
     checkedIn: 1.03,
     suits: FAST,
   },
-  thorough: {
-    id: 'thorough',
-    name: 'Thorough',
+  diagnostician: {
+    id: 'diagnostician',
+    name: 'Diagnostician',
     tier: 'senior',
-    desc: 'Each consultation is 12 points surer. Each takes 20% longer.',
-    consult: 0.12,
-    speed: 1 / 1.2,
+    desc: 'Structural conditions they see get as sure as 80%, not 60%, and a best guess of theirs costs nothing. Everyday consultations take 10% longer.',
+    structuralSure: 0.8,
+    sureGuess: true,
+    consultSpeed: { everyday: 1 / 1.1 },
     suits: PATIENT,
     suitsCourses: BEDSIDE,
   },
-  'quick-read': {
-    id: 'quick-read',
-    name: 'Quick Read',
+  triage: {
+    id: 'triage',
+    name: 'Triage',
     tier: 'senior',
-    desc: 'Consultations are 30% faster. Each is 5 points less sure.',
-    consult: -0.05,
-    speed: 1.3,
+    desc: 'Everyday conditions are seen 30% faster. Structural ones take 20% longer.',
+    consultSpeed: { everyday: 1.3, structural: 1 / 1.2 },
     suits: FAST,
   },
   'firm-hand': {
     id: 'firm-hand',
     name: 'Firm Hand',
     tier: 'senior',
-    desc: '+6% on every massage. Every massage they give needs a rest in the Recovery Lounge after.',
-    success: 0.06,
-    rest: 'always',
+    desc: '+8% on Deep Tissue, Sports and Cranio-sacral, −3% on the rest. One in three of their massages needs a rest in the Recovery Lounge after, on top of those that always do.',
+    success: 0.08,
+    techniques: ['deep', 'sports', 'cranio'],
+    offSuccess: -0.03,
+    rest: 1 / 3,
     suits: PATIENT,
     suitsCourses: BEDSIDE,
   },
@@ -153,29 +163,32 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
     id: 'light-touch',
     name: 'Light Touch',
     tier: 'senior',
-    desc: 'None of their massages need a rest after. −3% on Deep Tissue, Sports and Cranio-sacral.',
-    success: -0.03,
-    techniques: ['deep', 'sports', 'cranio'],
+    desc: '+8% on Swedish and Hot Stone, −3% on the rest. None of their massages need a rest after.',
+    success: 0.08,
+    techniques: ['swedish', 'stone'],
+    offSuccess: -0.03,
     rest: 'never',
     suits: FAST,
   },
-  'gentle-needles': {
-    id: 'gentle-needles',
-    name: 'Gentle Needles',
+  'needle-artist': {
+    id: 'needle-artist',
+    name: 'Needle Artist',
     tier: 'senior',
-    desc: 'Guests in their line lose patience 25% more slowly. Treatments take 7% longer.',
-    patience: 0.75,
-    speed: 1 / 1.07,
+    desc: '+8% on Classic Needling and Electroacupuncture, −3% on Cupping and Moxibustion.',
+    success: 0.08,
+    techniques: ['needling', 'electro'],
+    offSuccess: -0.03,
     suits: PATIENT,
     suitsCourses: BEDSIDE,
   },
-  'rapid-points': {
-    id: 'rapid-points',
-    name: 'Rapid Points',
+  'fire-and-glass': {
+    id: 'fire-and-glass',
+    name: 'Fire and Glass',
     tier: 'senior',
-    desc: 'Treatments are 18% faster. −3% on every technique.',
-    speed: 1.18,
-    success: -0.03,
+    desc: '+8% on Cupping and Moxibustion, −3% on Classic Needling and Electroacupuncture.',
+    success: 0.08,
+    techniques: ['cupping', 'moxa'],
+    offSuccess: -0.03,
     suits: FAST,
   },
   clears: {
@@ -201,8 +214,10 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
     id: 'big-gong',
     name: 'Big Gong',
     tier: 'senior',
-    desc: 'Plays for one more mat. Their sessions make 1 more noise next door.',
+    desc: 'Plays for one more mat, and +6% on Gong Bath. Their sessions make 1 more noise next door.',
     mats: 1,
+    success: 0.06,
+    techniques: ['gong'],
     noise: 1,
     suits: FAST,
   },
@@ -210,10 +225,12 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
     id: 'hushed',
     name: 'Hushed',
     tier: 'senior',
-    desc: 'No noise leaves their studio. −3% on Gong Bath and Overtone Chanting.',
+    desc: 'No noise leaves their studio, and +6% on Singing Bowls, Tuning Forks and Overtone Chanting. −3% on Gong Bath.',
     hushed: true,
-    success: -0.03,
-    techniques: ['gong', 'overtone'],
+    success: 0.06,
+    techniques: ['sound', 'forks', 'overtone'],
+    offSuccess: -0.03,
+    offTechniques: ['gong'],
     suits: PATIENT,
     suitsCourses: BEDSIDE,
   },
@@ -236,24 +253,27 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
     suits: PATIENT,
     suitsCourses: BEDSIDE,
   },
-  'steady-guide': {
-    id: 'steady-guide',
-    name: 'Steady Guide',
+  'trip-sitter': {
+    id: 'trip-sitter',
+    name: 'Trip Sitter',
     tier: 'senior',
-    desc: 'A failed ceremony is a really bad trip 60% less often, and they talk a runner down 2.5 times as fast. Ceremonies take 13% longer.',
+    desc: '+8% on Mushroom and Ayahuasca ceremonies, a failed one is a really bad trip 60% less often, and they talk a runner down 2.5 times as fast. −3% on the rest.',
+    success: 0.08,
+    techniques: ['mushroom', 'ayahuasca'],
+    offSuccess: -0.03,
     runaway: 0.4,
     calm: 2.5,
-    speed: 1 / 1.13,
     suits: PATIENT,
     suitsCourses: BEDSIDE,
   },
-  'deep-diver': {
-    id: 'deep-diver',
-    name: 'Deep Diver',
+  'earth-keeper': {
+    id: 'earth-keeper',
+    name: 'Earth Keeper',
     tier: 'senior',
-    desc: '+7% on every ceremony. A failed one is a really bad trip half as often again.',
-    success: 0.07,
-    runaway: 1.5,
+    desc: '+8% on Spirit Animal Reading, Spiritual Extraction, Sweat Lodge and Vision Quest. −3% on Mushroom and Ayahuasca.',
+    success: 0.08,
+    techniques: ['reading', 'extraction', 'sweat', 'quest'],
+    offSuccess: -0.03,
     suits: FAST,
   },
   fixer: {
@@ -307,13 +327,13 @@ export const PERKS: Readonly<Record<PerkId, PerkDef>> = {
 /** The two perks each role chooses between at the promotion to Senior. */
 export const SENIOR_PERKS: Readonly<Record<Role, readonly [PerkId, PerkId]>> = {
   receptionist: ['charmer', 'upseller'],
-  consultant: ['thorough', 'quick-read'],
+  consultant: ['diagnostician', 'triage'],
   therapist: ['firm-hand', 'light-touch'],
-  acupuncturist: ['gentle-needles', 'rapid-points'],
+  acupuncturist: ['needle-artist', 'fire-and-glass'],
   practitioner: ['clears', 'unbothered'],
   healer: ['big-gong', 'hushed'],
   instructor: ['crowd-pleaser', 'devotee-maker'],
-  shaman: ['steady-guide', 'deep-diver'],
+  shaman: ['trip-sitter', 'earth-keeper'],
   caretaker: ['fixer', 'neat-freak'],
 };
 
