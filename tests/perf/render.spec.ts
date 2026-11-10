@@ -150,6 +150,8 @@ test.describe('performance', () => {
   });
 
   test('reports how long frames take', async ({ game, page }) => {
+    // 180 frames of software rendering on a CI machine: 96 s of the usual 120 s at 0.36.3, and over it since
+    test.setTimeout(300_000);
     await game.start();
     await game.buildCenter();
     await game.fastForward(60);
@@ -173,7 +175,10 @@ test.describe('performance', () => {
     const pct = (p: number) => Math.round(sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]!);
     const summary = { median: pct(0.5), p95: pct(0.95), worst: pct(1) };
     test.info().annotations.push({ type: 'frame ms', description: JSON.stringify(summary) });
-    // software rendering is slow, so only a runaway fails: the numbers are for watching over time
-    expect(summary.median).toBeLessThan(500);
+    // software rendering is slow, so only a runaway fails: the numbers are for watching over time. On CI the median
+    // was 433 ms at 0.36.3, and 583 ms at 0.36.4 on a slower machine, before the ground cover was laid out as one
+    // mesh; drawn Full the scene costs about a fifth more than Plain in software (soft shadows, the patterned ground),
+    // and CI machines differ by as much again, so a limit of 500 failed on the machine's speed alone
+    expect(summary.median).toBeLessThan(1000);
   });
 });
