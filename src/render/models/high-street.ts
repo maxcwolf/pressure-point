@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 import { must } from '../../core/util';
-import { LAWN_FX } from '../ground';
-import { sway, WIND } from '../wind';
+import { fancy } from '../fx';
+import { sway } from '../wind';
 import { mergeStill } from './merge';
 import { cached, corner, mat, put } from './parts';
 
@@ -14,7 +14,7 @@ const PAVEMENT = new THREE.MeshStandardMaterial({ color: 0xd4ccbc, roughness: 0.
 const BRICK = 0xb5806a;
 const COPING = 0xd9cfc0;
 const HEDGE = 0x5b8f4e;
-/** The hedges' leaves when the wind blows: a material of their own that rustles a little at the top (see `sway`). */
+/** The hedges' leaves drawn Full: a material of their own that rustles a little at the top in the wind (see `sway`). */
 let hedgeLeaves: THREE.Material | null = null;
 
 /** A shared rounded slab, for a wall or a hedge. */
@@ -28,7 +28,7 @@ export function buildHedges(runs: readonly { x0: number; x1: number; z: number }
   const g = new THREE.Group();
   const brick = mat(BRICK);
   const coping = mat(COPING);
-  const leaf = WIND ? (hedgeLeaves ??= sway(mat(HEDGE, 0.9).clone(), 0.08)) : mat(HEDGE, 0.9);
+  const leaf = fancy() ? (hedgeLeaves ??= sway(mat(HEDGE, 0.9).clone(), 0.08)) : mat(HEDGE, 0.9);
   for (const r of runs) {
     const len = r.x1 - r.x0;
     if (len < 0.5) continue;
@@ -45,8 +45,8 @@ export function buildHedges(runs: readonly { x0: number; x1: number; z: number }
 const SLAB_PX = 64;
 
 /**
- * The lot's own pavement carried on past it with the richer ground (`lawn`): square slabs a tile each, in the floor's
- * two shades by turns, each with a faint joint round its edge, as the floor paints the pavement on the lot.
+ * The lot's own pavement carried on past it, drawn Full: square slabs a tile each, in the floor's two shades by turns,
+ * each with a faint joint round its edge, as the floor paints the pavement on the lot.
  */
 function slabMap(): THREE.CanvasTexture {
   const c = Object.assign(document.createElement('canvas'), { width: SLAB_PX * 2, height: SLAB_PX * 2 });
@@ -70,9 +70,13 @@ function slabMap(): THREE.CanvasTexture {
   return map;
 }
 
-if (LAWN_FX) {
-  PAVEMENT.color.setHex(0xffffff);
-  PAVEMENT.map = slabMap();
+/** The pavement's slabs, drawn Full: the lot's own pattern, made the first time it is wanted. */
+let slabs: THREE.MeshStandardMaterial | null = null;
+
+/** The material of the pavement's slabs, made the first time it is wanted. */
+function slabMaterial(): THREE.MeshStandardMaterial {
+  slabs ??= new THREE.MeshStandardMaterial({ color: 0xffffff, map: slabMap(), roughness: PAVEMENT.roughness });
+  return slabs;
 }
 
 /** Lay a strip's slabs on the map's tiles, for a strip whose middle is at (x, z): two tiles to the pattern each way. */
@@ -82,13 +86,17 @@ function slabsAt(shape: THREE.BufferGeometry, x: number, z: number) {
   for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) + x) / 2, (pos.getZ(i) + z) / 2);
 }
 
-/** Strips of pavement flat on the ground, which take shadows but cast none. */
+/**
+ * Strips of pavement flat on the ground, which take shadows but cast none: in the lot's slabs drawn Full, else in its
+ * plain stone.
+ */
 export function buildPavements(strips: readonly { x0: number; x1: number; z0: number; z1: number }[]): THREE.Group {
   const g = new THREE.Group();
+  const laid = fancy();
   for (const s of strips) {
     const shape = new THREE.PlaneGeometry(s.x1 - s.x0, s.z1 - s.z0).rotateX(-Math.PI / 2);
-    if (LAWN_FX) slabsAt(shape, (s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2);
-    const m = put(g, shape, PAVEMENT);
+    if (laid) slabsAt(shape, (s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2);
+    const m = put(g, shape, laid ? slabMaterial() : PAVEMENT);
     m.position.set((s.x0 + s.x1) / 2, -0.018, (s.z0 + s.z1) / 2);
     m.castShadow = false;
     m.receiveShadow = true;

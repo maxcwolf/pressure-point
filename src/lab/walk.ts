@@ -1,6 +1,6 @@
 // People walking round loops a few tiles across, turning at each corner, at any of the game's speeds: for the model
-// lab, to see how people walk. One guest walks the game's own walk; the same guest walks each of the walks being tried
-// out (`render/gait.ts`) side by side with it; and one walker for each way of walking the `character` walk shows.
+// lab, to see how people walk (`render/gait.ts`). One guest walks on their own, and one walker for each way people walk
+// as they feel walks beside the others.
 
 import * as THREE from 'three';
 
@@ -8,7 +8,6 @@ import { CONDITIONS, GUEST_WALK, STAFF_WALK, TIRED_WALK } from '../core/data';
 import { moveAlong } from '../core/sim/movement';
 import type { Char, Guest, Staff } from '../core/state/types';
 import { must } from '../core/util';
-import { type Gait, setGait } from '../render/gait';
 import { buildCharacter, type CharRig } from '../render/models/character';
 import { poseChar, treadmill } from '../render/pose';
 import type { Specimen } from './catalog';
@@ -38,19 +37,8 @@ const PAUSE = { lasts: 1.2, at: [0, 2] } as const;
 /** How long a walker on the spot walks before they stop, in the game's seconds, when they stop at all. */
 const WALK_FOR = 2.6;
 
-/** The walks side by side in `walk:compare`, the game's own first, left to right. */
-const COMPARED: readonly (Gait | 'today')[] = ['today', 'weighted', 'bouncy', 'character'];
-
-/** What each walk is called over it. */
-const TITLES: Readonly<Record<Gait | 'today', string>> = {
-  today: 'Today',
-  weighted: 'Weighted',
-  bouncy: 'Bouncy',
-  character: 'Character',
-};
-
-/** How far apart the loops side by side are, in meters. */
-const APART = 4.2;
+/** How far apart the loops of `walk:states` are side by side, in meters. */
+const APART = 3.4;
 
 /** One walker round a loop: who, posed on which rig, where their loop is, how fast they walk, and how far round it. */
 interface Lap {
@@ -71,16 +59,9 @@ function walkingGuest(): Guest {
   return { ...demoGuest(LAB_LOOK, condition.id), state: 'called', pose: 'walk', path: null };
 }
 
-/** Set a walker at the first corner of their loop, walking to the next, posed on a rig of their own with a walk. */
-function lapFor(
-  c: Char,
-  at: readonly [number, number],
-  corners: Lap['corners'],
-  gait: Gait | 'today' | undefined,
-  pace: number,
-): Lap {
+/** Set a walker at the first corner of their loop, walking to the next, posed on a rig of their own. */
+function lapFor(c: Char, at: readonly [number, number], corners: Lap['corners'], pace: number): Lap {
   const rig = buildCharacter(c.look, c.kind === 'staff' ? c.role : undefined);
-  if (gait) setGait(rig, gait);
   const [x, y] = must(corners[0], 'a corner');
   c.x = at[0] + x;
   c.y = at[1] + y;
@@ -202,7 +183,7 @@ function walkAll(laps: readonly Lap[], st: Walking) {
   };
 }
 
-/** A guest walking round and round the loop, in the game's own walk, or the one the address asks for. */
+/** A guest walking round and round the loop. */
 export function walkSpecimen(): Specimen {
   return {
     id: 'walk:guest',
@@ -212,40 +193,12 @@ export function walkSpecimen(): Specimen {
     /** Build the guest at the first corner, walking to the next. */
     build() {
       const st: Walking = { speed: '3', stops: false, spot: false };
-      const lap = lapFor(walkingGuest(), [0, 0], CORNERS, undefined, GUEST_WALK);
+      const lap = lapFor(walkingGuest(), [0, 0], CORNERS, GUEST_WALK);
       return {
         root: lap.rig.group,
         controls: walkingControls(st).slice(0, 1),
         animate: walkAll([lap], st),
       };
-    },
-  };
-}
-
-/**
- * The same guest walking the same loop in each of the walks side by side, the game's own on the left, then weighted,
- * bouncy and character, each named over its loop. They stop at every other corner, to show how they set off and
- * settle, and can walk on the spot instead, facing right, for a look at the cycle from the side.
- */
-export function walkCompareSpecimen(): Specimen {
-  const st: Walking = { speed: '1', stops: true, spot: false };
-  return {
-    id: 'walk:compare',
-    group: 'Acts',
-    name: 'Walks side by side: today, weighted, bouncy, character',
-    footprint: [16, 3],
-    /** Build a guest for each walk at the first corner of their loop. */
-    build() {
-      const root = new THREE.Group();
-      const laps = COMPARED.map((gait, i) => {
-        const at = [(i - (COMPARED.length - 1) / 2) * APART, 0] as const;
-        const lap = lapFor(walkingGuest(), at, CORNERS, gait, GUEST_WALK);
-        root.add(lap.rig.group);
-        // named over their head, wherever they walk
-        lap.rig.group.add(label(TITLES[gait]));
-        return lap;
-      });
-      return { root, controls: walkingControls(st), animate: walkAll(laps, st) };
     },
   };
 }
@@ -262,7 +215,7 @@ function staffIn(role: Staff['role'], state: Staff['state'], energy = 100): Staf
   return { ...demoStaff(LAB_LOOK, role), state, energy, pose: 'walk', path: null };
 }
 
-/** The ways of walking `character` shows, one walker each, made afresh. */
+/** The ways people walk as they feel, one walker each, made afresh. */
 function stateWalkers(): StateWalker[] {
   const guest = walkingGuest;
   return [
@@ -285,12 +238,12 @@ const ROWS_APART = 3.4;
 const SPOT_APART = 2.2;
 
 /**
- * One walker for each way of walking the `character` walk shows, each named over their loop: at ease, hurrying to a
- * job, worn out, with nothing to do, impatient, fed up, unwell and healed. The other walks can be chosen, to see what
- * each makes of the same people.
+ * One walker for each way people walk as they feel, each named over their loop: at ease, hurrying to a job, worn out,
+ * with nothing to do, impatient, fed up, unwell and healed. They can stop at every other corner, to show how they set
+ * off and settle, and walk on the spot instead, facing right, for a look at each walk from the side.
  */
 export function walkStatesSpecimen(): Specimen {
-  const st: Walking & { walk: string } = { speed: '1', stops: false, spot: false, walk: 'character' };
+  const st: Walking = { speed: '1', stops: false, spot: false };
   return {
     id: 'walk:states',
     group: 'Acts',
@@ -305,28 +258,15 @@ export function walkStatesSpecimen(): Specimen {
         // on the spot, all in one row, to be seen side on
         const at = st.spot
           ? ([(i - 3.5) * SPOT_APART, 0] as const)
-          : ([(col - (ROW - 1) / 2) * APART * 0.8, (row - 0.5) * ROWS_APART] as const);
+          : ([(col - (ROW - 1) / 2) * APART, (row - 0.5) * ROWS_APART] as const);
         const { c } = s;
         c.id = 11 + i * 7;
-        const lap = lapFor(c, at, SMALL, st.walk as Gait | 'today', s.pace);
+        const lap = lapFor(c, at, SMALL, s.pace);
         root.add(lap.rig.group);
         lap.rig.group.add(label(s.name));
         return lap;
       });
-      return {
-        root,
-        controls: [
-          choice(
-            'Walk',
-            st,
-            'walk',
-            COMPARED.map((g) => [g, TITLES[g]] as const),
-            true,
-          ),
-          ...walkingControls(st),
-        ],
-        animate: walkAll(laps, st),
-      };
+      return { root, controls: walkingControls(st), animate: walkAll(laps, st) };
     },
   };
 }

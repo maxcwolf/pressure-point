@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { must } from '../../core/util';
-import { sway, WIND } from '../wind';
+import { fancy } from '../fx';
+import { sway } from '../wind';
 import { cached, cyl, mat, rbox, soft, WOOD } from './parts';
 import type { TreeSpot } from './tree';
 
@@ -14,7 +15,7 @@ const HUT_COLORS = [0xf0ad9f, 0xa6cbe2, 0xf3df9f, 0xb0dabf, 0xf5c3a0] as const;
 /** The boards, the door's frame and the roof: a warm white. */
 const BOARD = 0xf6f1e6;
 const GRASS_COLORS = [0x9bb85a, 0xb5c46a] as const;
-/** The dune grass's blades when the wind blows: a material of their own that bends at the tips (see `sway`). */
+/** The dune grass's blades drawn Full: a material of their own that bends at the tips in the wind (see `sway`). */
 let swayingGrass: THREE.Material | null = null;
 
 /** A hut's width and depth, how tall its walls stand, and how high its ridge is over them. */
@@ -133,7 +134,7 @@ export function buildBeach(huts: readonly TreeSpot[], grass: readonly TreeSpot[]
       bladeColors.push(GRASS_COLORS[(seed + i) % 2] ?? GRASS_COLORS[0]);
     }
   }
-  const grassMaterial = WIND ? (swayingGrass ??= sway(mat(0xffffff, 0.8).clone(), 0.22)) : mat(0xffffff, 0.8);
+  const grassMaterial = fancy() ? (swayingGrass ??= sway(mat(0xffffff, 0.8).clone(), 0.22)) : mat(0xffffff, 0.8);
   if (blades.length) beach.add(instanced(cyl(0.001, 0.035, 1, 4), grassMaterial, blades, bladeColors));
   return beach;
 }

@@ -21,7 +21,7 @@ import {
 } from './bubbles';
 import { prefersReducedMotion } from './camera-math';
 import { animateEmitter, emitter, type EmitterShape } from './gags/particles';
-import { advanceGait, type Cycle, finishGait, gaitCycle, gaitOf, gaitPosture, KNEE_REST, NO_CYCLE, ride } from './gait';
+import { advanceGait, type Cycle, finishGait, gaitCycle, gaitPosture, KNEE_REST, ride } from './gait';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
 import {
@@ -172,12 +172,6 @@ export function idleMoment(id: number, kind: IdleAct) {
 /** An angle brought round to between -pi and pi. */
 const wrap = (a: number) => a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
 
-/**
- * How far round the legs' cycle goes for each meter walked, in radians: a full cycle of two steps every 1.3 m, about the
- * 9.5 rad/s the walk had at 2.1 m/s.
- */
-export const STRIDE = 4.8;
-
 /** How far someone may move in a frame and still have walked there, in meters: further, they were put there. */
 const TELEPORT = 2;
 
@@ -248,10 +242,10 @@ function showCure(rig: CharRig, c: Char, t: number) {
 }
 
 /**
- * How someone potted from the waist down walks, keeping the legs inside the pot: how far each leg swings, in radians,
- * how far the pot waddles from side to side, and how much of the usual bend the knees keep.
+ * How someone potted from the waist down walks, keeping the legs inside the pot, their knees straight: how far each leg
+ * swings, in radians, and how far the pot waddles from side to side.
  */
-export const POTTED = { stride: 0.1, waddle: 0.14, knees: 0.2 } as const;
+export const POTTED = { stride: 0.1, waddle: 0.14 } as const;
 
 /** How often lightning flashes in someone's storm cloud, in seconds, each person at their own pace. */
 const flashPeriod = (id: number) => 2.6 + hash(id * 1.3) * 1.8;
@@ -394,6 +388,8 @@ export interface Cues {
   lying?: number;
   /** How long since a healed guest got down from where they were treated, in seconds: they hop for joy. */
   up?: number;
+  /** Whether less motion is asked for: the walk then bobs and sways people about less (`gait.ts`). */
+  calm?: boolean;
   /**
    * Climbing on face down, how far they are on all fours, and how far their hands reach down to it; climbing on onto
    * their back, how far they lie back from sitting on it rather than from standing; each from 0 to 1.
@@ -431,11 +427,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     c.kind === 'guest' && c.pose === 'lie' && (c.state === 'resting' || (c.state === 'served' && cues.lie === 'back'));
   showEyes(rig.face, asleep || blinkAt(c.id, t));
   const visual = healed ? undefined : rig.visual;
-  // a walk being tried out in place of the game's own (`gait.ts`), if one is, which counts its own steps
-  const gait = gaitOf(rig);
-  const walker = gait && { mood: moodOf(c), idle: hasNothingToDo(c), cured: healed && rig.cured, visual };
-  const g = gait && walker ? advanceGait(rig, c, dt, gait, walker) : undefined;
-  const phase = g ? g.phase : rig.walked * STRIDE + c.id * 1.7;
+  // the walk counts its own steps from the ground covered (`gait.ts`), and goes as they feel
+  const calm = !!cues.calm;
+  const walker = { mood: moodOf(c), idle: hasNothingToDo(c), cured: healed && rig.cured, visual, calm };
+  const g = advanceGait(rig, c, dt, walker);
+  const phase = g.phase;
   let legL = 0;
   let legR = 0;
   let armL = Math.sin(t * 1.6 + c.id) * 0.05;
@@ -453,20 +449,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   const onFloor = c.pose === 'sit' && c.h < SIT.floor;
   /** Whether someone with text neck has their phone out: not lying down, and small in the lap sitting. */
   const phoneOut = visual === 'neck' && c.pose !== 'lie';
-  if (c.pose === 'walk' && g) {
+  if (c.pose === 'walk') {
     // the walk's cycle goes on once the rest of the pose has eased (`gaitCycle`); the arms are its to swing, unless
     // something below takes them
     armL = armR = SWINGING;
-  } else if (c.pose === 'walk') {
-    const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
-    legL = sw;
-    legR = -sw;
-    armL = -sw * 0.85;
-    armR = sw * 0.85;
-    bodyY = Math.abs(Math.cos(phase)) * 0.04;
-    if (healed && rig.cured) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
-  }
-  if (c.pose === 'walk') {
     // leaning into a corner, the head leading
     const turn = THREE.MathUtils.clamp(turning, -TURN_LEAN.most, TURN_LEAN.most);
     side -= turn * TURN_LEAN.body;
@@ -822,11 +808,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     armL,
     armR,
     armOut,
-    walking: g && c.pose === 'walk' ? gaitPosture(g, c, t, hasNothingToDo(c), swingL, swingR) : undefined,
+    walking: c.pose === 'walk' ? gaitPosture(g, c, t, hasNothingToDo(c), swingL, swingR) : undefined,
   };
   // too stiff, or frozen like a crashed computer, to move with life, they can still show their patience running out
   const frozen = visual === 'stiff' || visual === 'bluescreen';
-  const life = !frozen ? liveliness(c, t, phase, doing) : showMood({ ...NO_LIFE }, c, t, doing);
+  const life = !frozen ? liveliness(c, t, doing) : showMood({ ...NO_LIFE }, c, t, doing);
   lean += life.lean;
   side += life.side;
   headX += life.headX;
@@ -857,9 +843,10 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (held || rig.held) holdFor(rig, held, heldTilt(act, c, t) - (armR + elbowFor(armR) + life.elbowR));
   if (act === 'hose' || rig.jet) sprayHose(rig, act === 'hose', t);
   const k = Math.min(1, dt * 14);
-  // the walk's cycle this frame, and last, put straight on top of what eases (`ride`): none for the game's own walk
-  const cyc = g ? gaitCycle(rig, c, dt, g, swingL, swingR) : NO_CYCLE;
-  const was = g ? g.state.applied : NO_CYCLE;
+  // the walk's cycle this frame, and last, put straight on top of what eases (`ride`); someone the crowd last drew
+  // small (`crowd.ts`) keeps their feet flat and their head turning with them
+  const cyc = gaitCycle(rig, c, dt, g, swingL, swingR, !!rig.group.userData.small);
+  const was = g.state.applied;
   const b = rig.body;
   b.rotation.x += (bodyRX - b.rotation.x) * k;
   b.position.y = ride(b.position.y, bodyY, k, was.bodyY, cyc.bodyY);
@@ -882,7 +869,6 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     legR,
     armL,
     armR,
-    phase,
     visual,
     style,
     onFloor,
@@ -891,11 +877,14 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     hands: cues.hands ?? 0,
     fours: cues.fours ?? 0,
     sat: cues.lie === 'back' ? (cues.sat ?? 0) : 0,
-    stepping: !!g && c.pose === 'walk',
+    stepping: c.pose === 'walk',
     cyc,
     was,
   };
   poseJoints(rig.joints, rig, c, t, k, limbs, life);
+  // what hangs from the waist swings with the thighs, folds into the lap or round them bent over, and lies flatter
+  // lying down
+  rig.clothes.sway(rig.body, rig.torso, rig.legL, rig.legR, dt, c.pose === 'lie' ? lying : 0);
   if (visual === 'jitter' && c.pose !== 'lie') {
     // pins and needles: a constant fizzing shiver
     rig.body.position.x = Math.sin(t * 47 + c.id) * 0.022;
@@ -1011,7 +1000,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   const soles = prone && lying > 0.6;
   if (soles) rig.soles ??= buildSoles([rig.joints.shinL, rig.joints.shinR]);
   for (const sole of rig.soles ?? []) sole.visible = soles;
-  if (g) finishGait(rig, g, cyc);
+  finishGait(rig, g, cyc);
 
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;
@@ -1088,7 +1077,6 @@ interface Limbs {
   legR: number;
   armL: number;
   armR: number;
-  phase: number;
   visual: CharRig['visual'];
   style: WorkStyle;
   /** Sitting cross-legged on the floor. */
@@ -1103,7 +1091,7 @@ interface Limbs {
   hands: number;
   fours: number;
   sat: number;
-  /** Whether they walk one of the walks being tried out, whose cycle goes on top: this frame's, and last frame's. */
+  /** Whether they are walking, the walk's cycle going on top: this frame's, and last frame's. */
   stepping: boolean;
   cyc: Readonly<Cycle>;
   was: Readonly<Cycle>;
@@ -1118,7 +1106,7 @@ export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1,
  * arms reach forward.
  */
 function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
-  const { legL, legR, armL, armR, phase, visual, style, onFloor, lying, prone, hands, fours, sat } = limbs;
+  const { legL, legR, armL, armR, visual, style, onFloor, lying, prone, hands, fours, sat } = limbs;
   const { stepping, cyc, was } = limbs;
   let kneeL = 0.04;
   let kneeR = 0.04;
@@ -1126,10 +1114,6 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
   if (stepping) {
     // the knees bend and the shoulders turn with the walk's own cycle
     kneeL = kneeR = KNEE_REST;
-  } else if (c.pose === 'walk') {
-    kneeL = 0.08 + Math.max(0, -Math.cos(phase)) * 0.95;
-    kneeR = 0.08 + Math.max(0, Math.cos(phase)) * 0.95;
-    twist = Math.sin(phase) * 0.14;
   } else if (onFloor) {
     kneeL = SIT.crossed.kneeL;
     kneeR = SIT.crossed.kneeR;
@@ -1153,11 +1137,6 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
     elbowL = elbowR = 0;
     twist = 0;
   } else if (visual === 'flex' && c.pose !== 'lie') elbowL = elbowR = -1.5;
-  // potted from the waist down, the knees barely bend walking, so the feet stay in under the pot
-  if (visual === 'cactus' && c.pose === 'walk') {
-    kneeL = 0.06 + (kneeL - 0.08) * POTTED.knees;
-    kneeR = 0.06 + (kneeR - 0.08) * POTTED.knees;
-  }
   kneeL += life.kneeL;
   kneeR += life.kneeR;
   elbowL += life.elbowL;
@@ -1195,7 +1174,7 @@ interface Doing {
   armL: number;
   armR: number;
   armOut: number;
-  /** How they hold themselves walking one of the walks being tried out, whose cycle does the rest. */
+  /** How they hold themselves walking, which the walk's cycle goes on top of. */
   walking: Partial<Life> | undefined;
 }
 
@@ -1309,42 +1288,21 @@ export const RHYTHM: Readonly<Record<StandingWork, number>> = {
 };
 
 /**
- * The life a person built with knees and elbows moves with, on top of their pose. Walking, the hips shift over each
- * foot as it takes the weight and turn against the shoulders, the step bounces, and the head and forearms trail a
- * beat behind. Standing, they breathe, shift their weight from foot to foot with the other knee easing, and every so
- * often fidget: a look round, a glance at a watch, a stretch, a tapping foot. Sitting, they
- * breathe, swing their feet and look about. Working, they lean into each stroke and shift their weight in its rhythm,
- * knees giving, head following the hands. Someone holding something or showing a symptom only looks round instead of
- * fidgeting with their hands. Someone with nothing to do passes the time, strolling about with their arms barely
- * swinging, and a guest waiting shows how patient they are.
+ * The life a person built with knees and elbows moves with, on top of their pose. Walking, they hold themselves as
+ * their walk asks, and its cycle does the rest. Standing, they breathe, shift their weight from foot to foot with the
+ * other knee easing, and every so often fidget: a look round, a glance at a watch, a stretch, a tapping foot. Sitting,
+ * they breathe, swing their feet and look about. Working, they lean into each stroke and shift their weight in its
+ * rhythm, knees giving, head following the hands. Someone holding something or showing a symptom only looks round
+ * instead of fidgeting with their hands. Someone with nothing to do passes the time, and a guest waiting shows how
+ * patient they are.
  */
-function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
+function liveliness(c: Char, t: number, doing: Doing): Life {
   const { style, smudging, armL, armR, handsFree } = doing;
   const life = { ...NO_LIFE };
   if (c.pose === 'lie') return life;
   const breath = Math.sin(t * 1.7 + c.id);
-  if (c.pose === 'walk' && doing.walking) return Object.assign(life, doing.walking);
-  if (c.pose === 'walk') {
-    const cp = Math.cos(phase);
-    const sp = Math.sin(phase);
-    life.swayX = -cp * 0.022;
-    life.side = cp * 0.035;
-    life.bodyY = Math.abs(cp) * 0.012;
-    life.lean = 0.07;
-    life.headX = -0.03 + Math.sin(2 * phase + 0.9) * 0.035;
-    life.headYaw = -sp * 0.09;
-    life.bodyYaw = -sp * 0.06;
-    life.elbowL = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2));
-    life.elbowR = -0.22 * (0.5 + 0.5 * Math.sin(phase + 2.2 + Math.PI));
-    life.armOut = 0.08;
-    if (doing.idle) {
-      // strolling, with nowhere to be: the arms barely swing, and they look about them
-      life.armL = -armL * 0.75;
-      life.armR = -armR * 0.75;
-      life.headYaw += Math.sin(t * 0.8 + c.id) * 0.45;
-    }
-    return life;
-  }
+  // walking, the walk's cycle sways, turns and bobs them (`gait.ts`); they hold themselves as it asks
+  if (c.pose === 'walk') return Object.assign(life, doing.walking);
   // breathing, whatever else they are doing
   life.lean = breath * 0.012;
   life.bodyY = breath * 0.004;

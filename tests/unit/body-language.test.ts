@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { CONDITIONS, ITEMS, POOR_CONDITION } from '../../src/core/data';
+import { CONDITIONS, GUEST_WALK, ITEMS, POOR_CONDITION } from '../../src/core/data';
 import { SHOES } from '../../src/core/people';
 import type { Char } from '../../src/core/state/types';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from '../../src/lab/people';
@@ -36,7 +36,6 @@ import {
   RHYTHM,
   SIP,
   stepOn,
-  STRIDE,
   treadmill,
   type WorkStyle,
 } from '../../src/render/pose';
@@ -273,23 +272,33 @@ describe('the stride', () => {
     return { ...g, pose: 'walk' as const, x, y };
   }
 
-  it('follows the ground covered, so a step plants where it lands', () => {
+  /** Walk a guest so far along the floor at a pace, a sixtieth of a second at a time, and say where their legs are. */
+  function walkFor(meters: number, pace: number) {
     const rig = buildCharacter(LAB_LOOK);
-    pose(rig, walker(0, 0));
-    const before = rig.legL.rotation.x;
-    // half a cycle on: the other leg forward
-    pose(rig, walker(Math.PI / STRIDE, 0));
-    expect(Math.sign(rig.legL.rotation.x)).toBe(-Math.sign(before));
-    expect(Math.abs(before)).toBeGreaterThan(0.3);
+    const frames = Math.round((meters / pace) * 60);
+    let most = 0;
+    for (let i = 0; i <= frames; i++) {
+      poseChar(rig, walker((i * meters) / frames, 0), i / 60, 1 / 60, { style: null });
+      most = Math.max(most, Math.abs(rig.legL.rotation.x));
+    }
+    return { at: rig.legL.rotation.x, most };
+  }
+
+  it('follows the ground covered, so a step plants where it lands, at whatever pace', () => {
+    const quick = walkFor(2.1, GUEST_WALK);
+    const slow = walkFor(2.1, GUEST_WALK / 2);
+    expect(quick.at).toBeCloseTo(slow.at, 1);
+    expect(quick.most).toBeGreaterThan(0.3);
   });
 
   it('does not count a jump as a walk', () => {
     const rig = buildCharacter(LAB_LOOK);
     pose(rig, walker(0, 0));
+    pose(rig, walker(0.01, 0));
     const before = rig.legL.rotation.x;
     pose(rig, walker(5, 0));
-    expect(rig.legL.rotation.x).toBeCloseTo(before);
-    expect(rig.walked).toBe(0);
+    expect(rig.legL.rotation.x).toBeCloseTo(before, 1);
+    expect(rig.walked).toBeCloseTo(0.01);
   });
 
   it('counts nothing on the first frame', () => {

@@ -1,16 +1,16 @@
-// Small idle motions that keep still items alive: leaves stirring, fish swimming, a salt lamp breathing, a candle
-// flickering, water running down a slate, a tapestry stirring on its rod and a glint running up a crystal. Each is done
-// by the graphics card, in a twin of a part's material that moves its corners or its glow by the clock, so a moving
-// item costs no more to draw than a still one and nothing is worked out for it each frame. The twin stands in for its
-// material only in the item that moves, where nothing else of that material stands still, so no part is drawn apart
-// from those it was merged with. They are part of the graphics pass's motion (`juice`): with it off, or the player
-// asking for reduced motion, every material is given back as it is.
+// Small idle motions that keep still items alive while the scene is drawn Full: leaves stirring, fish swimming, a salt
+// lamp breathing, a candle flickering, embers smoldering, water running down a slate, a tapestry stirring on its rod
+// and a glint running up a crystal. Each is done by the graphics card, in a twin of a part's material that moves its
+// corners or its glow by the clock, so a moving item costs no more to draw than a still one and nothing is worked out
+// for it each frame. The twin stands in for its material only in the item that moves, where nothing else of that
+// material stands still, so no part is drawn apart from those it was merged with. Drawn Plain, or for a player who asks
+// for reduced motion, every material is given back as it is, as the item is built.
 
 import type * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { prefersReducedMotion } from '../../camera-math';
-import { fx } from '../../fx';
+import { fancy } from '../../fx';
 import { cached, mat, sph } from '../parts';
 
 /** The clock every idle motion keeps time by, in seconds: set once a frame, shared by every twin. */
@@ -88,9 +88,18 @@ function colorOf(m: Idle): string {
   return `diffuseColor.rgb *= 1.0 + 0.3 * smoothstep(0.55, 1.0, sin(vIdleUp * 26.0 + idleClock * ${f(m.pace)}));`;
 }
 
-/** Make a material move by an idle motion, in place, by rewriting its shaders as they are built. */
-function teach(material: THREE.MeshStandardMaterial, m: Idle) {
-  const key = `idle ${JSON.stringify(m)}`;
+/** The idle motion each material moves by, for the materials taught one. */
+const taught = new WeakMap<THREE.Material, Idle>();
+
+/** The idle motion a material moves by, if any: a copy of it made for another look, such as ice, keeps still. */
+export const idleOf = (material: THREE.Material): Idle | undefined => taught.get(material);
+
+/**
+ * Make a material move by an idle motion, in place, by rewriting its shaders as they are built: its corners, and
+ * unless `cornersOnly` its glow and color too.
+ */
+function teach(material: THREE.Material, m: Idle, cornersOnly = false) {
+  const key = `idle ${cornersOnly ? 'corners ' : ''}${JSON.stringify(m)}`;
   /** The motion, so materials that move alike share their shaders and those that move otherwise do not. */
   material.customProgramCacheKey = () => key;
   /** Rewrite the material's shaders as they are built, to move by the clock. */
@@ -116,14 +125,14 @@ function teach(material: THREE.MeshStandardMaterial, m: Idle) {
         varying float vIdleUp;
         void main() {`,
       )
-      .replace('#include <color_fragment>', `#include <color_fragment>\n${colorOf(m)}`)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${glowOf(m)}`);
+      .replace('#include <color_fragment>', `#include <color_fragment>\n${cornersOnly ? '' : colorOf(m)}`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${cornersOnly ? '' : glowOf(m)}`);
   };
-  material.userData.idle = m;
+  taught.set(material, m);
 }
 
-/** Whether idle motion is shown: switched on, and the player not asking for less motion. */
-export const idling = () => fx('juice') && !prefersReducedMotion();
+/** Whether idle motion is shown: the scene drawn Full, and the player not asking for less motion. */
+export const idling = () => fancy() && !prefersReducedMotion();
 
 /** Each material's twin for each idle motion, made once and shared by every item that moves that way. */
 const twins = new Map<string, THREE.MeshStandardMaterial>();
@@ -150,12 +159,33 @@ export function idleOwn<T extends THREE.MeshStandardMaterial>(material: T, m: Id
   return material;
 }
 
+/** Each plain material's twins that move as an idly moving material does, by the material and the motion. */
+const movers = new Map<string, THREE.Material>();
+
+/**
+ * A plain material, such as the hover glow's, moved the way an idly moving part's material moves its corners, so a
+ * copy of the part drawn in it keeps in step with the part; or the plain material itself for a part that keeps still.
+ * Made once for each material and motion.
+ */
+export function idleLike<T extends THREE.Material>(plain: T, part: THREE.Material): T {
+  const m = idleOf(part);
+  if (!m) return plain;
+  const key = `${plain.uuid}|${JSON.stringify(m)}`;
+  let twin = movers.get(key);
+  if (!twin) {
+    twin = plain.clone();
+    teach(twin, m, true);
+    movers.set(key, twin);
+  }
+  return twin as T;
+}
+
 /**
  * How much brighter than its own an idly moving material's glow is now, at a spot in the world, as the graphics card
  * works it out: for a halo to breathe and flicker with its light.
  */
 export function idleGlow(material: THREE.Material, x: number, z: number): number {
-  const m = material.userData.idle as Idle | undefined;
+  const m = idleOf(material);
   if (!m) return 1;
   const t = IDLE_CLOCK.value;
   const phase = x * 1.7 + z * 2.3;

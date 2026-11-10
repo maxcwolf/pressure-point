@@ -1,8 +1,9 @@
-// Grounding: the soft shade where things meet the floor, which a scene with no light bouncing between surfaces lacks,
-// so walls, furniture and the building look set down on the floor rather than pasted on it. It costs no draw calls:
-// the shade on the floor is painted into the floor's own texture, under the walls, the building's shell and each
-// item, and the foot of each wall is darkened as it is drawn, by height. Both multiply toward a warm brown, not
-// black, so the cream floors and the walls warm a little where they meet rather than going gray.
+// Grounding, drawn Full: the soft shade where things meet the floor, which a scene with no light bouncing between
+// surfaces lacks, so walls, furniture and the building look set down on the floor rather than pasted on it. It costs no
+// draw calls but one for the trees: the shade on the floor is painted into the floor's own texture, under the walls,
+// the building's shell and each item, and the foot of each wall is darkened as it is drawn, by height. Both multiply
+// toward a warm brown, not black, so the cream floors and the walls warm a little where they meet rather than going
+// gray. A soft round shade lies under every tree, all of them in one draw.
 
 import * as THREE from 'three';
 
@@ -11,7 +12,7 @@ import { inFootprint } from '../core/footprint';
 import type { Sim } from '../core/sim/sim';
 import { must } from '../core/util';
 import { itemDims, onWall } from '../core/world';
-import { fx } from './fx';
+import { fancy } from './fx';
 import { shellStretches } from './outer-walls';
 import { OUTER_T, WALL_T } from './shared';
 import { nearSides } from './turn';
@@ -34,42 +35,18 @@ const GAIN = 3;
 const SHADE_RGB = [104, 78, 54] as const;
 const SHADE_MOST = 0.46;
 
-/** The shade's cells, its picture, and the canvas it is drawn on, kept between paintings while the lot keeps its size. */
-let grid: {
+/** The shade worked out over the lot: so many cells across and down, each how strongly shaded, from 0 to over 1. */
+export interface ShadeCells {
   w: number;
   h: number;
   v: Float32Array;
-  tmp: Float32Array;
-  canvas: HTMLCanvasElement;
-  img: ImageData;
-} | null = null;
-
-/** The cells, picture and canvas for a lot this many tiles wide, made afresh only when the lot grows. */
-function gridFor(tilesW: number) {
-  const w = tilesW * CELLS;
-  const h = H * CELLS;
-  if (grid?.w === w && grid.h === h) {
-    grid.v.fill(0);
-    return grid;
-  }
-  const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
-  const ctx = must(canvas.getContext('2d'), '2D canvas');
-  grid = { w, h, v: new Float32Array(w * h), tmp: new Float32Array(w * h), canvas, img: ctx.createImageData(w, h) };
-  return grid;
 }
 
 /**
  * Shade a rectangle of the floor, given in tiles, as strongly as `k`: each cell it covers by as much of the cell as it
  * covers, keeping whatever shade the cell already has if that is more.
  */
-function cover(
-  g: { w: number; h: number; v: Float32Array },
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  k: number,
-) {
+function cover(g: ShadeCells, x0: number, y0: number, x1: number, y1: number, k: number) {
   const [cx0, cy0, cx1, cy1] = [x0 * CELLS, y0 * CELLS, x1 * CELLS, y1 * CELLS];
   for (let cy = Math.max(0, Math.floor(cy0)); cy < Math.min(g.h, Math.ceil(cy1)); cy++) {
     const fy = Math.min(cy + 1, cy1) - Math.max(cy, cy0);
@@ -81,9 +58,9 @@ function cover(
   }
 }
 
-/** Blur the cells with a box `SPREAD` cells either way, along the rows and then down the columns, from `v` into `v`. */
-function boxBlur(g: { w: number; h: number; v: Float32Array; tmp: Float32Array }) {
-  const { w, h, v, tmp } = g;
+/** Blur the cells with a box `SPREAD` cells either way, along the rows then down the columns, by way of `tmp`. */
+function boxBlur(g: ShadeCells, tmp: Float32Array) {
+  const { w, h, v } = g;
   const r = SPREAD;
   const n = 2 * r + 1;
   for (let y = 0; y < h; y++) {
@@ -106,16 +83,13 @@ function boxBlur(g: { w: number; h: number; v: Float32Array; tmp: Float32Array }
 }
 
 /**
- * Paint the soft shade where things stand on the floor into the floor's texture, `ts` pixels a tile: along the foot of
- * every finished room's walls, on both faces, and of the building's shell, inside and out, and a softer pool under each
- * item standing on the floor. It is worked out at a few cells a tile, blurred twice, and laid over the floor in one go,
- * scaled up smoothly. Painted before the door thresholds, the welcome mat and the rooms pencilled in, so they stay
- * clear of it.
+ * Where the floor is shaded, `CELLS` cells a tile: along the foot of every finished room's walls, on both faces, and
+ * of the building's shell, inside and out, and a softer pool under each item standing on the floor, blurred twice.
  */
-export function paintGroundShade(ctx: CanvasRenderingContext2D, sim: Sim, ts: number) {
+export function shadeCells(sim: Sim): ShadeCells {
   const world = sim.world;
   const fp = world.building;
-  const g = gridFor(world.w);
+  const g: ShadeCells = { w: world.w * CELLS, h: H * CELLS, v: new Float32Array(world.w * CELLS * H * CELLS) };
   // the building's shell, from the middle of the wall out to both faces
   for (const s of shellStretches(fp, nearSides(0))) {
     const [p, q] = [s.at - OUTER_T / 2, s.at + OUTER_T / 2];
@@ -151,22 +125,44 @@ export function paintGroundShade(ctx: CanvasRenderingContext2D, sim: Sim, ts: nu
     const [w, h] = itemDims(it.type, it.rot);
     cover(g, it.x + ITEM_INSET, it.y + ITEM_INSET, it.x + w - ITEM_INSET, it.y + h - ITEM_INSET, ITEM_SHADE);
   }
-  boxBlur(g);
-  boxBlur(g);
-  const { data } = g.img;
+  const tmp = new Float32Array(g.v.length);
+  boxBlur(g, tmp);
+  boxBlur(g, tmp);
+  return g;
+}
+
+/** How dark the shade is at a cell of so much shade, from 0 to `SHADE_MOST`: turned up by `GAIN`, then capped. */
+export const shadeAlpha = (v: number) => Math.min(1, v * GAIN) * SHADE_MOST;
+
+/** The canvas the shade is drawn on before it is laid over the floor, kept while the lot keeps its size. */
+let sheet: { canvas: HTMLCanvasElement; img: ImageData } | null = null;
+
+/**
+ * Paint the soft shade where things stand on the floor into the floor's texture, `ts` pixels a tile, when the scene is
+ * drawn Full: worked out at a few cells a tile (`shadeCells`) and laid over the floor in one go, scaled up smoothly.
+ * Painted before the door thresholds, the welcome mat and the rooms pencilled in, so they stay clear of it.
+ */
+export function paintGroundShade(ctx: CanvasRenderingContext2D, sim: Sim, ts: number) {
+  if (!fancy()) return;
+  const g = shadeCells(sim);
+  if (sheet?.canvas.width !== g.w || sheet.canvas.height !== g.h) {
+    const canvas = Object.assign(document.createElement('canvas'), { width: g.w, height: g.h });
+    sheet = { canvas, img: must(canvas.getContext('2d'), '2D canvas').createImageData(g.w, g.h) };
+  }
+  const { data } = sheet.img;
   for (let i = 0; i < g.v.length; i++) {
     const o = i * 4;
     data[o] = SHADE_RGB[0];
     data[o + 1] = SHADE_RGB[1];
     data[o + 2] = SHADE_RGB[2];
-    data[o + 3] = Math.round(Math.min(1, (g.v[i] ?? 0) * GAIN) * SHADE_MOST * 255);
+    data[o + 3] = Math.round(shadeAlpha(g.v[i] ?? 0) * 255);
   }
-  must(g.canvas.getContext('2d'), '2D canvas').putImageData(g.img, 0, 0);
+  must(sheet.canvas.getContext('2d'), '2D canvas').putImageData(sheet.img, 0, 0);
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(g.canvas, 0, 0, world.w * ts, H * ts);
+  ctx.drawImage(sheet.canvas, 0, 0, sim.world.w * ts, H * ts);
   ctx.restore();
 }
 
@@ -223,9 +219,9 @@ export function grounded(m: THREE.Material): THREE.Material {
   return g;
 }
 
-/** Darken the foot of every wall in a group, when grounding is switched on: each opaque part takes its material's copy. */
+/** Darken the foot of every wall in a group, drawn Full: each opaque part takes its material's copy. */
 export function groundWalls(root: THREE.Object3D) {
-  if (!fx('grounding')) return;
+  if (!fancy()) return;
   root.traverse((o) => {
     if (o instanceof THREE.Mesh && !Array.isArray(o.material)) o.material = grounded(o.material as THREE.Material);
   });
@@ -265,12 +261,12 @@ function treeShadeMaterial(): THREE.MeshBasicMaterial {
 }
 
 /**
- * Lay a soft shade on the ground at the foot of every tree in the scenery, when grounding is switched on: all of them
- * in one draw, found as the instanced trunks among it (the rough brown cylinders of every kind of tree), so it follows
- * whatever trees the setting grows. Its shape is the scenery's own, freed with it.
+ * Lay a soft shade on the ground at the foot of every tree in the scenery, drawn Full: all of them in one draw, found
+ * as the instanced trunks among it (the rough brown cylinders of every kind of tree), so it follows whatever trees the
+ * setting grows. Its shape is the scenery's own, freed with it.
  */
 export function groundTrees(scenery: THREE.Object3D) {
-  if (!fx('grounding')) return;
+  if (!fancy()) return;
   scenery.updateMatrixWorld(true);
   const spots: THREE.Vector3[] = [];
   const m = new THREE.Matrix4();

@@ -16,7 +16,15 @@ import {
 import type { Sim } from '../../core/sim/sim';
 import { disciplineHere, offeringHere } from '../../core/state/game';
 import { loadControls, saveControls } from '../../storage/controls';
-import { ITEM_VIEWS, loadDisplay, MESSAGE_TIMES, saveDisplay, UI_SCALES } from '../../storage/display';
+import {
+  GRAPHICS,
+  type Graphics,
+  ITEM_VIEWS,
+  loadDisplay,
+  MESSAGE_TIMES,
+  saveDisplay,
+  UI_SCALES,
+} from '../../storage/display';
 import {
   loadDisciplinePrefs,
   loadFeaturePrefs,
@@ -44,7 +52,12 @@ export interface SettingsPanelProps {
   fullScreen?: FullScreenSwitch | undefined;
   /** Called after any switch is flipped. */
   onChange?: (() => void) | undefined;
+  /** Draw the game in progress with a new Graphics setting. Without a game, the next one is drawn with it. */
+  onGraphics?: ((g: Graphics) => void) | undefined;
 }
+
+/** What the Graphics setting's button says for each choice. */
+const GRAPHICS_NAMES: Readonly<Record<Graphics, string>> = { full: 'Full', plain: 'Plain' };
 
 /** What dev mode's switch says. */
 const DEV_MODE_NOTE =
@@ -91,10 +104,11 @@ export const settingsLook = css({
 });
 
 /**
- * Switches for the tutorial, which treatments are offered, how items show their stats, the controls, how long messages stay, full
- * screen in the desktop app, sound and music, the cheat console, dev mode once unlocked, and sharing play statistics.
+ * Switches for the tutorial, which treatments are offered, how items show their stats, the controls, how long messages
+ * stay, how dressed the scene is, full screen in the desktop app, sound and music, the cheat console, dev mode once
+ * unlocked, and sharing play statistics.
  */
-export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPanelProps) {
+export function SettingsPanel({ audio, sim, fullScreen, onChange, onGraphics }: SettingsPanelProps) {
   const redraw = useRedraw();
   /** Whether dev mode's switch has been flipped here, which keeps it in view once off so it can go back on. */
   const [devFlipped, setDevFlipped] = useState(false);
@@ -258,6 +272,30 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange }: SettingsPane
             })}
           >
             {MESSAGE_TIME_NAMES[loadDisplay().messages]}
+          </button>
+        </li>
+        <li>
+          <Icon id="ui-paint" size={26} />
+          <div>
+            <b>Graphics</b>
+            <span>
+              How much the scene is dressed. Full lays soft shade where things meet the floor, sways the trees, lets
+              birds and butterflies about the lot, puts a glow round lamps and candles, and puffs dust where things are
+              put down. Plain leaves all that out, for a slower computer.
+            </span>
+          </div>{' '}
+          <button
+            class={choice}
+            aria-label="Graphics"
+            onClick={flip('graphics', () => {
+              const prefs = loadDisplay();
+              const graphics = nextChoice(GRAPHICS, prefs.graphics);
+              saveDisplay({ ...prefs, graphics });
+              onGraphics?.(graphics);
+              return graphics;
+            })}
+          >
+            {GRAPHICS_NAMES[loadDisplay().graphics]}
           </button>
         </li>
         {fullScreen && (

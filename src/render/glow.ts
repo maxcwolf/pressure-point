@@ -1,18 +1,20 @@
-// A soft glow round whatever gives light (a salt lamp, a candle, a screen, a kiln's fire, a street lamp), so it reads
-// as light rather than as a bright color. There is no pass over the whole picture: each lit part gets a soft round
-// spot facing the camera, as the room lamps' halos are, and every spot in the world is drawn in one go, so the glow
-// costs one draw call however many lights there are. Each spot is laid over what is behind it as light is (screen
-// blending), which never washes a pale floor out to white, and follows its part's glow every frame: a light that dims,
-// flickers or goes out in a power cut takes its glow with it.
+// A soft glow round whatever gives light (a salt lamp, a candle, a screen, a kiln's fire, the lamps at the building's
+// entrances and along the streets), so it reads as light rather than as a bright color, while the scene is drawn Full.
+// There is no pass over the whole picture: each lit part gets a soft round spot facing the camera, as the room lamps'
+// halos are, and every spot in the world is drawn in one go, so the glow costs one draw call however many lights there
+// are. Each spot is laid over what is behind it as light is (screen blending), which never washes a pale floor out to
+// white, and follows its part's glow every frame: a light that dims, flickers or goes out in a power cut takes its
+// glow with it. Drawn Plain, nothing is given a halo and nothing is drawn.
 
 import * as THREE from 'three';
 
+import { fancy } from './fx';
 import { idleGlow } from './models/items/idle';
 import { cached, partsOf } from './models/parts';
 
 /**
  * How bright a part's glow must be (its glow's strength times its brightest channel) before it shows any: the faint
- * glow of gold, steam and painted crystals stays as it is, and only what gives light gets a halo.
+ * glow of gold, steam, painted crystals and window glass stays as it is, and only what gives light gets a halo.
  */
 const FROM = 0.36;
 /** How bright a part's glow is when its halo is at its fullest. */
@@ -183,10 +185,13 @@ export class GlowLayer {
   }
 
   /**
-   * Give whatever in a model gives light a halo from now on: every part whose material has a glow of its own color,
-   * but not a blinking light, which is a cue in itself.
+   * Give whatever in a model gives light a halo from now on, while the scene is drawn Full: every part whose material
+   * has a glow of its own color, but not one copied for many (an instanced mesh) nor a blinking light, which is a cue
+   * in itself.
    */
   add(root: THREE.Object3D) {
+    if (!fancy()) return;
+    root.updateMatrixWorld(true);
     const { led } = partsOf(root);
     const list: Source[] = [];
     root.traverse((o) => {
@@ -202,6 +207,11 @@ export class GlowLayer {
   /** Stop a model's lights glowing, as it is taken away. */
   remove(root: THREE.Object3D) {
     this.sources.delete(root);
+  }
+
+  /** Stop every light glowing, as the scene is drawn Plain or built again. */
+  clear() {
+    this.sources.clear();
   }
 
   /** How many halos are drawn this frame. */

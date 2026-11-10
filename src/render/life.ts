@@ -1,9 +1,9 @@
-// Small life outdoors, behind the `life` switch: butterflies over the grass in spring and summer, leaves drifting down
-// from the trees in autumn, and a few birds that land on open ground, hop and peck, and fly off when someone walks near
-// (sparrows, gulls at the seaside, pigeons downtown). It is there to make the lot feel alive, never to draw the eye from
-// the game: small, in muted colors that read as no signal, low over the ground and away from the paths, never inside
-// the building, and all of it left out for a player who asks for less motion. Each kind is one instanced mesh, and its
-// randomness comes from the clock, never from the game's own random numbers, which it does not touch.
+// Small life outdoors, while the scene is drawn Full: butterflies over the grass in spring and summer, leaves drifting
+// down from the trees in autumn, and a few birds that land on open ground, hop and peck, and fly off when someone
+// walks near (sparrows, gulls at the seaside, pigeons downtown). It is there to make the lot feel alive, never to draw
+// the eye from the game: small, in muted colors that read as no signal, low over the ground and away from the paths,
+// never inside the building, and all of it hidden for a player who asks for less motion. Each kind is one instanced
+// mesh, and its randomness comes from the clock, never from the game's own random numbers, which it does not touch.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -13,7 +13,6 @@ import { calendarDay, type Season, seasonOf } from '../core/format';
 import type { Sim } from '../core/sim/sim';
 import { must } from '../core/util';
 import { prefersReducedMotion } from './camera-math';
-import { fx } from './fx';
 import { drawnAt } from './people';
 import { raining } from './rain';
 import { treeCrowns } from './scenery';
@@ -698,13 +697,7 @@ export class LifeLayer {
   /** Whether the player asks for less motion, as last looked at. */
   private still = false;
 
-  /** The life outdoors for a scene, or null with the switch off or when the player asks for less motion. */
-  static make(scene: THREE.Scene, sim: Sim): LifeLayer | null {
-    if (!fx('life') || prefersReducedMotion()) return null;
-    return new LifeLayer(scene, sim);
-  }
-
-  private constructor(
+  constructor(
     scene: THREE.Scene,
     private sim: Sim,
   ) {
@@ -719,9 +712,16 @@ export class LifeLayer {
     scene.add(this.butterflies.mesh, this.leaves.mesh, this.birds.mesh);
   }
 
-  /** Move the life on to `t` seconds of real time, `dt` since the last frame. */
-  update(t: number, dt: number) {
+  /**
+   * Move the life on to `t` seconds of real time, `dt` since the last frame, or hide it all while it is not `shown`, as
+   * when the scene is drawn Plain.
+   */
+  update(t: number, dt: number, shown: boolean) {
     TIME.value = t;
+    if (!shown) {
+      this.butterflies.mesh.visible = this.leaves.mesh.visible = this.birds.mesh.visible = false;
+      return;
+    }
     const look = settingName(this.sim.s);
     let fresh = false;
     if (t - this.looked > LOOK_AGAIN) {

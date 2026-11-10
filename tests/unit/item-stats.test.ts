@@ -3,7 +3,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { DAYS_PER_MONTH, IDEAL_TEMP, ITEMS } from '../../src/core/data';
 import { thermostatShare } from '../../src/core/sim/warmth';
-import { defaultDisplay, forgetDisplay, loadDisplay, readDisplay, saveDisplay } from '../../src/storage/display';
+import {
+  defaultDisplay,
+  type DisplayPrefs,
+  forgetDisplay,
+  loadDisplay,
+  readDisplay,
+  saveDisplay,
+} from '../../src/storage/display';
 import { DECOR_MOST, itemStats, placeEffects, statsText } from '../../src/ui/lib/item-stats';
 import { heatTiles, previewMode } from '../../src/ui/lib/overlays';
 import { openCenter } from './helpers';
@@ -25,17 +32,30 @@ beforeEach(() => {
 });
 
 describe('the display settings', () => {
-  it('start with stats in the tooltip, the preview while placing on, messages for as long as they take to read, and the usual size', () => {
-    expect(loadDisplay()).toEqual({ itemView: 'tooltip', placePreview: true, messages: 'normal', uiScale: 1 });
+  it('start with stats in the tooltip, the preview while placing on, messages for as long as they take to read, the usual size, and the scene drawn Full', () => {
+    expect(loadDisplay()).toEqual({
+      itemView: 'tooltip',
+      placePreview: true,
+      messages: 'normal',
+      uiScale: 1,
+      graphics: 'full',
+    });
   });
 
   it('keep a choice, and ignore what they cannot use', () => {
-    saveDisplay({ itemView: 'chips', placePreview: false, messages: 'dismissed', uiScale: 1.3 });
+    const chosen: DisplayPrefs = {
+      itemView: 'chips',
+      placePreview: false,
+      messages: 'dismissed',
+      uiScale: 1.3,
+      graphics: 'plain',
+    };
+    saveDisplay(chosen);
     forgetDisplay();
-    expect(loadDisplay()).toEqual({ itemView: 'chips', placePreview: false, messages: 'dismissed', uiScale: 1.3 });
-    expect(readDisplay({ itemView: 'sideways', placePreview: 'yes', messages: 'forever', uiScale: 7 })).toEqual(
-      defaultDisplay(),
-    );
+    expect(loadDisplay()).toEqual(chosen);
+    expect(
+      readDisplay({ itemView: 'sideways', placePreview: 'yes', messages: 'forever', uiScale: 7, graphics: 'ultra' }),
+    ).toEqual(defaultDisplay());
     expect(readDisplay(null)).toEqual(defaultDisplay());
   });
 });

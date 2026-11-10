@@ -1,130 +1,129 @@
-// What people wear, while better people are being tried out: which version of them is drawn, picked in the page's
-// address as `?people=clay`, `dressed` or `seasonal`, each building on the one before; with none named, people are
-// drawn exactly as the game has them.
+// What people wear. A guest dresses for the day they come in: the season, where the center is and the weather, in
+// parkas, scarves and bobble hats in winter, T-shirts, shorts, skirts and sun hats in summer, vests, visors and shades
+// down the shore, and a raincoat with the hood up in a storm, and keeps what they came in until they leave, but for
+// their outerwear, which comes off for a treatment and goes back on to leave (`outerwearOn`). Staff wear their role's
+// uniform, cut to an outline of its own (a long white coat, a tunic, a robe, sportswear), in short sleeves in summer
+// and long ones the rest of the year, and are dressed again as the season turns or a storm blows in. Visitors come
+// dressed for the part, and a guest asked back after a complaint in the center's robe, and those clothes never change.
 //
-// - clay: the same clothes, built more cheaply where it cannot be seen and better where it can: mitten hands with a
-//   thumb, slimmer arms under rounder shoulders, a clearer waist, and fewer sides on the hair, head, shoes and limbs.
-// - dressed: clay, and clothes with a shape. Guests come in skirts, dresses and shorts as well as trousers, in
-//   T-shirts as well as sweatshirts; staff each wear their role's cut: a long white coat, a tunic, a robe, sportswear.
-// - seasonal: dressed, and dressed for the day: parkas, scarves and bobble hats in winter, T-shirts, shorts and sun
-//   hats in summer, vests and visors on the Boardwalk in summer, and a raincoat with the hood up in a storm.
-//
-// What someone wears is taken from spare bits of the number their height was drawn from, as their build, glasses and
-// shoes are, so it takes none of the game's random numbers, and the same person always dresses the same way for the
-// same day.
+// Which of the outfits a day offers someone puts on is read from their taste in clothes (`Look.wear`), sixteen bits
+// that are a look's own, so dressing someone takes none of the game's random numbers, and the same guest on the same
+// day always comes in the same clothes. Everything here is plain numbers: the shapes and the dressing are in
+// character-clothes.ts.
 
 import { centerOf, type Role } from '../../core/data';
 import { calendarDay, type Season, seasonOf } from '../../core/format';
 import { TOPS } from '../../core/people';
 import { mishapOn } from '../../core/sim/mishaps';
-import type { GameState, Look } from '../../core/state/types';
-import { fxChoice } from '../fx';
+import type { Char, GameState, Look } from '../../core/state/types';
 
-/** The versions of the people that can be tried, each building on the one before it. */
-export const PEOPLE_VARIANTS = ['clay', 'dressed', 'seasonal'] as const;
-
-/** How far along the versions the people are drawn: 0 as the game has them, then one for each in `PEOPLE_VARIANTS`. */
-const STEP = PEOPLE_VARIANTS.indexOf(fxChoice('people') as (typeof PEOPLE_VARIANTS)[number]) + 1;
-
-/** Whether people are built the clay version's way, with mitten hands, slimmer arms and fewer sides. */
-export const CLAY = STEP >= 1;
-
-/** Whether people wear clothes with a shape: skirts, dresses, shorts, T-shirts, and each role's cut. */
-export const DRESSED = STEP >= 2;
-
-/** Whether people dress for the season, the setting and the weather. */
-export const SEASONAL = STEP >= 3;
-
-/** The day people are dressed for: the season, where the center is, and whether a storm is blowing. */
+/** The day people are dressed for: the season, the setting the center is in, and whether a storm is blowing. */
 export interface Weather {
   season: Season;
   setting: string;
   storm: boolean;
 }
 
-/** A mild spring day in the park, which is what people dress for until the game says otherwise. */
-const MILD: Weather = { season: 'spring', setting: 'park', storm: false };
+/** A mild spring day in the park, which is what people dress for when nothing says otherwise. */
+export const MILD: Readonly<Weather> = { season: 'spring', setting: 'park', storm: false };
 
-/** The day the model lab's address asks for, as `&season=winter&setting=seaside&storm`, if it asks. */
-function askedFor(): Weather | undefined {
-  if (typeof location === 'undefined') return undefined;
-  const params = new URLSearchParams(location.search);
-  const season = params.get('season');
-  if (!season && !params.has('setting') && !params.has('storm')) return undefined;
+/** The day the game is at, for whoever comes in now to dress for. */
+export function weatherOf(s: GameState): Weather {
   return {
-    season: (['winter', 'spring', 'summer', 'autumn'] as const).find((s) => s === season) ?? MILD.season,
-    setting: params.get('setting') ?? MILD.setting,
-    storm: params.has('storm'),
-  };
-}
-
-const ASKED = askedFor();
-
-/** The day people being made up now are dressed for. */
-let today: Weather = ASKED ?? MILD;
-
-/**
- * Note the day the game is at, for whoever is made up next to dress for: once a frame, from the people layer. The model
- * lab's address, if it names a day, wins.
- */
-export function dressFor(s: GameState) {
-  if (!SEASONAL || ASKED) return;
-  today = {
     season: seasonOf(calendarDay(s)),
     setting: centerOf(s).scenery ?? 'park',
     storm: mishapOn(s)?.id === 'storm',
   };
 }
 
-/** What covers someone's body: a sweatshirt, a T-shirt, a vest with bare arms, or a padded parka. */
+/** A day as a few letters, to tell at a glance whether it has changed since someone was last dressed. */
+export const weatherKey = (w: Weather) => `${w.season}|${w.setting}|${w.storm ? 'storm' : ''}`;
+
+/** What covers someone's body: a sweatshirt, a T-shirt, a vest with bare arms, or a padded parka over a sweatshirt. */
 export type Top = 'long' | 'tee' | 'vest' | 'parka';
 
-/** What covers their legs: trousers, shorts, a skirt in their trousers' color, or a dress in their top's. */
+/** What covers their legs: trousers, shorts, a skirt in a color of its own, or a dress in their top's color. */
 export type Legs = 'trousers' | 'shorts' | 'skirt' | 'dress';
 
 /** What they wear on their head. */
 export type Hat = 'beanie' | 'sunhat' | 'visor' | 'hood' | 'sweatband';
 
-/** How long a member of staff's top is cut, below the shirt: to the hip, the knee, or the shin. */
-export type Cut = 'tunic' | 'coat' | 'robe';
+/**
+ * How long a top is cut below the shirt: a tunic to the hip, a coat to the knee or a robe to the shin, for the staff
+ * whose role wears one, and the gown of the center's robe, to the knee, for a guest asked back after a complaint.
+ */
+export type Cut = 'tunic' | 'coat' | 'robe' | 'gown';
 
-/** Everything someone wears beyond what the game has always drawn. */
+/** Everything someone wears over the shirt and trousers that build them. */
 export interface Outfit {
   top: Top;
   legs: Legs;
-  /** Whether their legs are bare under a skirt, dress or shorts, or in tights the color of their trousers. */
+  /** Whether their legs are bare under a skirt, a dress or shorts, or in tights the color of their trousers. */
   bareLegs: boolean;
   hat?: Hat;
   scarf: boolean;
   shades: boolean;
-  /** How long their top is cut, for the staff whose role wears it long. */
+  /** How long their top is cut, for the staff whose role wears it long and the center's robe. */
   cut?: Cut;
   /**
-   * The color of a skirt, a hat or a scarf: one of the colors guests' tops come in, so it is never taken for a uniform,
-   * and a skirt reads as its own block of color under the top.
+   * The color of a skirt, a hat or a scarf: one of the colors guests' tops come in, and never their own top's, so it is
+   * never taken for a uniform and a skirt reads as a block of color of its own under the top. Staff wear their role's.
    */
   accent: number;
 }
 
-/** What everyone wore before: a sweatshirt and trousers, and nothing more. */
-const PLAIN: Outfit = { top: 'long', legs: 'trousers', bareLegs: false, scarf: false, shades: false, accent: 0 };
+/** A sweatshirt and trousers and nothing more, as everyone wore before there was a wardrobe, and visitors still do. */
+export const PLAIN: Readonly<Outfit> = {
+  top: 'long',
+  legs: 'trousers',
+  bareLegs: false,
+  scarf: false,
+  shades: false,
+  accent: 0,
+};
+
+/** The center's robe, for a guest asked back after a complaint: its gown to the knee over trousers. */
+const GOWN: Readonly<Outfit> = { ...PLAIN, cut: 'gown' };
 
 /**
- * The spare bits of the number someone's height was drawn from, past those their build, glasses and shoes take (see
- * `lookBits` in `core/people.ts`): plenty for what they wear, and the same every time for the same look.
+ * What comes off for a treatment and goes back on to leave: the parka and the raincoat, any hat, the scarf and shades.
+ * Under a parka is a sweatshirt.
  */
-function spareBits(look: Look) {
-  const height = (look.scale - 0.92) / (1.08 - 0.92);
-  return (Math.floor(height * 2 ** 32) >>> 7) ^ ((look.top * 2654435761) >>> 9);
+export function withoutOuterwear(o: Outfit): Outfit {
+  const { hat: _hat, ...rest } = o;
+  return { ...rest, top: o.top === 'parka' ? 'long' : o.top, scarf: false, shades: false };
 }
 
-/** A reader of spare bits, a few at a time. */
-class Bits {
-  constructor(private n: number) {}
+/** Whether an outfit has anything on that comes off for a treatment. */
+export const hasOuterwear = (o: Outfit) => o.top === 'parka' || o.hat !== undefined || o.scarf || o.shades;
+
+/**
+ * Whether someone has their outerwear on, given whether they had it on a moment ago: a guest takes it off to be
+ * treated, to rest after, or to lie down for anything, and keeps it off until they leave, when it goes back on.
+ * Everyone else keeps theirs on.
+ */
+export function outerwearOn(wasOn: boolean, c: Char): boolean {
+  if (c.kind !== 'guest') return true;
+  if (c.state === 'served' || c.state === 'resting' || c.pose === 'lie') return false;
+  return wasOn || c.state === 'leaving';
+}
+
+/** Someone's taste in clothes, as bits read a few at a time, with a second helping scrambled from the first. */
+class Taste {
+  private n: number;
+  private more: number;
+  constructor(wear: number) {
+    this.n = wear >>> 0;
+    // a stretch of bits made from the first, for a day that asks more of a look than its own sixteen hold
+    let h = Math.imul(wear ^ 0x5bd1e995, 0x27d4eb2d);
+    h ^= h >>> 15;
+    this.more = Math.imul(h, 0x165667b1) >>> 0;
+  }
   /** The next `count` bits, as a number from 0 to 2^count - 1. */
   take(count: number) {
     const v = this.n & ((1 << count) - 1);
-    this.n >>>= count;
+    this.n = (this.n >>> count) | ((this.more & ((1 << count) - 1)) << (32 - count));
+    this.more >>>= count;
     return v;
   }
   /** One of the choices, by the next bits: a list of four gives each a quarter. */
@@ -138,34 +137,39 @@ class Bits {
 }
 
 /** The season someone dresses for: in the mountains it is a season colder, but for the height of summer. */
-function feels(w: Weather): Season {
+export function feels(w: Weather): Season {
   if (w.setting !== 'mountain') return w.season;
   return w.season === 'summer' ? 'spring' : 'winter';
 }
 
-/** What a guest, a visitor or anyone not in uniform wears today. */
-function everyday(look: Look, b: Bits): Outfit {
+/** What a guest wears on a mild day: a sweatshirt or a T-shirt, and trousers, a skirt, a dress or shorts. */
+function mild(look: Look, t: Taste, accent: number): Outfit {
   const woman = look.sex === 'female';
-  const accent = b.of(TOPS);
-  /** What they wear on a mild day, as the dressed version always has them: the same top and legs, by the same bits. */
-  const mild = (): Outfit => ({
+  return {
     ...PLAIN,
     accent,
-    top: b.of(['long', 'long', 'tee', 'tee'] as const),
-    legs: woman ? b.of(['trousers', 'skirt', 'dress', 'dress'] as const) : b.chance(2) ? 'shorts' : 'trousers',
-    bareLegs: b.chance(6),
-  });
-  if (!SEASONAL) return mild();
-  const w = today;
+    top: t.of(['long', 'long', 'tee', 'tee'] as const),
+    legs: woman ? t.of(['trousers', 'skirt', 'dress', 'dress'] as const) : t.chance(2) ? 'shorts' : 'trousers',
+    bareLegs: t.chance(6),
+  };
+}
+
+/** What a guest, or anyone else not in a uniform or a costume, wears on a day, by their taste in clothes. */
+function everyday(look: Look, w: Weather): Outfit {
+  const t = new Taste(look.wear);
+  const woman = look.sex === 'female';
+  const accent = t.of(TOPS.filter((c) => c !== look.top));
+  /** Shades, this many eighths of the time, only for those who do not wear glasses: they go on in place of nothing. */
+  const shady = (eighths: number) => !look.glasses && t.chance(eighths);
   if (w.storm) {
     // caught in the rain on the way: a raincoat in their own color, mostly with the hood up
-    const o = mild();
+    const o = mild(look, t, accent);
     return {
       ...o,
       top: 'parka',
       legs: o.legs === 'shorts' ? 'trousers' : o.legs,
       bareLegs: false,
-      ...(b.chance(6) && { hat: 'hood' as const }),
+      ...(t.chance(6) && { hat: 'hood' as const }),
     };
   }
   const season = feels(w);
@@ -173,20 +177,20 @@ function everyday(look: Look, b: Bits): Outfit {
     return {
       ...PLAIN,
       accent,
-      top: b.chance(5) ? 'parka' : 'long',
-      legs: woman ? b.of(['trousers', 'skirt', 'trousers', 'dress'] as const) : 'trousers',
+      top: t.chance(5) ? 'parka' : 'long',
+      legs: woman ? t.of(['trousers', 'skirt', 'trousers', 'dress'] as const) : 'trousers',
       bareLegs: false,
-      ...(b.chance(5) && { hat: 'beanie' as const }),
-      scarf: b.chance(5),
+      ...(t.chance(5) && { hat: 'beanie' as const }),
+      scarf: t.chance(5),
     };
   if (season === 'autumn') {
-    const o = mild();
+    const o = mild(look, t, accent);
     return {
       ...o,
       top: o.top === 'tee' ? 'long' : o.top,
       legs: o.legs === 'shorts' ? 'trousers' : o.legs,
       bareLegs: false,
-      scarf: b.chance(2),
+      scarf: t.chance(2),
     };
   }
   if (season === 'summer' && w.setting === 'seaside')
@@ -194,72 +198,93 @@ function everyday(look: Look, b: Bits): Outfit {
     return {
       ...PLAIN,
       accent,
-      top: b.chance(4) ? 'vest' : 'tee',
-      legs: woman ? b.of(['shorts', 'dress', 'skirt', 'shorts'] as const) : 'shorts',
+      top: t.chance(4) ? 'vest' : 'tee',
+      legs: woman ? t.of(['shorts', 'dress', 'skirt', 'shorts'] as const) : 'shorts',
       bareLegs: true,
-      ...(b.chance(3) ? { hat: 'visor' as const } : b.chance(3) ? { hat: 'sunhat' as const } : {}),
-      shades: b.chance(3),
+      ...(t.chance(3) ? { hat: 'visor' as const } : t.chance(3) ? { hat: 'sunhat' as const } : {}),
+      shades: shady(3),
     };
   if (season === 'summer')
     return {
       ...PLAIN,
       accent,
-      top: b.of(['tee', 'tee', 'vest', 'long'] as const),
-      legs: woman ? b.of(['shorts', 'skirt', 'dress', 'trousers'] as const) : b.chance(6) ? 'shorts' : 'trousers',
+      top: t.of(['tee', 'tee', 'vest', 'long'] as const),
+      legs: woman ? t.of(['shorts', 'skirt', 'dress', 'trousers'] as const) : t.chance(6) ? 'shorts' : 'trousers',
       bareLegs: true,
-      ...(b.chance(3) && { hat: 'sunhat' as const }),
-      shades: b.chance(1),
+      ...(t.chance(3) && { hat: 'sunhat' as const }),
+      shades: shady(1),
     };
-  return mild();
+  return mild(look, t, accent);
 }
 
 /**
  * The cut each role wears, so it reads by its outline as well as its color: a long white coat for a consultant, a
- * tunic for a massage therapist, a long tunic and bare forearms for an acupuncturist, robes for a practitioner and a
- * sound healer, and sportswear for an instructor. A receptionist, a Caretaker and a Shaman have theirs already.
+ * tunic and rolled sleeves for a massage therapist, a coat and bare forearms for an acupuncturist, robes for a
+ * practitioner and a sound healer, and sportswear and a sweatband for an instructor, who dresses for the season. A
+ * receptionist, a Caretaker and a Shaman have theirs already, in their scarf, bib and cap, and poncho.
  */
-const ROLE_CUTS: Partial<Record<Role, Partial<Outfit>>> = {
+const ROLE_CUTS: Readonly<Record<Role, Partial<Outfit>>> = {
   consultant: { cut: 'coat' },
-  therapist: { cut: 'tunic' },
+  therapist: { cut: 'tunic', top: 'tee' },
   acupuncturist: { cut: 'coat', top: 'tee' },
   practitioner: { cut: 'robe' },
   healer: { cut: 'robe' },
-  instructor: { top: 'vest', legs: 'shorts', bareLegs: true, hat: 'sweatband' },
+  instructor: { hat: 'sweatband' },
+  receptionist: {},
+  caretaker: {},
+  shaman: {},
 };
 
-/**
- * What the model lab's address dresses every guest in, as `&wear=dress,vest,sunhat,scarf,shades,bare`, to picture
- * each piece: a top, legs, a hat, and a scarf, shades and bare legs if named.
- */
-function woreFor(): Partial<Outfit> | undefined {
-  if (typeof location === 'undefined') return undefined;
-  const asked = new URLSearchParams(location.search).get('wear');
-  if (!asked) return undefined;
-  const names = asked.split(',');
-  /** The first name asked for that is one of these, if any. */
-  const one = <T extends string>(of: readonly T[]) => of.find((n) => names.includes(n));
-  const top = one(['long', 'tee', 'vest', 'parka'] as const);
-  const legs = one(['trousers', 'shorts', 'skirt', 'dress'] as const);
-  const hat = one(['beanie', 'sunhat', 'visor', 'hood', 'sweatband'] as const);
-  return {
-    ...(top && { top }),
-    ...(legs && { legs }),
-    ...(hat && { hat }),
-    scarf: names.includes('scarf'),
-    shades: names.includes('shades'),
-    bareLegs: names.includes('bare') || legs === 'shorts',
-  };
-}
-
-const WORE = woreFor();
+/** The roles that keep their sleeves long through the summer: a consultant's white coat, cut as it always is. */
+const LONG_SLEEVED: ReadonlySet<Role> = new Set(['consultant']);
 
 /**
- * What someone wears, beyond what the game has always drawn: nothing, unless a version that dresses them is tried, nor
- * for anyone already in a `costume` (a visitor's clothes, or the center's robe).
+ * What a member of staff wears in a season: their role's cut, in short sleeves in summer, and an instructor in a vest
+ * and shorts in summer, a T-shirt and shorts in spring and autumn, and long sleeves and trousers in winter.
  */
-export function outfitOf(look: Look, role?: Role, costume = false): Outfit {
-  if (!DRESSED || costume) return PLAIN;
-  if (role) return { ...PLAIN, ...ROLE_CUTS[role] };
-  const own = everyday(look, new Bits(spareBits(look)));
-  return WORE ? { ...own, ...WORE } : own;
+function uniform(role: Role, w: Weather): Outfit {
+  const season = feels(w);
+  const cut = ROLE_CUTS[role];
+  if (role === 'instructor') {
+    const kit: Partial<Outfit> =
+      season === 'summer'
+        ? { top: 'vest', legs: 'shorts', bareLegs: true }
+        : season === 'winter'
+          ? { top: 'long', legs: 'trousers', bareLegs: false }
+          : { top: 'tee', legs: 'shorts', bareLegs: true };
+    return { ...PLAIN, ...cut, ...kit };
+  }
+  const summer = season === 'summer' && !LONG_SLEEVED.has(role);
+  return { ...PLAIN, ...cut, ...(summer && { top: 'tee' as const }) };
 }
+
+/** What the model lab dresses people for, and any pieces it puts everyone in, to picture each. */
+let lab: { weather: Weather; wear: Partial<Outfit> | undefined } = { weather: MILD, wear: undefined };
+
+/**
+ * Dress everyone the model lab builds for a day, and in any pieces named, as its address asks
+ * (`&season=winter&setting=seaside&storm&wear=dress,vest,sunhat`); the game itself always says what the day is.
+ */
+export function dressTheLab(weather: Weather, wear?: Partial<Outfit>) {
+  lab = { weather, wear };
+}
+
+/** The day people are dressed for when nothing says: a mild one, or whatever the model lab asks for. */
+export const labWeather = (): Weather => lab.weather;
+
+/**
+ * What someone wears on a day: a member of staff their role's uniform for the season, anyone in a `costume` (a
+ * visitor's clothes) nothing over it, a guest asked back in the center's robe its gown, and a guest what their taste
+ * picks from what the day calls for.
+ */
+export function outfitOf(look: Look, w: Weather, role?: Role, costume = false, robed = false): Outfit {
+  if (role) return uniform(role, w);
+  if (costume) return PLAIN;
+  if (robed) return GOWN;
+  const own = everyday(look, w);
+  return lab.wear ? { ...own, ...lab.wear } : own;
+}
+
+/** An outfit as a few letters, to tell whether someone's clothes need changing at all. */
+export const outfitKey = (o: Outfit) =>
+  `${o.top}|${o.legs}|${o.bareLegs ? 1 : 0}|${o.hat ?? ''}|${o.scarf ? 1 : 0}|${o.shades ? 1 : 0}|${o.cut ?? ''}|${o.accent}`;

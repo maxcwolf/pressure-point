@@ -28,6 +28,7 @@ import {
 import { PROFILE_GONE, whoseSaves } from '../ui/lib/profiles';
 import { refused, watchGame } from './analytics';
 import { trackMouse } from './edge';
+import { applyGraphics } from './graphics';
 import { reloadInto } from './handoff';
 import { bindKeyboard } from './keyboard';
 import { runLoop } from './loop';
@@ -63,6 +64,8 @@ export function startGame({ canvas, audio, state, exit, updates, fullScreen }: G
   // a blueprint still open when the game was last closed is torn up, with anything bought for it refunded
   for (const r of [...state.rooms]) if (!r.done) sim.removeRoom(r.id, 1);
 
+  // the scene is drawn as the Graphics setting says, which the view reads as it is built
+  applyGraphics();
   const view = new View(canvas, sim);
   const refresh = createRefresh();
   const tools = new Tools(

@@ -1,15 +1,19 @@
 // The scenery: the lawn, the sign and the trees, pines in the snow, rows of apple trees, or downtown's paving, streets,
 // office blocks and street trees, and apart from it the building's outer walls. The scenery changes only when the
-// building grows into more land; the walls change too as the camera turns, since the ones facing it are cut low. The windows in the outer walls change as rooms are built against
-// them, so they are drawn with the rooms.
+// building grows into more land; the walls change too as the camera turns, since the ones facing it are cut low. The
+// windows in the outer walls change as rooms are built against them, so they are drawn with the rooms. Drawn Full, the
+// ground wears its pattern and cover (`ground.ts`, `ground-cover.ts`), the trees sway and lay a soft shade at their
+// feet, and the walls darken toward the floor (`grounding.ts`); the view builds it all again when the setting changes.
 
 import * as THREE from 'three';
 
 import { H, type Rect, ROAD_Y, SIDEWALK_Y, TITLE_LINES } from '../core/data';
 import { entranceSpan, type Footprint, inRect } from '../core/footprint';
 import { must } from '../core/util';
-import { dressLawn, LAWN_FX } from './ground';
+import { fancy } from './fx';
+import { dressLawn, plainLawn } from './ground';
 import { buildGroundCover } from './ground-cover';
+import { groundTrees, groundWalls } from './grounding';
 import { buildBeach } from './models/beach';
 import { type Block, buildLamps, buildOffices, buildStreets, buildStreetTrees } from './models/downtown';
 import { buildHedges, buildPavements } from './models/high-street';
@@ -39,8 +43,9 @@ export function buildScenery(
   street = false,
 ): THREE.Group {
   const scene = buildSetting(fp, setting, colors, width, plots, street);
-  // whatever sways in the wind casts a shadow that sways with it
+  // whatever sways in the wind casts a shadow that sways with it, and every tree lays a soft shade at its foot
   swayShadows(scene);
+  groundTrees(scene);
   return scene;
 }
 
@@ -74,18 +79,13 @@ function buildSetting(
   lawn.position.set(width / 2, -0.03, H / 2);
   lawn.receiveShadow = true;
   scene.add(lawn);
-  if (LAWN_FX) {
-    // the richer ground: the setting's pattern, the same one the floor paints on the lot's open ground
+  if (fancy()) {
+    // the setting's pattern, the same one the floor paints on the lot's open ground, and what grows and lies on it
     dressLawn(LAWN, setting, width / 2 - 200, H / 2 + 200);
     scene.add(buildGroundCover(setting, width, (x, y) => keptClear(fp, plots, x, y), street));
-  } else {
-    // paving carries the floor's slabs on past the lot; any other ground is plain
-    const map = colors.kind === 'paving' ? pavingMap(width / 2 - 200, H / 2 + 200) : null;
-    if (LAWN.map !== map) {
-      LAWN.map = map;
-      LAWN.needsUpdate = true;
-    }
   }
+  // drawn Plain, paving carries the floor's slabs on past the lot; any other ground is plain
+  else plainLawn(LAWN, colors.kind === 'paving' ? pavingMap(width / 2 - 200, H / 2 + 200) : null);
 
   scene.add(buildSign(fp));
 
@@ -434,7 +434,10 @@ function buildSeaside(fp: Footprint, width: number, plots: readonly Rect[]): THR
 const SHELL_WALL = mat(0xf7f1e5, 0.85).clone();
 SHELL_WALL.shadowSide = THREE.FrontSide;
 
-/** Build the building's outer walls: tall across from the camera, low facing it, with a gap for each entrance. */
+/**
+ * Build the building's outer walls: tall across from the camera, low facing it, with a gap for each entrance, and a
+ * pillar either side of it with a lamp on top.
+ */
 export function buildShell(fp: Footprint, near: Sides): THREE.Group {
   const shell = new THREE.Group();
   const wall = SHELL_WALL;
@@ -475,5 +478,7 @@ export function buildShell(fp: Footprint, near: Sides): THREE.Group {
     }
   }
   mergeStill(shell);
+  // drawn Full, the foot of the walls is darkened where they meet the ground
+  groundWalls(shell);
   return shell;
 }

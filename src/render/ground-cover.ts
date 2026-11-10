@@ -1,9 +1,10 @@
-// What grows and lies on the ground outdoors with the richer ground (`lawn`): tufts of grass and small flowers on a lawn,
+// What grows and lies on the ground outdoors while the scene is drawn Full: tufts of grass and small flowers on a lawn,
 // pebbles and shells on the sand, and weeds in a plaza's joints with leaves blown onto it in autumn; the snow has its
 // drifts and sparkle in its pattern alone (`ground.ts`). Each setting's is at most two instanced meshes, kept clear of
 // the building, the plots, the paths and the road as the trees are. The grass and pebbles take the ground's own color
 // (the `LAWN` material's, which the light sets with the season), shaded a little by each copy, so they turn with it
-// and nothing is built again; the flowers, weeds and leaves follow the season through `coverFor`.
+// and nothing is built again; the flowers, weeds and leaves follow the season through `coverFor`. Drawn Plain, the
+// scenery is built without it (`scenery.ts`).
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';

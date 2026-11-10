@@ -204,14 +204,15 @@ function cactus(rig: CharRig) {
   put(top, sph(0.025, 8), mat(POLLEN, 0.5), 0, 0.38, 0);
   faceOut(rig, { eyes: 0.025, brows: 0.02, mouth: 0.03 });
   head.add(top);
-  // the shirt and its sleeves gone green, put back with the head
-  const shirt = (rig.torso.getObjectByName('shirt') as THREE.Mesh | undefined)?.material;
-  const leaf = mat(CACTUS, 0.7);
-  rig.body.traverse((o) => {
-    const m = o as THREE.Mesh;
-    if (!shirt || m.material !== shirt) return;
-    m.material = leaf;
-    (rig.restore ??= []).push(() => (m.material = shirt));
+  // the top and its sleeves gone green, whatever they wear, and a scarf with them, put back with the head
+  const { clothes } = rig;
+  const { top: shirt, accent } = clothes.cloth;
+  clothes.cloth.top = clothes.cloth.accent = mat(CACTUS, 0.7);
+  clothes.dress();
+  (rig.restore ??= []).push(() => {
+    clothes.cloth.top = shirt;
+    clothes.cloth.accent = accent;
+    clothes.dress();
   });
   const pot = new THREE.Group();
   const clay = mat(POT, 0.8);

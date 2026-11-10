@@ -19,7 +19,6 @@ import { buildSignPlaque, type LampState, pulseLamps, setLamp, type SignPlaque }
 import { lampStates } from './room-lamp';
 import { type Doorway, roomShape, type WallBox, walledBeyondDoor, type WallMaterial } from './room-walls';
 import { OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, SHELL_TRIM } from './shared';
-import { glassy } from './sky';
 import { nearSides, type Sides, type Turn } from './turn';
 import { windowBoxes } from './windows';
 
@@ -220,8 +219,6 @@ export class RoomsLayer {
     private sim: Sim,
   ) {
     scene.add(this.panes);
-    glassy(this.pane);
-    glassy(this.glass);
   }
 
   /** Cut the walls facing the camera low for a turn, rebuilding the rooms if it has changed. */
@@ -266,6 +263,13 @@ export class RoomsLayer {
       this.rooms.delete(id);
     }
     this.syncPanes();
+  }
+
+  /** Build every room again, for a change of the Graphics setting, which darkens the foot of the walls drawn Full. */
+  rebuild() {
+    for (const r of this.rooms.values()) this.dispose(r.group);
+    this.rooms.clear();
+    this.sync();
   }
 
   /**

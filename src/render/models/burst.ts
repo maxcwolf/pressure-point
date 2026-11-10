@@ -1,13 +1,13 @@
 // The puff of sparkles round a guest as their symptom goes, the moment they are healed: big and bright enough to catch
-// the eye from the game's usual distance, where a guest stands 30-odd pixels tall. With the graphics pass's motion
-// switched on (`juice`), the ring of stars eases out and shrinks away rather than vanishing at its biggest, and a
-// drift of gold motes rises off the guest as it goes, all of them one shape drawn in one go.
+// the eye from the game's usual distance, where a guest stands 30-odd pixels tall. Drawn Full, the ring of stars eases
+// out and shrinks away rather than vanishing at its biggest, and a drift of gold motes rises off the guest as it goes,
+// all of them one shape drawn in one go; for a player who asks for less motion, the motes are left out.
 
 import * as THREE from 'three';
 
 import { prefersReducedMotion } from '../camera-math';
 import { owned } from '../disposal';
-import { fx } from '../fx';
+import { fancy } from '../fx';
 import { cached, joined, mat, type Piece, put, torus } from './parts';
 
 /** How many sparkles there are, how big each is and how far round they stand, in meters. */
@@ -107,7 +107,7 @@ function moteShape(): THREE.BufferGeometry {
   });
 }
 
-/** A puff: its ring of sparkles, the bright ring that spreads out and fades, and the motes rising, if switched on. */
+/** A puff: its ring of sparkles, the bright ring that spreads out and fades, and the motes rising, drawn Full. */
 export interface Burst {
   group: THREE.Group;
   sparkles: THREE.Mesh;
@@ -119,8 +119,8 @@ export interface Burst {
 
 /**
  * A ring of gold stars, every other one a little higher, in one shape in a plain material so it batches, and a thin
- * bright ring lying flat, in a material of its own to fade: both on a person, hidden until they are healed. With the
- * motion switched on, and the player not asking for less of it, motes rise off them too.
+ * bright ring lying flat, in a material of its own to fade: both on a person, hidden until they are healed. Drawn Full,
+ * and for a player not asking for less motion, motes rise off them too.
  */
 export function buildBurst(person: THREE.Object3D): Burst {
   const star = cached('burst star', () => new THREE.OctahedronGeometry(STAR));
@@ -138,7 +138,7 @@ export function buildBurst(person: THREE.Object3D): Burst {
   wave.rotation.x = Math.PI / 2;
   wave.castShadow = false;
   const burst: Burst = { group, sparkles, wave };
-  if (fx('juice') && !prefersReducedMotion()) {
+  if (fancy() && !prefersReducedMotion()) {
     const rise = { uU: { value: 0 }, uDown: { value: 1 } };
     const shine = owned(
       new THREE.ShaderMaterial({
@@ -162,14 +162,16 @@ export function buildBurst(person: THREE.Object3D): Burst {
 
 /**
  * Show a puff partway through, from 0 to 1, at a height on the person: the sparkles bursting outward and turning as
- * they rise, and the ring spreading out fast and fading. With the motes, the sparkles ease out and shrink away by the
- * end, and the motes rise from the person's feet to above their head.
+ * they rise, and the ring spreading out fast and fading. With the motes, while the scene is drawn Full, the sparkles
+ * ease out and shrink away by the end, and the motes rise from the person's feet to above their head.
  */
 export function showBurst(b: Burst, u: number, y: number) {
   b.group.visible = u < 1;
   b.group.position.y = y + 0.2 * u;
   const out = 1 - (1 - u) ** 3;
-  if (b.rise) {
+  const motes = !!b.rise && fancy();
+  if (b.motes) b.motes.visible = motes;
+  if (b.rise && motes) {
     const gone = THREE.MathUtils.smoothstep(u, 0.65, 1);
     b.sparkles.scale.setScalar(Math.max(0.001, (0.4 + 1.4 * out) * (1 - gone)));
     b.sparkles.rotation.y = out * 3;

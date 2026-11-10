@@ -8,7 +8,7 @@ import { Dialog } from './Dialog';
 /** Settings for the game in progress. */
 export function SettingsDialog() {
   const hud = useHud();
-  const { audio, sim, fullScreen } = useGame();
+  const { audio, sim, view, fullScreen } = useGame();
   return (
     <Dialog wide>
       <h2>Settings</h2>
@@ -21,6 +21,9 @@ export function SettingsDialog() {
             // a switched-off discipline's menu may be open behind the dialog
             hud.menu = null;
             hud.update();
+          }}
+          onGraphics={(g) => {
+            view.setGraphics(g);
           }}
         />
       </div>{' '}

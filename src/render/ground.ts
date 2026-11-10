@@ -1,18 +1,15 @@
-// The richer ground outdoors, behind the `lawn` switch: soft mottling over a few meters, mowing stripes on a park's
+// The ground outdoors as the scene draws it Full: soft mottling over a few meters, faint mowing stripes on a park's
 // lawn and mown lanes between an orchard's rows, wind ripples on the sand, drifts and a sparkle on the snow, and grime
 // in a plaza's joints. It is one repeating pattern for each setting, laid on the ground past the lot (the shared `LAWN`
 // material, whose color the light still sets with the season) and painted, the same pattern at the same place, over
 // the lot's own open ground on the floor (`paintGround`), so the two meet without a seam. The pattern only shades the
-// ground's color, lighter and darker about it, so the season still recolors it and nothing is built again.
+// ground's color, lighter and darker about it, so the season still recolors it and nothing is built again. Drawn
+// Plain, the lawn goes back to its plain color (`plainLawn`) and the floor to its tiles.
 
 import * as THREE from 'three';
 
 import { must } from '../core/util';
-import { fx } from './fx';
 import { hash } from './shared';
-
-/** Whether the ground outdoors is the richer one. */
-export const LAWN_FX = fx('lawn');
 
 /** Which pattern a setting's ground wears: the park's lawn, the orchard's, sand, snow or paving. */
 export type GroundLook = 'park' | 'orchard' | 'seaside' | 'mountain' | 'downtown';
@@ -130,7 +127,8 @@ function grassShade(x: number, z: number): [number, number, number] {
 function paintSoft(ctx: CanvasRenderingContext2D, look: GroundLook) {
   const n = TILES * LOW;
   const low = Object.assign(document.createElement('canvas'), { width: n, height: n });
-  const lctx = must(low.getContext('2d'), '2D canvas');
+  // kept in memory, like the canvas it is drawn onto: one kept on the graphics card would have to be read back from it
+  const lctx = must(low.getContext('2d', { willReadFrequently: true }), '2D canvas');
   const img = lctx.createImageData(n, n);
   const shade = SOFT[look];
   for (let py = 0; py < n; py++)
@@ -164,18 +162,35 @@ function specks(ctx: CanvasRenderingContext2D, seed: number, per: number, color:
       }
 }
 
+/**
+ * How much a park's mowing stripes darken the lawn, and an orchard's longer grass along its rows at their middle, as
+ * the color they multiply it by: faint, so they read up close and do not band the lawn from far back.
+ */
+const STRIPE = 'rgb(248,250,246)';
+const LANE = 'rgb(247,249,245)';
+
+/**
+ * The blades of grass on every tile: so many darker strokes, a few darker still and a few lighter, each with its
+ * strength. Few and faint, as on the lot's open ground they are seen close up beside the plain floors.
+ */
+const BLADES = [
+  { seed: 1, per: 7, color: 'rgba(150,175,140,0.24)', over: 'multiply' },
+  { seed: 2, per: 2, color: 'rgba(120,150,115,0.2)', over: 'multiply' },
+  { seed: 3, per: 4, color: 'rgba(255,255,230,0.22)', over: 'source-over' },
+] as const;
+
 /** The fine detail of a lawn: mowing stripes two tiles wide on a park, mown lanes between an orchard's rows, blades. */
 function paintGrass(ctx: CanvasRenderingContext2D, look: 'park' | 'orchard') {
   const W = TILES * PX;
   if (look === 'park') {
     // stripes across the lawn, as a mower leaves them, the darker every other pair of tiles
-    for (let k = 0; k < TILES / 2; k += 2) band(ctx, 'rgb(240,243,238)', 0, k * 2 * PX, W, 2 * PX);
+    for (let k = 0; k < TILES / 2; k += 2) band(ctx, STRIPE, 0, k * 2 * PX, W, 2 * PX);
   } else {
     // the grass along each row of trees left longer and darker, the lane between mown: rows every three tiles
     for (let z = 0; z < TILES; z += 3) {
       const g = ctx.createLinearGradient(0, (z - 0.8) * PX, 0, (z + 0.8) * PX);
       g.addColorStop(0, 'rgb(255,255,255)');
-      g.addColorStop(0.5, 'rgb(232,238,230)');
+      g.addColorStop(0.5, LANE);
       g.addColorStop(1, 'rgb(255,255,255)');
       ctx.globalCompositeOperation = 'multiply';
       ctx.fillStyle = g;
@@ -186,11 +201,11 @@ function paintGrass(ctx: CanvasRenderingContext2D, look: 'park' | 'orchard') {
     }
   }
   // blades: short soft strokes, darker and a few lighter, leaning every way
-  ctx.globalCompositeOperation = 'multiply';
-  blades(ctx, 1, 16, 'rgba(150,175,140,0.35)');
-  blades(ctx, 2, 6, 'rgba(120,150,115,0.3)');
+  for (const b of BLADES) {
+    ctx.globalCompositeOperation = b.over;
+    blades(ctx, b.seed, b.per, b.color);
+  }
   ctx.globalCompositeOperation = 'source-over';
-  blades(ctx, 3, 6, 'rgba(255,255,230,0.3)');
 }
 
 /** Short soft strokes over every tile, each tile its own: blades of grass, leaning every way. */
@@ -365,45 +380,78 @@ function patternOf(look: GroundLook): Pattern {
 /** How far the lawn's color is raised after its pattern, shared by the lawn's shader and set for each setting. */
 const GAIN = { value: new THREE.Vector3(1, 1, 1) };
 
+/** Whether the lawn wears its pattern now, which its shader raises its color for; drawn Plain, it does not. */
+let dressed = false;
+
 /** The materials already patched to raise their color by the ground's gain. */
 const patched = new WeakSet<THREE.Material>();
+
+/**
+ * Patch a lawn's material, once, to raise its color by the ground's gain while it wears its pattern. While it does
+ * not, it builds the very program it did before it was patched.
+ */
+function patchGain(lawn: THREE.MeshStandardMaterial) {
+  if (patched.has(lawn)) return;
+  patched.add(lawn);
+  const plain = lawn.customProgramCacheKey();
+  /** Raise the lawn's color by the ground's gain, once its pattern has shaded it. */
+  lawn.onBeforeCompile = (shader) => {
+    if (!dressed) return;
+    shader.uniforms.groundGain = GAIN;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 groundGain;')
+      .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb *= groundGain;');
+  };
+  /** The lawn's program while it wears its pattern, told apart from a plain material's. */
+  lawn.customProgramCacheKey = () => (dressed ? 'ground-gain' : plain);
+}
+
+/** Put a map on the lawn, raised by the ground's gain or not, building its program again only if either changes. */
+function wear(lawn: THREE.MeshStandardMaterial, map: THREE.Texture | null, gain: boolean) {
+  if (lawn.map === map && dressed === gain) return;
+  lawn.map = map;
+  dressed = gain;
+  lawn.needsUpdate = true;
+}
+
+/** Whether there is a page to paint the pattern on: not in the unit tests, which build the scenery with none. */
+const onPage = () => typeof window !== 'undefined';
 
 /**
  * Lay a setting's pattern on the ground past the lot, lined up with the lot's tiles for a ground whose west edge is
  * at `left` and south edge at `bottom`. The lawn's own color is left alone, for the light to set with the season.
  */
 export function dressLawn(lawn: THREE.MeshStandardMaterial, look: GroundLook, left: number, bottom: number) {
+  if (!onPage()) return;
   const p = patternOf(look);
   // the pattern's top row is drawn at the ground's north edge, so it is offset to start on a whole tile
   p.map.offset.set(left / TILES, -bottom / TILES);
   GAIN.value.copy(p.gain);
-  if (lawn.map !== p.map) {
-    lawn.map = p.map;
-    lawn.needsUpdate = true;
-  }
-  if (patched.has(lawn)) return;
-  patched.add(lawn);
-  /** Raise the lawn's color by the ground's gain, once its pattern has shaded it. */
-  lawn.onBeforeCompile = (shader) => {
-    shader.uniforms.groundGain = GAIN;
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 groundGain;')
-      .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb *= groundGain;');
-  };
-  /** The lawn's program, told apart from a plain material's. */
-  lawn.customProgramCacheKey = () => 'ground-gain';
-  lawn.needsUpdate = true;
+  patchGain(lawn);
+  wear(lawn, p.map, true);
+}
+
+/** Take the pattern off the ground past the lot, as the scene drawn Plain has it: plain, or wearing `map`. */
+export function plainLawn(lawn: THREE.MeshStandardMaterial, map: THREE.Texture | null) {
+  wear(lawn, map, false);
 }
 
 /** The fill each floor's tile of open ground is shaded with, by the canvas it is painted on and the look. */
 const fills = new WeakMap<CanvasRenderingContext2D, { look: GroundLook; fill: CanvasPattern }>();
 
 /**
- * Shade a tile of the lot's open ground, painted on the floor at (px, py) for tile (x, y), `ts` pixels a side, with
- * the same pattern the ground past the lot wears there, so the two meet without a seam: the pattern multiplied over it,
- * then raised by the same share the lawn's shader raises it by.
+ * Shade the lot's open ground, painted on the floor, with the same pattern the ground past the lot wears there, so the
+ * two meet without a seam: the pattern multiplied over it, then raised by the same share the lawn's shader raises it
+ * by. `tiles` are the corners, in pixels, of the tiles of open ground, each `ts` pixels a side. All are shaded in two
+ * fills, not two a tile: each such fill has the canvas read what is under it first, which software drawing is slow at.
  */
-export function paintGround(ctx: CanvasRenderingContext2D, look: GroundLook, px: number, py: number, ts: number) {
+export function paintGround(
+  ctx: CanvasRenderingContext2D,
+  look: GroundLook,
+  tiles: readonly (readonly [number, number])[],
+  ts: number,
+) {
+  if (tiles.length === 0) return;
   const p = patternOf(look);
   let f = fills.get(ctx);
   if (f?.look !== look) {
@@ -413,12 +461,14 @@ export function paintGround(ctx: CanvasRenderingContext2D, look: GroundLook, px:
     f = { look, fill };
     fills.set(ctx, f);
   }
+  const open = new Path2D();
+  for (const [px, py] of tiles) open.rect(px, py, ts, ts);
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
   ctx.fillStyle = f.fill;
-  ctx.fillRect(px, py, ts, ts);
+  ctx.fill(open);
   ctx.globalCompositeOperation = 'color-dodge';
   ctx.fillStyle = p.dodge;
-  ctx.fillRect(px, py, ts, ts);
+  ctx.fill(open);
   ctx.restore();
 }

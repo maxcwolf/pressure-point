@@ -3,13 +3,16 @@
 // and &view=head (or front, side, top) to start from another angle, and &dist=41 to look from as far off as the game's
 // camera starts. Any of the model's settings can be given too, by
 // the name it is kept under, such as &wear=85 or &inUse=1, a guest's &pose=sit or &healed=1, or the &ailment of the
-// guest lying on a table.
+// guest lying on a table. People are dressed for a mild spring day in the park unless the address names another
+// (&season=winter, &setting=seaside, &storm), and can be put in any pieces named (&outfit=dress,vest,sunhat).
 import '@fontsource/fredoka/latin-400.css';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-600.css';
 import '../ui/theme/panda.css';
 
+import type { Season } from '../core/format';
 import { must } from '../core/util';
+import { dressTheLab, type Outfit, weatherKey } from '../render/models/wardrobe';
 import { SETTINGS } from '../render/setting';
 import { css } from '../styled-system/css';
 import { cx } from '../ui/lib/cx';
@@ -44,8 +47,48 @@ const view = {
   wireframe: false,
   tiles: true,
   person: false,
-  setting: 'park' as keyof typeof SETTINGS,
+  setting: (params.get('setting') ?? 'park') as keyof typeof SETTINGS,
+  season: (params.get('season') ?? 'spring') as Season,
+  storm: params.has('storm'),
 };
+
+/** The pieces of clothing the address can put everyone in, by name, and what each puts on. */
+const PIECES: Readonly<Record<string, Partial<Outfit>>> = {
+  long: { top: 'long' },
+  tee: { top: 'tee' },
+  vest: { top: 'vest' },
+  parka: { top: 'parka' },
+  trousers: { legs: 'trousers' },
+  shorts: { legs: 'shorts' },
+  skirt: { legs: 'skirt' },
+  dress: { legs: 'dress' },
+  bare: { bareLegs: true },
+  tights: { bareLegs: false },
+  beanie: { hat: 'beanie' },
+  sunhat: { hat: 'sunhat' },
+  visor: { hat: 'visor' },
+  hood: { hat: 'hood' },
+  sweatband: { hat: 'sweatband' },
+  scarf: { scarf: true },
+  shades: { shades: true },
+  tunic: { cut: 'tunic' },
+  coat: { cut: 'coat' },
+  robe: { cut: 'robe' },
+  gown: { cut: 'gown' },
+};
+
+/** Any pieces the address puts everyone in. */
+const outfitAsked = (params.get('outfit') ?? '')
+  .split(',')
+  .reduce<Partial<Outfit> | undefined>((o, name) => (PIECES[name] ? { ...o, ...PIECES[name] } : o), undefined);
+
+/** Dress everyone the lab builds for the day the view is set to, and say which day that is. */
+function dressLab() {
+  const weather = { season: view.season, setting: view.setting, storm: view.storm };
+  dressTheLab(weather, outfitAsked);
+  return weatherKey(weather);
+}
+let dressedFor = dressLab();
 
 /** Frames left before the model on show counts as drawn, long enough for a person to settle into a pose. */
 const SETTLE_FRAMES = 20;
@@ -401,6 +444,12 @@ let showingPerson = false;
 /** Bring the stage into line with the lab-wide settings after one has changed. */
 function viewChanged() {
   applyView();
+  // dressed for another day, the model is built again to wear what it calls for
+  const day = dressLab();
+  if (day !== dressedFor) {
+    dressedFor = day;
+    rebuild(false);
+  }
   if (view.person !== showingPerson) {
     showingPerson = view.person;
     stage.setPerson(view.person ? scalePerson() : null, current.footprint);
@@ -420,6 +469,13 @@ const VIEW_CONTROLS: Control[] = [
     ['mountain', 'Mountain'],
     ['downtown', 'Downtown'],
   ]),
+  choice('Season', view, 'season', [
+    ['spring', 'Spring'],
+    ['summer', 'Summer'],
+    ['autumn', 'Autumn'],
+    ['winter', 'Winter'],
+  ]),
+  toggle('Storm', view, 'storm'),
   ...(Object.keys(VIEWS) as ViewName[]).map((name) =>
     button(name === 'game' ? 'Game angle' : `${name.charAt(0).toUpperCase()}${name.slice(1)}`, () => stage.frame(name)),
   ),

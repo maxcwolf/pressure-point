@@ -1,4 +1,4 @@
-// The little clay people: guests and staff, and what their symptoms look like.
+// The little clay people: guests and staff, what they wear, and what their symptoms look like.
 import * as THREE from 'three';
 
 import { type Pose, type Role, ROLES, type Visual } from '../../core/data';
@@ -11,17 +11,17 @@ import { BUBBLE_PX, readable } from '../readable';
 import type { Bare } from './bare';
 import type { Burst } from './burst';
 import { bodySymptom } from './character-bodies';
-import { wear } from './character-clothes';
+import { Clothes } from './character-clothes';
 import {
   detailArm,
+  detailBelt,
   detailBib,
   detailCap,
-  detailCoat,
   detailHead,
   detailLeg,
   detailMedallion,
   detailPoncho,
-  detailRobe,
+  detailSash,
   detailShawl,
   detailShirtFront,
   detailTorso,
@@ -52,7 +52,7 @@ import {
   trimShadows,
 } from './parts';
 import { buildSage, buildSmoke } from './sage';
-import { type Hat, outfitOf } from './wardrobe';
+import { labWeather, type Outfit, outfitOf, type Weather } from './wardrobe';
 
 export interface CharRig {
   group: THREE.Group;
@@ -108,6 +108,8 @@ export interface CharRig {
   face: Face;
   /** Their glasses, if they wear them, taken off while a symptom or a visit has them in sunglasses. */
   glasses?: THREE.Mesh;
+  /** What they wear, which comes off and goes on again and is changed as the season turns. */
+  clothes: Clothes;
   /** When they last found themselves with nothing to do, in the scene's seconds, or NaN while they have something. */
   idleSince: number;
   /** How far they have walked, in meters, which their stride is counted from, so their feet plant at any speed. */
@@ -180,8 +182,17 @@ const HEAD_FREE: ReadonlySet<Visual> = new Set<Visual>([
   'shards',
 ]);
 
-/** The hats that cover the hair to the ears, and the one that only shades it, under which it is cut short. */
-const COVERING: ReadonlySet<Hat> = new Set<Hat>(['beanie', 'hood']);
+/**
+ * The symptoms shown on the chest or round the shoulders, which a padded parka or a scarf would bury: whoever has one
+ * comes in their sweatshirt instead, with nothing round the neck.
+ */
+const ON_THE_CHEST: ReadonlySet<Visual> = new Set<Visual>(['chakra', 'blanket']);
+
+/** What someone wears with a symptom: anything that would bury it left off. */
+export function fitFor(o: Outfit, visual: Visual | undefined): Outfit {
+  if (!visual || !ON_THE_CHEST.has(visual)) return o;
+  return { ...o, top: o.top === 'parka' ? 'long' : o.top, scarf: false };
+}
 
 /** How much wider and deeper each build is than average: slight, average and stocky. */
 const BUILD_WIDTH = [0.9, 1, 1.13];
@@ -309,7 +320,8 @@ const helmetShield = () =>
 
 /**
  * Build a person: a uniformed member of staff, a guest showing their symptom, or a visitor dressed for the part. A guest
- * asked back after a complaint is `robed`, in the center's gold.
+ * asked back after a complaint is `robed`, in the center's gold. Staff and guests are dressed for the day (`weather`),
+ * which in the model lab is whatever it asks for.
  */
 export function buildCharacter(
   look: Look,
@@ -317,6 +329,7 @@ export function buildCharacter(
   visual?: Visual,
   visitor?: VisitorKind,
   robed = false,
+  weather: Weather = labWeather(),
 ): CharRig {
   const group = new THREE.Group();
   const body = new THREE.Group();
@@ -325,15 +338,14 @@ export function buildCharacter(
   body.scale.set(look.scale * wide, look.scale, look.scale * wide);
   group.add(body);
   const skin = mat(look.skin, 0.65);
-  const clothes = visitor && VISITOR_CLOTHES[visitor];
-  const topColor = role ? ROLES[role].uniform : (clothes?.top ?? look.top);
+  const costume = visitor && VISITOR_CLOTHES[visitor];
+  const topColor = role ? ROLES[role].uniform : (costume?.top ?? look.top);
   const top = robed ? mat(ROBE, 0.38, ROBE_GLOW) : mat(topColor, 0.7);
-  const bottom = robed ? top : mat((role && ROLES[role].bottom) ?? clothes?.bottom ?? look.bottom, 0.8);
+  const bottom = robed ? top : mat((role && ROLES[role].bottom) ?? costume?.bottom ?? look.bottom, 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
-  // clothes with a shape, if a version of the people that dresses them is being tried
-  const outfit = outfitOf(look, role, !!visitor || robed);
+  // what they wear, by their taste and the day, or their uniform for the season
+  const outfit = fitFor(outfitOf(look, weather, role, !!visitor, robed), visual);
   const headFree = !visual || HEAD_FREE.has(visual);
-  const hat = headFree ? outfit.hat : undefined;
 
   // a firefighter's boots are black whatever shoes they would wear
   const shoes = mat(visitor === 'firefighter' ? BLACK : (SHOES[look.shoes] ?? 0x3a302b), 0.5);
@@ -345,9 +357,8 @@ export function buildCharacter(
   torso.position.set(0, 0.42, 0);
   body.add(torso);
   detailTorso(torso, top, bottom);
-  // a long white coat
-  if (role === 'consultant' && !outfit.cut) detailCoat(torso, top);
-  if (robed) detailRobe(torso, top, mat(ROBE_SASH, 0.8));
+  // the robe's gown is a cut of its own (see `Clothes`), tied with a sash
+  if (robed) detailSash(torso, mat(ROBE_SASH, 0.8));
   if (role === 'acupuncturist') put(torso, rbox(0.09, 0.1, 0.03, 0.01), accent, -0.08, 0.26, 0.15);
   if (role === 'receptionist' || role === 'acupuncturist') {
     const scarf = put(torso, torus(0.11, 0.035), accent, 0, 0.42, 0);
@@ -358,32 +369,19 @@ export function buildCharacter(
   if (role === 'caretaker') detailBib(torso, accent);
   // a shawl over one shoulder, and a string of beads
   if (role === 'healer') detailShawl(torso, accent, mat(0x8a5a2c, 0.5));
-  if (role === 'therapist') {
-    // a belt round the waist, shaped to the body, with a pump bottle of massage oil clipped on at the hip
-    const belt = put(torso, torus(0.172, 0.022), mat(0x5a3b28, 0.6), 0, 0.1, 0);
-    belt.rotation.x = Math.PI / 2;
-    belt.scale.set(1.1, 0.92, 1);
-    put(torso, cyl(0.034, 0.034, 0.1, 12), mat(0xd98a2b, 0.25), 0.15, 0.08, 0.135);
-    const pump = joined('lotion pump', [
-      [cyl(0.012, 0.012, 0.03, 8), 0, 0.015, 0],
-      [cyl(0.022, 0.022, 0.016, 10), 0, 0.036, 0],
-      [rbox(0.016, 0.012, 0.045, 0.005), 0, 0.04, 0.03],
-    ]);
-    put(torso, pump, mat(0xf4f1ea, 0.4), 0.15, 0.13, 0.135);
-  }
+  // a belt round the waist, shaped to the body, with a pump bottle of massage oil clipped on at the hip
+  if (role === 'therapist') detailBelt(torso, mat(0x5a3b28, 0.6), mat(0xd98a2b, 0.25), mat(0xf4f1ea, 0.4));
   // a woven poncho over the shoulders
   if (role === 'shaman') detailPoncho(torso, accent, mat(PONCHO_BAND, 0.85));
   // a gold chain round the neck to a medallion
   if (role === 'practitioner') detailMedallion(torso, mat(0xc9963f, 0.3), accent);
 
-  /** Add an arm hinged at the shoulder, with its forearm and hand hinged at the elbow. */
+  /** Add an arm hinged at the shoulder, with its forearm and hand hinged at the elbow, in a long sleeve for now. */
   const makeArm = (x: number) => {
     const arm = new THREE.Group();
     arm.position.set(x, 0.37, 0);
     torso.add(arm);
-    // sleeves rolled up past the elbow for a therapist, ready to work
-    const rolled = role === 'therapist' || outfit.top === 'tee' || outfit.top === 'vest';
-    return { arm, fore: detailArm(arm, Math.sign(x), top, skin, rolled) };
+    return { arm, fore: detailArm(arm, Math.sign(x), top, skin) };
   };
   const { arm: armL, fore: foreL } = makeArm(-0.245);
   const { arm: armR, fore: foreR } = makeArm(0.245);
@@ -399,23 +397,30 @@ export function buildCharacter(
   head.scale.set(1 / wide, 1, 1 / wide);
   torso.add(head);
   const hair = mat(look.hair, 0.85);
-  // a hat needs short hair under it, or a woman's tied back low
-  const hatted =
-    (hat && COVERING.has(hat) ? 'covered' : false) ||
-    role === 'caretaker' ||
-    visitor === 'inspector' ||
-    visitor === 'firefighter' ||
-    hat === 'sunhat';
-  const { headMesh, face, glasses } = detailHead(head, look, skin, hair, hatted);
-  const shades = wear(
+  // a cap that is part of who they are needs short hair under it, or a woman's tied back low
+  const hatted = role === 'caretaker' || visitor === 'inspector' || visitor === 'firefighter';
+  const { headMesh, face, glasses, hair: ownHair } = detailHead(head, look, skin, hair, hatted);
+  const clothes = new Clothes(
+    {
+      torso,
+      head,
+      legs: [
+        [legL, shinL],
+        [legR, shinR],
+      ],
+      arms: [
+        [armL, foreL],
+        [armR, foreR],
+      ],
+      hair: ownHair,
+    },
+    { top, bottom, skin, accent: role ? accent : mat(outfit.accent, 0.85), dark: mat(BLACK, 0.2), hair },
+    look,
     outfit,
-    { torso, head, legs: [legL, legR].map((leg, i) => [leg, i ? shinR : shinL] as const), arms: [armL, armR] },
-    { top, bottom, skin, accent: role ? accent : mat(outfit.accent, 0.85), dark: mat(BLACK, 0.2) },
-    hat,
-    outfit.shades && headFree,
+    headFree,
   );
   // sunglasses go on in place of glasses
-  if (glasses) glasses.visible = !shades && visitor !== 'vip' && visual !== 'sunburn' && visual !== 'beachhead';
+  if (glasses) glasses.visible = visitor !== 'vip' && visual !== 'sunburn' && visual !== 'beachhead';
   if (role === 'shaman') {
     // a single feather tucked in behind one ear
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);
@@ -475,6 +480,7 @@ export function buildCharacter(
     joints,
     face,
     ...(glasses ? { glasses } : {}),
+    clothes,
     idleSince: NaN,
     walked: 0,
     motion: newMotion(),
@@ -513,9 +519,11 @@ export function buildCharacter(
   } else if (visual === 'band') {
     headSymptom(rig, visual);
   } else if (visual === 'flex') {
-    // biceps bulging through the sleeves, in the shirt, and bare with it on a really bad trip
+    // biceps bulging through the sleeves, in the shirt, or bare out of a short sleeve or a vest, and bare with it on
+    // a really bad trip
+    const sleeved = outfit.top === 'long' || outfit.top === 'parka';
     for (const arm of [armL, armR]) {
-      const muscle = put(arm, sph(0.092, 12), top, 0, -0.1, 0.02);
+      const muscle = put(arm, sph(0.092, 12), sleeved ? top : skin, 0, -0.1, 0.02);
       muscle.name = 'muscle';
       rig.props.push(muscle);
     }
@@ -938,6 +946,8 @@ export function buildCharacter(
     rig.props.push(phone);
   } else machineSymptom(rig, visual, { head, torso, holdR, foreL, handUp });
   for (const o of [rig.steam, rig.orbit, rig.bob]) if (o) rig.props.push(o);
+  // dressed again over what the symptom changed: a forearm in its sleeve under a hand it has taken
+  if (visual) clothes.dress();
   if (rig.bob) rig.bobAt = rig.bob.position.y;
   rig.bubbleAt = bubbleOver(rig, false);
   rig.bubbleSitting = bubbleOver(rig, true);
@@ -1049,6 +1059,9 @@ export function endCure(rig: CharRig, look: Look) {
   });
   if (rig.glasses) rig.glasses.visible = true;
   restoreRig(rig);
+  // and dressed again with the hands back, and the head theirs again for a hat
+  rig.clothes.freeHead();
+  rig.clothes.dress();
   rig.head.scale.set(1 / rig.wide, 1, 1 / rig.wide);
   rig.headMesh.material = mat(look.skin, 0.65);
   if (rig.burst) rig.burst.group.visible = false;

@@ -43,7 +43,8 @@ describe('a guest with nothing on', () => {
     const rig = buildCharacter(LAB_LOOK);
     const skin = parts(rig, 'hand')[0]?.material;
     showBare(rig, true, true);
-    const clothes = parts(rig, 'shirt', 'sleeve', 'trousers', 'shoe');
+    // whatever of them shows: a sleeve with nothing under it is put away
+    const clothes = parts(rig, 'shirt', 'sleeve', 'arm', 'trousers', 'shoe').filter((p) => p.visible);
     expect(clothes.length).toBeGreaterThanOrEqual(8);
     for (const part of clothes) expect(part.material).toBe(skin);
     const censors = rig.bare?.censors ?? [];

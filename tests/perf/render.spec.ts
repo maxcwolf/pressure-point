@@ -108,7 +108,10 @@ test.describe('performance', () => {
     expect(served, 'guests were treated, so the busy parts of the scene ran').toBeGreaterThan(5);
     // with every guest gone again, whatever they alone were drawn with should have gone with them
     expect(after.geometries - before.geometries).toBeLessThan(3);
-    expect(after.textures - before.textures).toBeLessThan(5);
+    // drawn Full, a few textures are made the first time something shows, whenever that is: the shapes a kind of
+    // skirt or coat sways through, a season's flowers. They are made once and kept, so the count ends the same however
+    // early it was first taken; a texture leaked for each guest would add one for every guest served
+    expect(after.textures - before.textures).toBeLessThan(8);
     // a shader is compiled the first time each kind of material is drawn, and one may first turn up late
     expect(after.programs - before.programs).toBeLessThanOrEqual(2);
   });

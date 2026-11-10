@@ -209,6 +209,11 @@ export interface Look {
   glasses: number;
   /** The color of their shoes, an index into `SHOES`; a number already in saves never changes meaning. */
   shoes: number;
+  /**
+   * Their taste in clothes, 16 bits read a few at a time to pick from what the day calls for (see
+   * `render/models/wardrobe.ts`); a number already in saves never changes meaning.
+   */
+  wear: number;
 }
 
 interface CharBase {

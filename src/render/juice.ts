@@ -1,14 +1,15 @@
-// Small moments of motion that answer the player: a soft puff of dust round something as it is put down and along the
-// walls of a room as it is finished, and a shower of gold sparkles over the reception desk as a star is earned. Every
-// mote of each kind is one quad of a single batch, moved by the graphics card from where and when it was let go, so a
-// puff costs nothing but the writing of its motes, and nothing at all is drawn once the last of them has gone. None of
-// it is shown to a player whose system asks for reduced motion.
+// Small moments of motion that answer the player, while the scene is drawn Full: a soft puff of cream dust round
+// something as it is put down and along the walls of a room as it is finished, and a shower of gold sparkles over the
+// reception desk as a star is earned. Every mote of each kind is one quad of a single batch, moved by the graphics card
+// from where and when it was let go, so a puff costs nothing but the writing of its motes, and nothing at all is drawn
+// once the last of them has gone, nor before the first. None of it is shown to a player whose system asks for reduced
+// motion, nor drawn Plain.
 
 import * as THREE from 'three';
 
 import type { Sim } from '../core/sim/sim';
 import { itemCenter } from '../core/world';
-import { fx } from './fx';
+import { fancy } from './fx';
 import { TWINKLE } from './models/burst';
 import { cached } from './models/parts';
 
@@ -161,8 +162,12 @@ class Motes {
   }
 }
 
-/** The colors of dust, warm grays a little darker than the cream floors so a puff shows on them, in the screen's own colors. */
-const DUST_TINTS = [0xcdbda2, 0xd9cbb1, 0xc2b195].map((c) => new THREE.Color(c).convertLinearToSRGB());
+/**
+ * The colors of dust, in the screen's own colors: light warm creams, paler than the gray of a worn machine's smoke or the
+ * tan of a worn mat's dust, so a puff never reads as either, and shaded as a ball lit from above so it still shows on
+ * the cream floors.
+ */
+export const DUST_TINTS = [0xfbf0d9, 0xf6e7c8, 0xfff7e6].map((c) => new THREE.Color(c).convertLinearToSRGB());
 /** The gold of the sparkles, and a paler gold among them, in the screen's own colors. */
 const GOLDS = [0xffc93c, 0xffe08a].map((c) => new THREE.Color(c).convertLinearToSRGB());
 
@@ -200,9 +205,24 @@ export class JuiceLayer {
     this.sparkles = new Motes(scene, SPARKLE);
   }
 
+  /** Whether a puff may be let go now: drawn Full, for a player who does not ask for less motion. */
+  private lively(): boolean {
+    return fancy() && !this.reduceMotion();
+  }
+
+  /** The batches of motes, drawn only while a puff is in the air, whose programs the view builds ahead of the first. */
+  get batches(): readonly THREE.Object3D[] {
+    return [this.dust.mesh, this.sparkles.mesh];
+  }
+
+  /** Whether any mote is drawn this frame. */
+  get drawn(): boolean {
+    return this.dust.mesh.visible || this.sparkles.mesh.visible;
+  }
+
   /** A soft puff of dust round the foot of something just put down, unless it hangs on a wall. */
   landed(model: THREE.Object3D) {
-    if (this.reduceMotion()) return;
+    if (!this.lively()) return;
     this.box.setFromObject(model);
     if (this.box.isEmpty() || this.box.min.y > 0.3) return;
     const { min, max } = this.box;
@@ -290,16 +310,12 @@ export class JuiceLayer {
       for (const r of rooms) {
         if (!r.done) continue;
         done.add(r.id);
-        if (known && !known.has(r.id) && !this.reduceMotion()) this.finished(r);
+        if (known && !known.has(r.id) && this.lively()) this.finished(r);
       }
       this.done = done;
     }
     const stars = this.sim.s.stars;
-    if (this.stars >= 0 && stars > this.stars && !this.reduceMotion()) this.starred();
+    if (this.stars >= 0 && stars > this.stars && this.lively()) this.starred();
     this.stars = stars;
   }
 }
-
-/** The puffs and showers, if they are switched on, for a scene and the game it shows. */
-export const juiceLayer = (scene: THREE.Scene, sim: Sim, reduceMotion: () => boolean): JuiceLayer | null =>
-  fx('juice') ? new JuiceLayer(scene, sim, reduceMotion) : null;

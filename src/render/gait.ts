@@ -1,31 +1,24 @@
-// The walks being tried out for the graphics pass, each a way of turning a person's joints as they walk, chosen from
-// the page's address: `?walk=weighted`, `?walk=bouncy` or `?walk=character`. With none, `pose.ts` walks everyone as
-// it always has, and nothing here runs.
+// How people walk: a cycle of two steps worked out from how far round it someone is, put straight onto their joints on
+// top of the rest of their pose, which eases as it always has (see `ride`). So a walk keeps its shape at any speed,
+// while a pose that changes, a symptom, something carried or a look round, still eases in.
 //
-// Each walk is a cycle of two steps worked out from how far round it someone is, put straight onto their joints on
-// top of the rest of their pose, which eases as it always has (see `ride`): so a walk keeps its shape at any speed,
-// while a pose that changes, a symptom, something carried or a look round, still eases in. The cycle goes round with
-// the ground covered, as the game's own does, until the steps would come quicker than `CADENCE` allows, as they would
-// at double and triple speed: from there it goes round no faster, and the feet glide a little instead. People ease
-// into their first step and settle on their last rather than snapping to a stand. Nothing here touches the game or
-// its random numbers: all a person's walk remembers is kept here, by their rig.
+// The cycle goes round with the ground covered, so the feet plant where they land, until the steps would come quicker
+// than `CADENCE` allows, as they would at double and triple speed: from there it goes round no faster, and the feet
+// glide a little instead. People ease into their first step and settle on their last rather than snapping to a stand.
+//
+// Everyone walks a gentle, weighted walk of their own, from their height, build and id, and how they feel changes it
+// (`moodOfWalk`): staff hurrying to a job, worn out or with nothing to do; guests impatient, fed up, unwell or healed;
+// anyone on a really bad trip running. Nothing here touches the game or its random numbers: all a person's walk
+// remembers is kept here, by their rig.
 
 import * as THREE from 'three';
 
 import { POOR_CONDITION, TIRED_ENERGY } from '../core/data';
 import type { Char } from '../core/state/types';
-import { fxChoice } from './fx';
 import type { CharRig } from './models/character';
 import { HIP, KNEE } from './models/character-detail';
 
 const { clamp, lerp, smoothstep } = THREE.MathUtils;
-
-/** The walks that can be tried, by the name each goes under in the address. */
-export const GAITS = ['weighted', 'bouncy', 'character'] as const;
-export type Gait = (typeof GAITS)[number];
-
-/** The walk the page's address asks for, if it names one of them. */
-const ASKED: Gait | undefined = GAITS.find((g) => g === fxChoice('walk'));
 
 /**
  * How many steps a second people take at most, whatever the game's speed: up to `from` the steps follow the ground
@@ -36,14 +29,17 @@ const ASKED: Gait | undefined = GAITS.find((g) => g === fxChoice('walk'));
  */
 export const CADENCE = { from: 3.6, most: 4.1, stretch: 1.12 } as const;
 
-/** How far round the cycle of two steps goes for each meter walked, in radians, as the game's own walk does. */
-const STRIDE = 4.8;
+/**
+ * How far round the cycle of two steps goes for each meter walked, in radians, before a person's own stride: a full
+ * cycle every 1.3 m, about 9.5 radians a second at a guest's 2.1 m/s.
+ */
+export const STRIDE = 4.8;
 
 /**
  * How long someone takes to ease into their first step and to settle on their last, in seconds, and how quickly the
  * pace their steps are counted from follows the ground they cover, each second.
  */
-const EASE = { start: 0.35, stop: 0.3, pace: 6 } as const;
+export const EASE = { start: 0.35, stop: 0.3, pace: 6 } as const;
 
 /** How quickly someone's way of walking changes as they do, from hurrying to dawdling, each second. */
 const RESTYLE = 3;
@@ -72,25 +68,31 @@ const KNEE_TOP = 0.35;
  */
 const RIDE = { rise: 0.35, lag: 0.035 } as const;
 
+/**
+ * A fed-up guest's stamp: where in a leg's cycle it lands and how long it lasts, as shares of a cycle, and how far the
+ * body drops with it, in meters for each radian the head drops, and leans into it, as a share of the head's drop. Wide
+ * enough to be seen at the game's distance: about a tenth of a second at speed 1.
+ */
+const STAMP = { at: 0.04, wide: 0.08, sink: 0.1, lean: 0.5 } as const;
+
 /** How far the knee is bent in a straight leg, in radians: never quite locked. */
 export const KNEE_REST = 0.06;
 
 /**
- * A way of walking, in numbers. The legs: how many steps a meter (`stride`, times the game's), how much quicker they
- * may come at most (`cap`), the share of the cycle a foot is on the floor (`duty`), how far forward a leg reaches and
- * how far back it goes as a share of that, in radians, how far it overshoots and settles at each end of a swing
+ * A way of walking, in numbers. The legs: how many steps a meter (`stride`, times `STRIDE`), how much quicker they may
+ * come at most (`cap`), the share of the cycle a foot is on the floor (`duty`), how far forward a leg reaches and how
+ * far back it goes as a share of that, in radians, how far it overshoots and settles at each end of a swing
  * (`tangent`), how far the knee gives as the heel strikes (`load`), bends as the foot leaves the floor (`pre`) and
  * lifts as it swings through (`lift`), and how far the foot rolls heel to toe (`roll`, a share). The arms: how far
  * they swing forward from the shoulder and back as a share of that, how much they trail the legs and the elbows the
- * arms (`armLag`, `elbowLag`, shares of a cycle), how far the elbows are bent and bend more as an arm comes forward,
- * and how far the arms flap out with each step. The body: how far the hips sway over the standing foot, in meters, and
- * the shoulders roll with it (`hipDrop`), how far the hips and the shoulders turn against each other, how far the
- * body nods into each step, how much of their turning the head takes out (`steady`), how much of the dip as the legs
- * spread the body follows (`bob`), how high it springs up from each step, and the squash and stretch of the body with
- * each, a share of its height. The head: how far it nods a beat behind the bounce (`headLag`) and jolts down as a foot
- * stamps (`stomp`). The healed: how high they skip. And the posture the walk is held in, which eases rather than goes
- * round: how far they lean forward, hold the head down, hold the arms out and bend the elbows, and how far they hold an
- * arm across the belly, or both behind the back, from 0 to 1.
+ * arms (`armLag`, `elbowLag`, shares of a cycle), and how far the elbows are bent and bend more as an arm comes
+ * forward. The body: how far the hips sway over the standing foot, in meters, and the shoulders roll with it
+ * (`hipDrop`), how far the hips and the shoulders turn against each other, how far the body nods into each step, how
+ * much of their turning the head takes out (`steady`), how much of the dip as the legs spread the body follows
+ * (`bob`), and how high it springs up from each step. A fed-up stamp (`stomp`, how far the head drops with it), and
+ * how high the healed skip. And the posture the walk is held in, which eases rather than goes round: how far they lean
+ * forward, hold the head down, hold the arms out and bend the elbows, and how far they hold an arm across the belly,
+ * or both behind the back, from 0 to 1.
  */
 interface Style {
   stride: number;
@@ -109,7 +111,6 @@ interface Style {
   elbow: number;
   elbowSwing: number;
   elbowLag: number;
-  flap: number;
   sway: number;
   hipDrop: number;
   hipYaw: number;
@@ -118,8 +119,6 @@ interface Style {
   steady: number;
   bob: number;
   bounce: number;
-  squash: number;
-  headLag: number;
   stomp: number;
   skip: number;
   lean: number;
@@ -130,12 +129,12 @@ interface Style {
 }
 
 /**
- * A real walk, kept gentle: the leg goes back slowly with the foot on the floor and forward quickly through the air,
- * the knee giving as the heel strikes and lifting through the pass, the foot rolling heel to toe; the hips sway over
- * the standing foot and turn against the shoulders; the arms swing from the shoulder, more forward than back, with
- * the elbow trailing; and the head is held steadier than the body.
+ * The walk everyone's own starts from, kept gentle: the leg goes back slowly with the foot on the floor and forward
+ * quickly through the air, the knee giving as the heel strikes and lifting through the pass, the foot rolling heel to
+ * toe; the hips sway over the standing foot and turn against the shoulders; the arms swing from the shoulder, more
+ * forward than back, with the elbow trailing; and the head is held steadier than the body.
  */
-const WEIGHTED: Readonly<Style> = {
+const WALK: Readonly<Style> = {
   stride: 1,
   cap: 1,
   duty: 0.58,
@@ -152,7 +151,6 @@ const WEIGHTED: Readonly<Style> = {
   elbow: 0.1,
   elbowSwing: 0.35,
   elbowLag: 0.08,
-  flap: 0,
   sway: 0.022,
   hipDrop: 0.03,
   hipYaw: 0.07,
@@ -161,8 +159,6 @@ const WEIGHTED: Readonly<Style> = {
   steady: 0.8,
   bob: 1,
   bounce: 0,
-  squash: 0,
-  headLag: 0,
   stomp: 0,
   skip: 0.07,
   lean: 0.06,
@@ -172,58 +168,21 @@ const WEIGHTED: Readonly<Style> = {
   behind: 0,
 };
 
-/**
- * A clay cartoon's walk: a spring up off each step, the body squashing a little as the foot lands and stretching as it
- * pushes off, the head nodding a beat behind, and the arms loose, swinging wide and flapping out.
- */
-const BOUNCY: Readonly<Style> = {
-  ...WEIGHTED,
-  duty: 0.52,
-  reach: 0.52,
-  back: 0.8,
-  tangent: 0.7,
-  load: 0.28,
-  pre: 0.35,
-  lift: 1.1,
-  roll: 0.6,
-  arm: 0.6,
-  armBack: 0.8,
-  armLag: 0.08,
-  elbow: 0.1,
-  elbowSwing: 0.5,
-  elbowLag: 0.15,
-  flap: 0.1,
-  sway: 0.018,
-  hipDrop: 0.05,
-  hipYaw: 0.05,
-  twist: 0.1,
-  nod: 0.03,
-  steady: 0.4,
-  bob: 0.7,
-  bounce: 0.035,
-  squash: 0.06,
-  headLag: 0.09,
-  lean: 0.03,
-  headDown: -0.04,
-  armOut: 0.12,
-};
-
 /** Every number a walk is made of, to go through them all. */
-const STYLE_KEYS = Object.keys(WEIGHTED) as readonly (keyof Style)[];
+const STYLE_KEYS = Object.keys(WALK) as readonly (keyof Style)[];
 
-/** The walks to choose from, by name. */
-const STYLES: Readonly<Record<Gait, Readonly<Style>>> = { weighted: WEIGHTED, bouncy: BOUNCY, character: WEIGHTED };
+/** A change to a walk: what it sets outright, and what it multiplies (`times`) or adds to (`plus`). */
+type Change = Partial<Style> & { times?: Partial<Style>; plus?: Partial<Style> };
 
 /**
- * How each way people can be walking changes a walk, in `character`: what each sets outright, and what it multiplies
- * (`times`) or adds to (`plus`). Staff hurrying to a job lean into it with their elbows bent, pumping their arms;
- * worn-out staff slouch and drag their feet with their arms hanging; a fed-up guest stamps, knees high, arms stiff and
- * head down; an unwell guest shuffles small steps, hunched, an arm across the belly; the healed skip, head up and arms
- * swinging high; staff with nothing to do stroll with their hands behind their back; an impatient guest walks
- * briskly; and anyone running, as on a really bad trip, runs.
+ * How each way people can be walking changes their walk. Staff hurrying to a job lean into it with their elbows bent,
+ * pumping their arms. Worn-out staff drag their feet in long slow steps, rolling heavily from side to side, their arms
+ * hanging and the head hung low. A fed-up guest stamps, knees high, arms stiff and head down, the head and body
+ * dropping with each stamp. An unwell guest shuffles small quick steps, hunched and holding still, an arm across the
+ * belly. The healed skip, head up and arms swinging high; staff with nothing to do stroll with their hands behind their
+ * back; an impatient guest walks briskly; and anyone running, as on a really bad trip, runs.
  */
-type Change = Partial<Style> & { times?: Partial<Style>; plus?: Partial<Style> };
-const MOODS = {
+export const MOODS = {
   hurry: {
     duty: 0.55,
     arm: 0.8,
@@ -236,19 +195,21 @@ const MOODS = {
     plus: { lean: 0.2, elbow: 1.3 },
   },
   tired: {
-    lift: 0.3,
-    load: 0.1,
-    pre: 0.15,
-    roll: 0.25,
-    arm: 0.12,
+    lift: 0.2,
+    load: 0.08,
+    pre: 0.1,
+    roll: 0.2,
+    arm: 0.08,
     armBack: 1,
+    armLag: 0.3,
     elbow: 0,
-    elbowSwing: 0.04,
-    elbowLag: 0.25,
-    armOut: 0,
-    headDown: 0.5,
-    bob: 0.6,
-    times: { stride: 0.72, reach: 0.75, sway: 2.2, hipDrop: 2.6, twist: 0.4, hipYaw: 0.5 },
+    elbowSwing: 0.02,
+    armOut: -0.02,
+    headDown: 0.55,
+    nod: 0.01,
+    steady: 0.3,
+    bob: 0.5,
+    times: { stride: 0.8, reach: 0.85, sway: 2.6, hipDrop: 3, twist: 0.3, hipYaw: 0.4 },
     plus: { lean: 0.3 },
   },
   stomp: {
@@ -262,27 +223,29 @@ const MOODS = {
     elbowSwing: 0.04,
     elbowLag: 0,
     armOut: 0.02,
-    stomp: 0.22,
+    stomp: 0.3,
     nod: 0.04,
-    headDown: 0.26,
+    headDown: 0.42,
     times: { stride: 1.05, reach: 1.05, hipDrop: 1.6 },
-    plus: { lean: 0.08 },
+    plus: { lean: 0.1 },
   },
   shuffle: {
     duty: 0.72,
-    reach: 0.2,
+    reach: 0.16,
     back: 1,
-    lift: 0.22,
+    lift: 0.3,
     load: 0.05,
     pre: 0.1,
     roll: 0.15,
-    arm: 0.12,
-    elbowSwing: 0.1,
+    arm: 0.1,
+    elbowSwing: 0.05,
     belly: 1,
-    headDown: 0.2,
-    bob: 0.5,
-    times: { sway: 2.2, hipDrop: 2.4, twist: 0.3, hipYaw: 0.4 },
-    plus: { lean: 0.22 },
+    headDown: 0.28,
+    nod: 0.01,
+    bob: 0.4,
+    steady: 0.9,
+    times: { stride: 1.35, cap: 1.15, sway: 0.5, hipDrop: 0.4, twist: 0.2, hipYaw: 0.3 },
+    plus: { lean: 0.28 },
   },
   skip: {
     lift: 1.25,
@@ -317,12 +280,12 @@ const MOODS = {
     plus: { lean: 0.12 },
   },
 } as const satisfies Record<string, Change>;
-type Mood = keyof typeof MOODS;
+export type WalkMood = keyof typeof MOODS;
 
 /**
- * How the symptoms that change how someone walks change any of these walks: too stiff to bend, a shuffle with the
- * legs straight; potted from the waist down, the pot's own waddle (`pose.ts`) and no step at all; bent as if the chair
- * were still there, short steps in the crouch; and a fizzing shiver, no sway to fight it.
+ * How the symptoms that change how someone walks change their walk: too stiff to bend, a shuffle with the legs
+ * straight; potted from the waist down, the pot's own waddle (`pose.ts`) and no step at all; bent as if the chair were
+ * still there, short steps in the crouch; and a fizzing shiver, no sway to fight it.
  */
 const SYMPTOMS: Partial<Record<string, Change>> = {
   stiff: {
@@ -337,8 +300,6 @@ const SYMPTOMS: Partial<Record<string, Change>> = {
     hipYaw: 0,
     nod: 0,
     bounce: 0,
-    squash: 0,
-    headLag: 0,
     times: { sway: 0.5 },
   },
   cactus: {
@@ -351,16 +312,19 @@ const SYMPTOMS: Partial<Record<string, Change>> = {
     hipDrop: 0,
     bob: 0,
     bounce: 0,
-    squash: 0,
     times: { arm: 0.4 },
   },
   chairshape: { bob: 0, bounce: 0, times: { reach: 0.4, lift: 0.5 } },
   jitter: { sway: 0 },
 };
 
+/** A symptom that weighs them down drags the feet; one that sways them sways them more. */
+const HEAVY: Change = { times: { stride: 0.9, lift: 0.6, arm: 0.6 } };
+const SWAYING: Change = { times: { sway: 2.5, hipDrop: 2 } };
+
 /**
- * How people of each role walk on top of who they are, in `character`: the consultant and the receptionist neat,
- * their arms close; the Caretaker heavy-footed, rolling from side to side; the therapist springy.
+ * How people of each role walk on top of who they are: the consultant and the receptionist neat, their arms close;
+ * the Caretaker heavy-footed, rolling from side to side; the therapist springy.
  */
 const ROLE_WALKS: Partial<Record<string, Change>> = {
   consultant: { times: { arm: 0.75, sway: 0.8 }, plus: { lean: -0.02 } },
@@ -369,7 +333,19 @@ const ROLE_WALKS: Partial<Record<string, Change>> = {
   therapist: { times: { lift: 1.12 } },
 };
 
-/** A walk changed: set, multiplied and added to. */
+/**
+ * With less motion asked for, the walk keeps its steps and its moods but loses what bobs the body about: no spring,
+ * skip, stamp or nod, and half the sway and turn.
+ */
+const CALM: Change = {
+  bounce: 0,
+  skip: 0,
+  stomp: 0,
+  nod: 0,
+  times: { sway: 0.5, hipDrop: 0.5, twist: 0.5, hipYaw: 0.5 },
+};
+
+/** A walk changed: set, multiplied and added to, all the way or partway (`by`). */
 function changed(s: Style, ch: Change | undefined, by = 1): Style {
   if (!ch || by <= 0) return s;
   const out = { ...s };
@@ -407,7 +383,7 @@ function personal(c: Char, scale: number, wide: number): Style {
     1 - PERSONAL.cadence,
     1 + PERSONAL.cadence,
   );
-  return changed(WEIGHTED, {
+  return changed(WALK, {
     stride,
     times: {
       arm: 1 + PERSONAL.arm * u(2),
@@ -421,24 +397,26 @@ function personal(c: Char, scale: number, wide: number): Style {
 
 /**
  * What the walk needs to know about someone that `pose.ts` works out: how their patience shows, whether they are
- * staff with nothing to do, whether their symptom has gone, and the symptom showing, if any.
+ * staff with nothing to do, whether their symptom has gone, the symptom showing, if any, and whether less motion is
+ * asked for.
  */
 export interface Walker {
   mood: 'content' | 'restless' | 'impatient' | 'fedUp';
   idle: boolean;
   cured: boolean;
   visual: string | undefined;
+  calm: boolean;
 }
 
 /**
- * How someone is walking, in `character`, and how much: hurrying to a job, worn out, fed up, unwell, healed, idling
- * or impatient, the most telling first; or none of these.
+ * How someone is walking, and how much: running, healed, worn out, hurrying to a job or idling for staff; fed up,
+ * unwell or impatient for a guest, the most telling first; or none of these. Worn out shows from a little before the
+ * game slows staff down, and all the way once it does.
  */
-export function moodOfWalk(c: Char, w: Walker): { mood: Mood; by: number } | undefined {
+export function moodOfWalk(c: Char, w: Walker): { mood: WalkMood; by: number } | undefined {
   if (c.kind === 'guest' && c.state === 'running') return { mood: 'run', by: 1 };
   if (w.cured) return { mood: 'skip', by: 1 };
   if (c.kind === 'staff') {
-    // worn out shows from a little before the game slows them, all the way once it does
     const tired = smoothstep(TIRED_ENERGY * 2 - c.energy, 0, TIRED_ENERGY);
     if (tired > 0) return { mood: 'tired', by: tired };
     if (c.state === 'toJob' || c.state === 'toCall' || (c.state === 'toPost' && c.busy))
@@ -459,23 +437,19 @@ export function moodOfWalk(c: Char, w: Walker): { mood: Mood; by: number } | und
  * The walk someone is to walk this moment, before it eases there from the last: worked out afresh only when how they
  * are walking changes, as it seldom does, and kept with the rest of their walk till then.
  */
-function styleFor(gait: Gait, c: Char, rig: CharRig, w: Walker, kept: GaitState): Style {
-  const running = c.kind === 'guest' && c.state === 'running';
-  const m = gait === 'character' ? moodOfWalk(c, w) : undefined;
+function styleFor(c: Char, rig: CharRig, w: Walker, kept: GaitState): Style {
+  const m = moodOfWalk(c, w);
   // how tired shows in steps of a twentieth, so it is not worked out again every frame as their energy runs down
-  const key = `${gait}|${m?.mood}|${Math.round((m?.by ?? 0) * 20)}|${w.visual}|${running}`;
+  const by = Math.round((m?.by ?? 0) * 20) / 20;
+  const key = `${m?.mood}|${by}|${w.visual}|${w.calm}|${c.kind === 'staff' ? c.role : ''}`;
   if (kept.want && kept.wantKey === key) return kept.want;
-  let s: Style = STYLES[gait];
-  if (gait === 'character') {
-    s = personal(c, rig.scale, rig.wide);
-    if (c.kind === 'staff') s = changed(s, ROLE_WALKS[c.role]);
-    if (m) s = changed(s, MOODS[m.mood], Math.round(m.by * 20) / 20);
-    // a symptom that weighs them down drags the feet; one that sways them, more so
-    if (w.visual === 'slump' || w.visual === 'battery' || w.visual === 'oldsoul')
-      s = changed(s, { times: { stride: 0.9, lift: 0.6, arm: 0.6 } });
-    else if (w.visual === 'sway') s = changed(s, { times: { sway: 2.5, hipDrop: 2 } });
-  } else if (running) s = changed(s, MOODS.run);
-  kept.want = changed(s, w.visual ? SYMPTOMS[w.visual] : undefined);
+  let s = personal(c, rig.scale, rig.wide);
+  if (c.kind === 'staff') s = changed(s, ROLE_WALKS[c.role]);
+  if (m) s = changed(s, MOODS[m.mood], by);
+  if (w.visual === 'slump' || w.visual === 'battery' || w.visual === 'oldsoul') s = changed(s, HEAVY);
+  else if (w.visual === 'sway') s = changed(s, SWAYING);
+  s = changed(s, w.visual ? SYMPTOMS[w.visual] : undefined);
+  kept.want = w.calm ? changed(s, CALM) : s;
   kept.wantKey = key;
   return kept.want;
 }
@@ -484,8 +458,7 @@ function styleFor(gait: Gait, c: Char, rig: CharRig, w: Walker, kept: GaitState)
  * The parts of a walk that go round with each step, each the turn or shift of a joint in radians or meters on top of
  * the rest of the pose: the thighs forward and back and out to the side, the knees, the feet at the ankle, the arms
  * at the shoulder and out to the side, the elbows, the body up and down and side to side, the hips turning, the body
- * leaning, rolling and turning at the waist, the head nodding, tipping, turning and bobbing, and the body squashing
- * (less than 0) and stretching (more).
+ * leaning, rolling and turning at the waist, and the head nodding, tipping and turning.
  */
 export interface Cycle {
   legL: number;
@@ -510,11 +483,9 @@ export interface Cycle {
   headX: number;
   headZ: number;
   headYaw: number;
-  headY: number;
-  squash: number;
 }
 
-/** No walk going round: the game's own walk, or someone standing still. */
+/** No walk going round: someone standing still, sitting or lying down. */
 export const NO_CYCLE: Readonly<Cycle> = {
   legL: 0,
   legR: 0,
@@ -538,18 +509,15 @@ export const NO_CYCLE: Readonly<Cycle> = {
   headX: 0,
   headZ: 0,
   headYaw: 0,
-  headY: 0,
-  squash: 0,
 };
 
 /**
- * All a person's walk remembers from one frame to the next: which walk they walk, how far round its cycle they are,
- * in radians, how far they had walked by last frame, how many radians a second their steps would come at from the
- * ground they cover and how many they are shown at, how far into walking they are (0 standing, 1 walking), the walk
- * as it eases from one way of walking to another, what the cycle put on their joints last frame, and their shoes.
+ * All a person's walk remembers from one frame to the next: how far round its cycle they are, in radians, how far
+ * they had walked by last frame, how many radians a second their steps would come at from the ground they cover and
+ * how many they are shown at, how far into walking they are (0 standing, 1 walking), the walk as it eases from one way
+ * of walking to another, what the cycle put on their joints last frame, and their shoes.
  */
-interface GaitState {
-  gait: Gait | undefined;
+export interface GaitState {
   phase: number;
   walked: number;
   pace: number;
@@ -563,6 +531,8 @@ interface GaitState {
   wantKey: string;
   applied: Cycle;
   shoes: [THREE.Object3D | undefined, THREE.Object3D | undefined] | undefined;
+  /** Whether their shoes were last left rolled, so they are put flat once when someone is next drawn small. */
+  rolled: boolean;
 }
 
 /** Each person's walk, kept by their rig. */
@@ -573,7 +543,6 @@ function stateOf(rig: CharRig): GaitState {
   let s = STATES.get(rig);
   if (!s) {
     s = {
-      gait: ASKED,
       phase: NaN,
       walked: 0,
       pace: 0,
@@ -585,18 +554,11 @@ function stateOf(rig: CharRig): GaitState {
       wantKey: '',
       applied: NO_CYCLE,
       shoes: undefined,
+      rolled: false,
     };
     STATES.set(rig, s);
   }
   return s;
-}
-
-/** Which walk someone walks: the one the address asks for, or the one the model lab gives them; none for the game's own. */
-export const gaitOf = (rig: CharRig): Gait | undefined => (STATES.get(rig) ?? (ASKED ? stateOf(rig) : undefined))?.gait;
-
-/** Give someone a walk of their own, or the game's own (`'today'`), whatever the address asks for: for the model lab. */
-export function setGait(rig: CharRig, gait: Gait | 'today') {
-  stateOf(rig).gait = gait === 'today' ? undefined : gait;
 }
 
 /** How fast the cycle is shown going round, in radians a second, for a pace the ground would set it going at. */
@@ -619,7 +581,7 @@ export interface GaitNow {
  * into their steps, no quicker than `CADENCE` allows, and ease into walking or out of it. Someone who stops finishes
  * their step, slowing, as they settle; someone who sits or lies down stops walking at once.
  */
-export function advanceGait(rig: CharRig, c: Char, dt: number, gait: Gait, w: Walker): GaitNow {
+export function advanceGait(rig: CharRig, c: Char, dt: number, w: Walker): GaitNow {
   const s = stateOf(rig);
   const walking = c.pose === 'walk';
   if (Number.isNaN(s.phase)) {
@@ -627,9 +589,9 @@ export function advanceGait(rig: CharRig, c: Char, dt: number, gait: Gait, w: Wa
     s.walked = rig.walked;
     s.on = walking ? 1 : 0;
   }
-  const want = styleFor(gait, c, rig, w, s);
+  const want = styleFor(c, rig, w, s);
   if (!s.style) s.style = { ...want };
-  else {
+  else if (s.style !== want) {
     const a = 1 - Math.exp(-dt * RESTYLE);
     for (const key of STYLE_KEYS) s.style[key] += (want[key] - s.style[key]) * a;
   }
@@ -657,7 +619,7 @@ export function advanceGait(rig: CharRig, c: Char, dt: number, gait: Gait, w: Wa
  * strolling with nothing to do, a look round as they go. Only arms free to swing (`armsL`, `armsR`) are held.
  */
 export function gaitPosture(now: GaitNow, c: Char, t: number, idle: boolean, armL: boolean, armR: boolean) {
-  const st = now.state.style ?? WEIGHTED;
+  const st = now.state.style ?? WALK;
   const belly = armL ? st.belly : 0;
   const behind = st.behind;
   const out = {
@@ -695,7 +657,7 @@ const turnOf = (a: number) => a - Math.floor(a);
  * of straight down being negative, in a walk's style: back steadily with the foot on the floor, then swung forward
  * through the air, easing out of the push and overshooting a little before it settles into the next step.
  */
-function legAt(u: number, st: Style) {
+export function legAt(u: number, st: Style) {
   const front = -st.reach;
   const rear = st.reach * st.back;
   if (u < st.duty) return lerp(front, rear, u / st.duty);
@@ -758,6 +720,9 @@ function reachOf(leg: number, knee: number, foot: number) {
   return ankle + Math.max(heel, toe);
 }
 
+/** How far below the hip a straight leg standing reaches, which the body dips from. */
+const STANDING_REACH = reachOf(0, KNEE_REST, 0);
+
 /** A soft bump of height 1 at a point of a cycle, so wide either side, coming round again each cycle. */
 function pulse(u: number, at: number, wide: number) {
   const d = turnOf(u - at + 0.5) - 0.5;
@@ -768,12 +733,21 @@ function pulse(u: number, at: number, wide: number) {
  * The cycle of a walk at this frame, to put on the joints over the rest of the pose: the legs, knees and feet at their
  * points in the cycle, a half apart; the body dipping as far as the lower foot needs to stay on the floor; the arms
  * swinging against the legs, if they are free to (`armL`, `armR`); the hips swaying and turning, the shoulders turning
- * against them, the head held steady; and, as the walk asks, a bounce, a squash and stretch, a lagging head, a stamp
- * or a skip. All of it scaled down as someone eases into walking or settles out of it.
+ * against them, the head held steady; and, as the walk asks, a spring, a stamp or a skip. All of it scaled down as
+ * someone eases into walking or settles out of it. Someone drawn `small`, too small to see it, keeps their feet flat
+ * and their head turning with their body.
  */
-export function gaitCycle(rig: CharRig, c: Char, dt: number, now: GaitNow, armL: boolean, armR: boolean): Cycle {
+export function gaitCycle(
+  rig: CharRig,
+  c: Char,
+  dt: number,
+  now: GaitNow,
+  armL: boolean,
+  armR: boolean,
+  small = false,
+) {
   const s = now.state;
-  const st = s.style ?? WEIGHTED;
+  const st = s.style ?? WALK;
   const on = smoothstep(s.on, 0, 1);
   if (on <= 0) {
     s.dip = 0;
@@ -788,16 +762,17 @@ export function gaitCycle(rig: CharRig, c: Char, dt: number, now: GaitNow, armL:
   const legR = legAt(uR, st) * reach;
   const kneeL = kneeAt(uL, st) * on;
   const kneeR = kneeAt(uR, st) * on;
-  const footL = footAt(uL, st, legL, kneeL + KNEE_REST) * on;
-  const footR = footAt(uR, st, legR, kneeR + KNEE_REST) * on;
+  const footL = small ? 0 : footAt(uL, st, legL, kneeL + KNEE_REST) * on;
+  const footR = small ? 0 : footAt(uR, st, legR, kneeR + KNEE_REST) * on;
   // down as far as the lower foot needs to stay on the floor, or a share of it; up as far as it must not go through it
   const dip =
-    Math.max(reachOf(legL, kneeL + KNEE_REST, footL), reachOf(legR, kneeR + KNEE_REST, footR)) -
-    reachOf(0, KNEE_REST, 0);
-  const step = turnOf(uL * 2);
+    Math.max(reachOf(legL, kneeL + KNEE_REST, footL), reachOf(legR, kneeR + KNEE_REST, footR)) - STANDING_REACH;
   const ridden = (Math.min(0, dip) * st.bob + Math.max(0, dip) * RIDE.rise) * rig.scale;
   s.dip += (ridden - s.dip) * (dt > 0 ? 1 - Math.exp(-dt / RIDE.lag) : 1);
-  let bodyY = s.dip;
+  const step = turnOf(uL * 2);
+  // into each step, and a stamp of the foot as it lands, the head and body dropping with it
+  const stamp = st.stomp * (pulse(uL, STAMP.at, STAMP.wide) + pulse(uR, STAMP.at, STAMP.wide)) * on;
+  let bodyY = s.dip - stamp * STAMP.sink * rig.scale;
   bodyY += st.bounce * Math.pow(Math.sin(Math.PI * step), 0.8) * on;
   if (st.skip && c.kind === 'guest' && c.outcome === 'healed' && rig.cured)
     bodyY += Math.abs(Math.sin(now.phase * 0.5)) * st.skip * on;
@@ -809,9 +784,9 @@ export function gaitCycle(rig: CharRig, c: Char, dt: number, now: GaitNow, armL:
   const swing = -Math.cos(Math.PI * 2 * uL);
   const hipYaw = st.hipYaw * -swing * on;
   const twist = st.twist * swing * on;
-  // into each step, and a stamp of the foot as it lands
-  const stamp = st.stomp * (pulse(uL, 0.03, 0.05) + pulse(uR, 0.03, 0.05)) * on;
-  const lean = st.nod * Math.cos(Math.PI * 4 * (uL - 0.05)) * on + stamp * 0.4;
+  // the nod the head is held steady against, but not the stamp, which it drops with
+  const nod = st.nod * Math.cos(Math.PI * 4 * (uL - 0.05)) * on;
+  const lean = nod + stamp * STAMP.lean;
   const roll = st.hipDrop * over * on;
   /** An arm against the leg on the other side, at that leg's point `u`, more forward than back, the elbow trailing. */
   const armOf = (u: number, free: boolean) => {
@@ -822,10 +797,7 @@ export function gaitCycle(rig: CharRig, c: Char, dt: number, now: GaitNow, armL:
   };
   const left = armOf(uR, armL);
   const right = armOf(uL, armR);
-  // the head nodding a beat behind the bounce, and jolting down with a stamp
-  const lag = st.headLag * Math.sin(Math.PI * 2 * (step - 0.3)) * on;
-  // squashed as the foot lands, stretched as it pushes off
-  const squash = st.squash * on * (0.7 * pulse(step, 0.25, 0.09) - pulse(step, 0.03, 0.07));
+  const steady = small ? 0 : st.steady;
   return {
     legL,
     legR,
@@ -837,7 +809,7 @@ export function gaitCycle(rig: CharRig, c: Char, dt: number, now: GaitNow, armL:
     footR,
     armL: left.arm,
     armR: right.arm,
-    armOut: st.flap * Math.sin(Math.PI * step) * on,
+    armOut: 0,
     elbowL: left.elbow,
     elbowR: right.elbow,
     bodyY,
@@ -846,17 +818,15 @@ export function gaitCycle(rig: CharRig, c: Char, dt: number, now: GaitNow, armL:
     lean,
     roll,
     twist,
-    headX: -lean * st.steady + lag + stamp,
-    headZ: -roll * st.steady,
-    headYaw: -(hipYaw + twist) * st.steady,
-    headY: -lag * 0.04,
-    squash,
+    headX: -nod * steady + stamp,
+    headZ: -roll * steady,
+    headYaw: -(hipYaw + twist) * steady,
   };
 }
 
 /**
  * Turn an eased part of the pose with the walk's cycle on top: take off what the cycle put on last frame, ease what is
- * left toward where the pose wants it, and put this frame's cycle on. With no cycle, it eases as the pose always has.
+ * left toward where the pose wants it, and put this frame's cycle on. With no cycle, it eases as it always has.
  */
 export const ride = (now: number, to: number, k: number, was: number, add: number) => {
   const base = now - was;
@@ -865,16 +835,17 @@ export const ride = (now: number, to: number, k: number, was: number, add: numbe
 
 /**
  * Put on what the cycle moves that the pose never does, now that the rest is posed: each shoe rolled at the ankle,
- * the body squashed or stretched, the head bobbing on the neck. Then note the cycle, to take it off again next frame.
+ * unless they are drawn too small to see it. Then note the cycle, to take it off again next frame.
  */
 export function finishGait(rig: CharRig, now: GaitNow, cycle: Cycle) {
   const s = now.state;
-  s.shoes ??= [rig.joints.shinL.getObjectByName('shoe'), rig.joints.shinR.getObjectByName('shoe')];
-  rollShoe(s.shoes[0], cycle.footL);
-  rollShoe(s.shoes[1], cycle.footR);
-  const sq = cycle.squash;
-  rig.torso.scale.set(1 - sq / 2, 1 + sq, 1 - sq / 2);
-  rig.head.position.y += cycle.headY - s.applied.headY;
+  const roll = cycle.footL !== 0 || cycle.footR !== 0;
+  if (roll || s.rolled) {
+    s.shoes ??= [rig.joints.shinL.getObjectByName('shoe'), rig.joints.shinR.getObjectByName('shoe')];
+    rollShoe(s.shoes[0], cycle.footL);
+    rollShoe(s.shoes[1], cycle.footR);
+    s.rolled = roll;
+  }
   s.applied = cycle;
 }
 

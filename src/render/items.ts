@@ -11,12 +11,11 @@ import type { Item } from '../core/state/types';
 import { itemCenter, onWall } from '../core/world';
 import { animateCeremony } from './ceremony';
 import { disposeOwned, owned } from './disposal';
-import { fx } from './fx';
 import { applyGag } from './gags/apply';
 import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
-import { GlowLayer, NO_HALO } from './glow';
+import { type GlowLayer, NO_HALO } from './glow';
 import { ghostHung, hangPlace, placeHung } from './hung';
 import { animateCues, type CueCondition, NOISE_CUE, STOP_LOOKS, unlitShare, usedNoise, wearLight } from './item-cues';
 import { powerOut } from './lighting';
@@ -169,16 +168,14 @@ export class ItemsLayer {
   private bars = new Map<number, { group: THREE.Group; fill: THREE.Mesh }>();
   /** How far round the camera is, which says which walls stand tall for what hangs on them. */
   private turn: Turn = 0;
-  /** The halos round whatever gives light, when the glow is switched on. */
-  private glow: GlowLayer | null;
 
   constructor(
     private scene: THREE.Scene,
     private sim: Sim,
     private gags: GagClock = new GagClock(),
-  ) {
-    this.glow = fx('glow') ? new GlowLayer(scene) : null;
-  }
+    /** The halos round whatever gives light, which the view keeps and draws Full. */
+    private glow?: GlowLayer,
+  ) {}
 
   /** Every item's model, for picking. */
   models(): THREE.Object3D[] {
@@ -223,10 +220,7 @@ export class ItemsLayer {
       else placeItemModel(group, it.type, it.x, it.y, it.rot);
       group.traverse((o) => (o.userData.itemId = it.id));
       this.scene.add(group);
-      if (this.glow && !NO_HALO.has(it.type)) {
-        group.updateMatrixWorld(true);
-        this.glow.add(group);
-      }
+      if (!NO_HALO.has(it.type)) this.glow?.add(group);
       // a machine stands taller than anything else, so its bar and markers go over the top of it
       const top = new THREE.Box3().setFromObject(model).max.y;
       this.items.set(it.id, { group, key, top });
@@ -245,6 +239,15 @@ export class ItemsLayer {
     }
     this.gags.prune(liveItems);
     return landed;
+  }
+
+  /**
+   * Build every item's model again, for a change of the Graphics setting, which sets which parts idle. They are built
+   * where they stood, so none of them lands.
+   */
+  rebuild() {
+    for (const it of this.items.values()) it.key = '';
+    this.sync();
   }
 
   /**
@@ -275,7 +278,6 @@ export class ItemsLayer {
       this.scene.remove(bar.group);
       this.bars.delete(id);
     }
-    this.glow?.update();
   }
 
   /**

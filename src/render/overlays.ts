@@ -13,6 +13,7 @@ import { hangPlace, placeHung } from './hung';
 import { placeItemModel } from './items';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
+import { idleLike } from './models/items/idle';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { drawnAt } from './people';
 import { type Selection, shown } from './picking';
@@ -450,7 +451,8 @@ export class Overlays {
         const part = o as Partial<THREE.InstancedMesh> & THREE.Mesh;
         if (!(o as Partial<THREE.Mesh>).isMesh || part.isInstancedMesh) return;
         if (!(part.material as THREE.Material).visible) return;
-        const copy = new THREE.Mesh(part.geometry, this.glowMat);
+        // a part that idles, such as a plant's leaves, has a copy that moves with it
+        const copy = new THREE.Mesh(part.geometry, idleLike(this.glowMat, part.material as THREE.Material));
         copy.matrixAutoUpdate = false;
         copy.frustumCulled = false;
         // a person's parts are posed as the scene is drawn, so the copy takes up where the part is only then
@@ -462,7 +464,10 @@ export class Overlays {
         this.glow.add(copy);
       });
     }
-    for (const copy of this.glow.children) copy.visible = shown(copy.userData.part as THREE.Object3D);
+    for (const copy of this.glow.children) {
+      copy.visible = shown(copy.userData.part as THREE.Object3D);
+      ((copy as THREE.Mesh).material as THREE.Material).opacity = this.glowMat.opacity;
+    }
     const room =
       hov?.kind === 'room'
         ? this.sim.s.rooms.find((r) => r.id === hov.id)

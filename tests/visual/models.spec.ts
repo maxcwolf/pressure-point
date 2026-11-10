@@ -75,8 +75,7 @@ const IDS = [
   'climb-off:reiki_table',
   // a guest walking round corners
   'walk:guest',
-  // the walks being tried out, side by side, and the character walk's states
-  'walk:compare',
+  // how people walk as they feel
   'walk:states',
   'room:door',
   'scenery:puddles',

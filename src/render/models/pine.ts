@@ -1,7 +1,8 @@
 // Pine trees for the mountains, with snow on their branches, drawn as a few instanced meshes.
 import * as THREE from 'three';
 
-import { sway, WIND } from '../wind';
+import { fancy } from '../fx';
+import { sway } from '../wind';
 import { cached, cyl, mat } from './parts';
 import type { TreeSpot } from './tree';
 
@@ -33,15 +34,15 @@ const tier = () =>
 
 /** How far a pine's tiers give in the wind (see `sway`): a stiff tree, a little less than a broadleaved one. */
 const PINE_BEND = 0.016;
-/** The pines' own materials for needles and snow, made once each, when the wind blows. */
+/** The pines' own materials for needles and snow, made once each, for a scene drawn Full. */
 const swaying = new Map<THREE.Material, THREE.Material>();
 
 /**
- * The material a pine's needles or snow are drawn in: the shared one, or, while the wind blows, a copy of it of the
- * pines' own that sways, so nothing else of that color sways with them.
+ * The material a pine's needles or snow are drawn in: the shared one, or, drawn Full, a copy of it of the pines' own
+ * that sways in the wind, so nothing else of that color sways with them.
  */
 function pineMaterial(shared: THREE.MeshStandardMaterial): THREE.Material {
-  if (!WIND) return shared;
+  if (!fancy()) return shared;
   let own = swaying.get(shared);
   if (!own) {
     own = sway(shared.clone(), PINE_BEND);
