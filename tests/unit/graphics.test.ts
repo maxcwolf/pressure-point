@@ -209,15 +209,10 @@ const onRect = (r: Rect, x: number, y: number) => x >= r.x0 && x <= r.x1 && y >=
 function coverTiles(scenery: THREE.Object3D): { x: number; y: number }[] {
   const out: { x: number; y: number }[] = [];
   const cover = scenery.getObjectByName('ground-cover');
-  const m = new THREE.Matrix4();
-  const p = new THREE.Vector3();
   cover?.traverse((o) => {
-    if (!(o instanceof THREE.InstancedMesh)) return;
-    for (let i = 0; i < o.count; i++) {
-      o.getMatrixAt(i, m);
-      p.setFromMatrixPosition(m);
-      out.push({ x: Math.floor(p.x), y: Math.floor(p.z) });
-    }
+    const places = o.userData.places as Float64Array | undefined;
+    if (!places) return;
+    for (let i = 0; i < places.length; i += 2) out.push({ x: Math.floor(places[i]!), y: Math.floor(places[i + 1]!) });
   });
   return out;
 }

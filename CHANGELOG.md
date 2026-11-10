@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Full graphics without a graphics card.** The grass, flowers and pebbles on the ground are drawn in a way that costs a computer drawing in software about a third less time each frame. They look the same, and nothing changes on a computer with a graphics card.
+
 ## v0.36.4
 
 - **A graphics pass.** Things sit on the floor now: soft shade lies where walls, furniture and trees meet the ground, and the sun's shadows have soft edges. Outdoors the ground has grass, flowers and pebbles to suit each center and season, trees and grass sway in the wind and harder in a storm, and butterflies, birds and falling leaves come and go. Lamps, candles, screens and the lamps at the entrance and along the street glow. Dust puffs where an item is put down or a room is finished, a cure sends up motes, a new star sparkles, and plants, candles, fountains and fish idle. **Graphics** in Settings, under Display, switches between **Full** and **Plain**, which draws the scene as before for a slower computer.

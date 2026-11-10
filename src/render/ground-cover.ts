@@ -1,10 +1,12 @@
 // What grows and lies on the ground outdoors while the scene is drawn Full: tufts of grass and small flowers on a lawn,
 // pebbles and shells on the sand, and weeds in a plaza's joints with leaves blown onto it in autumn; the snow has its
-// drifts and sparkle in its pattern alone (`ground.ts`). Each setting's is at most two instanced meshes, kept clear of
-// the building, the plots, the paths and the road as the trees are. The grass and pebbles take the ground's own color
-// (the `LAWN` material's, which the light sets with the season), shaded a little by each copy, so they turn with it
-// and nothing is built again; the flowers, weeds and leaves follow the season through `coverFor`. Drawn Plain, the
-// scenery is built without it (`scenery.ts`).
+// drifts and sparkle in its pattern alone (`ground.ts`). Each setting's is at most two meshes, kept clear of the
+// building, the plots, the paths and the road as the trees are. Each mesh is every copy of its shape laid out in one
+// shape, not an instanced mesh: thousands of small instances are slow to draw without a graphics card (6,300 tufts
+// took 47 ms a frame in software, and take 4 ms laid out as one), and no quicker with one. The grass and pebbles take
+// the ground's own color (the `LAWN` material's, which the light sets with the season), shaded a little by each copy,
+// so they turn with it and nothing is built again; the flowers, weeds and leaves follow the season through
+// `coverFor`. Drawn Plain, the scenery is built without it (`scenery.ts`).
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -32,21 +34,29 @@ const groundColored = (m: THREE.MeshStandardMaterial) => {
   return m;
 };
 
+/** What every material here is made with: each copy's own color is in the shape's corners (`scattered`). */
+const COPY_COLORED = { vertexColors: true } as const;
+
 /** Tufts of grass, in the lawn's color, darker or yellower tuft by tuft, swaying a little at the tips. */
-const GRASS = sway(groundColored(new THREE.MeshStandardMaterial({ roughness: 1, side: THREE.DoubleSide })), 0.6);
-/** Pebbles on the sand, in the ground's color, shaded stone by stone. */
-const STONES = groundColored(new THREE.MeshStandardMaterial({ roughness: 0.95 }));
-/** Small flowers on a lawn, in spring and summer, each in its own pale color. */
-const FLOWERS = sway(
-  new THREE.MeshStandardMaterial({ roughness: 0.8, side: THREE.DoubleSide, vertexColors: true }),
+const GRASS = sway(
+  groundColored(new THREE.MeshStandardMaterial({ ...COPY_COLORED, roughness: 1, side: THREE.DoubleSide })),
   0.6,
 );
+/** Pebbles on the sand, in the ground's color, shaded stone by stone. */
+const STONES = groundColored(new THREE.MeshStandardMaterial({ ...COPY_COLORED, roughness: 0.95 }));
+/** Small flowers on a lawn, in spring and summer, each in its own pale color. */
+const FLOWERS = sway(new THREE.MeshStandardMaterial({ ...COPY_COLORED, roughness: 0.8, side: THREE.DoubleSide }), 0.6);
 /** Shells on the sand, each in its own pale color. */
-const SHELLS = new THREE.MeshStandardMaterial({ roughness: 0.55 });
+const SHELLS = new THREE.MeshStandardMaterial({ ...COPY_COLORED, roughness: 0.55 });
 /** Weeds in a plaza's joints, in the season's green, or gone straw-colored. */
-const WEEDS = sway(new THREE.MeshStandardMaterial({ roughness: 0.9, side: THREE.DoubleSide }), 0.6);
+const WEEDS = sway(new THREE.MeshStandardMaterial({ ...COPY_COLORED, roughness: 0.9, side: THREE.DoubleSide }), 0.6);
 /** Leaves blown onto a plaza in autumn, each its own brown. */
-const FALLEN = new THREE.MeshStandardMaterial({ roughness: 0.9, side: THREE.DoubleSide, visible: false });
+const FALLEN = new THREE.MeshStandardMaterial({
+  ...COPY_COLORED,
+  roughness: 0.9,
+  side: THREE.DoubleSide,
+  visible: false,
+});
 
 /** The weeds' color in each season. */
 const WEED_SEASONS: Readonly<Record<Season, number>> = {
@@ -105,7 +115,7 @@ const tuftShape = () =>
 /** The shade a flower's stalk takes of its head's color: a dull green whatever the head. */
 const STALK = [0.42, 0.62, 0.34] as const;
 
-/** A shape with every corner in one shade, for a material whose copies each have a color the shade multiplies. */
+/** A shape with every corner in one shade, which each copy's own color is multiplied by (`scattered`). */
 function tinted(g: THREE.BufferGeometry, shade: number | readonly [number, number, number]): THREE.BufferGeometry {
   const [r, gr, b] = typeof shade === 'number' ? [shade, shade, shade] : shade;
   const n = g.getAttribute('position').count;
@@ -174,27 +184,51 @@ interface Copy {
   color: number;
 }
 
-/** An instanced mesh of copies of a shape, catching shadows but casting none, its copies each in their color. */
-function instanced(
-  shape: THREE.BufferGeometry,
-  material: THREE.Material,
-  copies: readonly Copy[],
-): THREE.InstancedMesh {
-  const mesh = new THREE.InstancedMesh(shape, material, copies.length);
+/**
+ * One mesh of every copy of a shape, each laid out in its place, turned, sized and in its color (times the shade the
+ * shape's own corners have, if any), catching shadows but casting none; or null with no copies. Where each copy
+ * stands is kept in `userData.places`, x then z, for whoever asks what grows where.
+ */
+function scattered(shape: THREE.BufferGeometry, material: THREE.Material, copies: readonly Copy[]): THREE.Mesh | null {
+  if (!copies.length) return null;
+  const from = shape.index ? shape.toNonIndexed() : shape;
+  const corners = from.getAttribute('position');
+  const facings = from.getAttribute('normal');
+  const shades = from.getAttribute('color') as THREE.BufferAttribute | undefined;
+  const n = corners.count;
+  const position = new Float32Array(copies.length * n * 3);
+  const normal = new Float32Array(position.length);
+  const colors = new Float32Array(position.length);
+  const places = new Float64Array(copies.length * 2);
   const m = new THREE.Matrix4();
+  const turned = new THREE.Matrix3();
   const q = new THREE.Quaternion();
   const up = new THREE.Vector3(0, 1, 0);
+  const [at, size, p] = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const color = new THREE.Color();
   copies.forEach((c, i) => {
-    mesh.setMatrixAt(
-      i,
-      m.compose(new THREE.Vector3(c.x, 0, c.z), q.setFromAxisAngle(up, c.turn), new THREE.Vector3(...c.size)),
-    );
-    mesh.setColorAt(i, color.setHex(c.color));
+    m.compose(at.set(c.x, 0, c.z), q.setFromAxisAngle(up, c.turn), size.set(...c.size));
+    turned.getNormalMatrix(m);
+    color.setHex(c.color);
+    places.set([c.x, c.z], i * 2);
+    for (let k = 0; k < n; k++) {
+      const o = (i * n + k) * 3;
+      p.fromBufferAttribute(corners, k).applyMatrix4(m).toArray(position, o);
+      p.fromBufferAttribute(facings, k).applyNormalMatrix(turned).toArray(normal, o);
+      colors[o] = color.r * (shades?.getX(k) ?? 1);
+      colors[o + 1] = color.g * (shades?.getY(k) ?? 1);
+      colors[o + 2] = color.b * (shades?.getZ(k) ?? 1);
+    }
   });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(position, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  g.computeBoundingSphere();
+  const mesh = new THREE.Mesh(g, material);
   mesh.castShadow = false;
   mesh.receiveShadow = true;
-  mesh.computeBoundingSphere();
+  mesh.userData.places = places;
   /** What lies on the ground is not there to be clicked: a click goes through to the ground. */
   mesh.raycast = () => undefined;
   return mesh;
@@ -238,7 +272,7 @@ const FALLEN_COLORS = [0xb98a56, 0x9c7048, 0xc8a870, 0xa97c4e] as const;
 const pick = <T>(list: readonly T[], r: number): T => must(list[Math.floor(r * list.length) % list.length], 'a pick');
 
 /** A lawn's cover: tufts in clumps, thicker in some places than others, and flowers in patches of one color. */
-function lawnCover(width: number, clear: Clear, keep: (x: number, y: number) => boolean): THREE.Object3D[] {
+function lawnCover(width: number, clear: Clear, keep: (x: number, y: number) => boolean): (THREE.Mesh | null)[] {
   const tufts: Copy[] = [];
   const flowers: Copy[] = [];
   for (const { x, y, thick } of tiles(width, clear, keep)) {
@@ -268,11 +302,11 @@ function lawnCover(width: number, clear: Clear, keep: (x: number, y: number) => 
       });
     }
   }
-  return [instanced(tuftShape(), GRASS, tufts), instanced(flowerShape(), FLOWERS, flowers)];
+  return [scattered(tuftShape(), GRASS, tufts), scattered(flowerShape(), FLOWERS, flowers)];
 }
 
 /** The sand's cover: pebbles here and there, more in some stretches, and a few shells. */
-function sandCover(width: number, clear: Clear): THREE.Object3D[] {
+function sandCover(width: number, clear: Clear): (THREE.Mesh | null)[] {
   const pebbles: Copy[] = [];
   const shells: Copy[] = [];
   // the sand runs from the beach huts down to the road, and away either side
@@ -299,11 +333,11 @@ function sandCover(width: number, clear: Clear): THREE.Object3D[] {
       });
     }
   }
-  return [instanced(pebbleShape(), STONES, pebbles), instanced(shellShape(), SHELLS, shells)];
+  return [scattered(pebbleShape(), STONES, pebbles), scattered(shellShape(), SHELLS, shells)];
 }
 
 /** A plaza's cover: weeds in the joints between slabs, and in autumn leaves blown onto it. */
-function pavingCover(width: number, clear: Clear): THREE.Object3D[] {
+function pavingCover(width: number, clear: Clear): (THREE.Mesh | null)[] {
   const weeds: Copy[] = [];
   const leaves: Copy[] = [];
   // the plaza round the lot, inside the streets either side and behind, and up to the pavement
@@ -335,7 +369,7 @@ function pavingCover(width: number, clear: Clear): THREE.Object3D[] {
         });
       }
   }
-  return [instanced(tuftShape(), WEEDS, weeds), instanced(leafShape(), FALLEN, leaves)];
+  return [scattered(tuftShape(), WEEDS, weeds), scattered(leafShape(), FALLEN, leaves)];
 }
 
 /**
@@ -356,6 +390,6 @@ export function buildGroundCover(look: GroundLook, width: number, clear: Clear, 
         : look === 'downtown'
           ? pavingCover(width, clear)
           : lawnCover(width, clear, offRoad);
-  for (const p of parts) if ((p as THREE.InstancedMesh).count > 0) g.add(p);
+  for (const p of parts) if (p) g.add(p);
   return g;
 }
