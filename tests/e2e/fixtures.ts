@@ -41,6 +41,8 @@ interface Handle {
     drawing: boolean;
     turn: number;
     turnCamera(quarters: number): void;
+    /** Draw the scene Full or Plain from the next frame, as the Graphics setting does. */
+    setGraphics(graphics: 'full' | 'plain'): void;
     lookAt(x: number, y: number): void;
     cameraStill: boolean;
     target: { set(x: number, y: number, z: number): void };

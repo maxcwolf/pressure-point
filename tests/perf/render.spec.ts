@@ -149,36 +149,57 @@ test.describe('performance', () => {
     expect(read).toBeLessThan(20_000);
   });
 
-  test('reports how long frames take', async ({ game, page }) => {
-    // 180 frames of software rendering on a CI machine: 96 s of the usual 120 s at 0.36.3, and over it since
-    test.setTimeout(300_000);
+  test('reports how long frames take, drawn Full and drawn Plain', async ({ game, page }) => {
+    // 240 frames of software rendering on a CI machine, where a frame drawn Full has taken 430 to 670 ms
+    test.setTimeout(400_000);
     await game.start();
     await game.buildCenter();
     await game.fastForward(60);
-    const frames = await page.evaluate(
-      () =>
-        new Promise<number[]>((done) => {
-          const times: number[] = [];
-          let last = performance.now();
-          /** Note the time since the last frame, until there are enough. */
-          const tick = (now: number) => {
-            times.push(now - last);
-            last = now;
-            if (times.length < 180) requestAnimationFrame(tick);
-            else done(times);
-          };
-          requestAnimationFrame(tick);
-        }),
-    );
-    const sorted = frames.slice(1).sort((a, b) => a - b);
-    /** The frame time below which this fraction of frames came in. */
-    const pct = (p: number) => Math.round(sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]!);
-    const summary = { median: pct(0.5), p95: pct(0.95), worst: pct(1) };
-    test.info().annotations.push({ type: 'frame ms', description: JSON.stringify(summary) });
+    /** The time each of the next frames takes, after a few left out for the scene to settle into a change. */
+    const frames = (count: number) =>
+      page.evaluate(
+        (count) =>
+          new Promise<number[]>((done) => {
+            const settling = 5;
+            const times: number[] = [];
+            let last = performance.now();
+            /** Note the time since the last frame, until there are enough. */
+            const tick = (now: number) => {
+              times.push(now - last);
+              last = now;
+              if (times.length < count + settling) requestAnimationFrame(tick);
+              else done(times.slice(settling));
+            };
+            requestAnimationFrame(tick);
+          }),
+        count,
+      );
+    // CI machines differ in speed by a fifth or more from run to run, so one run's number says little beside
+    // another's: the scene is drawn Full and Plain turn about in the same run, on the same machine, and Plain draws
+    // what 0.36.3 drew, so the two beside each other say what drawing Full costs without a graphics card
+    const times: Record<'full' | 'plain', number[]> = { full: [], plain: [] };
+    for (const graphics of ['full', 'plain', 'full', 'plain'] as const) {
+      await game.eval((pp, graphics) => pp.view.setGraphics(graphics), graphics);
+      times[graphics].push(...(await frames(60)));
+    }
+    /** The median, the time 95% of frames came in under, and the worst, of some frames' times. */
+    const summed = (frameTimes: number[]) => {
+      const sorted = [...frameTimes].sort((a, b) => a - b);
+      /** The frame time below which this fraction of frames came in. */
+      const pct = (p: number) => Math.round(sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]!);
+      return { median: pct(0.5), p95: pct(0.95), worst: pct(1) };
+    };
+    const [full, plain] = [summed(times.full), summed(times.plain)];
+    test
+      .info()
+      .annotations.push(
+        { type: 'frame ms', description: JSON.stringify(full) },
+        { type: 'frame ms drawn Plain', description: JSON.stringify(plain) },
+        { type: 'Full over Plain', description: (full.median / plain.median).toFixed(2) },
+      );
     // software rendering is slow, so only a runaway fails: the numbers are for watching over time. On CI the median
-    // was 433 ms at 0.36.3, and 583 ms at 0.36.4 on a slower machine, before the ground cover was laid out as one
-    // mesh; drawn Full the scene costs about a fifth more than Plain in software (soft shadows, the patterned ground),
-    // and CI machines differ by as much again, so a limit of 500 failed on the machine's speed alone
-    expect(summary.median).toBeLessThan(1000);
+    // drawn Full was 433 ms at 0.36.3, 583 ms at 0.36.4 and 667 ms at 0.36.5, each on a machine of its own speed, so
+    // a limit of 500 failed on the machine's speed alone
+    expect(full.median).toBeLessThan(1000);
   });
 });
