@@ -1,4 +1,6 @@
 // Pictures of the 3D scene itself. Only scenes with nobody in them: people sway and blink, so they never hold still.
+// Nor do the trees and the grass in the wind, drawn Full, so the pictures are taken as a player who asks for less
+// motion sees the scene: the wind dropped, and whatever idles and flits about held still.
 import { NOON_AT } from '../../src/render/daylight';
 import { expect, type Game, test } from '../e2e/fixtures';
 
@@ -10,7 +12,7 @@ const noon = (game: Game) =>
 
 test.describe('the scene', () => {
   // the one picture of the scene, so the one place the screenshot tests draw it
-  test.use({ draw: true });
+  test.use({ draw: true, reducedMotion: 'reduce' });
 
   test('rooms with windows on every side, at the back, middle and front of the building', async ({ game, page }) => {
     // four pictures drawn in software, with the camera turned between them, which a busy machine takes a while over

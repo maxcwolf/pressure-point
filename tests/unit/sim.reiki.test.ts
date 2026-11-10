@@ -185,7 +185,9 @@ describe('the reiki setting', () => {
 });
 
 describe('a long session with all three disciplines', () => {
-  it.each([1, 2])('stays healthy for an hour of play (seed %i)', (seed) => {
+  // the longest of the long sessions: about 30 s on the Windows machine the release is built on, right at the usual
+  // limit, where it failed the 0.36.4 build once by 0.7 s; the game was no slower, so it has a limit of its own
+  it.each([1, 2])('stays healthy for an hour of play (seed %i)', { timeout: 90_000 }, (seed) => {
     const { sim, s, therapist } = openCenter(seed);
     s.stars = 3;
     addStaffRoom(sim);
