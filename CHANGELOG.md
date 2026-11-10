@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.36.4
 
 - **A graphics pass.** Things sit on the floor now: soft shade lies where walls, furniture and trees meet the ground, and the sun's shadows have soft edges. Outdoors the ground has grass, flowers and pebbles to suit each center and season, trees and grass sway in the wind and harder in a storm, and butterflies, birds and falling leaves come and go. Lamps, candles, screens and the lamps at the entrance and along the street glow. Dust puffs where an item is put down or a room is finished, a cure sends up motes, a new star sparkles, and plants, candles, fountains and fish idle. **Graphics** in Settings, under Display, switches between **Full** and **Plain**, which draws the scene as before for a slower computer.
 - **People walk and dress like people.** Everyone has a new walk with weight in it, that starts and stops rather than snapping, and shows how they are: staff hurrying or worn out, guests impatient, fed up and stamping, unwell and shuffling, or healed with a spring in their step. Guests arrive dressed for the season and the weather, in shorts and sun hats, skirts, coats, scarves and bobble hats, or hoods up in a storm, and take hats, scarves and coats off to be treated. Staff change their sleeves with the season.
