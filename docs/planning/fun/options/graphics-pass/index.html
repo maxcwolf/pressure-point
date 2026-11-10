@@ -1,0 +1,1254 @@
+<meta charset="utf-8" />
+<title>Graphics Pass Options</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap"
+/>
+<style>
+  /* Layout: the whole pass before and after first, then one section per switch with matched pictures and its measured cost, the walks as short animations, the wardrobe as sheets; a cost table and the recommendation close the page. What is recommended wears an amber frame. */
+  :root {
+    --bg: #eef3f2;
+    --panel: #ffffff;
+    --fg: #182628;
+    --muted: #566a6c;
+    --line: #d3dedd;
+    --accent: #0f7a73;
+    --rec: #e09a12;
+    --rec-ink: #2a1c00;
+    --bad: #b5432f;
+    --display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+    --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #101819;
+      --panel: #172223;
+      --fg: #e3eceb;
+      --muted: #9db0b1;
+      --line: #2a3a3c;
+      --accent: #43c3b8;
+      --rec: #f2b33d;
+      --rec-ink: #241700;
+      --bad: #ef8a74;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #101819;
+    --panel: #172223;
+    --fg: #e3eceb;
+    --muted: #9db0b1;
+    --line: #2a3a3c;
+    --accent: #43c3b8;
+    --rec: #f2b33d;
+    --rec-ink: #241700;
+    --bad: #ef8a74;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+  }
+  main {
+    max-width: 1360px;
+    margin: 0 auto;
+    display: grid;
+    gap: 56px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    text-wrap: balance;
+    line-height: 1.15;
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(2rem, 4vw, 2.9rem);
+  }
+  h2 {
+    font-size: 1.7rem;
+  }
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  p {
+    margin: 0;
+    max-width: 68ch;
+  }
+  .eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  header {
+    display: grid;
+    gap: 14px;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .opt {
+    display: grid;
+    gap: 18px;
+    padding-top: 28px;
+    border-top: 2px solid var(--line);
+  }
+  .opt-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 14px;
+  }
+  .opt-head .letter {
+    font-family: var(--display);
+    font-size: 1.7rem;
+    color: var(--accent);
+  }
+  .chip {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--rec);
+    color: var(--rec-ink);
+  }
+  .pitch {
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  figcaption b {
+    color: var(--fg);
+  }
+  .shot {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+    max-width: 100%;
+    line-height: 0;
+    border-radius: 6px;
+  }
+  .shot img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+  }
+  .shot:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  /* the recommended option's pictures: a heavy amber frame and a tag on the picture itself */
+  .rec .shot img {
+    border: 5px solid var(--rec);
+  }
+  .rec .shot::after {
+    content: 'Recommended';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    line-height: 1;
+    font: 700 0.8rem/1 var(--body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--rec);
+    color: var(--rec-ink);
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px 28px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .spec div {
+    min-width: 0;
+  }
+  .spec dt {
+    font-size: 0.78rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .spec dd {
+    margin: 0;
+  }
+  .risk dd {
+    color: var(--fg);
+  }
+  .risk dt {
+    color: var(--bad);
+  }
+  .days {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 760px;
+    font-variant-numeric: tabular-nums;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  tr.rec-row td {
+    background: color-mix(in srgb, var(--rec) 16%, transparent);
+  }
+  tr.rec-row td:first-child {
+    box-shadow: inset 5px 0 0 var(--rec);
+    font-weight: 700;
+  }
+  .verdict {
+    display: grid;
+    gap: 14px;
+    padding: 22px 24px;
+    border-radius: 10px;
+    border: 3px solid var(--rec);
+    background: var(--panel);
+  }
+  ol.ten {
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 4px;
+    max-width: 80ch;
+  }
+  ol.ten b {
+    font-weight: 700;
+  }
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    background: rgb(8 14 15 / 0.88);
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox .frame {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    line-height: 0;
+  }
+  .lightbox img {
+    max-width: min(1440px, 100%);
+    max-height: calc(100vh - 80px);
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  .lightbox .frame.rec img {
+    border: 6px solid var(--rec);
+  }
+  .lightbox .frame.rec::after {
+    content: 'Recommended';
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font: 700 0.85rem/1 var(--body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--rec);
+    color: var(--rec-ink);
+    padding: 7px 11px;
+    border-radius: 4px;
+  }
+  .lightbox .cap {
+    color: #e3eceb;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .lightbox button {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    font: 700 1rem var(--body);
+    background: #e3eceb;
+    color: #101819;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    body {
+      padding-block: 24px 48px;
+    }
+    main {
+      gap: 40px;
+    }
+  }
+  .trio {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: start;
+  }
+  .pair figure {
+    flex: 1 1 520px;
+  }
+  .pair .shot img {
+    width: 100%;
+  }
+  .part {
+    display: grid;
+    gap: 10px;
+    padding-top: 12px;
+  }
+  .part > p {
+    font-size: 1.05rem;
+  }
+  .question {
+    display: grid;
+    gap: 12px;
+    padding: 20px 22px;
+    border-radius: 10px;
+    border: 2px dashed var(--accent);
+    background: var(--panel);
+  }
+  .question ol {
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 6px;
+    max-width: 80ch;
+  }
+  ul.plan {
+    margin: 0;
+    padding-left: 1.2em;
+    display: grid;
+    gap: 6px;
+    max-width: 80ch;
+  }
+  .closeups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .closeups .shot img,
+  .map .shot img {
+    width: 100%;
+  }
+  .map figure {
+    max-width: 1200px;
+  }
+  .shipped {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .optional {
+    background: var(--line);
+    color: var(--fg);
+  }
+  .kicker {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .anim img {
+    width: 100%;
+  }
+  code {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.9em;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  .cost {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    font-size: 0.92rem;
+    max-width: 80ch;
+  }
+  .cost b {
+    color: var(--fg);
+  }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Pressure Point Institute &#183; graphics pass &#183; 9 November 2026</span>
+    <h1>A better-looking game for about a tenth more frame time</h1>
+    <p>
+      Eleven upgrades to the picture, each built behind its own switch on the branch <code>feat/graphics-pass</code> and
+      shot in the late-game Orchard save (17 rooms, 182 items, about 50 people). With no switch named, the game draws
+      exactly as it does in 0.36.3. Pick what ships; the framed pictures are what I would ship.
+    </p>
+    <p class="note">
+      Click any picture to enlarge it. Try any of it yourself from the worktree&#8217;s dev server by adding to the
+      address, for example <code>?fx=all&amp;walk=character&amp;people=seasonal</code> or
+      <code>?fx=grounding,lawn</code>.
+    </p>
+  </header>
+  <section class="opt">
+    <div class="opt-head"><h2>Everything on, against today</h2></div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/all-before-41.webp"
+            alt="<b>Before.</b> The Orchard at the default camera distance (41)."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Before.</b> The Orchard at the default camera distance (41).</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/all-after-41.webp"
+            alt="<b>After.</b> Every switch on, with the character walk and seasonal wardrobe."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>After.</b> Every switch on, with the character walk and seasonal wardrobe.</figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/all-before-18.webp" alt="<b>Before.</b> Close up (18)." loading="lazy" />
+        </button>
+        <figcaption><b>Before.</b> Close up (18).</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/all-after-18.webp"
+            alt="<b>After.</b> Shade at the foot of the walls, softer shadows, turf, tufts and glassier windows."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>After.</b> Shade at the foot of the walls, softer shadows, turf, tufts and glassier windows.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/all-before-70.webp" alt="<b>Before.</b> Pulled all the way back (70)." loading="lazy" />
+        </button>
+        <figcaption><b>Before.</b> Pulled all the way back (70).</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/all-after-70.webp"
+            alt="<b>After.</b> The orchard&#8217;s mown lanes show most from here."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>After.</b> The orchard&#8217;s mown lanes show most from here.</figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/bw-before-41.webp" alt="<b>Before.</b> The Boardwalk." loading="lazy" />
+        </button>
+        <figcaption><b>Before.</b> The Boardwalk.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/bw-after-41.webp"
+            alt="<b>After.</b> Sand ripples, pebbles and shells, and people dressed for the beach."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>After.</b> Sand ripples, pebbles and shells, and people dressed for the beach.</figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost of everything together:</b> about 10% more frame time on this Mac (8.3 to 9.1 ms at pixel ratio 2), 30
+      more draw calls on 1,850, and 26,000 fewer triangles, because the trimmed people pay for the grass.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">1</span>
+      <h2>Grounding</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">
+      Soft warm shade where walls and furniture meet the floor, so the building stops looking pasted on.
+    </p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/grounding-before.webp"
+            alt="<b>Before.</b> Walls and furniture meet the floor with a hard edge."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Before.</b> Walls and furniture meet the floor with a hard edge.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/grounding-after.webp"
+            alt="<b>After.</b> Shade along every wall, a pool under each item, the foot of the walls darkened, a soft shade under trees."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>After.</b> Shade along every wall, a pool under each item, the foot of the walls darkened, a soft shade
+          under trees.
+        </figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> four draw calls. A floor repaint goes from 0.6 to 1.6 ms, and the floor is only repainted when the
+      world changes. <b>Gap:</b> a tall cabinet and a low mat get the same pool.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">2</span>
+      <h2>Soft shadows</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">The sun&#8217;s shadows get a smooth, wider edge.</p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/softshadow-before.webp" alt="<b>Before.</b> Shadows today." loading="lazy" />
+        </button>
+        <figcaption><b>Before.</b> Shadows today.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/softshadow-after.webp"
+            alt="<b>After.</b> Twelve samples instead of five; the same shadow map."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>After.</b> Twelve samples instead of five; the same shadow map.</figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> no draw calls; not measurable in frame time. A small change at play distance. It patches a piece of
+      three.js&#8217;s shared shader code, guarded so it does nothing if a three.js upgrade changes that code.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">3</span>
+      <h2>Sky reflections</h2>
+      <span class="chip optional">Your call</span>
+    </div>
+    <p class="pitch">Window glass and glossy surfaces reflect a soft sky.</p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/sky-before.webp" alt="<b>Before.</b> Windows and lacquer today." loading="lazy" />
+        </button>
+        <figcaption><b>Before.</b> Windows and lacquer today.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/sky-after.webp"
+            alt="<b>After.</b> Paler, glassier windows and a satin sheen on wood, trim and extinguishers. Matte walls, floors and cloth are untouched."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>After.</b> Paler, glassier windows and a satin sheen on wood, trim and extinguishers. Matte walls, floors
+          and cloth are untouched.
+        </figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> no draw calls; not measurable. Overall color moves about 1%. The gain is modest away from windows, it
+      also patches shared three.js shader code, and it does not yet follow the evening tint or a storm&#8217;s gray.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">4</span>
+      <h2>Ground</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">Turf, sand, snow and paving with some life in them, in every setting.</p>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/lawn-before.webp" alt="<b>Before.</b> A flat lawn." loading="lazy" />
+        </button>
+        <figcaption><b>Before.</b> A flat lawn.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/lawn-after.webp"
+            alt="<b>After.</b> Mottling, mowing stripes, tufts and small flowers that turn with the season."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>After.</b> Mottling, mowing stripes, tufts and small flowers that turn with the season.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="closeups">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/lawn-boardwalk.webp"
+            alt="<b>Boardwalk.</b> Wind ripples, pebbles and shells."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Boardwalk.</b> Wind ripples, pebbles and shells.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/lawn-willow.webp"
+            alt="<b>Willow Lane.</b> Park turf, pavement slabs carried along the street."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Willow Lane.</b> Park turf, pavement slabs carried along the street.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img src="pictures/lawn-highpines.webp" alt="<b>High Pines.</b> Drifts and sparkle; subtle." loading="lazy" />
+        </button>
+        <figcaption><b>High Pines.</b> Drifts and sparkle; subtle.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/lawn-exchange.webp"
+            alt="<b>The Exchange, autumn.</b> Stains, weeds in the joints, fallen leaves."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>The Exchange, autumn.</b> Stains, weeds in the joints, fallen leaves.</figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> two draw calls and about 46,000 triangles; not measurable in frame time.
+      <b>I would turn it down a notch before shipping:</b> the mowing stripes and the orchard&#8217;s lanes are strong
+      from far back, and the dark blade strokes in courtyards look busy close up.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">5</span>
+      <h2>Wind</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">
+      Trees, canopies, pines, hedges and tufts sway, and their shadows with them; stronger in a storm.
+    </p>
+    <div class="closeups">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/wind-motion.webp"
+            alt="<b>What moves.</b> A frame above, and below it the difference between two frames, amplified: crowns, apples and tufts move, trunks stay planted."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>What moves.</b> A frame above, and below it the difference between two frames, amplified: crowns, apples
+          and tufts move, trunks stay planted.
+        </figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> none in draw calls or triangles; done on the graphics card. The sway is one or two pixels at play
+      distance, so it is gentle; three constants raise it. Held still under reduced motion.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">6</span>
+      <h2>Wildlife</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">
+      Sparrows on the lawn, butterflies in spring and summer, gulls at the seaside, pigeons downtown, leaves falling in
+      autumn.
+    </p>
+    <div class="closeups">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/life-sparrows.webp"
+            alt="<b>Sparrows</b> land, hop and peck, and fly off when someone walks near."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Sparrows</b> land, hop and peck, and fly off when someone walks near.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img src="pictures/life-butterfly.webp" alt="<b>Butterflies</b> over the grass." loading="lazy" />
+        </button>
+        <figcaption><b>Butterflies</b> over the grass.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img src="pictures/life-gulls.webp" alt="<b>Gulls</b> at the Boardwalk." loading="lazy" />
+        </button>
+        <figcaption><b>Gulls</b> at the Boardwalk.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img src="pictures/life-pigeons.webp" alt="<b>Pigeons</b> at The Exchange." loading="lazy" />
+        </button>
+        <figcaption><b>Pigeons</b> at The Exchange.</figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> two or three draw calls, about 1,000 triangles. Birds and butterflies are three to five pixels at
+      play distance, so many players will only notice them zoomed in. The falling leaves are barely visible at play
+      distance. None of it is red, amber or green, and all of it is off under reduced motion.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">7</span>
+      <h2>Glow</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">Salt lamps, candles, embers and screens get a soft halo, so they read as light.</p>
+    <div class="closeups" style="grid-template-columns: 1fr">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/glow-evening.webp"
+            alt="<b>Evening, close up.</b> Today on the left, glow on the right: the salt lamp, the ember bowl and the brew pot."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Evening, close up.</b> Today on the left, glow on the right: the salt lamp, the ember bowl and the brew
+          pot.
+        </figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/glow-day.webp"
+            alt="<b>Noon, close up.</b> Today on the left, glow on the right."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Noon, close up.</b> Today on the left, glow on the right.</figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> one draw call for every halo in the building. Subtle at play distance; two constants raise it. A real
+      bloom pass was tried and dropped: it shifted the game&#8217;s colors, bloomed speech bubbles and floors instead of
+      lamps, and cost 15 to 25% at pixel ratio 2. Entrance and street lamps have no halo yet.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">8</span>
+      <h2>Small moments</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">
+      Dust when something lands, a better cure, twinkles on a star, and twelve items that no longer sit dead still.
+    </p>
+    <div class="closeups">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/juice-place.webp"
+            alt="<b>An item put down.</b> A ring of dust spreads from its foot."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>An item put down.</b> A ring of dust spreads from its foot.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/juice-cure.webp"
+            alt="<b>A cure.</b> The star ring eases out and motes rise."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>A cure.</b> The star ring eases out and motes rise.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/juice-star.webp"
+            alt="<b>A star earned.</b> Gold twinkles over reception."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>A star earned.</b> Gold twinkles over reception.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/juice-room.webp"
+            alt="<b>A room finished.</b> Dust settles along its walls."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>A room finished.</b> Dust settles along its walls.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img src="pictures/idle-koi.webp" alt="<b>Koi</b> swim, bob and wag." loading="lazy" />
+        </button>
+        <figcaption><b>Koi</b> swim, bob and wag.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img src="pictures/idle-aquarium.webp" alt="<b>Aquarium fish</b> do the same." loading="lazy" />
+        </button>
+        <figcaption><b>Aquarium fish</b> do the same.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img src="pictures/idle-tapestry.webp" alt="<b>The tapestry</b> ripples on its rod." loading="lazy" />
+        </button>
+        <figcaption><b>The tapestry</b> ripples on its rod.</figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> nothing at rest; a draw call or two while an effect plays. Also moving: plants, bonsai and topiary
+      stir, the salt lamp breathes, candles flicker, the wall fountain runs, the crystal grid glints, embers and moxa
+      smolder. <b>To fix before shipping:</b> the dust is a grayish tan that could be read as smoke, and a hovered plant
+      shows a still copy over the swaying one.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">9</span>
+      <h2>The walk</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">
+      Three new walks to compare with today&#8217;s. All ease into the first step, settle on the last, and stop the legs
+      racing at speeds 2 and 3.
+    </p>
+    <div class="pair anim">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/compare-speed1.webp"
+            alt="<b>Speed 1.</b> Left to right: today, weighted, bouncy, character."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>Speed 1.</b> Left to right: today, weighted, bouncy, character.</figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/compare-speed3.webp"
+            alt="<b>Speed 3.</b> Today&#8217;s legs take 9.6 steps a second; the new walks hold at about 4."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Speed 3.</b> Today&#8217;s legs take 9.6 steps a second; the new walks hold at about 4.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="pair anim">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/states-speed1.webp"
+            alt="<b>The character walk&#8217;s eight states:</b> at ease, hurrying, worn out, nothing to do, impatient, fed up, unwell, healed."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>The character walk&#8217;s eight states:</b> at ease, hurrying, worn out, nothing to do, impatient, fed up,
+          unwell, healed.
+        </figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/walk-states.webp"
+            alt="<b>The same eight as stills,</b> side on and at play size."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>The same eight as stills,</b> side on and at play size.</figcaption>
+      </figure>
+    </div>
+    <ul class="plan">
+      <li>
+        <b>Weighted:</b> a real walk cycle kept gentle: the foot planted for most of the step, the shoe rolling heel to
+        toe, hips swaying, the head steady.
+      </li>
+      <li><b>Bouncy:</b> a spring off each step, a little squash on landing, loose arms.</li>
+      <li>
+        <b>Character (framed):</b> weighted, plus a stride of each person&#8217;s own and a walk for how they feel, so a
+        hurrying, worn-out, fed-up or unwell person can be told from across the room.
+      </li>
+    </ul>
+    <p class="cost">
+      <b>Cost:</b> no draw calls; about 0.12 ms a frame for 50 people. <b>Watch it move before deciding:</b> I could
+      only judge stills. At speed 3 the feet glide, which is the price of calm legs; worn out and unwell both read as
+      hunched; at play size weighted looks close to today.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head">
+      <span class="letter">10</span>
+      <h2>People</h2>
+      <span class="chip">Recommended</span>
+    </div>
+    <p class="pitch">
+      Tidier clay bodies at nearly half the triangles, clothes with shape, and dressing for the weather.
+    </p>
+    <div class="closeups" style="grid-template-columns: 1fr">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/people-seasons.webp"
+            alt="<b>Seasonal.</b> As the game has them, then spring, summer, autumn, winter, a storm, the Boardwalk in summer and the mountains in winter."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Seasonal.</b> As the game has them, then spring, summer, autumn, winter, a storm, the Boardwalk in summer
+          and the mountains in winter.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="closeups">
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/people-clay.webp"
+            alt="<b>Clay.</b> Mitten hands, sloping shoulders, a waist; the same look for 13,600 triangles a guest instead of 24,300."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Clay.</b> Mitten hands, sloping shoulders, a waist; the same look for 13,600 triangles a guest instead of
+          24,300.
+        </figcaption>
+      </figure>
+      <figure>
+        <button type="button" class="shot">
+          <img
+            src="pictures/people-dressed.webp"
+            alt="<b>Dressed.</b> T-shirts, skirts, dresses and shorts for guests; a coat, tunic, robe or vest by role for staff."
+            loading="lazy"
+          />
+        </button>
+        <figcaption>
+          <b>Dressed.</b> T-shirts, skirts, dresses and shorts for guests; a coat, tunic, robe or vest by role for
+          staff.
+        </figcaption>
+      </figure>
+    </div>
+    <div class="pair">
+      <figure>
+        <button type="button" class="shot">
+          <img src="pictures/people-bw-before.webp" alt="<b>Before.</b> The Boardwalk in summer." loading="lazy" />
+        </button>
+        <figcaption><b>Before.</b> The Boardwalk in summer.</figcaption>
+      </figure>
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/people-bw-after.webp"
+            alt="<b>After.</b> Sun hats, visors, shades and bare arms."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>After.</b> Sun hats, visors, shades and bare arms.</figcaption>
+      </figure>
+    </div>
+    <div class="closeups">
+      <figure class="rec">
+        <button type="button" class="shot">
+          <img
+            src="pictures/people-winter.webp"
+            alt="<b>The Orchard in winter.</b> Parkas, scarves and bobble hats."
+            loading="lazy"
+          />
+        </button>
+        <figcaption><b>The Orchard in winter.</b> Parkas, scarves and bobble hats.</figcaption>
+      </figure>
+    </div>
+    <p class="cost">
+      <b>Cost:</b> people&#8217;s triangles fall 26% at the default distance and 39% close up, for about 20 more draw
+      calls that do not grow with the crowd. Each variant includes the one before it. <b>Gaps:</b> skirts, coats and
+      robes are rigid, so thighs push through at full stride and they hang through seats; a guest stripping on a bad
+      trip keeps the hat; people keep the clothes they arrived in when the season turns.
+    </p>
+  </section>
+  <section class="opt">
+    <div class="opt-head"><h2>What it costs</h2></div>
+    <p>
+      Late-game Orchard at the default camera, on an M4 Max with nothing else running. Frame time is the median of 240
+      frames, three loads each; one switch alone moves it less than the 0.3 ms the measurement wobbles by.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Switch</th>
+            <th>Draw calls</th>
+            <th>Triangles</th>
+            <th>Frame, pixel ratio 1</th>
+            <th>Frame, pixel ratio 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Today</td>
+            <td>1,853</td>
+            <td>1,669,000</td>
+            <td>8.0 to 8.6 ms</td>
+            <td>8.2 to 8.4 ms</td>
+          </tr>
+          <tr>
+            <td>Grounding</td>
+            <td>+4</td>
+            <td>+600</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Soft shadows</td>
+            <td>0</td>
+            <td>0</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Sky reflections</td>
+            <td>0</td>
+            <td>0</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Ground</td>
+            <td>+6</td>
+            <td>+49,000</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Wind</td>
+            <td>0</td>
+            <td>0</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Wildlife</td>
+            <td>+2</td>
+            <td>+1,000</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Glow</td>
+            <td>+1</td>
+            <td>0</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Small moments</td>
+            <td>0 at rest</td>
+            <td>0</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>All eight scene switches</td>
+            <td>+10</td>
+            <td>+51,000</td>
+            <td>8.3 to 8.9 ms</td>
+            <td>8.6 to 8.9 ms (about +6%)</td>
+          </tr>
+          <tr>
+            <td>Character walk</td>
+            <td>0</td>
+            <td>0</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr>
+            <td>Seasonal people</td>
+            <td>+23</td>
+            <td>&#8722;76,000</td>
+            <td>within noise</td>
+            <td>within noise</td>
+          </tr>
+          <tr class="rec-row">
+            <td>Everything</td>
+            <td>+30</td>
+            <td>&#8722;26,000</td>
+            <td>8.4 to 8.5 ms</td>
+            <td>8.9 to 9.2 ms (about +10%)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">
+      Not measured: a mid-range Windows laptop. The game is held back by draw calls there rather than by the graphics
+      card, and this pass adds under 2% to those, so I expect the same proportions, but that is an expectation.
+    </p>
+  </section>
+  <section class="verdict">
+    <span class="eyebrow">Recommendation</span>
+    <h2>Ship the framed ones; leave sky reflections for later</h2>
+    <p>
+      Grounding and the ground do the most for the picture at the distance the game is played at, and seasonal people
+      are the only change you can see in the crowd from there. Wind, wildlife, glow and the small moments are quiet by
+      design and nearly free. Soft shadows are a small gain for nothing. Sky reflections are the weakest for the risk
+      they carry. The character walk is my pick of the three, but it is the one choice here that has to be watched
+      moving.
+    </p>
+    <div class="question">
+      <span class="kicker">Choices for you</span>
+      <ol>
+        <li>Which walk: character, weighted, bouncy, or keep today&#8217;s? And is the glide at speed 3 acceptable?</li>
+        <li>People: seasonal, or stop at dressed or clay?</li>
+        <li>The ground: as shown, or toned down (fainter stripes and lanes, fewer blade strokes)?</li>
+        <li>Sky reflections: in or out?</li>
+        <li>Glow and the plants&#8217; sway are subtle at play distance. Leave them subtle, or turn them up?</li>
+        <li>
+          Should the whole pass sit behind a Graphics setting (Full or Plain) for slower computers, or simply be how the
+          game looks?
+        </li>
+      </ol>
+    </div>
+    <p class="note">
+      Next, once the look is settled: a pass over the weakest item models (television, wall fountain, water cooler, bin
+      and cabinet, koi pond, snack machine), sway for skirts and robes, and halos for the entrance and street lamps.
+    </p>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" id="lb-close">Close</button>
+  <div class="frame" id="lb-frame">
+    <img id="lb-img" alt="" />
+    <div class="cap" id="lb-cap"></div>
+  </div>
+</div>
+
+<script>
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  const lbFrame = document.getElementById('lb-frame');
+  const lbCap = document.getElementById('lb-cap');
+  document.querySelectorAll('.shot').forEach((b) =>
+    b.addEventListener('click', () => {
+      lbImg.src = b.querySelector('img').src;
+      lbImg.alt = b.querySelector('img').alt;
+      lbFrame.classList.toggle('rec', !!b.closest('.rec'));
+      lbCap.textContent = b.closest('figure').querySelector('figcaption')?.textContent ?? '';
+      lb.hidden = false;
+      document.getElementById('lb-close').focus();
+    }),
+  );
+  const close = () => {
+    lb.hidden = true;
+    lbImg.removeAttribute('src');
+  };
+  document.getElementById('lb-close').addEventListener('click', close);
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !lb.hidden) close();
+  });
+</script>
