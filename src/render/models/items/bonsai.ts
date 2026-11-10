@@ -3,6 +3,7 @@
 import type * as THREE from 'three';
 
 import { capsule, cyl, LACQUER, mat, put, soft, sph } from '../parts';
+import { idle } from './idle';
 
 /** Each pad of foliage: where it sits on the branches and how big it is. */
 const PADS: readonly (readonly [x: number, y: number, z: number, r: number])[] = [
@@ -22,7 +23,7 @@ export function buildBonsai(g: THREE.Group) {
   put(g, cyl(0.045, 0.065, 0.32, 12), bark, -0.04, 0.5, 0).rotation.z = 0.35;
   put(g, cyl(0.032, 0.045, 0.3, 12), bark, -0.02, 0.76, 0).rotation.z = -0.45;
   put(g, capsule(0.025, 0.2), bark, -0.12, 0.78, 0.02).rotation.z = 0.9;
-  const leaf = mat(0x4f8f4a, 0.85);
+  const leaf = idle(mat(0x4f8f4a, 0.85), { kind: 'stir', from: 0.7, to: 1.1, by: 0.012, pace: 1.1 });
   // soft clouds of leaves, smooth like the park's trees
   for (const [x, y, z, r] of PADS) put(g, sph(r, 16), leaf, x, y, z).scale.y = 0.6;
 }

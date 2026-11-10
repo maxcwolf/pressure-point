@@ -10,13 +10,17 @@ import { BrigadeLayer } from './brigade';
 import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
+import { fancy, type Graphics, setGraphics as drawGraphics } from './fx';
 import { GagClock } from './gags/clock';
+import { GlowLayer } from './glow';
 import { HalosLayer } from './halos';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
+import { JuiceLayer } from './juice';
 import { LandLayer } from './land';
 import { addLights, atNoon, type Lights, lightScene, lightSetting, placeSun, shadowReach, toneMap } from './lighting';
 import { LitterLayer } from './litter';
+import { OutdoorsLayer } from './outdoors';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
 import { PeopleLayer } from './people';
@@ -28,9 +32,11 @@ import { buildScenery, buildShell } from './scenery';
 import { settingName, settingOf } from './setting';
 import { Settling } from './settle';
 import { SnowfallLayer } from './snowfall';
+import { softRadius } from './soft-shadows';
 import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
 import { VibesLayer } from './vibes';
+import { warmSwaying, windRestyled } from './wind';
 
 /** Room for the size of the picture the renderer draws, asked for each frame. */
 const drawn = new THREE.Vector2();
@@ -84,6 +90,10 @@ export class View {
   private facing: Turn = 0;
   /** The items just put down, settling into place. */
   private settling = new Settling();
+  /** Puffs of dust and showers of sparkles, drawn Full. */
+  private juice: JuiceLayer;
+  /** The halos round whatever gives light, items and the lamps by the entrances and along the streets, drawn Full. */
+  private glow: GlowLayer;
   private floor: Floor;
   readonly rooms: RoomsLayer;
   private items: ItemsLayer;
@@ -92,6 +102,8 @@ export class View {
   private vibes: VibesLayer;
   private snow: SnowfallLayer;
   private rain: RainLayer;
+  /** The wind outdoors and the small life on the lot. */
+  private outdoors: OutdoorsLayer;
   private storefront: StorefrontLayer;
   private preparations: PreparationsLayer;
   private brigade: BrigadeLayer;
@@ -120,6 +132,7 @@ export class View {
 
     this.lights = addLights(this.scene);
     lightSetting(this.lights, settingOf(sim.s).light);
+    this.glow = new GlowLayer(this.scene);
 
     this.rig = new CameraRig(sim.world.building, sim.world.w);
     this.scenery = buildScenery(
@@ -132,22 +145,26 @@ export class View {
     );
     this.sceneryPlot = sceneryKey(sim);
     this.scene.add(this.scenery);
+    this.glow.add(this.scenery);
     this.shell = buildShell(sim.world.building, nearSides(this.facing));
     this.shellKey = `${footprintKey(sim.world.building)}|${this.facing}`;
     this.scene.add(this.shell);
+    this.glow.add(this.shell);
     this.floor = new Floor(this.scene, sim);
     this.rooms = new RoomsLayer(this.scene, sim);
     // the machines and the guests inside them read the same gags, so they keep in step
     const gags = new GagClock();
-    this.items = new ItemsLayer(this.scene, sim, gags);
+    this.items = new ItemsLayer(this.scene, sim, gags, this.glow);
     this.people = new PeopleLayer(this.scene, sim, gags);
     this.litter = new LitterLayer(this.scene, sim);
     this.vibes = new VibesLayer(this.scene, sim);
     this.snow = new SnowfallLayer(this.scene, sim);
     this.rain = new RainLayer(this.scene, sim);
+    this.outdoors = new OutdoorsLayer(this.scene, sim);
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.preparations = new PreparationsLayer(this.scene, sim);
     this.brigade = new BrigadeLayer(this.scene, sim);
+    this.juice = new JuiceLayer(this.scene, sim, () => this.rig.reduceMotion());
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
     this.halos = new HalosLayer(this.scene, sim);
@@ -160,6 +177,22 @@ export class View {
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
+  }
+
+  /** Whether the programs of what is drawn only now and then are built, for the graphics the scene is drawn with. */
+  private warmed = false;
+
+  /**
+   * Build, with the first frame drawn Full, the programs of what is drawn only now and then: the puffs of dust and the
+   * sparkles, and the swaying leaves and flowers that come out in spring, and their shadows. A program built as the
+   * first of them shows would stall that frame. A view that draws nothing, as in the browser tests of behavior, builds
+   * none: software WebGL takes over a second to.
+   */
+  private warmUp() {
+    this.warmed = true;
+    if (!fancy()) return;
+    for (const batch of this.juice.batches) this.renderer.compile(batch, this.rig.camera, this.scene);
+    warmSwaying(this.renderer, this.rig.camera, this.scene, this.scenery);
   }
 
   /** Fit the canvas and camera to the window. */
@@ -216,11 +249,13 @@ export class View {
     if (key === this.shellKey) return;
     this.shellKey = key;
     this.scene.remove(this.shell);
+    this.glow.remove(this.shell);
     this.shell.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
     this.shell = buildShell(fp, nearSides(this.facing));
     this.scene.add(this.shell);
+    this.glow.add(this.shell);
   }
 
   /** Build the scenery again if the building has grown into more land, or something outdoors moved, since it was built. */
@@ -230,6 +265,7 @@ export class View {
     if (key === this.sceneryPlot) return;
     this.sceneryPlot = key;
     this.scene.remove(this.scenery);
+    this.glow.remove(this.scenery);
     // the materials are shared, but each shape belongs to this scenery alone
     this.scenery.traverse((o) => {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
@@ -243,6 +279,26 @@ export class View {
       centerOf(this.sim.s).highStreet,
     );
     this.scene.add(this.scenery);
+    this.glow.add(this.scenery);
+  }
+
+  /**
+   * Draw the scene Full or Plain from now on: the sun's shadows, the swaying materials, the scenery, the building's
+   * walls, the floor, the rooms and the items are all built again for it, once, and the halos with them.
+   */
+  setGraphics(g: Graphics) {
+    drawGraphics(g);
+    this.lights.sun.shadow.radius = softRadius();
+    windRestyled();
+    this.glow.clear();
+    this.sceneryPlot = '';
+    this.growScenery();
+    this.shellKey = '';
+    this.buildShell();
+    this.floor.draw();
+    this.rooms.rebuild();
+    this.items.rebuild();
+    this.warmed = false;
   }
 
   /** Draw one frame, syncing the scene with the game first. */
@@ -257,7 +313,11 @@ export class View {
       this.floor.draw();
       this.rooms.sync();
       const landed = this.items.sync();
-      if (!loading && !this.rig.reduceMotion()) for (const model of landed) this.settling.add(model);
+      if (!loading && !this.rig.reduceMotion())
+        for (const model of landed) {
+          this.settling.add(model);
+          this.juice.landed(model);
+        }
     }
     this.people.update(this.time, dt);
     this.litter.update(this.time, this.rig.camera, this.renderer.getSize(drawn).y);
@@ -265,12 +325,15 @@ export class View {
     this.vibes.update(this.time);
     this.snow.update(this.time);
     this.rain.update(this.time);
+    this.outdoors.update(this.time, dt);
     this.storefront.update();
     this.preparations.update(this.time);
     this.brigade.update(this.time, this.rig.reduceMotion());
     this.land.update();
     this.items.animate(this.time);
+    this.glow.update();
     this.settling.update(dt);
+    this.juice.update(dt);
     this.heat.update(dt);
     this.overlays.updateRing(this.time);
     this.halos.update();
@@ -278,8 +341,11 @@ export class View {
     this.faceWalls();
     if (lightScene(this.lights, this.sim.s, dt)) this.floor.draw();
     placeSun(this.lights.sun, this.rig.target, shadowReach(this.rig.dist));
-    if (this.drawing) this.renderer.render(this.scene, this.rig.camera);
-    else {
+    if (this.drawing) {
+      if (!this.warmed) this.warmUp();
+      this.floor.ready();
+      this.renderer.render(this.scene, this.rig.camera);
+    } else {
       // what drawing would have done along the way, so clicks still find what is where
       this.scene.updateMatrixWorld();
       this.rig.camera.updateMatrixWorld();
@@ -289,6 +355,7 @@ export class View {
   /** A small JPEG of the view as it is now, for a save's picture on the title screen. */
   snapshot(width = 320, height = 200): string {
     // drawn afresh so the picture is taken before the browser clears the canvas, and at noon, whatever the hour
+    this.floor.ready();
     atNoon(this.lights, this.sim.s, () => this.renderer.render(this.scene, this.rig.camera));
     const out = Object.assign(document.createElement('canvas'), { width, height });
     const src = this.renderer.domElement;

@@ -11,6 +11,7 @@ import type { Sim } from '../core/sim/sim';
 import type { Room, WallSpot } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
 import { disposeOwned, owned } from './disposal';
+import { groundWalls } from './grounding';
 import { ghostOf } from './hung';
 import { mergeStill } from './models/merge';
 import { mat, put, sph } from './models/parts';
@@ -249,6 +250,7 @@ export class RoomsLayer {
       if (cur?.key === key) continue;
       if (cur) this.dispose(cur.group);
       const drawn = this.build(r, walled, through);
+      groundWalls(drawn.group);
       this.scene.add(drawn.group);
       // a new sign starts as the lamp last showed, until the next frame looks again
       const lamp = this.lamps.get(r.id);
@@ -261,6 +263,13 @@ export class RoomsLayer {
       this.rooms.delete(id);
     }
     this.syncPanes();
+  }
+
+  /** Build every room again, for a change of the Graphics setting, which darkens the foot of the walls drawn Full. */
+  rebuild() {
+    for (const r of this.rooms.values()) this.dispose(r.group);
+    this.rooms.clear();
+    this.sync();
   }
 
   /**

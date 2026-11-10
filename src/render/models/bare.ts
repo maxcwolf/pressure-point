@@ -1,5 +1,6 @@
-// A guest on a really bad trip has nothing on: their clothes go to their own skin, smooth as a doll's with nothing
-// modeled, and blocks of gray pixel mosaic cover what a television would hide. The mosaic is a sprite, so it faces the camera
+// A guest on a really bad trip has nothing on: everything they wear comes off, hat, scarf, shades, skirt, parka and
+// all (see `Clothes`), leaving them in their own skin, smooth as a doll's with nothing modeled, and blocks of gray
+// pixel mosaic cover what a television would hide. The mosaic is a sprite, so it faces the camera
 // from every turn; it is drawn a little in front of the body toward the camera, so the body never hides it, and kept big
 // enough to read as the camera pulls back, as a speech bubble is. All of it is made the first time someone strips, and
 // put away again when they are calmed down.
@@ -8,7 +9,6 @@ import * as THREE from 'three';
 
 import { floorScale, pixelsPerMeter } from '../readable';
 import type { CharRig } from './character';
-import { bareForearm, bareTorso, bareUpperArm } from './character-detail';
 
 /**
  * How big each block of the mosaic is, in meters: about four across the groin, big enough to see as blocks close up and
@@ -33,21 +33,14 @@ const BEHIND = -0.25;
 /** The colors of the mosaic's blocks, as a television blurs: grays with a little warmth. */
 const GRAYS = [0x9a9089, 0xb7aca3, 0xd2c8bf, 0x7f7670, 0xc4b8ae];
 
-/** What a person with nothing on remembers: what each part wore, and the censors over them. */
+/**
+ * What a person with nothing on remembers: biceps bulging through the sleeves, and what they were in, to go bare with
+ * the rest of them; and the censors over them.
+ */
 export interface Bare {
   on: boolean;
-  swaps: Swap[];
+  muscles: { mesh: THREE.Mesh; dressed: THREE.Material }[];
   censors: THREE.Sprite[];
-}
-
-/** A part of someone that changes as they strip: to skin, to the shape of what is under it, or out of sight. */
-interface Swap {
-  mesh: THREE.Mesh;
-  dressed: THREE.Material;
-  skin: THREE.Material;
-  shape: THREE.BufferGeometry;
-  /** Its shape with nothing on, or null if it goes. */
-  bare: THREE.BufferGeometry | null;
 }
 
 /** A number from 0 to 1 for a block of a mosaic, the same every time, so the pattern looks scattered but never changes. */
@@ -146,38 +139,18 @@ function censor(torso: THREE.Object3D, at: typeof GROIN, chest: boolean) {
   return sprite;
 }
 
-/**
- * What a part of someone is with nothing on: the shirt the body under it, with no collar; the sleeve on the upper arm
- * the arm, and the one on the forearm gone, the hand below it taking the bare forearm, unless a symptom has the hand;
- * the trousers and shoes the legs and feet, and biceps bulging through the sleeves bare biceps, as they are. Undefined for a part that does not change.
- */
-function bareShape(mesh: THREE.Mesh, torso: THREE.Object3D): THREE.BufferGeometry | null | undefined {
-  const fore = mesh.parent;
-  const side = Math.sign(fore?.parent?.position.x ?? 1);
-  const handShown = fore?.getObjectByName('hand')?.visible ?? false;
-  if (mesh.name === 'shirt') return bareTorso();
-  if (mesh.name === 'trousers' || mesh.name === 'shoe' || mesh.name === 'muscle') return mesh.geometry;
-  if (mesh.name === 'sleeve') return fore?.parent === torso ? bareUpperArm() : handShown ? null : mesh.geometry;
-  if (mesh.name === 'hand' && mesh.visible) return bareForearm(side);
-  return undefined;
-}
-
-/** Make what someone needs to go without their clothes: their skin for each part, and the censors, put away for now. */
+/** Make what someone needs to go without their clothes: the censors, put away for now, and their muscles noted. */
 function strip(rig: CharRig, chest: boolean): Bare {
-  const hand = rig.body.getObjectByName('hand') as THREE.Mesh | undefined;
-  const skin = (hand?.material ?? rig.headMesh.material) as THREE.MeshStandardMaterial;
-  const swaps: Swap[] = [];
+  const muscles: Bare['muscles'] = [];
   rig.body.traverse((o) => {
-    if (!(o as Partial<THREE.Mesh>).isMesh) return;
+    if (o.name !== 'muscle' || !(o instanceof THREE.Mesh)) return;
     const mesh = o as THREE.Mesh;
-    const bare = bareShape(mesh, rig.torso);
-    if (bare === undefined) return;
-    swaps.push({ mesh, dressed: mesh.material as THREE.Material, skin, shape: mesh.geometry, bare });
+    muscles.push({ mesh, dressed: mesh.material as THREE.Material });
   });
   const censors = [censor(rig.torso, GROIN, false)];
   if (chest) censors.push(censor(rig.torso, CHEST, true));
   for (const c of censors) c.visible = false;
-  return { on: false, swaps, censors };
+  return { on: false, muscles, censors };
 }
 
 /**
@@ -188,10 +161,9 @@ export function showBare(rig: CharRig, on: boolean, chest: boolean) {
   if ((rig.bare?.on ?? false) === on) return;
   rig.bare ??= strip(rig, chest);
   rig.bare.on = on;
-  for (const s of rig.bare.swaps) {
-    s.mesh.material = on ? s.skin : s.dressed;
-    if (s.bare) s.mesh.geometry = on ? s.bare : s.shape;
-    else s.mesh.visible = !on;
-  }
+  const { clothes } = rig;
+  clothes.bare = on;
+  clothes.dress();
+  for (const m of rig.bare.muscles) m.mesh.material = on ? clothes.cloth.skin : m.dressed;
   for (const c of rig.bare.censors) c.visible = on;
 }

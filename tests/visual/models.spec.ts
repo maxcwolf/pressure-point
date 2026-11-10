@@ -75,6 +75,8 @@ const IDS = [
   'climb-off:reiki_table',
   // a guest walking round corners
   'walk:guest',
+  // how people walk as they feel
+  'walk:states',
   'room:door',
   'scenery:puddles',
   // a poop and a puddle of pee, as a guest leaves them who could not find a toilet in time

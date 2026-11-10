@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 
 import { cyl, mat, partsOf, put, sph, torus } from '../parts';
+import { EMBERS } from './idle';
 
 /** Build the Brew Pot model. */
 export function buildBrewPot(g: THREE.Group) {
@@ -11,7 +12,7 @@ export function buildBrewPot(g: THREE.Group) {
     const a = (i / 8) * Math.PI * 2;
     put(g, sph(0.06, 8), mat(0x8f857a, 0.95), Math.cos(a) * 0.24 - 0.06, 0.04, Math.sin(a) * 0.24 - 0.06);
   }
-  put(g, sph(0.08, 8), mat(0xff6a2a, 0.5, 1.1), -0.06, 0.05, -0.06).castShadow = false;
+  put(g, sph(0.08, 8), EMBERS(), -0.06, 0.05, -0.06).castShadow = false;
   // the pot, with its brew
   put(g, cyl(0.2, 0.15, 0.26, 22), mat(0x2a2422, 0.6), -0.06, 0.25, -0.06);
   put(g, torus(0.2, 0.02), mat(0x2a2422, 0.6), -0.06, 0.38, -0.06).rotation.x = Math.PI / 2;

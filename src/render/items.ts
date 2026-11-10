@@ -15,6 +15,7 @@ import { applyGag } from './gags/apply';
 import { gagFrame } from './gags/beats';
 import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
+import { type GlowLayer, NO_HALO } from './glow';
 import { ghostHung, hangPlace, placeHung } from './hung';
 import { animateCues, type CueCondition, NOISE_CUE, STOP_LOOKS, unlitShare, usedNoise, wearLight } from './item-cues';
 import { powerOut } from './lighting';
@@ -22,6 +23,7 @@ import { itemMarkers } from './markers';
 import { iconTexture } from './models/icons';
 import { buildItem } from './models/items';
 import { SPILL_SPEED, spillRuns } from './models/items/fountain';
+import { IDLE_CLOCK } from './models/items/idle';
 import { soilLinens } from './models/linens';
 import { partsOf } from './models/parts';
 import { upgradePlate } from './models/plate';
@@ -79,6 +81,8 @@ function dryColor(water: number, green: readonly [number, number, number]): THRE
 export function animateItemParts(model: THREE.Object3D, it: ItemCondition, t: number) {
   const { leaf, glow, ring, orb, spill, puffs, led, cups, slips, linens, heap, flames, chimes, hands, flags, moss } =
     partsOf(model);
+  // the leaves, fish, flames and glows that idle on the graphics card keep this clock
+  IDLE_CLOCK.value = t;
   if (leaf) {
     // a plant browns and droops as it dries out
     leaf.color.copy(dryColor(it.water, LEAF));
@@ -169,6 +173,8 @@ export class ItemsLayer {
     private scene: THREE.Scene,
     private sim: Sim,
     private gags: GagClock = new GagClock(),
+    /** The halos round whatever gives light, which the view keeps and draws Full. */
+    private glow?: GlowLayer,
   ) {}
 
   /** Every item's model, for picking. */
@@ -203,6 +209,7 @@ export class ItemsLayer {
       const moved = !old?.key.startsWith(`${it.type},${it.x},${it.y},${it.rot},`);
       if (old) {
         this.scene.remove(old.group);
+        this.glow?.remove(old.group);
         disposeOwned(old.group);
       }
       const model = buildItem(it.type, { pattern: it.pattern, center: this.sim.s.center });
@@ -213,6 +220,7 @@ export class ItemsLayer {
       else placeItemModel(group, it.type, it.x, it.y, it.rot);
       group.traverse((o) => (o.userData.itemId = it.id));
       this.scene.add(group);
+      if (!NO_HALO.has(it.type)) this.glow?.add(group);
       // a machine stands taller than anything else, so its bar and markers go over the top of it
       const top = new THREE.Box3().setFromObject(model).max.y;
       this.items.set(it.id, { group, key, top });
@@ -221,6 +229,7 @@ export class ItemsLayer {
     for (const [id, it] of this.items) {
       if (liveItems.has(id)) continue;
       this.scene.remove(it.group);
+      this.glow?.remove(it.group);
       disposeOwned(it.group);
       this.items.delete(id);
       // and its bar, in case it was taken away mid-session
@@ -230,6 +239,15 @@ export class ItemsLayer {
     }
     this.gags.prune(liveItems);
     return landed;
+  }
+
+  /**
+   * Build every item's model again, for a change of the Graphics setting, which sets which parts idle. They are built
+   * where they stood, so none of them lands.
+   */
+  rebuild() {
+    for (const it of this.items.values()) it.key = '';
+    this.sync();
   }
 
   /**

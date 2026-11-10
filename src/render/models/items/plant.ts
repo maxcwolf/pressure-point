@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import { owned } from '../../disposal';
 import { cyl, mat, MEMBER_MIN, partsOf, put, sph } from '../parts';
+import { idleOwn } from './idle';
 
 /** Build the Potted Plant model: a terracotta pot with a lip, and a soft round bush of leaves. */
 export function buildPlant(g: THREE.Group) {
@@ -13,7 +14,13 @@ export function buildPlant(g: THREE.Group) {
   put(g, cyl(0.23, 0.23, 0.03), mat(0x5a4332), 0, 0.36, 0);
   put(g, cyl(MEMBER_MIN / 2, MEMBER_MIN / 2 + 0.01, 0.3), mat(0x6b4f33), 0, 0.5, 0);
   // each plant owns its leaf material so it can wilt independently
-  const leaf = owned(new THREE.MeshStandardMaterial({ color: 0x57a85a, roughness: 0.8 }));
+  const leaf = idleOwn(owned(new THREE.MeshStandardMaterial({ color: 0x57a85a, roughness: 0.8 })), {
+    kind: 'stir',
+    from: 0.45,
+    to: 1.05,
+    by: 0.03,
+    pace: 1.3,
+  });
   partsOf(g).leaf = leaf;
   const blobs: [number, number, number, number][] = [
     [0, 0.8, 0, 0.22],

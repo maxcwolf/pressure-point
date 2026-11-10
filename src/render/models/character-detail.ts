@@ -12,13 +12,13 @@ import { buildMohawk } from './mohawk';
 import { cached, mat, put, withFar } from './parts';
 
 /** A fresh shape with only positions and normals, so it joins with any other. */
-const bare = <T extends THREE.BufferGeometry>(geo: T) => {
+export const bare = <T extends THREE.BufferGeometry>(geo: T) => {
   geo.deleteAttribute('uv');
   return geo;
 };
 
 /** How many sides to give a round shape that has this many in full. */
-type Sides = (full: number) => number;
+export type Sides = (full: number) => number;
 /** All of them, for someone seen close up. */
 const ALL: Sides = (full) => full;
 /** About half, for someone seen from afar, whose every side in full would be finer than a pixel. */
@@ -33,13 +33,13 @@ const tinyShapes = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
 export const tinyShape = (shape: THREE.BufferGeometry) => tinyShapes.get(shape);
 
 /** A fresh ball. */
-const ball = (r: number, seg: number) => bare(new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
+export const ball = (r: number, seg: number) => bare(new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
 
 /** A fresh capsule. */
-const pill = (r: number, len: number, n: Sides) => bare(new THREE.CapsuleGeometry(r, len, n(4), n(10)));
+export const pill = (r: number, len: number, n: Sides) => bare(new THREE.CapsuleGeometry(r, len, n(4), n(10)));
 
 /** Smooth a shape's shading across its seams, where its points are doubled up. */
-function smooth(geo: THREE.BufferGeometry) {
+export function smooth(geo: THREE.BufferGeometry) {
   bare(geo).deleteAttribute('normal');
   const out = mergeVertices(geo, 1e-4);
   out.computeVertexNormals();
@@ -47,7 +47,7 @@ function smooth(geo: THREE.BufferGeometry) {
 }
 
 /** Place a fresh shape: stretch it along each axis, then turn it, then move it. */
-function place(
+export function place(
   geo: THREE.BufferGeometry,
   [x, y, z]: readonly number[],
   [rx, ry, rz]: readonly number[] = [0, 0, 0],
@@ -72,12 +72,19 @@ const indexed = (geo: THREE.BufferGeometry) => {
  * Several fresh shapes joined into one, made once by key and shared, so together they cost a single part to draw. They
  * keep sharing their corners, so each corner is worked out once a frame rather than once for every triangle at it. The
  * shape is made three times, with all its sides, with fewer and with fewer still, the others to be drawn in its place
- * when seen from afar and from further.
+ * when seen from afar and from further; `finish`, if given, is done to each of the three once joined.
  */
-const fuse = (key: string, make: (n: Sides) => THREE.BufferGeometry[]) =>
+export const fuse = (
+  key: string,
+  make: (n: Sides) => THREE.BufferGeometry[],
+  finish?: (shape: THREE.BufferGeometry) => THREE.BufferGeometry,
+) =>
   cached(`hd-${key}`, () => {
     /** The shapes joined, with so many sides. */
-    const join = (n: Sides) => must(mergeGeometries(make(n).map(indexed)), `the shapes of ${key} joined`);
+    const join = (n: Sides) => {
+      const joined = must(mergeGeometries(make(n).map(indexed)), `the shapes of ${key} joined`);
+      return finish ? finish(joined) : joined;
+    };
     const shape = withFar(
       join(ALL),
       cached(`hd-${key}-far`, () => join(FEW)),
@@ -90,7 +97,7 @@ const fuse = (key: string, make: (n: Sides) => THREE.BufferGeometry[]) =>
   });
 
 /** A shape turned round the upright axis from a profile of [radius, height] pairs, bottom to top, squashed front to back. */
-const lathe = (n: Sides, profile: readonly (readonly [number, number])[], sx = 1, sz = 1, seg = 32) => {
+export const lathe = (n: Sides, profile: readonly (readonly [number, number])[], sx = 1, sz = 1, seg = 32) => {
   const geo = new THREE.LatheGeometry(
     profile.map(([r, y]) => new THREE.Vector2(r, y)),
     n(seg),
@@ -102,7 +109,7 @@ const lathe = (n: Sides, profile: readonly (readonly [number, number])[], sx = 1
 // The head: a ball a touch taller than it is wide, narrowing to the chin, with a fuller back to the skull.
 
 /** The head's radius, which hats, glasses and symptoms are sized to. */
-const HEAD = 0.215;
+export const HEAD = 0.215;
 
 /** How much further forward glasses sit in this build, to clear the eyes, which stand out more than the usual dots. */
 export const GLASSES_OUT = 0.01;
@@ -122,7 +129,7 @@ function shapeHead(v: THREE.Vector3, r: number) {
 }
 
 /** How far forward the face is at a point on it: where to set an eye, a brow or the mouth so it sits on the skin. */
-function faceZ(x: number, y: number) {
+export function faceZ(x: number, y: number) {
   const y0 = y / TALL;
   const t = y0 < 0 ? (y0 / HEAD) ** 2 : 0;
   const x0 = x / (WIDE * (1 - 0.14 * t));
@@ -143,22 +150,22 @@ function headShaped(geo: THREE.BufferGeometry, r: number) {
 /** The head, its ears and its nose, all skin, so a flushed or frozen face colors the lot. */
 const headShape = () =>
   fuse('head', (n) => {
-    const skull = smooth(headShaped(new THREE.SphereGeometry(HEAD, n(40), n(28)), HEAD));
+    const skull = smooth(headShaped(new THREE.SphereGeometry(HEAD, n(30), n(20)), HEAD));
     const ears = [-1, 1].map((s) =>
-      smooth(place(ball(0.05, n(14)), [s * 0.196, -0.02, -0.01], [0, 0, s * 0.12], [0.42, 1, 0.75])),
+      smooth(place(ball(0.05, n(10)), [s * 0.196, -0.02, -0.01], [0, 0, s * 0.12], [0.42, 1, 0.75])),
     );
-    const nose = smooth(place(ball(0.041, n(18)), [0, -0.028, faceZ(0, -0.028) - 0.008], [0, 0, 0], [0.95, 0.88, 1.1]));
+    const nose = smooth(place(ball(0.041, n(12)), [0, -0.028, faceZ(0, -0.028) - 0.008], [0, 0, 0], [0.95, 0.88, 1.1]));
     return [skull, ...ears, nose];
   });
 
 /** Where the eyes are, either side of the middle of the face. */
-const EYE = { x: 0.068, y: 0.02 };
+export const EYE = { x: 0.068, y: 0.02 };
 
 /** Both eyes: small dark ovals, set into the face. */
 const eyes = () =>
   fuse('eyes', (n) =>
     [-1, 1].map((s) =>
-      place(ball(0.0215, n(16)), [s * EYE.x, EYE.y, faceZ(EYE.x, EYE.y) - 0.002], [0, s * 0.3, 0], [0.78, 1.2, 0.5]),
+      place(ball(0.0215, n(12)), [s * EYE.x, EYE.y, faceZ(EYE.x, EYE.y) - 0.002], [0, s * 0.3, 0], [0.78, 1.2, 0.5]),
     ),
   );
 
@@ -345,10 +352,17 @@ interface Fall {
   puff: number;
 }
 
+/**
+ * How many sides a cap of hair has round it in full, and how many combed ridges run from its crown: four sides to a
+ * ridge, so each is round. A few broad ridges read from the game's height where many fine ones would not.
+ */
+const HAIR_ROUND = 84;
+const HAIR_RIDGES = 21;
+
 /** A fresh cap of hair falling a given way. */
 function capOf(fall: Fall, n: Sides) {
   const r = 0.229;
-  const geo = new THREE.SphereGeometry(r, n(132), n(28));
+  const geo = new THREE.SphereGeometry(r, n(HAIR_ROUND), n(20));
   const pos = geo.getAttribute('position');
   const uv = geo.getAttribute('uv');
   for (let i = 0; i < pos.count; i++) {
@@ -362,7 +376,7 @@ function capOf(fall: Fall, n: Sides) {
     // the edge tucks in to meet the scalp, so the hair looks thick rather than a shell
     const tuck = Math.max(0, (f - 0.8) / 0.2) ** 2 * (0.13 + fall.puff);
     // fine ridges from the crown, fading out before the edge so it stays clean
-    const ridge = 0.011 * Math.sin(a * 30) * Math.min(1, f * 3, Math.max(0, (0.85 - f) / 0.15));
+    const ridge = 0.011 * Math.sin(a * HAIR_RIDGES) * Math.min(1, f * 3, Math.max(0, (0.85 - f) / 0.15));
     const rad = r * (1 + ridge + fall.puff * f ** 3 - tuck);
     pos.setXYZ(
       i,
@@ -418,7 +432,7 @@ const curlyHair = () =>
         const r = 0.232;
         const size = 0.056 + ((i * 7 + ring * 3) % 5) * 0.004;
         curls.push(
-          place(ball(size, n(10)), [
+          place(ball(size, n(8)), [
             r * Math.sin(theta) * Math.sin(a),
             r * Math.cos(theta) + 0.01,
             r * Math.sin(theta) * Math.cos(a) - 0.01,
@@ -483,9 +497,39 @@ const lowTie = () =>
     place(tail(0.26, 0.058, n), [0, -0.08, -0.27], [-0.35, 0, 0]),
   ]);
 
+/** How the hair is cut to go under a hat: short, or not at all under one that covers it to the ears. */
+export type HatHair = 'short' | 'covered';
+
+/** Put hair on a head in a style, as one or two parts named for it, and return them. */
+function hairIn(head: THREE.Group, look: Look, hair: THREE.Material, style: number): THREE.Object3D[] {
+  const before = head.children.length;
+  if (style === AMANDA.hairStyle) buildMohawk(head, look.skin, look.hair);
+  else if (style === HAIR.short) put(head, hairCap('short', FALLS.short), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.bob) put(head, hairCap('bob', FALLS.bob), hair, 0, 0.004, -0.006).name = 'hair';
+  else if (style === HAIR.long) put(head, longHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.curls) put(head, curlyHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.bun) put(head, bunHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.ponytail) put(head, ponytailHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.quiff) put(head, quiffHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  else if (style === HAIR.topknot) put(head, topknotHair(), hair, 0, 0.004, -0.004).name = 'hair';
+  return head.children.slice(before);
+}
+
+/**
+ * Put the hair someone wears under a hat on their head, named `hat hair`, to show in place of their own while the hat
+ * is on: cut short, or, under a hat that covers it, none of the cap at all; a woman's tied back low either way.
+ */
+export function hatHair(head: THREE.Group, look: Look, hair: THREE.Material, under: HatHair): THREE.Object3D[] {
+  const parts = under === 'short' ? hairIn(head, look, hair, HAIR.short) : [];
+  if (look.sex === 'female') parts.push(put(head, lowTie(), hair));
+  for (const p of parts) p.name = 'hat hair';
+  return parts;
+}
+
 /**
  * Build the head: its shape, the face, the hair in its style, and glasses if they wear them. Returns the head's skin,
- * for symptoms to recolor, the face, at ease, for its expression to change, and the glasses, to take off for shades.
+ * for symptoms to recolor, the face, at ease, for its expression to change, the glasses, and the hair, to hide under a
+ * hat. Under a cap that is part of who they are (`hatted`), the hair is cut short, or a woman's tied back low.
  */
 export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, hair: THREE.Material, hatted: boolean) {
   // glasses round or square, in dark frames or tortoiseshell
@@ -508,44 +552,42 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
   face.glints.name = 'glints';
   face.brows.name = 'brows';
   face.mouth.name = 'mouth';
-  const style = hatted ? HAIR.short : look.hairStyle;
-  if (style === AMANDA.hairStyle) buildMohawk(head, look.skin, look.hair);
-  else if (style === HAIR.short) put(head, hairCap('short', FALLS.short), hair, 0, 0.004, -0.004).name = 'hair';
-  else if (style === HAIR.bob) put(head, hairCap('bob', FALLS.bob), hair, 0, 0.004, -0.006).name = 'hair';
-  else if (style === HAIR.long) put(head, longHair(), hair, 0, 0.004, -0.004).name = 'hair';
-  else if (style === HAIR.curls) put(head, curlyHair(), hair, 0, 0.004, -0.004).name = 'hair';
-  else if (style === HAIR.bun) put(head, bunHair(), hair, 0, 0.004, -0.004).name = 'hair';
-  else if (style === HAIR.ponytail) put(head, ponytailHair(), hair, 0, 0.004, -0.004).name = 'hair';
-  else if (style === HAIR.quiff) put(head, quiffHair(), hair, 0, 0.004, -0.004).name = 'hair';
-  else if (style === HAIR.topknot) put(head, topknotHair(), hair, 0, 0.004, -0.004).name = 'hair';
-  if (hatted && look.sex === 'female') put(head, lowTie(), hair).name = 'hair';
+  const own = hairIn(head, look, hair, hatted ? HAIR.short : look.hairStyle);
+  if (hatted && look.sex === 'female') {
+    const tie = put(head, lowTie(), hair);
+    tie.name = 'hair';
+    own.push(tie);
+  }
   if (look.sex === 'male' && look.beard) {
     put(head, moustache(), hair).name = 'moustache';
     if (look.beard === 2) put(head, beard(), hair).name = 'beard';
   }
-  return { headMesh, face, glasses: specs };
+  return { headMesh, face, glasses: specs, hair: own };
 }
 
 // The body: a shirt shaped to the chest and waist with a collar, trousers over the hips, and the legs and arms.
 
-/** The shirt's profile, [radius, height] from the hem to the collar, and how much wider and shallower it is than round. */
-const SHIRT: readonly (readonly [number, number])[] = [
-  [0.15, -0.085],
-  [0.166, -0.075],
-  [0.167, -0.05],
-  [0.16, 0.02],
-  [0.155, 0.09],
-  [0.162, 0.17],
-  [0.17, 0.26],
-  [0.17, 0.32],
-  [0.164, 0.37],
+/**
+ * The shirt's profile, [radius, height] from the hem to the collar, and how much wider and shallower it is than round:
+ * in at the waist and full at the chest, so the body has a shape at a glance.
+ */
+export const SHIRT: readonly (readonly [number, number])[] = [
+  [0.152, -0.085],
+  [0.168, -0.075],
+  [0.168, -0.05],
+  [0.156, 0.02],
+  [0.147, 0.09],
+  [0.158, 0.17],
+  [0.173, 0.26],
+  [0.173, 0.32],
+  [0.165, 0.37],
   [0.146, 0.42],
   [0.112, 0.458],
   [0.075, 0.478],
   [0, 0.482],
 ];
-const SHIRT_WIDE = 1.12;
-const SHIRT_DEEP = 0.9;
+export const SHIRT_WIDE = 1.12;
+export const SHIRT_DEEP = 0.9;
 
 /** A profile's radius at a height up it, between the points either side. */
 function radiusAt(profile: readonly (readonly [number, number])[], y: number) {
@@ -560,12 +602,15 @@ function radiusAt(profile: readonly (readonly [number, number])[], y: number) {
 /** The shirt's radius at a height on the torso, before it is made wider and shallower. */
 const shirtRadius = (y: number) => radiusAt(SHIRT, y);
 
-/** Round shoulders over the arms' hinges, so an arm swinging any way stays joined to the body. */
+/**
+ * Round shoulders over the arms' hinges, so an arm swinging any way stays joined to the body: set into it, sloping down
+ * to the arm, rather than puffed out over it.
+ */
 const shoulders = (n: Sides) =>
-  [-1, 1].map((s) => smooth(place(ball(0.066, n(18)), [s * 0.232, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95])));
+  [-1, 1].map((s) => smooth(place(ball(0.06, n(14)), [s * 0.226, 0.37, 0], [0, 0, s * -0.35], [1.1, 0.92, 0.95])));
 
 /** The shirt, from the hem to the collar, shaped to the chest and waist, as wide and deep as the uniforms are cut. */
-const shirt = () =>
+export const shirtShape = () =>
   fuse('shirt', (n) => [
     lathe(n, SHIRT, SHIRT_WIDE, SHIRT_DEEP),
     place(
@@ -580,8 +625,11 @@ const shirt = () =>
 /** The body under the shirt, shaped as it is but with no collar: someone with nothing on, smooth as a doll. */
 export const bareTorso = () => fuse('bare torso', (n) => [lathe(n, SHIRT, SHIRT_WIDE, SHIRT_DEEP), ...shoulders(n)]);
 
+/** The bare shoulders alone, as the shirt's are, for someone in a vest: the arms swing under them as under a sleeve. */
+export const bareShoulders = () => fuse('bare shoulders', (n) => shoulders(n));
+
 /** The trousers over the hips, under the shirt, rounding in to meet the legs. */
-const hips = () =>
+export const hipsShape = () =>
   fuse('hips', (n) => [
     lathe(
       n,
@@ -601,8 +649,8 @@ const hips = () =>
 
 /** Build the torso's shirt and the hips under it. */
 export function detailTorso(torso: THREE.Group, top: THREE.Material, bottom: THREE.Material) {
-  put(torso, shirt(), top).name = 'shirt';
-  const seat = put(torso, hips(), bottom);
+  put(torso, shirtShape(), top).name = 'shirt';
+  const seat = put(torso, hipsShape(), bottom);
   seat.name = 'trousers';
   // the seat of the trousers is under the shirt and between the legs, so its shadow is theirs
   seat.castShadow = false;
@@ -730,7 +778,7 @@ export function detailShawl(torso: THREE.Group, cloth: THREE.Material, wood: THR
 }
 
 /** How far out the front of the shirt is at a point across it and up it, plus `out`. */
-function shirtFront(x: number, y: number, out: number) {
+export function shirtFront(x: number, y: number, out: number) {
   const r = shirtRadius(y);
   return r * SHIRT_DEEP * Math.sqrt(Math.max(0, 1 - (x / (r * SHIRT_WIDE)) ** 2)) + out;
 }
@@ -758,49 +806,6 @@ function onFront(at: (u: number, v: number) => readonly [number, number], out: n
   return geo;
 }
 
-/** The tails of a long coat, from the waist to above the knee, falling a little wider than the shirt. */
-const coatTails = () =>
-  fuse('coat tails', (n) => [
-    lathe(
-      n,
-      [
-        [0.168, -0.166],
-        [0.185, -0.172],
-        [0.181, -0.12],
-        [0.174, -0.06],
-        [0.168, 0],
-        [0.164, 0.03],
-      ],
-      SHIRT_WIDE,
-      0.93,
-      36,
-    ),
-  ]);
-
-/** Lengthen a shirt into a long coat, as a consultant's white coat. */
-export function detailCoat(torso: THREE.Group, cloth: THREE.Material) {
-  put(torso, coatTails(), cloth).name = 'coat';
-}
-
-/** A robe's skirts, from the waist flaring out to the knee: longer and fuller than a coat's tails. */
-const robeSkirts = () =>
-  fuse('robe skirts', (n) => [
-    lathe(
-      n,
-      [
-        [0.2, -0.27],
-        [0.205, -0.262],
-        [0.196, -0.18],
-        [0.182, -0.09],
-        [0.17, 0],
-        [0.164, 0.06],
-      ],
-      SHIRT_WIDE,
-      0.95,
-      36,
-    ),
-  ]);
-
 /** How far up the torso the robe's sash is tied: at the waist. */
 const SASH_AT = 0.06;
 
@@ -824,9 +829,8 @@ const sash = () =>
     ];
   });
 
-/** Dress a guest asked back in the center's robe: its skirts down to the knee, and a sash tied in front. */
-export function detailRobe(torso: THREE.Group, cloth: THREE.Material, tie: THREE.Material) {
-  put(torso, robeSkirts(), cloth).name = 'coat';
+/** Tie the sash round the center's robe, whose skirts are a cut of its own (see character-clothes.ts). */
+export function detailSash(torso: THREE.Group, tie: THREE.Material) {
   put(torso, sash(), tie).name = 'sash';
 }
 
@@ -892,7 +896,7 @@ function bandRound(
 const stripeOf = ([y0, y1]: readonly [number, number]) => [(y0 + y1 - STRIPE) / 2, (y0 + y1 + STRIPE) / 2] as const;
 
 /** The turnout coat, from the hem to the shoulders, with round shoulders over the arms' hinges and a stand collar. */
-const turnoutCoat = () =>
+export const turnoutCoat = () =>
   fuse('turnout coat', (n) => [
     lathe(n, TURNOUT, TURNOUT_WIDE, TURNOUT_DEEP, 36),
     ...[-1, 1].map((s) => smooth(place(ball(0.072, n(18)), [s * 0.236, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95]))),
@@ -923,7 +927,7 @@ const coatStripes = () =>
   );
 
 /** How much fuller than a shirt's a turnout coat's sleeves are. */
-const SLEEVE_FULL = 1.1;
+export const SLEEVE_FULL = 1.1;
 
 /** A band round a sleeve above the cuff, measured from the elbow, on a sleeve made fuller. */
 const cuffBand = () =>
@@ -989,6 +993,42 @@ export function detailTurnout(
     cuff.scale.set(SLEEVE_FULL, 1, SLEEVE_FULL);
   }
   for (const shin of [joints.shinL, joints.shinR]) flat(put(shin, ankleBand(), band)).name = 'bands';
+}
+
+/** Where the therapist's oil bottle hangs on their belt, on the right hip toward the front, measured on the torso. */
+const BOTTLE_AT = [0.15, 0.08, 0.135] as const;
+
+/** A belt round the waist, shaped to the body. */
+const belt = () =>
+  fuse('belt', (n) => [
+    place(bare(new THREE.TorusGeometry(0.172, 0.022, n(8), n(28))), [0, 0.1, 0], [Math.PI / 2, 0, 0], [1.1, 0.92, 1]),
+  ]);
+
+/** A bottle of massage oil, clipped to the belt. */
+const oilBottle = () =>
+  fuse('oil bottle', (n) => [
+    place(bare(new THREE.CylinderGeometry(0.034, 0.034, 0.1, n(12), 1)), [BOTTLE_AT[0], BOTTLE_AT[1], BOTTLE_AT[2]]),
+  ]);
+
+/** The pump on top of the oil bottle: its stem, the collar it screws on with and the nozzle pointing forward. */
+const oilPump = () =>
+  fuse('oil pump', (n) => {
+    const [x, y, z] = BOTTLE_AT;
+    return [
+      place(bare(new THREE.CylinderGeometry(0.012, 0.012, 0.03, n(8), 1)), [x, y + 0.065, z]),
+      place(bare(new THREE.CylinderGeometry(0.022, 0.022, 0.016, n(10), 1)), [x, y + 0.086, z]),
+      place(bare(new THREE.BoxGeometry(0.016, 0.012, 0.045)), [x, y + 0.09, z + 0.03]),
+    ];
+  });
+
+/**
+ * Dress a massage therapist in their belt, with a pump bottle of massage oil clipped on at the hip: each a shape with
+ * stand-ins of fewer sides, so from the game's distance they cost a few dozen triangles rather than hundreds.
+ */
+export function detailBelt(torso: THREE.Group, leather: THREE.Material, oil: THREE.Material, pump: THREE.Material) {
+  put(torso, belt(), leather).name = 'belt';
+  put(torso, oilBottle(), oil).name = 'bottle';
+  put(torso, oilPump(), pump).name = 'pump';
 }
 
 /** The bib of a pair of overalls, over the front of the shirt. */
@@ -1059,6 +1099,9 @@ export function detailCap(head: THREE.Group, cloth: THREE.Material, kind: 'peake
   put(head, cap(kind), cloth).name = 'cap';
 }
 
+/** How many sides a limb has round it in full: a leg is a dozen pixels across even close up. */
+const LIMB = 16;
+
 /** How high the hips are, in meters before scaling. */
 export const HIP = 0.42;
 
@@ -1071,7 +1114,7 @@ export const KNEE = 0.18;
 export const ELBOW = 0.13;
 
 /** A thigh, from the hip to just past the knee. */
-const thigh = () =>
+export const thighShape = () =>
   fuse('thigh', (n) => [
     lathe(
       n,
@@ -1086,14 +1129,14 @@ const thigh = () =>
       ],
       1,
       0.95,
-      24,
+      LIMB,
     ),
   ]);
 
 /** A shin, from a round knee down to the turn-up at the ankle, measured from the knee. */
-const shin = () =>
+export const shinShape = () =>
   fuse('shin', (n) => [
-    smooth(place(ball(0.072, n(18)), [0, 0, 0], [0, 0, 0], [1, 1, 0.95])),
+    smooth(place(ball(0.072, n(14)), [0, 0, 0], [0, 0, 0], [1, 1, 0.95])),
     lathe(
       n,
       [
@@ -1107,16 +1150,19 @@ const shin = () =>
       ],
       1,
       0.95,
-      24,
+      LIMB,
     ),
   ]);
+
+/** How many sides the round parts of a shoe have in full. */
+const SHOE = 14;
 
 /** A shoe, rounded at the toe, on a flat sole that follows its outline, measured from the knee. */
 const shoe = () =>
   fuse('shoe', (n) => [
-    smooth(place(ball(0.075, n(20)), [0, -0.2, 0.042], [0.06, 0, 0], [0.95, 0.56, 1.62])),
-    smooth(place(ball(0.06, n(14)), [0, -0.175, -0.02], [0, 0, 0], [1.1, 0.7, 1])),
-    smooth(place(ball(0.075, n(20)), [0, -0.228, 0.042], [0, 0, 0], [0.98, 0.2, 1.65])),
+    smooth(place(ball(0.075, n(SHOE)), [0, -0.2, 0.042], [0.06, 0, 0], [0.95, 0.56, 1.62])),
+    smooth(place(ball(0.06, n(10)), [0, -0.175, -0.02], [0, 0, 0], [1.1, 0.7, 1])),
+    smooth(place(ball(0.075, n(SHOE)), [0, -0.228, 0.042], [0, 0, 0], [0.98, 0.2, 1.65])),
   ]);
 
 /** Build a leg hinged at the hip, with a shin and shoe hinged at the knee. */
@@ -1124,13 +1170,13 @@ export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material, 
   const leg = new THREE.Group();
   leg.position.set(x, HIP, 0);
   // a leg's shadow falls from its thigh and shin together, though each alone is too small to cast one
-  const upper = put(leg, thigh(), bottom);
+  const upper = put(leg, thighShape(), bottom);
   upper.name = 'trousers';
   upper.userData.shadow = 'always';
   const lower = new THREE.Group();
   lower.position.y = -KNEE;
   leg.add(lower);
-  const below = put(lower, shin(), bottom);
+  const below = put(lower, shinShape(), bottom);
   below.name = 'trousers';
   below.userData.shadow = 'always';
   put(lower, shoe(), shoes).name = 'shoe';
@@ -1138,51 +1184,54 @@ export function detailLeg(body: THREE.Group, x: number, bottom: THREE.Material, 
   return { leg, shin: lower };
 }
 
-/** An upper sleeve, from the shoulder to just past the elbow. */
-const upperSleeve = () =>
+/** An upper sleeve, from the shoulder to just past the elbow, slim under a round shoulder. */
+export const upperSleeve = () =>
   fuse('upper sleeve', (n) => [
     lathe(
       n,
       [
         [0, -ELBOW - 0.02],
-        [0.054, -ELBOW - 0.02],
-        [0.057, -0.1],
-        [0.061, -0.02],
-        [0.06, 0.015],
-        [0.05, 0.04],
-        [0.03, 0.055],
+        [0.049, -ELBOW - 0.02],
+        [0.051, -0.1],
+        [0.055, -0.02],
+        [0.054, 0.015],
+        [0.045, 0.04],
+        [0.027, 0.055],
         [0, 0.06],
       ],
       1,
       1,
-      24,
+      LIMB,
     ),
   ]);
 
 /** A forearm's sleeve, from a round elbow to a cuff at the wrist, measured from the elbow. */
 const lowerSleeve = () =>
   fuse('lower sleeve', (n) => [
-    smooth(ball(0.056, n(16))),
+    smooth(ball(0.05, n(12))),
     lathe(
       n,
       [
         [0, -0.112],
-        [0.046, -0.112],
-        [0.056, -0.106],
-        [0.056, -0.092],
-        [0.051, -0.084],
-        [0.052, -0.05],
-        [0.056, 0],
+        [0.042, -0.112],
+        [0.05, -0.106],
+        [0.05, -0.092],
+        [0.045, -0.084],
+        [0.046, -0.05],
+        [0.05, 0],
         [0, 0.02],
       ],
       1,
       1,
-      24,
+      LIMB,
     ),
   ]);
 
-/** A sleeve rolled up well above the elbow, as a massage therapist wears it. */
-const rolledSleeve = () =>
+/**
+ * A sleeve rolled up well above the elbow, as a massage therapist wears it, or a T-shirt's, with the roll of its cuff
+ * left off from the game's distance, where it would be under a pixel.
+ */
+export const rolledSleeve = () =>
   fuse('rolled', (n) => [
     lathe(
       n,
@@ -1198,9 +1247,11 @@ const rolledSleeve = () =>
       ],
       1,
       1,
-      24,
+      LIMB,
     ),
-    place(smooth(new THREE.TorusGeometry(0.054, 0.02, n(10), n(24))), [0, -0.087, 0], [Math.PI / 2, 0, 0]),
+    ...(n === TINY
+      ? []
+      : [place(smooth(new THREE.TorusGeometry(0.054, 0.02, n(10), n(24))), [0, -0.087, 0], [Math.PI / 2, 0, 0])]),
   ]);
 
 /** The bare upper arm below a rolled-up sleeve, rounding off into the point of the elbow when the arm bends. */
@@ -1222,22 +1273,17 @@ export const bareUpperArm = () =>
     ),
   ]);
 
-/** A hand on one side with a wrist above it, measured from the elbow, and with the bare forearm for a rolled-up sleeve. */
-const hand = (side: number, forearm: boolean) =>
+/**
+ * A hand on one side with a wrist above it, measured from the elbow, and with the bare forearm for a rolled-up sleeve:
+ * a mitten, the fingers one soft paddle curling a little forward and a thumb standing off it toward the front, which
+ * reads as a hand where four fingers a few pixels long do not.
+ */
+export const handShape = (side: number, forearm: boolean) =>
   fuse(`hand${side}${forearm ? 'f' : ''}`, (n) => {
     const parts = [
-      place(ball(0.05, n(16)), [0, -0.172, 0.004], [0, 0, 0], [0.6, 1, 0.95]),
-      place(bare(new THREE.CylinderGeometry(0.031, 0.034, 0.06, n(14))), [0, -0.118, 0]),
-      // four fingers held together, curling a little forward
-      ...[-0.024, -0.008, 0.008, 0.024].map((z, i) =>
-        place(
-          pill(0.0125, 0.03 - Math.abs(i - 1.5) * 0.005, n),
-          [side * -0.003, -0.222 + Math.abs(i - 1.5) * 0.004, z],
-          [-0.18 + z, 0, side * 0.08],
-        ),
-      ),
-      // the thumb, toward the front and turned in
-      place(pill(0.0135, 0.028, n), [side * -0.018, -0.168, 0.042], [0.7, 0, side * 0.45]),
+      smooth(place(ball(0.05, n(14)), [side * -0.002, -0.19, 0.006], [-0.12, 0, side * 0.06], [0.62, 1.2, 0.98])),
+      place(bare(new THREE.CylinderGeometry(0.03, 0.033, 0.06, n(12))), [0, -0.118, 0]),
+      place(pill(0.016, 0.026, n), [side * -0.016, -0.17, 0.042], [0.75, 0, side * 0.5]),
     ];
     if (forearm)
       parts.push(
@@ -1260,19 +1306,20 @@ const hand = (side: number, forearm: boolean) =>
   });
 
 /** A hand on one side with the bare forearm above it, for someone in a rolled-up sleeve or no sleeve at all. */
-export const bareForearm = (side: number) => hand(side, true);
+export const bareForearm = (side: number) => handShape(side, true);
 
-/** Build an arm hinged at the shoulder, with a forearm and hand hinged at the elbow: in a sleeve to the wrist, or rolled
- * up above the elbow. Returns the forearm. */
-export function detailArm(arm: THREE.Group, side: number, top: THREE.Material, skin: THREE.Material, rolled: boolean) {
-  put(arm, rolled ? rolledSleeve() : upperSleeve(), top).name = rolled ? 'rolled' : 'sleeve';
-  if (rolled) put(arm, bareUpperArm(), skin).name = 'arm';
+/**
+ * Build an arm hinged at the shoulder, with a forearm and hand hinged at the elbow, in a sleeve to the wrist: what they
+ * wear turns it into a short sleeve or a bare arm (see character-clothes.ts). Returns the forearm.
+ */
+export function detailArm(arm: THREE.Group, side: number, top: THREE.Material, skin: THREE.Material) {
+  put(arm, upperSleeve(), top).name = 'sleeve';
   const fore = new THREE.Group();
   fore.position.y = -ELBOW;
   // turned on the upper arm first, then bent, so the elbow can bend inward across the body as well as forward
   fore.rotation.order = 'YXZ';
   arm.add(fore);
-  if (!rolled) put(fore, lowerSleeve(), top).name = 'sleeve';
-  put(fore, hand(side, rolled), skin).name = 'hand';
+  put(fore, lowerSleeve(), top).name = 'sleeve';
+  put(fore, handShape(side, false), skin).name = 'hand';
   return fore;
 }

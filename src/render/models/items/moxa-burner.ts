@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 
 import { cyl, LACQUER, mat, partsOf, put, sph } from '../parts';
+import { idle } from './idle';
 
 /** Build the Moxa Burner model. */
 export function buildMoxaBurner(g: THREE.Group) {
@@ -17,7 +18,14 @@ export function buildMoxaBurner(g: THREE.Group) {
   ] as const) {
     const stick = put(g, cyl(0.016, 0.016, 0.22, 6), mat(0x6b5a3a, 0.9), x, 0.86, z);
     stick.rotation.z = lean;
-    put(g, sph(0.022, 8), mat(0xff7a2f, 0.4, 1.2), x - lean * 0.11, 0.97, z).castShadow = false;
+    put(
+      g,
+      sph(0.022, 8),
+      idle(mat(0xff7a2f, 0.4, 1.2), { kind: 'breathe', by: 0.35, pace: 2.3 }),
+      x - lean * 0.11,
+      0.97,
+      z,
+    ).castShadow = false;
   }
   const smoke = new THREE.Group();
   for (let i = 0; i < 3; i++) put(smoke, sph(0.06, 8), mat(0xe8e4dc, 0.9, 0.2), 0, 0, 0).castShadow = false;

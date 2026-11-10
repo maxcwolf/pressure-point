@@ -15,6 +15,7 @@ import { type Daylight, daylightAt, NOON, SEASON_LIGHT, stormy, type Tint } from
 import { orchardFor } from './models/orchard';
 import { leavesFor } from './models/tree';
 import { LAWN, type Setting, type SettingLight, settingOf } from './setting';
+import { softenShadows, softRadius } from './soft-shadows';
 
 /** How bright the sky and the sun are as usual. */
 const SKY = 1.1;
@@ -78,6 +79,9 @@ export function addLights(scene: THREE.Scene, shadowReach = 26): Lights {
   sun.castShadow = true;
   sun.shadow.mapSize.set(SHADOW_MAP, SHADOW_MAP);
   sun.shadow.bias = -0.0004;
+  // three.js's shadow code is patched for soft shadows before anything is drawn, and the sun's are soft drawn Full
+  softenShadows();
+  sun.shadow.radius = softRadius();
   fitShadow(sun, shadowReach);
   scene.add(sky, sun, sun.target);
   return { sky, sun, level: 1, gray: 0, depth: 1, out: 0, scene };

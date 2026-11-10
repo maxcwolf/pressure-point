@@ -139,19 +139,31 @@ export const rollSex = (r: Rng, womenShare: number): Sex => (random(r) < womenSh
 /** A build from a number's lowest two bits: slight, average twice over, or stocky. */
 const buildOf = (n: number) => [0, 1, 1, 2][n & 3] ?? 1;
 
+/** How many bits of taste in clothes a look keeps. */
+export const WEAR_BITS = 16;
+
 /**
- * What a look takes from the spare bits of the number its height was drawn from: its build, glasses and shoes. The height uses the top
- * bits, and these the bottom ones, so making someone up takes no more of the game's random numbers than it did, and a
- * seeded game runs as it always has.
+ * What a look takes from the spare bits of the number its height was drawn from: its build, glasses, shoes and taste in
+ * clothes. The height uses the top bits, and these the bottom ones, so making someone up takes no more of the game's
+ * random numbers than it did, and a seeded game runs as it always has.
  */
 function lookBits(height: number) {
   const bits = Math.floor(height * 2 ** 32) >>> 0;
-  // slight, average twice over, or stocky; glasses on a quarter of people, round or square; and any color of shoe
+  // slight, average twice over, or stocky; glasses on a quarter of people, round or square; any color of shoe; and
+  // the next sixteen bits for what they like to wear
   return {
     build: buildOf(bits),
     glasses: ((bits >>> 2) & 3) === 0 ? 1 + ((bits >>> 4) & 1) : 0,
     shoes: (bits >>> 5) & 3,
+    wear: (bits >>> 7) & ((1 << WEAR_BITS) - 1),
   };
+}
+
+/** A taste in clothes for someone from a save made before people had one: scrambled from their id, so neighbors differ. */
+export function wearOf(id: number) {
+  let h = Math.imul(id + 0x9e37, 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return (h ^ (h >>> 16)) & ((1 << WEAR_BITS) - 1);
 }
 
 /** A random appearance for a woman or a man: half of men have a moustache or a beard. */
@@ -168,14 +180,15 @@ export function randomLook(r: Rng, sex: Sex): Look {
 }
 
 /**
- * Give a look from before builds, glasses and shoes the fields it lacks, from the person's id rather than the game's
- * random numbers, so loading a save changes nothing about what happens next.
+ * Give a look from before builds, glasses, shoes and a taste in clothes the fields it lacks, from the person's id rather
+ * than the game's random numbers, so loading a save changes nothing about what happens next.
  */
 export function settleLook(person: { id: number; look: Partial<Look> }) {
   person.look.build ??= [1, 0, 1, 2][person.id % 4] ?? 1;
   person.look.glasses ??= person.id % 4 === 1 ? 1 + ((person.id >> 2) % 2) : 0;
   // everyone's shoes were brown, and stay so
   person.look.shoes ??= 0;
+  person.look.wear ??= wearOf(person.id);
 }
 
 const CAMEOS_BY_SEX: Readonly<Record<Sex, readonly string[]>> = {

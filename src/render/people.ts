@@ -1,4 +1,4 @@
-// People: a clay figure for every guest and member of staff, posed each frame.
+// People: a clay figure for every guest and member of staff, dressed for the day and posed each frame.
 
 import type * as THREE from 'three';
 
@@ -9,6 +9,7 @@ import type { Sim } from '../core/sim/sim';
 import type { Char, Guest } from '../core/state/types';
 import { type Act, actOf, itemIdAt, lyingAt } from './acts';
 import { BUBBLE_STANDING } from './bubbles';
+import { prefersReducedMotion } from './camera-math';
 import { Crowd, type Viewpoint } from './crowd';
 import { disposeOwned } from './disposal';
 import { applyGuestGag } from './gags/apply';
@@ -17,6 +18,7 @@ import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { showBare } from './models/bare';
 import { bubbleHeight, buildCharacter, type CharRig } from './models/character';
+import { outerwearOn, outfitOf, weatherKey, weatherOf } from './models/wardrobe';
 import { keepApart, type Placed, showMotion, type Shown } from './motion';
 import { poseChar, type WorkStyle } from './pose';
 
@@ -44,6 +46,8 @@ export function streetFade(x: number, y: number, ends: readonly number[]): numbe
 export class PeopleLayer {
   private chars = new Map<number, CharRig>();
   private crowd: Crowd;
+  /** The day staff were last dressed for, to dress them again when it changes. */
+  private dressedFor = '';
 
   constructor(
     private scene: THREE.Scene,
@@ -60,6 +64,13 @@ export class PeopleLayer {
 
   /** Give everyone a figure, pose them for this frame and remove those who have left. */
   update(t: number, dt: number) {
+    // whoever arrives now is dressed for the day, and staff are dressed again as it changes
+    const weather = weatherOf(this.sim.s);
+    const day = weatherKey(weather);
+    const redress = day !== this.dressedFor;
+    this.dressedFor = day;
+    // asked for less motion, people walk with less bob and sway
+    const calm = prefersReducedMotion();
     const live = new Set<number>();
     const ends = streetEnds(this.sim.world.building, this.sim.world.w);
     // the front door, between its two tiles in the front wall, that a guest who is fed up with waiting turns toward
@@ -79,9 +90,9 @@ export class PeopleLayer {
       if (!rig) {
         rig =
           c.kind === 'staff'
-            ? buildCharacter(c.look, c.role)
+            ? buildCharacter(c.look, c.role, undefined, undefined, false, weather)
             : c.kind === 'visitor'
-              ? buildCharacter(c.look, undefined, undefined, c.visit)
+              ? buildCharacter(c.look, undefined, undefined, c.visit, false, weather)
               : // a class-goer is here for a class, and shows no symptoms; a guest asked back comes in the center's robe
                 buildCharacter(
                   c.look,
@@ -89,6 +100,7 @@ export class PeopleLayer {
                   c.classDay ? undefined : conditionOf(c.condition).visual,
                   undefined,
                   c.comp !== undefined,
+                  weather,
                 );
         rig.pick.userData.charId = c.id;
         rig.pick.userData.charKind = c.kind;
@@ -96,7 +108,7 @@ export class PeopleLayer {
         // the smoke from a bundle of sage hangs in the room, not on whoever is carrying it
         if (rig.smoke) this.scene.add(rig.smoke);
         this.chars.set(c.id, rig);
-      }
+      } else if (redress && c.kind === 'staff') rig.clothes.wear(outfitOf(c.look, weather, c.role));
       const at = this.itemAt(c);
       // where they are shown, climbing on or off where they lie rather than popping there
       const bed = c.kind === 'guest' ? at?.access.find((a) => a.pose === 'lie')?.lie : undefined;
@@ -124,6 +136,12 @@ export class PeopleLayer {
         drawnAt.delete(c.id);
         continue;
       }
+      // outerwear off to be treated, and back on to leave
+      const outer = outerwearOn(rig.clothes.outer, seen.c);
+      if (outer !== rig.clothes.outer) {
+        rig.clothes.outer = outer;
+        rig.clothes.dress();
+      }
       poseChar(rig, seen.c, t, dt, {
         style: this.workStyle(c),
         door,
@@ -137,6 +155,7 @@ export class PeopleLayer {
         runners,
         mopping: this.mopping(c),
         rattled: rattled.size > 0 && rattled.has(this.sim.world.zoneAt(c.tx, c.ty)),
+        calm,
       });
       rig.group.scale.setScalar(size);
       if (c.kind === 'guest') {

@@ -3,6 +3,7 @@
 import type * as THREE from 'three';
 
 import { CREAM, cyl, mat, put, soft, sph, WOOD_DARK } from '../parts';
+import { idle } from './idle';
 
 /** Build the Reiki Altar model. */
 export function buildReikiAltar(g: THREE.Group) {
@@ -14,7 +15,14 @@ export function buildReikiAltar(g: THREE.Group) {
     [-0.22, 0.12],
   ] as const) {
     put(g, cyl(0.04, 0.04, h, 14), mat(CREAM), x, 0.66 + h / 2, -0.1);
-    put(g, sph(0.026, 10), mat(0xffb347, 0.4, 1.6), x, 0.69 + h, -0.1).scale.y = 1.5;
+    put(
+      g,
+      sph(0.026, 10),
+      idle(mat(0xffb347, 0.4, 1.6), { kind: 'flicker', by: 0.45, from: 0.8 }),
+      x,
+      0.69 + h,
+      -0.1,
+    ).scale.y = 1.5;
   }
   // a crystal on a little stand, and a framed photo
   put(g, cyl(0.06, 0.07, 0.04, 10), mat(WOOD_DARK), 0.04, 0.68, -0.14);

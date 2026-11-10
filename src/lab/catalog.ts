@@ -79,7 +79,7 @@ import { nearSides } from '../render/turn';
 import { CLIMBS, climbSpecimen } from './climb';
 import { button, choice, type Control, type Option, range, toggle } from './controls';
 import { demoGuest, demoStaff, demoVisitor, LAB_LOOK } from './people';
-import { walkSpecimen } from './walk';
+import { walkSpecimen, walkStatesSpecimen } from './walk';
 
 /** A model as built for the lab, with what moves it each frame and the settings that change it. */
 export interface Model {
@@ -1397,6 +1397,7 @@ export const CATALOG: readonly Specimen[] = [
   ...CLIMBS.map((type) => climbSpecimen(type)),
   ...CLIMBS.map((type) => climbSpecimen(type, 'off')),
   walkSpecimen(),
+  walkStatesSpecimen(),
   doorSpecimen(),
   ...SCENERY,
 ];

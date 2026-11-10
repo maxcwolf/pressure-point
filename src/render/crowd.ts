@@ -4,7 +4,11 @@
 // not look at. Anything else, such as a glowing symptom or a material of a person's own, is drawn as it always was.
 // Someone seen from afar is drawn with stand-ins for their parts that have fewer sides, where a shape has one, and from
 // further still with fewer again: from there, each of the full shape's sides would be finer than a pixel, and still
-// cost as much to draw.
+// cost as much to draw. Someone drawn that small is marked so (`userData.small`), for the next frame's posing to spare
+// what would not show.
+//
+// A part that changes shape as it is posed, as a skirt does swinging and folding into the lap (see
+// character-clothes.ts), takes its own mix of its shapes in its batch too.
 
 import * as THREE from 'three';
 
@@ -40,11 +44,15 @@ export interface Viewpoint {
 const eye = new THREE.Vector3();
 const at = new THREE.Vector3();
 
-/** One shape in one kind of material, drawn for every person who has it. */
+/**
+ * One shape in one kind of material, drawn for every person who has it, and, for a shape that changes as it is posed,
+ * how many numbers each person's mix of its shapes takes up.
+ */
 interface Batch {
   mesh: THREE.InstancedMesh;
   colors: THREE.InstancedBufferAttribute;
   count: number;
+  morphs: number;
 }
 
 export class Crowd {
@@ -70,6 +78,7 @@ export class Crowd {
     for (const person of people) {
       const ppm = view ? pixelsPerMeter(view, eye.distanceTo(at.setFromMatrixPosition(person.matrixWorld))) : Infinity;
       const detail: Detail = ppm < TINY_PIXELS_PER_METER ? 'tiny' : ppm < FAR_PIXELS_PER_METER ? 'far' : 'full';
+      person.userData.small = detail === 'tiny';
       person.traverseVisible((o) => (o as Partial<THREE.Mesh>).isMesh && this.add(o as THREE.Mesh, detail));
     }
     for (const b of this.batches.values()) {
@@ -77,6 +86,7 @@ export class Crowd {
       b.mesh.visible = b.count > 0;
       b.mesh.instanceMatrix.needsUpdate = true;
       b.colors.needsUpdate = true;
+      if (b.mesh.morphTexture && b.count > 0) b.mesh.morphTexture.needsUpdate = true;
     }
   }
 
@@ -101,6 +111,7 @@ export class Crowd {
     part.matrixWorld.toArray(b.mesh.instanceMatrix.array, b.count * 16);
     const { r, g, b: blue } = (material as THREE.MeshStandardMaterial).color;
     b.colors.setXYZ(b.count, r, g, blue);
+    if (b.morphs && part.morphTargetInfluences) b.mesh.setMorphAt(b.count, part);
     b.count++;
   }
 
@@ -116,10 +127,24 @@ export class Crowd {
     mesh.receiveShadow = part.receiveShadow;
     // the people move every frame, so a box around them all would need working out every frame too
     mesh.frustumCulled = false;
-    const b: Batch = { mesh, colors, count: old?.count ?? 0 };
+    // a shape that changes as it is posed keeps each person's mix of its shapes, made now for all the room there is,
+    // so it is drawn the same way from its first frame to its last
+    const shapes = shape.morphAttributes.position?.length ?? 0;
+    const morphs = shapes ? shapes + 1 : 0;
+    if (morphs)
+      mesh.morphTexture = new THREE.DataTexture(
+        new Float32Array(morphs * room),
+        morphs,
+        room,
+        THREE.RedFormat,
+        THREE.FloatType,
+      );
+    const b: Batch = { mesh, colors, count: old?.count ?? 0, morphs };
     if (old) {
       mesh.instanceMatrix.array.set(old.mesh.instanceMatrix.array);
       colors.array.set(old.colors.array);
+      const was = old.mesh.morphTexture?.image.data as Float32Array | undefined;
+      if (was && mesh.morphTexture) (mesh.morphTexture.image.data as Float32Array).set(was);
       this.root.remove(old.mesh);
       old.mesh.dispose();
     }

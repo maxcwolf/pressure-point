@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import type { Item } from '../../src/core/state/types';
 import { isOwned } from '../../src/render/disposal';
+import { grounded } from '../../src/render/grounding';
 import { GHOST_OPACITY } from '../../src/render/hung';
 import { ItemsLayer } from '../../src/render/items';
 import { mat, partsOf } from '../../src/render/models/parts';
@@ -238,9 +239,10 @@ describe('drawing rooms', () => {
 
   it("draws a finished room's walls in one go, rather than a box at a time", () => {
     const { s, scene } = drawnRooms();
-    const wall = mat(0xf7f1e5, 0.85);
+    // drawn Full, the walls are drawn in the copy of their paint whose foot is darkened
+    const paint = [mat(0xf7f1e5, 0.85), grounded(mat(0xf7f1e5, 0.85))];
     let walls = 0;
-    scene.traverse((o) => o instanceof THREE.Mesh && o.material === wall && walls++);
+    scene.traverse((o) => o instanceof THREE.Mesh && paint.includes(o.material as THREE.Material) && walls++);
     expect(s.rooms.filter((r) => r.done).length).toBeGreaterThan(1);
     expect(walls).toBe(s.rooms.filter((r) => r.done).length);
   });

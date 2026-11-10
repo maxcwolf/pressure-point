@@ -16,6 +16,9 @@ export const LAB_LOOK: Look = {
   build: 1,
   glasses: 0,
   shoes: 0,
+  // a sweatshirt and trousers on a mild day, and on others every piece the day has: a parka, a bobble hat and a
+  // scarf in winter, a T-shirt, shorts, a sun hat and shades in summer
+  wear: 0,
 };
 
 /** What every person has, standing still at the middle of the stage and facing the front. */

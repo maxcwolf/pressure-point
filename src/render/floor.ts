@@ -1,5 +1,7 @@
 // The floor: one texture painted from the tile grid, with each room's flooring, as chosen or its own, the corridor,
 // paving and road, and the open ground: a lawn, sand or snow, or a plaza's slabs with gravel lots for sale among them.
+// Drawn Full, the open ground wears the same pattern as the ground past the lot (`ground.ts`), on one even color so no
+// tile shows, and a soft shade is laid where walls and furniture stand (`grounding.ts`).
 
 import * as THREE from 'three';
 
@@ -11,7 +13,10 @@ import type { Sketch, WallSpot } from '../core/state/types';
 import { must } from '../core/util';
 import { itemDims, onWall, Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
 import { paintFloorTile } from './decor-paint';
-import { type Setting, settingOf } from './setting';
+import { fancy } from './fx';
+import { paintGround } from './ground';
+import { paintGroundShade } from './grounding';
+import { type Setting, settingName, settingOf } from './setting';
 import { hash } from './shared';
 
 /** How many texture pixels a tile gets: enough to stay crisp fully zoomed in, and the widest lot under 4096 across. */
@@ -260,8 +265,27 @@ export class Floor {
     scene.add(floor);
   }
 
-  /** Repaint the floor texture. */
+  /** Whether the floor has changed since its texture was last painted. */
+  private stale = false;
+
+  /**
+   * Have the floor's texture repainted before the next frame that is drawn. Painting waits for that frame: a view
+   * that draws none, as in the browser tests of behavior, paints nothing, and several changes between two frames are
+   * painted once.
+   */
   draw() {
+    this.stale = true;
+  }
+
+  /** Repaint the floor's texture if the floor has changed since it was last painted, for a frame about to be drawn. */
+  ready() {
+    if (!this.stale) return;
+    this.stale = false;
+    this.paint();
+  }
+
+  /** Repaint the floor texture. */
+  private paint() {
     const ctx = must(this.canvas.getContext('2d'), '2D canvas');
     const world = this.sim.world;
     const setting = settingOf(this.sim.s);
@@ -281,6 +305,11 @@ export class Floor {
       ctx.fillRect(px + 1.5, py + 1.5, TS - 1.5, 1);
       ctx.fillRect(px + 1.5, py + 1.5, 1, TS - 1.5);
     };
+    // drawn Full, the open ground is one even color under the ground's pattern, as it is past the lot
+    const full = fancy();
+    const look = settingName(this.sim.s);
+    /** The tiles of open ground, by their corners in pixels, for the ground's pattern to shade once all are painted. */
+    const open: [number, number][] = [];
     for (let y = 0; y < world.h; y++) {
       for (let x = 0; x < world.w; x++) {
         const z = world.zoneAt(x, y);
@@ -327,8 +356,14 @@ export class Floor {
         } else if (setting.plots && plotAt(plots, x, y)) {
           const lot = plotAt(plots, x, y);
           paintLot(ctx, setting.plots, px, py, x, y, (dx, dy) => plotAt(plots, x + dx, y + dy) === lot);
-        } else if (setting.kind === 'paving') paintPaving(ctx, setting, px, py, x, y);
-        else {
+        } else if (setting.kind === 'paving') {
+          paintPaving(ctx, setting, px, py, x, y);
+          if (full) open.push([px, py]);
+        } else if (full) {
+          ctx.fillStyle = setting.tiles[0];
+          ctx.fillRect(px, py, TS, TS);
+          open.push([px, py]);
+        } else {
           ctx.fillStyle = setting.tiles[hash(x, y) > 0.5 ? 0 : 1];
           ctx.fillRect(px, py, TS, TS);
           ctx.fillStyle = setting.fleck;
@@ -337,6 +372,9 @@ export class Floor {
         }
       }
     }
+    paintGround(ctx, look, open, TS);
+    // the soft shade where walls and furniture stand, under the mat, the thresholds and the sketches
+    paintGroundShade(ctx, this.sim, TS);
     // welcome mat
     const { front } = world.building;
     ctx.fillStyle = '#2fa8a0';
