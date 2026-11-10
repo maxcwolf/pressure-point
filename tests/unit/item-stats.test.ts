@@ -32,13 +32,12 @@ beforeEach(() => {
 });
 
 describe('the display settings', () => {
-  it('start with stats in the tooltip, the preview while placing on, messages for as long as they take to read, the usual size, and the scene drawn Full', () => {
+  it('start with stats in the tooltip, the preview while placing on, messages for as long as they take to read, the usual size, and no choice of graphics', () => {
     expect(loadDisplay()).toEqual({
       itemView: 'tooltip',
       placePreview: true,
       messages: 'normal',
       uiScale: 1,
-      graphics: 'full',
     });
   });
 

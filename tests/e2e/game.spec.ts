@@ -4141,3 +4141,40 @@ test.describe('complaints', () => {
     expect(game.errors).toEqual([]);
   });
 });
+
+test.describe('the Graphics setting', () => {
+  /** Whether the scene is dressed as Full dresses it: with what grows on the ground outdoors. */
+  const dressed = (game: Game) =>
+    game.eval(
+      (pp) =>
+        !!(pp.view as unknown as { scene: { getObjectByName(name: string): unknown } }).scene.getObjectByName(
+          'ground-cover',
+        ),
+    );
+
+  test('is Full for a player who chose it, however the computer draws', async ({ game }) => {
+    await game.start();
+    expect(await dressed(game)).toBe(true);
+  });
+
+  test.describe('with no choice made, on a computer that draws in software as the tests do', () => {
+    test.use({ graphics: 'computer' });
+
+    test('starts Plain, and is Full from then on once the player chooses it', async ({ game, page }) => {
+      await game.start();
+      expect(await dressed(game)).toBe(false);
+      await page.locator('#sys').locator('[data-tip="Menu"]').click();
+      await page.getByRole('button', { name: 'Settings' }).click();
+      const graphics = page.getByRole('button', { name: 'Graphics' });
+      await expect(graphics).toHaveText('Plain');
+      await graphics.click();
+      await expect(graphics).toHaveText('Full');
+      expect(await dressed(game)).toBe(true);
+
+      // the choice is the player's now, and kept
+      await page.reload();
+      await page.getByRole('button', { name: 'Settings' }).click();
+      await expect(page.getByRole('button', { name: 'Graphics' })).toHaveText('Full');
+    });
+  });
+});

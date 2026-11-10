@@ -34,19 +34,22 @@ export interface DisplayPrefs {
   messages: MessageTime;
   /** How big the in-game interface is drawn, as a share of its usual size: bigger for a large screen far away. */
   uiScale: number;
-  graphics: Graphics;
+  /**
+   * The player's choice of graphics, once they have made one. Until then the computer's own way of drawing decides:
+   * Full with a graphics card, Plain without one (`graphicsFor` in `app/graphics.ts`).
+   */
+  graphics?: Graphics;
 }
 
 /**
  * What a new player starts with: stats in the tooltip, the preview while placing on, messages for as long as they take
- * to read, the interface at its usual size and the scene drawn Full.
+ * to read, the interface at its usual size, and no choice of graphics yet, which leaves it to the computer.
  */
 export const defaultDisplay = (): DisplayPrefs => ({
   itemView: 'tooltip',
   placePreview: true,
   messages: 'normal',
   uiScale: 1,
-  graphics: 'full',
 });
 
 /** Display settings read back from storage, with anything missing or unusable left at its default. */

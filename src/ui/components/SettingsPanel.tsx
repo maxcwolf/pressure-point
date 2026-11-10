@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'preact/hooks';
 
 import { setSharing, sharing, track } from '../../app/analytics';
+import { graphicsInUse } from '../../app/graphics';
 import type { Audio } from '../../audio/audio';
 import {
   CAMPAIGN,
@@ -281,21 +282,21 @@ export function SettingsPanel({ audio, sim, fullScreen, onChange, onGraphics }: 
             <span>
               How much the scene is dressed. Full lays soft shade where things meet the floor, sways the trees, lets
               birds and butterflies about the lot, puts a glow round lamps and candles, and puffs dust where things are
-              put down. Plain leaves all that out, for a slower computer.
+              put down. Plain leaves all that out, for a slower computer, and is what a computer with no graphics card
+              starts with.
             </span>
           </div>{' '}
           <button
             class={choice}
             aria-label="Graphics"
             onClick={flip('graphics', () => {
-              const prefs = loadDisplay();
-              const graphics = nextChoice(GRAPHICS, prefs.graphics);
-              saveDisplay({ ...prefs, graphics });
+              const graphics = nextChoice(GRAPHICS, graphicsInUse());
+              saveDisplay({ ...loadDisplay(), graphics });
               onGraphics?.(graphics);
               return graphics;
             })}
           >
-            {GRAPHICS_NAMES[loadDisplay().graphics]}
+            {GRAPHICS_NAMES[graphicsInUse()]}
           </button>
         </li>
         {fullScreen && (

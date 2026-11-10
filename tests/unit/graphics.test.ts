@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { askedGraphics } from '../../src/app/graphics';
+import { askedGraphics, graphicsFor, softwareRenderer } from '../../src/app/graphics';
 import { CENTERS, H, type Rect, ROAD_Y, SIDEWALK_Y } from '../../src/core/data';
 import { footprintOf } from '../../src/core/footprint';
 import { lotWidth } from '../../src/core/land';
@@ -79,6 +79,33 @@ describe('the Graphics setting', () => {
     expect(askedGraphics('?graphics=ultra')).toBeUndefined();
     expect(askedGraphics('?fx=all')).toBeUndefined();
     expect(askedGraphics('')).toBeUndefined();
+  });
+
+  it('is left to the computer until the player chooses: Plain drawn in software, Full on a graphics card', () => {
+    expect(graphicsFor(undefined, undefined, true)).toBe('plain');
+    expect(graphicsFor(undefined, undefined, false)).toBe('full');
+    // the player's choice stands however the computer draws, and a dev build's address over both
+    expect(graphicsFor(undefined, 'full', true)).toBe('full');
+    expect(graphicsFor(undefined, 'plain', false)).toBe('plain');
+    expect(graphicsFor('full', 'plain', true)).toBe('full');
+    expect(graphicsFor('plain', 'full', false)).toBe('plain');
+  });
+
+  it('knows a driver that draws in software by its name', () => {
+    for (const name of [
+      'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)',
+      'ANGLE (Mesa, llvmpipe (LLVM 15.0.7 256 bits), OpenGL 4.5)',
+      'ANGLE (Microsoft, Microsoft Basic Render Driver Direct3D11 vs_5_0 ps_5_0, D3D11)',
+      'Apple Software Renderer',
+    ])
+      expect(softwareRenderer(name), name).toBe(true);
+    for (const name of [
+      'ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Unspecified Version)',
+      'ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)',
+      'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)',
+      '',
+    ])
+      expect(softwareRenderer(name), name).toBe(false);
   });
 });
 

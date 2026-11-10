@@ -615,9 +615,27 @@ export class Game {
   }
 }
 
-/** The options a test can set: whether the game draws each frame. */
+/**
+ * The options a test can set: whether the game draws each frame, and the Graphics setting the player is taken to have
+ * chosen, or 'computer' for none, which leaves it to the computer the test runs on.
+ */
 export interface GameOptions {
   draw: boolean;
+  graphics: 'full' | 'plain' | 'computer';
+}
+
+/**
+ * Choose a Graphics setting for the player, where none is stored yet. Run in the page before anything else. The tests
+ * draw in software, where a player who has not chosen gets Plain, and most of them are about the game drawn Full.
+ */
+function chooseGraphics(graphics: 'full' | 'plain') {
+  const key = 'pressure-point-display';
+  try {
+    const prefs = JSON.parse(localStorage.getItem(key) ?? '{}') as { graphics?: string };
+    if (!prefs.graphics) localStorage.setItem(key, JSON.stringify({ ...prefs, graphics }));
+  } catch {
+    // a page with no storage keeps what the computer decides
+  }
 }
 
 /**
@@ -647,9 +665,12 @@ function stopDrawing() {
 export const test = base.extend<GameOptions & { game: Game }>({
   // drawing is the slow part of software WebGL; tests of behavior turn it off (playwright.config.ts)
   draw: [true, { option: true }],
+  // Full, as most players have it: left to the computer, the tests' software drawing would make it Plain
+  graphics: ['full', { option: true }],
   /** Give each test a Game, and fail it if the page logged any errors. */
-  game: async ({ page, draw }, use) => {
+  game: async ({ page, draw, graphics }, use) => {
     if (!draw) await page.addInitScript(stopDrawing);
+    if (graphics !== 'computer') await page.addInitScript(chooseGraphics, graphics);
     const game = new Game(page);
     await use(game);
     expect(game.errors, 'errors logged by the page').toEqual([]);
