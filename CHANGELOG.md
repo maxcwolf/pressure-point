@@ -2,6 +2,10 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
+## Unreleased
+
+- **Plain graphics to begin with on a computer with no graphics card.** Where the game is drawn in software, Full takes about half as long again a frame, so a player who has not chosen starts in Plain there. On a computer with a graphics card it is Full as before, and **Graphics** in Settings still switches either way.
+
 ## v0.36.5
 
 - **Full graphics without a graphics card.** The grass, flowers and pebbles on the ground are drawn in a way that costs a computer drawing in software about a third less time each frame. They look the same, and nothing changes on a computer with a graphics card.
