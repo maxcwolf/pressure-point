@@ -2,7 +2,7 @@
 
 Each release's notes are taken from its section here. Keep them short.
 
-## Unreleased
+## v0.36.5
 
 - **Full graphics without a graphics card.** The grass, flowers and pebbles on the ground are drawn in a way that costs a computer drawing in software about a third less time each frame. They look the same, and nothing changes on a computer with a graphics card.
 
