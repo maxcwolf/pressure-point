@@ -11,12 +11,15 @@ import { CameraRig } from './camera';
 import { coverCrop } from './cover-crop';
 import { Floor } from './floor';
 import { GagClock } from './gags/clock';
+import { groundTrees, groundWalls } from './grounding';
 import { HalosLayer } from './halos';
 import { Heatmap, type HeatTile, type Palette } from './heatmap';
 import { ItemsLayer } from './items';
+import { type JuiceLayer, juiceLayer } from './juice';
 import { LandLayer } from './land';
 import { addLights, atNoon, type Lights, lightScene, lightSetting, placeSun, shadowReach, toneMap } from './lighting';
 import { LitterLayer } from './litter';
+import { OutdoorsLayer } from './outdoors';
 import type { Marker, OverlayTile } from './overlay-codes';
 import { type DoorSpec, type GhostSpec, Overlays } from './overlays';
 import { PeopleLayer } from './people';
@@ -27,6 +30,7 @@ import { RoomsLayer } from './rooms';
 import { buildScenery, buildShell } from './scenery';
 import { settingName, settingOf } from './setting';
 import { Settling } from './settle';
+import { reflectionsFor } from './sky';
 import { SnowfallLayer } from './snowfall';
 import { StorefrontLayer } from './storefront';
 import { nearSides, type Turn } from './turn';
@@ -84,6 +88,8 @@ export class View {
   private facing: Turn = 0;
   /** The items just put down, settling into place. */
   private settling = new Settling();
+  /** Puffs of dust and showers of sparkles, when switched on. */
+  private juice: JuiceLayer | null;
   private floor: Floor;
   readonly rooms: RoomsLayer;
   private items: ItemsLayer;
@@ -92,6 +98,8 @@ export class View {
   private vibes: VibesLayer;
   private snow: SnowfallLayer;
   private rain: RainLayer;
+  /** The wind outdoors and the small life on the lot. */
+  private outdoors: OutdoorsLayer;
   private storefront: StorefrontLayer;
   private preparations: PreparationsLayer;
   private brigade: BrigadeLayer;
@@ -119,6 +127,7 @@ export class View {
     this.scene.background = new THREE.Color(settingOf(sim.s).ground);
 
     this.lights = addLights(this.scene);
+    this.lights.reflected = reflectionsFor(this.renderer, this.scene);
     lightSetting(this.lights, settingOf(sim.s).light);
 
     this.rig = new CameraRig(sim.world.building, sim.world.w);
@@ -130,9 +139,11 @@ export class View {
       clearOf(sim),
       centerOf(sim.s).highStreet,
     );
+    groundTrees(this.scenery);
     this.sceneryPlot = sceneryKey(sim);
     this.scene.add(this.scenery);
     this.shell = buildShell(sim.world.building, nearSides(this.facing));
+    groundWalls(this.shell);
     this.shellKey = `${footprintKey(sim.world.building)}|${this.facing}`;
     this.scene.add(this.shell);
     this.floor = new Floor(this.scene, sim);
@@ -145,9 +156,11 @@ export class View {
     this.vibes = new VibesLayer(this.scene, sim);
     this.snow = new SnowfallLayer(this.scene, sim);
     this.rain = new RainLayer(this.scene, sim);
+    this.outdoors = new OutdoorsLayer(this.scene, sim);
     this.storefront = new StorefrontLayer(this.scene, sim);
     this.preparations = new PreparationsLayer(this.scene, sim);
     this.brigade = new BrigadeLayer(this.scene, sim);
+    this.juice = juiceLayer(this.scene, sim, () => this.rig.reduceMotion());
     this.overlays = new Overlays(this.scene, sim);
     this.heat = new Heatmap(this.scene, sim.world.w * sim.world.h);
     this.halos = new HalosLayer(this.scene, sim);
@@ -220,6 +233,7 @@ export class View {
       (o as Partial<THREE.Mesh>).geometry?.dispose();
     });
     this.shell = buildShell(fp, nearSides(this.facing));
+    groundWalls(this.shell);
     this.scene.add(this.shell);
   }
 
@@ -242,6 +256,7 @@ export class View {
       clearOf(this.sim),
       centerOf(this.sim.s).highStreet,
     );
+    groundTrees(this.scenery);
     this.scene.add(this.scenery);
   }
 
@@ -257,7 +272,11 @@ export class View {
       this.floor.draw();
       this.rooms.sync();
       const landed = this.items.sync();
-      if (!loading && !this.rig.reduceMotion()) for (const model of landed) this.settling.add(model);
+      if (!loading && !this.rig.reduceMotion())
+        for (const model of landed) {
+          this.settling.add(model);
+          this.juice?.landed(model);
+        }
     }
     this.people.update(this.time, dt);
     this.litter.update(this.time, this.rig.camera, this.renderer.getSize(drawn).y);
@@ -265,12 +284,14 @@ export class View {
     this.vibes.update(this.time);
     this.snow.update(this.time);
     this.rain.update(this.time);
+    this.outdoors.update(this.time, dt);
     this.storefront.update();
     this.preparations.update(this.time);
     this.brigade.update(this.time, this.rig.reduceMotion());
     this.land.update();
     this.items.animate(this.time);
     this.settling.update(dt);
+    this.juice?.update(dt);
     this.heat.update(dt);
     this.overlays.updateRing(this.time);
     this.halos.update();

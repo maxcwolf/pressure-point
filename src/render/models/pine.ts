@@ -1,6 +1,7 @@
 // Pine trees for the mountains, with snow on their branches, drawn as a few instanced meshes.
 import * as THREE from 'three';
 
+import { sway, WIND } from '../wind';
 import { cached, cyl, mat } from './parts';
 import type { TreeSpot } from './tree';
 
@@ -29,6 +30,25 @@ const tier = () =>
     ].map(([x = 0, y = 0]) => new THREE.Vector2(x, y));
     return new THREE.LatheGeometry(pts, 12);
   });
+
+/** How far a pine's tiers give in the wind (see `sway`): a stiff tree, a little less than a broadleaved one. */
+const PINE_BEND = 0.016;
+/** The pines' own materials for needles and snow, made once each, when the wind blows. */
+const swaying = new Map<THREE.Material, THREE.Material>();
+
+/**
+ * The material a pine's needles or snow are drawn in: the shared one, or, while the wind blows, a copy of it of the
+ * pines' own that sways, so nothing else of that color sways with them.
+ */
+function pineMaterial(shared: THREE.MeshStandardMaterial): THREE.Material {
+  if (!WIND) return shared;
+  let own = swaying.get(shared);
+  if (!own) {
+    own = sway(shared.clone(), PINE_BEND);
+    swaying.set(shared, own);
+  }
+  return own;
+}
 
 /** How tall a pine is, by its seed. */
 export const pineHeight = (seed: number) => 0.85 + (seed % 4) * 0.15;
@@ -74,8 +94,8 @@ export function buildPines(spots: readonly TreeSpot[]): THREE.Group {
   const cone = tier();
   NEEDLE_COLORS.forEach((color, i) => {
     const tiers = needles[i] ?? [];
-    if (tiers.length) forest.add(instanced(cone, mat(color, 0.78), tiers));
+    if (tiers.length) forest.add(instanced(cone, pineMaterial(mat(color, 0.78)), tiers));
   });
-  if (snow.length) forest.add(instanced(cone, mat(0xf4f8fb, 0.6), snow));
+  if (snow.length) forest.add(instanced(cone, pineMaterial(mat(0xf4f8fb, 0.6)), snow));
   return forest;
 }

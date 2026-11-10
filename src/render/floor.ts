@@ -11,7 +11,10 @@ import type { Sketch, WallSpot } from '../core/state/types';
 import { must } from '../core/util';
 import { itemDims, onWall, Z_CORRIDOR, Z_OUTSIDE } from '../core/world';
 import { paintFloorTile } from './decor-paint';
-import { type Setting, settingOf } from './setting';
+import { fx } from './fx';
+import { LAWN_FX, paintGround } from './ground';
+import { paintGroundShade } from './grounding';
+import { type Setting, settingName, settingOf } from './setting';
 import { hash } from './shared';
 
 /** How many texture pixels a tile gets: enough to stay crisp fully zoomed in, and the widest lot under 4096 across. */
@@ -327,16 +330,22 @@ export class Floor {
         } else if (setting.plots && plotAt(plots, x, y)) {
           const lot = plotAt(plots, x, y);
           paintLot(ctx, setting.plots, px, py, x, y, (dx, dy) => plotAt(plots, x + dx, y + dy) === lot);
-        } else if (setting.kind === 'paving') paintPaving(ctx, setting, px, py, x, y);
-        else {
+        } else if (setting.kind === 'paving') {
+          paintPaving(ctx, setting, px, py, x, y);
+          // the richer ground's shading, matching the ground past the lot (see ground.ts)
+          if (LAWN_FX) paintGround(ctx, settingName(this.sim.s), px, py, TS);
+        } else {
           ctx.fillStyle = setting.tiles[hash(x, y) > 0.5 ? 0 : 1];
           ctx.fillRect(px, py, TS, TS);
           ctx.fillStyle = setting.fleck;
           for (let i = 0; i < 4; i++)
             ctx.fillRect(px + hash(x + i, y) * (TS - 4 * K), py + hash(x, y + i * 3) * (TS - 6 * K), 2 * K, 5 * K);
+          if (LAWN_FX) paintGround(ctx, settingName(this.sim.s), px, py, TS);
         }
       }
     }
+    // the soft shade where walls and furniture stand, under the mat, the thresholds and the sketches
+    if (fx('grounding')) paintGroundShade(ctx, this.sim, TS);
     // welcome mat
     const { front } = world.building;
     ctx.fillStyle = '#2fa8a0';

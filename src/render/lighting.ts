@@ -12,6 +12,7 @@ import { buildingsOf } from '../core/land';
 import { mishapHolder } from '../core/sim/mishaps';
 import type { GameState, Mishap } from '../core/state/types';
 import { type Daylight, daylightAt, NOON, SEASON_LIGHT, stormy, type Tint } from './daylight';
+import { fx } from './fx';
 import { orchardFor } from './models/orchard';
 import { leavesFor } from './models/tree';
 import { LAWN, type Setting, type SettingLight, settingOf } from './setting';
@@ -37,7 +38,7 @@ const SHADE_ROOF = 3.2;
 const EASE = 3;
 
 /** Which way the sun shines from, seen from the point the camera looks at. */
-const SUN_DIR = new THREE.Vector3(-16, 30, 9).normalize();
+export const SUN_DIR = new THREE.Vector3(-16, 30, 9).normalize();
 /** The shadow map's size, in texels a side: one map, whatever the zoom. */
 const SHADOW_MAP = 2048;
 /** How far the sun's shadow reaches each way from the point the camera looks at, for a camera this far back. */
@@ -47,9 +48,46 @@ const MAX_REACH = 58;
 /** How far a shadow lookup is pushed off a surface along its normal, in shadow-map texels: enough to stop acne. */
 const NORMAL_BIAS_TEXELS = 1.4;
 
+/**
+ * How many taps of the sun's shadow map each point takes when shadows are soft, and how far apart they spread, in
+ * texels: more taps than the five three.js takes, so a wider spread blurs smoothly rather than into grain.
+ */
+const SOFT_TAPS = 12;
+const SOFT_RADIUS = 3;
+
+/**
+ * Take `SOFT_TAPS` taps of the shadow map for each point in the sun's shadow, rather than five, for every material
+ * drawn from here on: done once, before anything is drawn. Each tap is still filtered by the hardware, and the disk of
+ * taps still turns from pixel to pixel, so the edge is a smooth gradient.
+ */
+function softenShadows() {
+  const chunk = THREE.ShaderChunk.shadowmap_pars_fragment;
+  const five =
+    /shadow = \(\s*texture\( shadowMap, vec3\( shadowCoord\.xy \+ vogelDiskSample\( 0, 5, phi \)[\s\S]*?\) \* 0\.2;/;
+  if (!five.test(chunk)) return;
+  THREE.ShaderChunk.shadowmap_pars_fragment = chunk.replace(
+    five,
+    `shadow = 0.0;
+				for ( int i = 0; i < ${SOFT_TAPS}; i ++ ) {
+					shadow += texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( i, ${SOFT_TAPS}, phi ) * radius, shadowCoord.z ) );
+				}
+				shadow /= ${SOFT_TAPS}.0;`,
+  );
+}
+
 /** The tone mapping the scene is drawn with, and how bright it is exposed. */
 export const TONE_MAPPING = THREE.NeutralToneMapping;
 export const EXPOSURE = 1.1;
+
+/**
+ * A sky for glossy surfaces and glass to reflect (see `sky.ts`): how bright it is in plain noon light, the share of
+ * the hemisphere light's brightness kept beside it, and how to paint it in a setting's light.
+ */
+export interface Reflected {
+  readonly strength: number;
+  readonly ambient: number;
+  paint(light: SettingLight): void;
+}
 
 /** The sky's light and the sun, and in a game, how far a mishap has dimmed and grayed them so far. */
 export interface Lights {
@@ -69,6 +107,8 @@ export interface Lights {
   setting?: Setting;
   /** The roof that shades the building's inside from the sun in a power cut, and the building it was made for. */
   shade?: { roof: THREE.Mesh; key: string };
+  /** The sky reflected, if there is one, which dims with the sky's light and is painted again with the setting. */
+  reflected?: Reflected | undefined;
 }
 
 /** Light a scene with the game's sky and sun, and return them so the sun can follow the camera. */
@@ -78,6 +118,10 @@ export function addLights(scene: THREE.Scene, shadowReach = 26): Lights {
   sun.castShadow = true;
   sun.shadow.mapSize.set(SHADOW_MAP, SHADOW_MAP);
   sun.shadow.bias = -0.0004;
+  if (fx('softshadow')) {
+    softenShadows();
+    sun.shadow.radius = SOFT_RADIUS;
+  }
   fitShadow(sun, shadowReach);
   scene.add(sky, sun, sun.target);
   return { sky, sun, level: 1, gray: 0, depth: 1, out: 0, scene };
@@ -237,10 +281,14 @@ function shine(lights: Lights, s: GameState, day: Daylight): boolean {
   lights.sky.color.lerp(scratch.copy(lights.sky.color).multiply(cool.setRGB(...POWER_CUT_TINT)), lights.out);
   tinted(lights.sun.color, setting.light.sun, season.sun, d.sun);
   lights.sky.groundColor.setHex(setting.light.bounce);
-  lights.sky.intensity = SKY * d.skyLevel * lights.level * (1 - lights.out * (1 - POWER_CUT_SKY));
+  const skyLevel = d.skyLevel * lights.level * (1 - lights.out * (1 - POWER_CUT_SKY));
+  const reflected = lights.reflected;
+  lights.sky.intensity = SKY * skyLevel * (reflected ? reflected.ambient : 1);
+  if (reflected) lights.scene.environmentIntensity = reflected.strength * skyLevel;
   lights.sun.intensity = SUN * d.sunLevel * lights.level;
   if (setting === lights.setting) return false;
   lights.setting = setting;
+  reflected?.paint(setting.light);
   LAWN.color.setHex(setting.ground);
   // the trees turn with the lawn
   leavesFor(seasonOf(calendarDay(s)));

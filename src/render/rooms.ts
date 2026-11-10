@@ -11,6 +11,7 @@ import type { Sim } from '../core/sim/sim';
 import type { Room, WallSpot } from '../core/state/types';
 import { papered, paperUVs, wallMaterial } from './decor-paint';
 import { disposeOwned, owned } from './disposal';
+import { groundWalls } from './grounding';
 import { ghostOf } from './hung';
 import { mergeStill } from './models/merge';
 import { mat, put, sph } from './models/parts';
@@ -18,6 +19,7 @@ import { buildSignPlaque, type LampState, pulseLamps, setLamp, type SignPlaque }
 import { lampStates } from './room-lamp';
 import { type Doorway, roomShape, type WallBox, walledBeyondDoor, type WallMaterial } from './room-walls';
 import { OUTER_PANE_H, OUTER_PANE_Y0, OUTER_T, SHELL_TRIM } from './shared';
+import { glassy } from './sky';
 import { nearSides, type Sides, type Turn } from './turn';
 import { windowBoxes } from './windows';
 
@@ -218,6 +220,8 @@ export class RoomsLayer {
     private sim: Sim,
   ) {
     scene.add(this.panes);
+    glassy(this.pane);
+    glassy(this.glass);
   }
 
   /** Cut the walls facing the camera low for a turn, rebuilding the rooms if it has changed. */
@@ -249,6 +253,7 @@ export class RoomsLayer {
       if (cur?.key === key) continue;
       if (cur) this.dispose(cur.group);
       const drawn = this.build(r, walled, through);
+      groundWalls(drawn.group);
       this.scene.add(drawn.group);
       // a new sign starts as the lamp last showed, until the next frame looks again
       const lamp = this.lamps.get(r.id);

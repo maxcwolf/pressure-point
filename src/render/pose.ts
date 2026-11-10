@@ -21,6 +21,7 @@ import {
 } from './bubbles';
 import { prefersReducedMotion } from './camera-math';
 import { animateEmitter, emitter, type EmitterShape } from './gags/particles';
+import { advanceGait, type Cycle, finishGait, gaitCycle, gaitOf, gaitPosture, KNEE_REST, NO_CYCLE, ride } from './gait';
 import { rattle, RATTLE_PEAK } from './item-cues';
 import { buildBurst, showBurst } from './models/burst';
 import {
@@ -179,6 +180,9 @@ export const STRIDE = 4.8;
 
 /** How far someone may move in a frame and still have walked there, in meters: further, they were put there. */
 const TELEPORT = 2;
+
+/** An arm left for the walk's cycle to swing, until anything else takes it: no number, so any that does shows. */
+const SWINGING = NaN;
 
 /** How far a body leans into a turn for each radian a second it turns, and how fast a turn it leans for at most. */
 const TURN_LEAN = { body: 0.02, head: 0.01, most: 8 } as const;
@@ -427,7 +431,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     c.kind === 'guest' && c.pose === 'lie' && (c.state === 'resting' || (c.state === 'served' && cues.lie === 'back'));
   showEyes(rig.face, asleep || blinkAt(c.id, t));
   const visual = healed ? undefined : rig.visual;
-  const phase = rig.walked * STRIDE + c.id * 1.7;
+  // a walk being tried out in place of the game's own (`gait.ts`), if one is, which counts its own steps
+  const gait = gaitOf(rig);
+  const walker = gait && { mood: moodOf(c), idle: hasNothingToDo(c), cured: healed && rig.cured, visual };
+  const g = gait && walker ? advanceGait(rig, c, dt, gait, walker) : undefined;
+  const phase = g ? g.phase : rig.walked * STRIDE + c.id * 1.7;
   let legL = 0;
   let legR = 0;
   let armL = Math.sin(t * 1.6 + c.id) * 0.05;
@@ -445,7 +453,11 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   const onFloor = c.pose === 'sit' && c.h < SIT.floor;
   /** Whether someone with text neck has their phone out: not lying down, and small in the lap sitting. */
   const phoneOut = visual === 'neck' && c.pose !== 'lie';
-  if (c.pose === 'walk') {
+  if (c.pose === 'walk' && g) {
+    // the walk's cycle goes on once the rest of the pose has eased (`gaitCycle`); the arms are its to swing, unless
+    // something below takes them
+    armL = armR = SWINGING;
+  } else if (c.pose === 'walk') {
     const sw = Math.sin(phase) * (visual === 'stiff' ? 0.14 : 0.62);
     legL = sw;
     legR = -sw;
@@ -453,6 +465,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     armR = sw * 0.85;
     bodyY = Math.abs(Math.cos(phase)) * 0.04;
     if (healed && rig.cured) bodyY += Math.abs(Math.sin(phase * 0.5)) * 0.07;
+  }
+  if (c.pose === 'walk') {
     // leaning into a corner, the head leading
     const turn = THREE.MathUtils.clamp(turning, -TURN_LEAN.most, TURN_LEAN.most);
     side -= turn * TURN_LEAN.body;
@@ -769,6 +783,12 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     lean += 0.4;
     headX -= 0.25;
   }
+  // an arm nothing above has taken is the walk's to swing; settling to a stand, only with nothing in hand to do
+  const settles = c.pose === 'stand' && !act && !c.busy && !visual && !mopping && !smudging;
+  const swingL = Number.isNaN(armL) || settles;
+  const swingR = Number.isNaN(armR) || settles;
+  if (Number.isNaN(armL)) armL = 0;
+  if (Number.isNaN(armR)) armR = 0;
   // a hop for joy as the symptom goes, or once down from where they lay while it went
   const hop = Number.isFinite(cues.up) ? (cues.up ?? NaN) : curing;
   if (healed && hop < HOP.lasts && c.pose !== 'lie') bodyY += Math.sin((Math.PI * hop) / HOP.lasts) * HOP.high;
@@ -802,6 +822,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     armL,
     armR,
     armOut,
+    walking: g && c.pose === 'walk' ? gaitPosture(g, c, t, hasNothingToDo(c), swingL, swingR) : undefined,
   };
   // too stiff, or frozen like a crashed computer, to move with life, they can still show their patience running out
   const frozen = visual === 'stiff' || visual === 'bluescreen';
@@ -836,22 +857,25 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   if (held || rig.held) holdFor(rig, held, heldTilt(act, c, t) - (armR + elbowFor(armR) + life.elbowR));
   if (act === 'hose' || rig.jet) sprayHose(rig, act === 'hose', t);
   const k = Math.min(1, dt * 14);
+  // the walk's cycle this frame, and last, put straight on top of what eases (`ride`): none for the game's own walk
+  const cyc = g ? gaitCycle(rig, c, dt, g, swingL, swingR) : NO_CYCLE;
+  const was = g ? g.state.applied : NO_CYCLE;
   const b = rig.body;
   b.rotation.x += (bodyRX - b.rotation.x) * k;
-  b.position.y += (bodyY - b.position.y) * k;
+  b.position.y = ride(b.position.y, bodyY, k, was.bodyY, cyc.bodyY);
   b.position.z += (bodyZ - b.position.z) * k;
-  rig.torso.rotation.x += (lean - rig.torso.rotation.x) * k;
-  rig.torso.rotation.z += (side - rig.torso.rotation.z) * k;
-  rig.head.rotation.x += (headX - rig.head.rotation.x) * k;
-  rig.head.rotation.z += (headZ - rig.head.rotation.z) * k;
-  rig.legL.rotation.x += (legL - rig.legL.rotation.x) * k;
-  rig.legR.rotation.x += (legR - rig.legR.rotation.x) * k;
+  rig.torso.rotation.x = ride(rig.torso.rotation.x, lean, k, was.lean, cyc.lean);
+  rig.torso.rotation.z = ride(rig.torso.rotation.z, side, k, was.roll, cyc.roll);
+  rig.head.rotation.x = ride(rig.head.rotation.x, headX, k, was.headX, cyc.headX);
+  rig.head.rotation.z = ride(rig.head.rotation.z, headZ, k, was.headZ, cyc.headZ);
+  rig.legL.rotation.x = ride(rig.legL.rotation.x, legL, k, was.legL, cyc.legL);
+  rig.legR.rotation.x = ride(rig.legR.rotation.x, legR, k, was.legR, cyc.legR);
   rig.legL.rotation.y += ((onFloor ? SIT.crossed.left.y : 0) - rig.legL.rotation.y) * k;
   rig.legR.rotation.y += ((onFloor ? SIT.crossed.right.y : 0) - rig.legR.rotation.y) * k;
-  rig.armL.rotation.x += (armL - rig.armL.rotation.x) * k;
-  rig.armR.rotation.x += (armR - rig.armR.rotation.x) * k;
-  rig.armL.rotation.z += (-armOut + life.armInL - rig.armL.rotation.z) * k;
-  rig.armR.rotation.z += (armOut - rig.armR.rotation.z) * k;
+  rig.armL.rotation.x = ride(rig.armL.rotation.x, armL, k, was.armL, cyc.armL);
+  rig.armR.rotation.x = ride(rig.armR.rotation.x, armR, k, was.armR, cyc.armR);
+  rig.armL.rotation.z = ride(rig.armL.rotation.z, -armOut + life.armInL, k, -was.armOut, -cyc.armOut);
+  rig.armR.rotation.z = ride(rig.armR.rotation.z, armOut, k, was.armOut, cyc.armOut);
   const prone = c.pose === 'lie' && cues.lie === 'prone';
   const limbs = {
     legL,
@@ -867,6 +891,9 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     hands: cues.hands ?? 0,
     fours: cues.fours ?? 0,
     sat: cues.lie === 'back' ? (cues.sat ?? 0) : 0,
+    stepping: !!g && c.pose === 'walk',
+    cyc,
+    was,
   };
   poseJoints(rig.joints, rig, c, t, k, limbs, life);
   if (visual === 'jitter' && c.pose !== 'lie') {
@@ -876,8 +903,8 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
     rig.legR.rotation.z = Math.sin(t * 43 + c.id) * 0.1;
   } else {
     if (rig.visual === 'jitter') rig.body.position.x = 0;
-    rig.legL.rotation.z += ((onFloor ? SIT.crossed.left.z : 0) - rig.legL.rotation.z) * k;
-    rig.legR.rotation.z += ((onFloor ? SIT.crossed.right.z : 0) - rig.legR.rotation.z) * k;
+    rig.legL.rotation.z = ride(rig.legL.rotation.z, onFloor ? SIT.crossed.left.z : 0, k, was.legZL, cyc.legZL);
+    rig.legR.rotation.z = ride(rig.legR.rotation.z, onFloor ? SIT.crossed.right.z : 0, k, was.legZR, cyc.legZR);
   }
   if (rig.bob && !rig.cured) {
     rig.bob.position.y = rig.bobAt + Math.sin(t * 2.2 + c.id) * BOB;
@@ -984,6 +1011,7 @@ export function poseChar(rig: CharRig, c: Char, t: number, dt: number, cues: Cue
   const soles = prone && lying > 0.6;
   if (soles) rig.soles ??= buildSoles([rig.joints.shinL, rig.joints.shinR]);
   for (const sole of rig.soles ?? []) sole.visible = soles;
+  if (g) finishGait(rig, g, cyc);
 
   if (rig.sage && rig.sageTip && rig.smoke) {
     rig.sage.visible = smudging;
@@ -1075,6 +1103,10 @@ interface Limbs {
   hands: number;
   fours: number;
   sat: number;
+  /** Whether they walk one of the walks being tried out, whose cycle goes on top: this frame's, and last frame's. */
+  stepping: boolean;
+  cyc: Readonly<Cycle>;
+  was: Readonly<Cycle>;
 }
 
 /** How far an elbow bends for an arm raised this far: hanging, a little; reaching forward, more; straight overhead. */
@@ -1087,10 +1119,14 @@ export const elbowFor = (arm: number) => (arm < -2 ? -0.12 : -(0.2 + Math.min(1,
  */
 function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limbs: Limbs, life: Life) {
   const { legL, legR, armL, armR, phase, visual, style, onFloor, lying, prone, hands, fours, sat } = limbs;
+  const { stepping, cyc, was } = limbs;
   let kneeL = 0.04;
   let kneeR = 0.04;
   let twist = 0;
-  if (c.pose === 'walk') {
+  if (stepping) {
+    // the knees bend and the shoulders turn with the walk's own cycle
+    kneeL = kneeR = KNEE_REST;
+  } else if (c.pose === 'walk') {
     kneeL = 0.08 + Math.max(0, -Math.cos(phase)) * 0.95;
     kneeR = 0.08 + Math.max(0, Math.cos(phase)) * 0.95;
     twist = Math.sin(phase) * 0.14;
@@ -1126,14 +1162,14 @@ function poseJoints(j: Joints, rig: CharRig, c: Char, t: number, k: number, limb
   kneeR += life.kneeR;
   elbowL += life.elbowL;
   elbowR += life.elbowR;
-  j.shinL.rotation.x += (kneeL - j.shinL.rotation.x) * k;
-  j.shinR.rotation.x += (kneeR - j.shinR.rotation.x) * k;
-  j.foreL.rotation.x += (elbowL - j.foreL.rotation.x) * k;
-  j.foreR.rotation.x += (elbowR - j.foreR.rotation.x) * k;
-  rig.torso.rotation.y += (twist - rig.torso.rotation.y) * k;
-  rig.head.rotation.y += (life.headYaw - rig.head.rotation.y) * k;
-  rig.body.rotation.y += (life.bodyYaw - rig.body.rotation.y) * k;
-  rig.body.position.x += (life.swayX - rig.body.position.x) * k;
+  j.shinL.rotation.x = ride(j.shinL.rotation.x, kneeL, k, was.kneeL, cyc.kneeL);
+  j.shinR.rotation.x = ride(j.shinR.rotation.x, kneeR, k, was.kneeR, cyc.kneeR);
+  j.foreL.rotation.x = ride(j.foreL.rotation.x, elbowL, k, was.elbowL, cyc.elbowL);
+  j.foreR.rotation.x = ride(j.foreR.rotation.x, elbowR, k, was.elbowR, cyc.elbowR);
+  rig.torso.rotation.y = ride(rig.torso.rotation.y, twist, k, was.twist, cyc.twist);
+  rig.head.rotation.y = ride(rig.head.rotation.y, life.headYaw, k, was.headYaw, cyc.headYaw);
+  rig.body.rotation.y = ride(rig.body.rotation.y, life.bodyYaw, k, was.hipYaw, cyc.hipYaw);
+  rig.body.position.x = ride(rig.body.position.x, life.swayX, k, was.swayX, cyc.swayX);
   j.foreL.rotation.y += (life.bendL - j.foreL.rotation.y) * k;
   j.foreR.rotation.y += (-life.bendR - j.foreR.rotation.y) * k;
 }
@@ -1159,6 +1195,8 @@ interface Doing {
   armL: number;
   armR: number;
   armOut: number;
+  /** How they hold themselves walking one of the walks being tried out, whose cycle does the rest. */
+  walking: Partial<Life> | undefined;
 }
 
 /** What liveliness adds to a pose: turns in radians and shifts in meters, on top of what the pose sets. */
@@ -1285,6 +1323,7 @@ function liveliness(c: Char, t: number, phase: number, doing: Doing): Life {
   const life = { ...NO_LIFE };
   if (c.pose === 'lie') return life;
   const breath = Math.sin(t * 1.7 + c.id);
+  if (c.pose === 'walk' && doing.walking) return Object.assign(life, doing.walking);
   if (c.pose === 'walk') {
     const cp = Math.cos(phase);
     const sp = Math.sin(phase);

@@ -3,6 +3,7 @@
 import type * as THREE from 'three';
 
 import { bowl, cyl, mat, partsOf, put, sph, WOOD_DARK } from '../parts';
+import { EMBERS } from './idle';
 
 /** Build the Ember Bowl model. */
 export function buildEmberBowl(g: THREE.Group) {
@@ -16,7 +17,7 @@ export function buildEmberBowl(g: THREE.Group) {
     [0.02, 0.11],
     [0.12, 0.06],
   ] as const)
-    put(g, sph(0.055, 10), mat(0xff6a2a, 0.5, 1.1), x, 0.3, z).castShadow = false;
+    put(g, sph(0.055, 10), EMBERS(), x, 0.3, z).castShadow = false;
   // a lick of flame or two over the embers
   const flames = [
     [0, 0.08, 0.16, 0xff9a3c],

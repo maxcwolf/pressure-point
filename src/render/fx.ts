@@ -35,3 +35,12 @@ const ON = named();
 
 /** Whether an upgrade is switched on. */
 export const fx = (name: Fx): boolean => ON.has('all') || ON.has(name);
+
+/**
+ * Which version of something with several to choose from is being tried, by the name it goes under in the page's
+ * address, such as `?walk=weighted`; undefined for the game's own.
+ */
+export function fxChoice(name: 'walk' | 'people'): string | undefined {
+  if (typeof location === 'undefined') return undefined;
+  return new URLSearchParams(location.search).get(name) ?? undefined;
+}

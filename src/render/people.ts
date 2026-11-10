@@ -17,6 +17,7 @@ import { GagClock } from './gags/clock';
 import { GAGS } from './gags/scripts';
 import { showBare } from './models/bare';
 import { bubbleHeight, buildCharacter, type CharRig } from './models/character';
+import { dressFor } from './models/wardrobe';
 import { keepApart, type Placed, showMotion, type Shown } from './motion';
 import { poseChar, type WorkStyle } from './pose';
 
@@ -60,6 +61,8 @@ export class PeopleLayer {
 
   /** Give everyone a figure, pose them for this frame and remove those who have left. */
   update(t: number, dt: number) {
+    // whoever arrives now is dressed for the day, while a version of the people that dresses them is tried
+    dressFor(this.sim.s);
     const live = new Set<number>();
     const ends = streetEnds(this.sim.world.building, this.sim.world.w);
     // the front door, between its two tiles in the front wall, that a guest who is fed up with waiting turns toward

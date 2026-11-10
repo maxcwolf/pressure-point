@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 
 import type { Season } from '../../core/format';
+import { sway } from '../wind';
 import { blob, cyl, mat, sph } from './parts';
 import { bareCrowns, BARK, crownPlacement, SPREADING, type TreeSpot } from './tree';
 
@@ -18,6 +19,8 @@ const APPLES = [
 /** The canopy's size, and how high it sits on its trunk. */
 const CANOPY = 0.6;
 const TRUNK = 0.75;
+/** How far an apple tree's canopy, and the apples on it, give in the wind (see `sway`): a little more than a park tree's. */
+const ORCHARD_BEND = 0.026;
 
 /**
  * How an orchard looks in each season: the color of its canopies, or null when they are bare, and whether its apples
@@ -34,12 +37,18 @@ export const ORCHARD_SEASONS: Readonly<Record<Season, { canopy: number | null; a
  * The canopies and apples of every orchard, materials of their own rather than shared, so a change of season repaints
  * them all at once with nothing built again.
  */
-const CANOPY_MAT = new THREE.MeshStandardMaterial({
-  color: 0x5aa34f,
-  roughness: 0.78,
-  metalness: 0,
-});
-const APPLE_MAT = new THREE.MeshStandardMaterial({ color: 0xd9362f, roughness: 0.45, metalness: 0 });
+const CANOPY_MAT = sway(
+  new THREE.MeshStandardMaterial({
+    color: 0x5aa34f,
+    roughness: 0.78,
+    metalness: 0,
+  }),
+  ORCHARD_BEND,
+);
+const APPLE_MAT = sway(
+  new THREE.MeshStandardMaterial({ color: 0xd9362f, roughness: 0.45, metalness: 0 }),
+  ORCHARD_BEND,
+);
 
 /**
  * Turn every orchard to a season: its canopies' color or gone, and its apples hung or gone. Their bare branches show

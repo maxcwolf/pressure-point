@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import { owned } from '../../disposal';
 import { capsule, DARK, mat, partsOf, put, rbox, soft, sph, WHITE, WOOD } from '../parts';
+import { fishShape, idle, idling, keepApart } from './idle';
 
 /** The fish: where each swims and its color, warm against the blue so they show from above. */
 const FISH: readonly (readonly [x: number, y: number, z: number, color: number])[] = [
@@ -49,11 +50,19 @@ export function buildAquarium(g: THREE.Group) {
     [0.1, 0.22, 0.15],
   ] as const)
     put(g, capsule(0.035, h - 0.07), mat(0x4f9a55, 0.8), x, 0.67 + h / 2, -0.15).rotation.z = lean;
+  const swimmers: THREE.Object3D[] = [];
   for (const [x, y, z, color] of FISH) {
+    if (idling()) {
+      // each fish swims to and fro in its own time, body and tail as one
+      const shape = fishShape('aquarium', 0.08, [1.7, 1, 0.8], rbox(0.05, 0.11, 0.03, 0.012), 0.16);
+      swimmers.push(put(g, shape, idle(mat(color, 0.4, 0.6), { kind: 'swim', by: 0.09, pace: 0.55 }), x, y, z));
+      continue;
+    }
     const fish = put(g, sph(0.08, 12), mat(color, 0.4, 0.6), x, y, z);
     fish.scale.set(1.7, 1, 0.8);
     put(g, rbox(0.05, 0.11, 0.03, 0.012), mat(color, 0.4, 0.6), x - 0.16, y, z);
   }
+  keepApart(g, swimmers);
   // bubbles rising from the corner
   const bubbles = new THREE.Group();
   for (let i = 0; i < 3; i++) put(bubbles, sph(0.035, 8), mat(WHITE, 0.2), 0, 0, 0).castShadow = false;

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import { owned } from '../../disposal';
 import { cyl, mat, put, rbox, sph } from '../parts';
+import { fishShape, idle, idling, keepApart } from './idle';
 
 /** The koi: where each swims, which way it faces and its color. */
 const KOI: readonly (readonly [x: number, z: number, angle: number, color: number])[] = [
@@ -39,14 +40,22 @@ export function buildKoiPond(g: THREE.Group) {
     }),
   );
   put(g, cyl(0.78, 0.78, 0.02, 28), water, 0, 0.12, 0).castShadow = false;
+  const swimmers: THREE.Object3D[] = [];
   for (const [x, z, angle, color] of KOI) {
     const fish = new THREE.Group();
-    put(fish, sph(0.09, 10), mat(color, 0.4), 0, 0, 0).scale.set(2, 0.6, 0.9);
-    put(fish, rbox(0.1, 0.02, 0.13, 0.01), mat(color, 0.4), -0.2, 0, 0);
+    if (idling()) {
+      // each koi noses to and fro and wags its tail, in its own time, body and tail as one
+      const shape = fishShape('koi', 0.09, [2, 0.6, 0.9], rbox(0.1, 0.02, 0.13, 0.01), 0.2);
+      swimmers.push(put(fish, shape, idle(mat(color, 0.4), { kind: 'swim', by: 0.1, pace: 0.4 }), 0, 0, 0));
+    } else {
+      put(fish, sph(0.09, 10), mat(color, 0.4), 0, 0, 0).scale.set(2, 0.6, 0.9);
+      put(fish, rbox(0.1, 0.02, 0.13, 0.01), mat(color, 0.4), -0.2, 0, 0);
+    }
     fish.position.set(x, 0.1, z);
     fish.rotation.y = angle;
     g.add(fish);
   }
+  keepApart(g, swimmers);
   const pad = mat(0x5f9e4f, 0.7);
   for (const [x, z, r] of PADS) put(g, cyl(r, r, 0.01, 12), pad, x, 0.135, z).castShadow = false;
   put(g, sph(0.035, 8), mat(0xf4b6c2, 0.6), 0.45, 0.16, 0.3);

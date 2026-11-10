@@ -11,6 +11,7 @@ import { BUBBLE_PX, readable } from '../readable';
 import type { Bare } from './bare';
 import type { Burst } from './burst';
 import { bodySymptom } from './character-bodies';
+import { wear } from './character-clothes';
 import {
   detailArm,
   detailBib,
@@ -51,6 +52,7 @@ import {
   trimShadows,
 } from './parts';
 import { buildSage, buildSmoke } from './sage';
+import { type Hat, outfitOf } from './wardrobe';
 
 export interface CharRig {
   group: THREE.Group;
@@ -152,6 +154,34 @@ export interface Joints {
 }
 
 const pickMat = new THREE.MeshBasicMaterial({ visible: false });
+
+/**
+ * The symptoms that leave the head as it is, so a hat or shades can go on it: what else ails a guest stands in for the
+ * head, sits on it, or circles it, and a hat would only get in the way.
+ */
+const HEAD_FREE: ReadonlySet<Visual> = new Set<Visual>([
+  'knot',
+  'slump',
+  'stiff',
+  'neck',
+  'crick',
+  'flex',
+  'frost',
+  'jitter',
+  'aura',
+  'coldfeet',
+  'tilt',
+  'sway',
+  'mallet',
+  'toxic',
+  'leash',
+  'chakra',
+  'brent',
+  'shards',
+]);
+
+/** The hats that cover the hair to the ears, and the one that only shades it, under which it is cut short. */
+const COVERING: ReadonlySet<Hat> = new Set<Hat>(['beanie', 'hood']);
 
 /** How much wider and deeper each build is than average: slight, average and stocky. */
 const BUILD_WIDTH = [0.9, 1, 1.13];
@@ -300,6 +330,10 @@ export function buildCharacter(
   const top = robed ? mat(ROBE, 0.38, ROBE_GLOW) : mat(topColor, 0.7);
   const bottom = robed ? top : mat((role && ROLES[role].bottom) ?? clothes?.bottom ?? look.bottom, 0.8);
   const accent = role ? mat(ROLES[role].accent, 0.6) : top;
+  // clothes with a shape, if a version of the people that dresses them is being tried
+  const outfit = outfitOf(look, role, !!visitor || robed);
+  const headFree = !visual || HEAD_FREE.has(visual);
+  const hat = headFree ? outfit.hat : undefined;
 
   // a firefighter's boots are black whatever shoes they would wear
   const shoes = mat(visitor === 'firefighter' ? BLACK : (SHOES[look.shoes] ?? 0x3a302b), 0.5);
@@ -312,7 +346,7 @@ export function buildCharacter(
   body.add(torso);
   detailTorso(torso, top, bottom);
   // a long white coat
-  if (role === 'consultant') detailCoat(torso, top);
+  if (role === 'consultant' && !outfit.cut) detailCoat(torso, top);
   if (robed) detailRobe(torso, top, mat(ROBE_SASH, 0.8));
   if (role === 'acupuncturist') put(torso, rbox(0.09, 0.1, 0.03, 0.01), accent, -0.08, 0.26, 0.15);
   if (role === 'receptionist' || role === 'acupuncturist') {
@@ -348,7 +382,8 @@ export function buildCharacter(
     arm.position.set(x, 0.37, 0);
     torso.add(arm);
     // sleeves rolled up past the elbow for a therapist, ready to work
-    return { arm, fore: detailArm(arm, Math.sign(x), top, skin, role === 'therapist') };
+    const rolled = role === 'therapist' || outfit.top === 'tee' || outfit.top === 'vest';
+    return { arm, fore: detailArm(arm, Math.sign(x), top, skin, rolled) };
   };
   const { arm: armL, fore: foreL } = makeArm(-0.245);
   const { arm: armR, fore: foreR } = makeArm(0.245);
@@ -365,10 +400,22 @@ export function buildCharacter(
   torso.add(head);
   const hair = mat(look.hair, 0.85);
   // a hat needs short hair under it, or a woman's tied back low
-  const hatted = role === 'caretaker' || visitor === 'inspector' || visitor === 'firefighter';
+  const hatted =
+    (hat && COVERING.has(hat) ? 'covered' : false) ||
+    role === 'caretaker' ||
+    visitor === 'inspector' ||
+    visitor === 'firefighter' ||
+    hat === 'sunhat';
   const { headMesh, face, glasses } = detailHead(head, look, skin, hair, hatted);
+  const shades = wear(
+    outfit,
+    { torso, head, legs: [legL, legR].map((leg, i) => [leg, i ? shinR : shinL] as const), arms: [armL, armR] },
+    { top, bottom, skin, accent: role ? accent : mat(outfit.accent, 0.85), dark: mat(BLACK, 0.2) },
+    hat,
+    outfit.shades && headFree,
+  );
   // sunglasses go on in place of glasses
-  if (glasses) glasses.visible = visitor !== 'vip' && visual !== 'sunburn' && visual !== 'beachhead';
+  if (glasses) glasses.visible = !shades && visitor !== 'vip' && visual !== 'sunburn' && visual !== 'beachhead';
   if (role === 'shaman') {
     // a single feather tucked in behind one ear
     const feather = put(head, rbox(0.05, 0.26, 0.012, 0.01), mat(0xf4f1ea, 0.8), 0.17, 0.16, -0.12);

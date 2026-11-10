@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { H, type Rect, ROAD_Y, SIDEWALK_Y, TITLE_LINES } from '../core/data';
 import { entranceSpan, type Footprint, inRect } from '../core/footprint';
 import { must } from '../core/util';
+import { dressLawn, LAWN_FX } from './ground';
+import { buildGroundCover } from './ground-cover';
 import { buildBeach } from './models/beach';
 import { type Block, buildLamps, buildOffices, buildStreets, buildStreetTrees } from './models/downtown';
 import { buildHedges, buildPavements } from './models/high-street';
@@ -15,13 +17,14 @@ import { mergeStill } from './models/merge';
 import { buildOrchard, orchardRows } from './models/orchard';
 import { cyl, mat, put, rbox, sph } from './models/parts';
 import { buildPines } from './models/pine';
-import { buildForest, type TreeSpot } from './models/tree';
+import { buildForest, type TreeSpot, trunkHeight } from './models/tree';
 import { shellStretches } from './outer-walls';
 import { LAWN, type Setting, type SETTINGS } from './setting';
 import { H_LOW, hash, OUTER_HT, OUTER_T, SHELL_TRIM } from './shared';
 import { SIGN_HALF, SIGN_LEG, signSpot } from './sign';
 import { onStorefront } from './storefront';
 import type { Sides } from './turn';
+import { swayShadows } from './wind';
 
 /** Build the scenery around a building, in its setting: the same until the building grows. */
 export function buildScenery(
@@ -35,18 +38,53 @@ export function buildScenery(
   /** Whether the lot is on a high street, whose road and pavements run on past it (see `buildHighStreet`). */
   street = false,
 ): THREE.Group {
+  const scene = buildSetting(fp, setting, colors, width, plots, street);
+  // whatever sways in the wind casts a shadow that sways with it
+  swayShadows(scene);
+  return scene;
+}
+
+/** Where a tree's crown is: over a spot on the ground, about so high. */
+export interface Crown {
+  x: number;
+  z: number;
+  y: number;
+}
+
+/** The crowns of the broadleaved trees round the building as last built, for leaves to fall from in autumn. */
+let crowns: readonly Crown[] = [];
+
+/** The crowns of the broadleaved trees round the building, as the scenery was last built. */
+export const treeCrowns = (): readonly Crown[] => crowns;
+
+/** The scenery of a setting round a building (see `buildScenery`). */
+function buildSetting(
+  fp: Footprint,
+  setting: keyof typeof SETTINGS,
+  colors: Setting,
+  width: number,
+  plots: readonly Rect[],
+  street: boolean,
+): THREE.Group {
   const scene = new THREE.Group();
+  crowns = [];
   // one lawn material, which the light recolors as the seasons turn
   LAWN.color.setHex(colors.ground);
   const lawn = new THREE.Mesh(new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2), LAWN);
   lawn.position.set(width / 2, -0.03, H / 2);
   lawn.receiveShadow = true;
   scene.add(lawn);
-  // paving carries the floor's slabs on past the lot; any other ground is plain
-  const map = colors.kind === 'paving' ? pavingMap(width / 2 - 200, H / 2 + 200) : null;
-  if (LAWN.map !== map) {
-    LAWN.map = map;
-    LAWN.needsUpdate = true;
+  if (LAWN_FX) {
+    // the richer ground: the setting's pattern, the same one the floor paints on the lot's open ground
+    dressLawn(LAWN, setting, width / 2 - 200, H / 2 + 200);
+    scene.add(buildGroundCover(setting, width, (x, y) => keptClear(fp, plots, x, y), street));
+  } else {
+    // paving carries the floor's slabs on past the lot; any other ground is plain
+    const map = colors.kind === 'paving' ? pavingMap(width / 2 - 200, H / 2 + 200) : null;
+    if (LAWN.map !== map) {
+      LAWN.map = map;
+      LAWN.needsUpdate = true;
+    }
   }
 
   scene.add(buildSign(fp));
@@ -66,6 +104,7 @@ export function buildScenery(
       (p) => !keptClear(fp, plots, Math.floor(p.x), Math.floor(p.z)),
     );
     scene.add(buildOrchard(rows.map((p, i) => ({ ...p, seed: Math.floor(hash(i, 5) * 97) }))));
+    crowns = rows.map((p) => ({ x: p.x, z: p.z, y: 1.2 }));
     return scene;
   }
 
@@ -84,6 +123,7 @@ export function buildScenery(
     }
   }
   scene.add(setting === 'mountain' ? buildPines(trees) : buildForest(trees));
+  if (setting !== 'mountain') crowns = trees.map((t) => ({ x: t.x, z: t.z, y: trunkHeight(t.seed) + 0.4 }));
   return scene;
 }
 
@@ -277,6 +317,7 @@ function buildDowntown(fp: Footprint, width: number, plots: readonly Rect[]): TH
     }
   }
   city.add(buildStreetTrees(trees));
+  crowns = trees.map((t) => ({ x: t.x, z: t.z, y: 1.75 }));
 
   // lamps along the kerb of the pavement, and of the far side of the road, clear of every path and of the storefront
   const lamps: { x: number; z: number }[] = [];

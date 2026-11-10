@@ -6,7 +6,9 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Season } from '../../core/format';
 import { must } from '../../core/util';
 import { owned } from '../disposal';
+import { coverFor } from '../ground-cover';
 import { hash } from '../shared';
+import { sway } from '../wind';
 import { blob, cached, cyl, mat, type Piece } from './parts';
 
 /** Where a tree stands on the ground, and the seed its height and color vary with. */
@@ -26,8 +28,12 @@ export const LEAF_SEASONS: Readonly<Record<Season, readonly [number, number, num
 };
 const LEAF_COLORS = [0x5fae5a, 0x4f9a55, 0x74b85c, 0x468c4a, 0x82bf62] as const;
 
-/** Leaves of a color, in a material of their own. */
-const leaf = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0 });
+/** How far a tree's crown gives in the wind (see `sway`): a few centimeters at its top. */
+export const CROWN_BEND = 0.02;
+
+/** Leaves of a color, in a material of their own, swaying in the wind if it blows. */
+const leaf = (color: number) =>
+  sway(new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0 }), CROWN_BEND);
 /**
  * The leaves of every tree, one material for each of the five colors, of their own rather than shared with anything
  * else, so a change of season repaints every tree at once with nothing built again.
@@ -49,14 +55,21 @@ export const BARK = 0x7a5a3c;
  * The bare branches of every broadleaved tree, the park's, the street's and the orchards', shown only while the leaves
  * are gone: a material of their own, like the leaves', so a change of season shows or hides them all at once.
  */
-export const BRANCHES = new THREE.MeshStandardMaterial({ color: BARK, roughness: 0.9, metalness: 0, visible: false });
+export const BRANCHES = sway(
+  new THREE.MeshStandardMaterial({ color: BARK, roughness: 0.9, metalness: 0, visible: false }),
+  CROWN_BEND,
+);
 
-/** Turn every tree's leaves to a season's colors, or take them off and leave the branches bare. */
+/**
+ * Turn every tree's leaves to a season's colors, or take them off and leave the branches bare; and with them what
+ * grows on the ground, flowers and weeds (see `coverFor`).
+ */
 export function leavesFor(season: Season) {
   const colors = LEAF_SEASONS[season];
   for (const material of LEAVES) material.visible = colors !== null;
   colors?.forEach((color, i) => LEAVES[i]?.color.setHex(color));
   BRANCHES.visible = colors === null;
+  coverFor(season);
 }
 
 const UP = new THREE.Vector3(0, 1, 0);

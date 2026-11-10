@@ -10,15 +10,16 @@ import type { Look } from '../../core/state/types';
 import { must } from '../../core/util';
 import { buildMohawk } from './mohawk';
 import { cached, mat, put, withFar } from './parts';
+import { CLAY } from './wardrobe';
 
 /** A fresh shape with only positions and normals, so it joins with any other. */
-const bare = <T extends THREE.BufferGeometry>(geo: T) => {
+export const bare = <T extends THREE.BufferGeometry>(geo: T) => {
   geo.deleteAttribute('uv');
   return geo;
 };
 
 /** How many sides to give a round shape that has this many in full. */
-type Sides = (full: number) => number;
+export type Sides = (full: number) => number;
 /** All of them, for someone seen close up. */
 const ALL: Sides = (full) => full;
 /** About half, for someone seen from afar, whose every side in full would be finer than a pixel. */
@@ -33,13 +34,13 @@ const tinyShapes = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
 export const tinyShape = (shape: THREE.BufferGeometry) => tinyShapes.get(shape);
 
 /** A fresh ball. */
-const ball = (r: number, seg: number) => bare(new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
+export const ball = (r: number, seg: number) => bare(new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)));
 
 /** A fresh capsule. */
-const pill = (r: number, len: number, n: Sides) => bare(new THREE.CapsuleGeometry(r, len, n(4), n(10)));
+export const pill = (r: number, len: number, n: Sides) => bare(new THREE.CapsuleGeometry(r, len, n(4), n(10)));
 
 /** Smooth a shape's shading across its seams, where its points are doubled up. */
-function smooth(geo: THREE.BufferGeometry) {
+export function smooth(geo: THREE.BufferGeometry) {
   bare(geo).deleteAttribute('normal');
   const out = mergeVertices(geo, 1e-4);
   out.computeVertexNormals();
@@ -47,7 +48,7 @@ function smooth(geo: THREE.BufferGeometry) {
 }
 
 /** Place a fresh shape: stretch it along each axis, then turn it, then move it. */
-function place(
+export function place(
   geo: THREE.BufferGeometry,
   [x, y, z]: readonly number[],
   [rx, ry, rz]: readonly number[] = [0, 0, 0],
@@ -74,7 +75,7 @@ const indexed = (geo: THREE.BufferGeometry) => {
  * shape is made three times, with all its sides, with fewer and with fewer still, the others to be drawn in its place
  * when seen from afar and from further.
  */
-const fuse = (key: string, make: (n: Sides) => THREE.BufferGeometry[]) =>
+export const fuse = (key: string, make: (n: Sides) => THREE.BufferGeometry[]) =>
   cached(`hd-${key}`, () => {
     /** The shapes joined, with so many sides. */
     const join = (n: Sides) => must(mergeGeometries(make(n).map(indexed)), `the shapes of ${key} joined`);
@@ -90,7 +91,7 @@ const fuse = (key: string, make: (n: Sides) => THREE.BufferGeometry[]) =>
   });
 
 /** A shape turned round the upright axis from a profile of [radius, height] pairs, bottom to top, squashed front to back. */
-const lathe = (n: Sides, profile: readonly (readonly [number, number])[], sx = 1, sz = 1, seg = 32) => {
+export const lathe = (n: Sides, profile: readonly (readonly [number, number])[], sx = 1, sz = 1, seg = 32) => {
   const geo = new THREE.LatheGeometry(
     profile.map(([r, y]) => new THREE.Vector2(r, y)),
     n(seg),
@@ -102,7 +103,7 @@ const lathe = (n: Sides, profile: readonly (readonly [number, number])[], sx = 1
 // The head: a ball a touch taller than it is wide, narrowing to the chin, with a fuller back to the skull.
 
 /** The head's radius, which hats, glasses and symptoms are sized to. */
-const HEAD = 0.215;
+export const HEAD = 0.215;
 
 /** How much further forward glasses sit in this build, to clear the eyes, which stand out more than the usual dots. */
 export const GLASSES_OUT = 0.01;
@@ -122,7 +123,7 @@ function shapeHead(v: THREE.Vector3, r: number) {
 }
 
 /** How far forward the face is at a point on it: where to set an eye, a brow or the mouth so it sits on the skin. */
-function faceZ(x: number, y: number) {
+export function faceZ(x: number, y: number) {
   const y0 = y / TALL;
   const t = y0 < 0 ? (y0 / HEAD) ** 2 : 0;
   const x0 = x / (WIDE * (1 - 0.14 * t));
@@ -143,22 +144,29 @@ function headShaped(geo: THREE.BufferGeometry, r: number) {
 /** The head, its ears and its nose, all skin, so a flushed or frozen face colors the lot. */
 const headShape = () =>
   fuse('head', (n) => {
-    const skull = smooth(headShaped(new THREE.SphereGeometry(HEAD, n(40), n(28)), HEAD));
+    const skull = smooth(headShaped(new THREE.SphereGeometry(HEAD, n(CLAY ? 30 : 40), n(CLAY ? 20 : 28)), HEAD));
     const ears = [-1, 1].map((s) =>
-      smooth(place(ball(0.05, n(14)), [s * 0.196, -0.02, -0.01], [0, 0, s * 0.12], [0.42, 1, 0.75])),
+      smooth(place(ball(0.05, n(CLAY ? 10 : 14)), [s * 0.196, -0.02, -0.01], [0, 0, s * 0.12], [0.42, 1, 0.75])),
     );
-    const nose = smooth(place(ball(0.041, n(18)), [0, -0.028, faceZ(0, -0.028) - 0.008], [0, 0, 0], [0.95, 0.88, 1.1]));
+    const nose = smooth(
+      place(ball(0.041, n(CLAY ? 12 : 18)), [0, -0.028, faceZ(0, -0.028) - 0.008], [0, 0, 0], [0.95, 0.88, 1.1]),
+    );
     return [skull, ...ears, nose];
   });
 
 /** Where the eyes are, either side of the middle of the face. */
-const EYE = { x: 0.068, y: 0.02 };
+export const EYE = { x: 0.068, y: 0.02 };
 
 /** Both eyes: small dark ovals, set into the face. */
 const eyes = () =>
   fuse('eyes', (n) =>
     [-1, 1].map((s) =>
-      place(ball(0.0215, n(16)), [s * EYE.x, EYE.y, faceZ(EYE.x, EYE.y) - 0.002], [0, s * 0.3, 0], [0.78, 1.2, 0.5]),
+      place(
+        ball(0.0215, n(CLAY ? 12 : 16)),
+        [s * EYE.x, EYE.y, faceZ(EYE.x, EYE.y) - 0.002],
+        [0, s * 0.3, 0],
+        [0.78, 1.2, 0.5],
+      ),
     ),
   );
 
@@ -345,10 +353,18 @@ interface Fall {
   puff: number;
 }
 
+/**
+ * How many sides a cap of hair has round it in full, and how many combed ridges run from its crown: four sides to a
+ * ridge, so each is round. The clay version combs fewer, broader ridges, as seen from the game's height, for two thirds
+ * of the sides.
+ */
+const HAIR_ROUND = CLAY ? 84 : 132;
+const HAIR_RIDGES = CLAY ? 21 : 30;
+
 /** A fresh cap of hair falling a given way. */
 function capOf(fall: Fall, n: Sides) {
   const r = 0.229;
-  const geo = new THREE.SphereGeometry(r, n(132), n(28));
+  const geo = new THREE.SphereGeometry(r, n(HAIR_ROUND), n(CLAY ? 20 : 28));
   const pos = geo.getAttribute('position');
   const uv = geo.getAttribute('uv');
   for (let i = 0; i < pos.count; i++) {
@@ -362,7 +378,7 @@ function capOf(fall: Fall, n: Sides) {
     // the edge tucks in to meet the scalp, so the hair looks thick rather than a shell
     const tuck = Math.max(0, (f - 0.8) / 0.2) ** 2 * (0.13 + fall.puff);
     // fine ridges from the crown, fading out before the edge so it stays clean
-    const ridge = 0.011 * Math.sin(a * 30) * Math.min(1, f * 3, Math.max(0, (0.85 - f) / 0.15));
+    const ridge = 0.011 * Math.sin(a * HAIR_RIDGES) * Math.min(1, f * 3, Math.max(0, (0.85 - f) / 0.15));
     const rad = r * (1 + ridge + fall.puff * f ** 3 - tuck);
     pos.setXYZ(
       i,
@@ -418,7 +434,7 @@ const curlyHair = () =>
         const r = 0.232;
         const size = 0.056 + ((i * 7 + ring * 3) % 5) * 0.004;
         curls.push(
-          place(ball(size, n(10)), [
+          place(ball(size, n(CLAY ? 8 : 10)), [
             r * Math.sin(theta) * Math.sin(a),
             r * Math.cos(theta) + 0.01,
             r * Math.sin(theta) * Math.cos(a) - 0.01,
@@ -486,8 +502,16 @@ const lowTie = () =>
 /**
  * Build the head: its shape, the face, the hair in its style, and glasses if they wear them. Returns the head's skin,
  * for symptoms to recolor, the face, at ease, for its expression to change, and the glasses, to take off for shades.
+ * Under a hat the hair is cut short, or a woman's tied back low; under one `covered` to the ears, only a woman's tie
+ * shows.
  */
-export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, hair: THREE.Material, hatted: boolean) {
+export function detailHead(
+  head: THREE.Group,
+  look: Look,
+  skin: THREE.Material,
+  hair: THREE.Material,
+  hatted: boolean | 'covered',
+) {
   // glasses round or square, in dark frames or tortoiseshell
   const specs = look.glasses
     ? put(head, glasses(look.glasses), look.glasses === 1 ? mat(0x2b2b30, 0.3) : mat(0x6b4a2a, 0.4))
@@ -508,7 +532,8 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
   face.glints.name = 'glints';
   face.brows.name = 'brows';
   face.mouth.name = 'mouth';
-  const style = hatted ? HAIR.short : look.hairStyle;
+  // nothing of the hair's cap shows under a hat that covers it, so it has no style to build
+  const style = hatted === 'covered' ? -1 : hatted ? HAIR.short : look.hairStyle;
   if (style === AMANDA.hairStyle) buildMohawk(head, look.skin, look.hair);
   else if (style === HAIR.short) put(head, hairCap('short', FALLS.short), hair, 0, 0.004, -0.004).name = 'hair';
   else if (style === HAIR.bob) put(head, hairCap('bob', FALLS.bob), hair, 0, 0.004, -0.006).name = 'hair';
@@ -529,23 +554,40 @@ export function detailHead(head: THREE.Group, look: Look, skin: THREE.Material, 
 // The body: a shirt shaped to the chest and waist with a collar, trousers over the hips, and the legs and arms.
 
 /** The shirt's profile, [radius, height] from the hem to the collar, and how much wider and shallower it is than round. */
-const SHIRT: readonly (readonly [number, number])[] = [
-  [0.15, -0.085],
-  [0.166, -0.075],
-  [0.167, -0.05],
-  [0.16, 0.02],
-  [0.155, 0.09],
-  [0.162, 0.17],
-  [0.17, 0.26],
-  [0.17, 0.32],
-  [0.164, 0.37],
-  [0.146, 0.42],
-  [0.112, 0.458],
-  [0.075, 0.478],
-  [0, 0.482],
-];
-const SHIRT_WIDE = 1.12;
-const SHIRT_DEEP = 0.9;
+export const SHIRT: readonly (readonly [number, number])[] = CLAY
+  ? // the clay version's: in more at the waist and fuller at the chest, so the body has a shape at a glance
+    [
+      [0.152, -0.085],
+      [0.168, -0.075],
+      [0.168, -0.05],
+      [0.156, 0.02],
+      [0.147, 0.09],
+      [0.158, 0.17],
+      [0.173, 0.26],
+      [0.173, 0.32],
+      [0.165, 0.37],
+      [0.146, 0.42],
+      [0.112, 0.458],
+      [0.075, 0.478],
+      [0, 0.482],
+    ]
+  : [
+      [0.15, -0.085],
+      [0.166, -0.075],
+      [0.167, -0.05],
+      [0.16, 0.02],
+      [0.155, 0.09],
+      [0.162, 0.17],
+      [0.17, 0.26],
+      [0.17, 0.32],
+      [0.164, 0.37],
+      [0.146, 0.42],
+      [0.112, 0.458],
+      [0.075, 0.478],
+      [0, 0.482],
+    ];
+export const SHIRT_WIDE = 1.12;
+export const SHIRT_DEEP = 0.9;
 
 /** A profile's radius at a height up it, between the points either side. */
 function radiusAt(profile: readonly (readonly [number, number])[], y: number) {
@@ -562,7 +604,12 @@ const shirtRadius = (y: number) => radiusAt(SHIRT, y);
 
 /** Round shoulders over the arms' hinges, so an arm swinging any way stays joined to the body. */
 const shoulders = (n: Sides) =>
-  [-1, 1].map((s) => smooth(place(ball(0.066, n(18)), [s * 0.232, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95])));
+  [-1, 1].map((s) =>
+    CLAY
+      ? // the clay version's sit into the body, sloping down to the arm, rather than puffed out over it
+        smooth(place(ball(0.06, n(14)), [s * 0.226, 0.37, 0], [0, 0, s * -0.35], [1.1, 0.92, 0.95]))
+      : smooth(place(ball(0.066, n(18)), [s * 0.232, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95])),
+  );
 
 /** The shirt, from the hem to the collar, shaped to the chest and waist, as wide and deep as the uniforms are cut. */
 const shirt = () =>
@@ -730,7 +777,7 @@ export function detailShawl(torso: THREE.Group, cloth: THREE.Material, wood: THR
 }
 
 /** How far out the front of the shirt is at a point across it and up it, plus `out`. */
-function shirtFront(x: number, y: number, out: number) {
+export function shirtFront(x: number, y: number, out: number) {
   const r = shirtRadius(y);
   return r * SHIRT_DEEP * Math.sqrt(Math.max(0, 1 - (x / (r * SHIRT_WIDE)) ** 2)) + out;
 }
@@ -892,7 +939,7 @@ function bandRound(
 const stripeOf = ([y0, y1]: readonly [number, number]) => [(y0 + y1 - STRIPE) / 2, (y0 + y1 + STRIPE) / 2] as const;
 
 /** The turnout coat, from the hem to the shoulders, with round shoulders over the arms' hinges and a stand collar. */
-const turnoutCoat = () =>
+export const turnoutCoat = () =>
   fuse('turnout coat', (n) => [
     lathe(n, TURNOUT, TURNOUT_WIDE, TURNOUT_DEEP, 36),
     ...[-1, 1].map((s) => smooth(place(ball(0.072, n(18)), [s * 0.236, 0.372, 0], [0, 0, 0], [1, 0.95, 0.95]))),
@@ -923,7 +970,7 @@ const coatStripes = () =>
   );
 
 /** How much fuller than a shirt's a turnout coat's sleeves are. */
-const SLEEVE_FULL = 1.1;
+export const SLEEVE_FULL = 1.1;
 
 /** A band round a sleeve above the cuff, measured from the elbow, on a sleeve made fuller. */
 const cuffBand = () =>
@@ -1059,6 +1106,9 @@ export function detailCap(head: THREE.Group, cloth: THREE.Material, kind: 'peake
   put(head, cap(kind), cloth).name = 'cap';
 }
 
+/** How many sides a limb has round it in full: fewer in the clay version, where a leg is a dozen pixels across close up. */
+const LIMB = CLAY ? 16 : 24;
+
 /** How high the hips are, in meters before scaling. */
 export const HIP = 0.42;
 
@@ -1086,14 +1136,14 @@ const thigh = () =>
       ],
       1,
       0.95,
-      24,
+      LIMB,
     ),
   ]);
 
 /** A shin, from a round knee down to the turn-up at the ankle, measured from the knee. */
 const shin = () =>
   fuse('shin', (n) => [
-    smooth(place(ball(0.072, n(18)), [0, 0, 0], [0, 0, 0], [1, 1, 0.95])),
+    smooth(place(ball(0.072, n(CLAY ? 14 : 18)), [0, 0, 0], [0, 0, 0], [1, 1, 0.95])),
     lathe(
       n,
       [
@@ -1107,16 +1157,19 @@ const shin = () =>
       ],
       1,
       0.95,
-      24,
+      LIMB,
     ),
   ]);
+
+/** How many sides the round parts of a shoe have in full. */
+const SHOE = CLAY ? 14 : 20;
 
 /** A shoe, rounded at the toe, on a flat sole that follows its outline, measured from the knee. */
 const shoe = () =>
   fuse('shoe', (n) => [
-    smooth(place(ball(0.075, n(20)), [0, -0.2, 0.042], [0.06, 0, 0], [0.95, 0.56, 1.62])),
-    smooth(place(ball(0.06, n(14)), [0, -0.175, -0.02], [0, 0, 0], [1.1, 0.7, 1])),
-    smooth(place(ball(0.075, n(20)), [0, -0.228, 0.042], [0, 0, 0], [0.98, 0.2, 1.65])),
+    smooth(place(ball(0.075, n(SHOE)), [0, -0.2, 0.042], [0.06, 0, 0], [0.95, 0.56, 1.62])),
+    smooth(place(ball(0.06, n(CLAY ? 10 : 14)), [0, -0.175, -0.02], [0, 0, 0], [1.1, 0.7, 1])),
+    smooth(place(ball(0.075, n(SHOE)), [0, -0.228, 0.042], [0, 0, 0], [0.98, 0.2, 1.65])),
   ]);
 
 /** Build a leg hinged at the hip, with a shin and shoe hinged at the knee. */
@@ -1143,41 +1196,63 @@ const upperSleeve = () =>
   fuse('upper sleeve', (n) => [
     lathe(
       n,
-      [
-        [0, -ELBOW - 0.02],
-        [0.054, -ELBOW - 0.02],
-        [0.057, -0.1],
-        [0.061, -0.02],
-        [0.06, 0.015],
-        [0.05, 0.04],
-        [0.03, 0.055],
-        [0, 0.06],
-      ],
+      CLAY
+        ? [
+            [0, -ELBOW - 0.02],
+            [0.049, -ELBOW - 0.02],
+            [0.051, -0.1],
+            [0.055, -0.02],
+            [0.054, 0.015],
+            [0.045, 0.04],
+            [0.027, 0.055],
+            [0, 0.06],
+          ]
+        : [
+            [0, -ELBOW - 0.02],
+            [0.054, -ELBOW - 0.02],
+            [0.057, -0.1],
+            [0.061, -0.02],
+            [0.06, 0.015],
+            [0.05, 0.04],
+            [0.03, 0.055],
+            [0, 0.06],
+          ],
       1,
       1,
-      24,
+      LIMB,
     ),
   ]);
 
 /** A forearm's sleeve, from a round elbow to a cuff at the wrist, measured from the elbow. */
 const lowerSleeve = () =>
   fuse('lower sleeve', (n) => [
-    smooth(ball(0.056, n(16))),
+    smooth(ball(CLAY ? 0.05 : 0.056, n(CLAY ? 12 : 16))),
     lathe(
       n,
-      [
-        [0, -0.112],
-        [0.046, -0.112],
-        [0.056, -0.106],
-        [0.056, -0.092],
-        [0.051, -0.084],
-        [0.052, -0.05],
-        [0.056, 0],
-        [0, 0.02],
-      ],
+      CLAY
+        ? [
+            [0, -0.112],
+            [0.042, -0.112],
+            [0.05, -0.106],
+            [0.05, -0.092],
+            [0.045, -0.084],
+            [0.046, -0.05],
+            [0.05, 0],
+            [0, 0.02],
+          ]
+        : [
+            [0, -0.112],
+            [0.046, -0.112],
+            [0.056, -0.106],
+            [0.056, -0.092],
+            [0.051, -0.084],
+            [0.052, -0.05],
+            [0.056, 0],
+            [0, 0.02],
+          ],
       1,
       1,
-      24,
+      LIMB,
     ),
   ]);
 
@@ -1198,7 +1273,7 @@ const rolledSleeve = () =>
       ],
       1,
       1,
-      24,
+      LIMB,
     ),
     place(smooth(new THREE.TorusGeometry(0.054, 0.02, n(10), n(24))), [0, -0.087, 0], [Math.PI / 2, 0, 0]),
   ]);
@@ -1222,23 +1297,38 @@ export const bareUpperArm = () =>
     ),
   ]);
 
+/**
+ * A mitten of a hand on one side, as the clay version has it, with a wrist above it, measured from the elbow: the
+ * fingers one soft paddle curling a little forward, and a thumb standing off it toward the front, which reads as a hand
+ * where four fingers a few pixels long do not.
+ */
+function mitten(side: number, n: Sides) {
+  return [
+    smooth(place(ball(0.05, n(14)), [side * -0.002, -0.19, 0.006], [-0.12, 0, side * 0.06], [0.62, 1.2, 0.98])),
+    place(bare(new THREE.CylinderGeometry(0.03, 0.033, 0.06, n(12))), [0, -0.118, 0]),
+    place(pill(0.016, 0.026, n), [side * -0.016, -0.17, 0.042], [0.75, 0, side * 0.5]),
+  ];
+}
+
 /** A hand on one side with a wrist above it, measured from the elbow, and with the bare forearm for a rolled-up sleeve. */
 const hand = (side: number, forearm: boolean) =>
   fuse(`hand${side}${forearm ? 'f' : ''}`, (n) => {
-    const parts = [
-      place(ball(0.05, n(16)), [0, -0.172, 0.004], [0, 0, 0], [0.6, 1, 0.95]),
-      place(bare(new THREE.CylinderGeometry(0.031, 0.034, 0.06, n(14))), [0, -0.118, 0]),
-      // four fingers held together, curling a little forward
-      ...[-0.024, -0.008, 0.008, 0.024].map((z, i) =>
-        place(
-          pill(0.0125, 0.03 - Math.abs(i - 1.5) * 0.005, n),
-          [side * -0.003, -0.222 + Math.abs(i - 1.5) * 0.004, z],
-          [-0.18 + z, 0, side * 0.08],
-        ),
-      ),
-      // the thumb, toward the front and turned in
-      place(pill(0.0135, 0.028, n), [side * -0.018, -0.168, 0.042], [0.7, 0, side * 0.45]),
-    ];
+    const parts = CLAY
+      ? mitten(side, n)
+      : [
+          place(ball(0.05, n(16)), [0, -0.172, 0.004], [0, 0, 0], [0.6, 1, 0.95]),
+          place(bare(new THREE.CylinderGeometry(0.031, 0.034, 0.06, n(14))), [0, -0.118, 0]),
+          // four fingers held together, curling a little forward
+          ...[-0.024, -0.008, 0.008, 0.024].map((z, i) =>
+            place(
+              pill(0.0125, 0.03 - Math.abs(i - 1.5) * 0.005, n),
+              [side * -0.003, -0.222 + Math.abs(i - 1.5) * 0.004, z],
+              [-0.18 + z, 0, side * 0.08],
+            ),
+          ),
+          // the thumb, toward the front and turned in
+          place(pill(0.0135, 0.028, n), [side * -0.018, -0.168, 0.042], [0.7, 0, side * 0.45]),
+        ];
     if (forearm)
       parts.push(
         smooth(ball(0.047, n(16))),
